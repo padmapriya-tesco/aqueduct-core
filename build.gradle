@@ -1,0 +1,209 @@
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "org.projectlombok:lombok:1.18.2"
+        classpath "io.franzbecker:gradle-lombok:1.14"
+        classpath "com.github.jengelman.gradle.plugins:shadow:5.0.0"
+        classpath "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.5"
+        classpath 'io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE'
+        classpath "pl.allegro.tech.build:axion-release-plugin:1.10.0"
+        classpath "com.adarshr:gradle-test-logger-plugin:1.6.0"
+        classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.7.1"
+
+    }
+}
+
+apply plugin: "pl.allegro.tech.build.axion-release"
+
+// This is to add settings to idea so one don't have to do that manually
+// https://github.com/JetBrains/gradle-idea-ext-plugin/wiki/DSL-spec-v.-0.1
+// currently only setting -parameters to have Jackson happy
+apply plugin: 'org.jetbrains.gradle.plugin.idea-ext'
+idea.project.settings {
+    compiler {
+        javac {
+            javacAdditionalOptions "-parameters"
+        }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'groovy'
+    apply plugin: 'io.franzbecker.gradle-lombok'
+    apply plugin: 'project-report'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'com.adarshr.test-logger'
+    apply plugin: 'com.github.spotbugs'
+    apply plugin: 'pmd'
+
+    lombok {
+        version = "1.18.2"
+    }
+
+    task packageSources(type: Jar, dependsOn: 'classes') {
+        from sourceSets.main.allSource
+        classifier = 'sources'
+    }
+
+    artifacts {
+        archives packageSources
+    }
+
+    ext {
+        addMicronautDependencies = {
+            project.dependencies {
+                if (project.name != "pipe-micronaut-common") {
+                    compile project(":pipe-micronaut-common")
+                }
+
+                // order is important
+                compileOnly 'org.projectlombok:lombok:1.18.2'
+                annotationProcessor 'org.projectlombok:lombok:1.18.2'
+                compileOnly 'io.micronaut:micronaut-inject-java'
+                annotationProcessor 'io.micronaut:micronaut-inject-java'
+
+                compile 'io.micronaut:micronaut-security'
+                compile "io.micronaut:micronaut-management"
+                compile 'io.micronaut.configuration:micronaut-micrometer-core'
+
+                implementation 'io.micronaut:micronaut-inject'
+                implementation 'io.micronaut:micronaut-runtime'
+
+                testCompileOnly 'io.micronaut:micronaut-inject-groovy'
+                testCompile 'io.micronaut.test:micronaut-test-spock:1.0.1'
+                testCompile 'io.micronaut.test:micronaut-test-junit5:1.0.1'
+            }
+        }
+
+        addPublish = {
+            project.apply plugin: "maven-publish"
+
+            project.publishing {
+
+                repositories {
+                    maven {
+                        url = "https://nexus.ourtesco.com/repository/Messaging/"
+
+                        if (project.hasProperty('mavenUser')) {
+                            credentials {
+                                username "$mavenUser"
+                                password "$mavenPassword"
+                            }
+                        }
+                    }
+
+                    publications {
+                        maven(MavenPublication) {
+                            artifactId = "aqueduct-${project.name}"
+                            from components.java
+                            artifact packageSources
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    spotbugs {
+        ignoreFailures = true
+        effort = "max"
+    }
+
+    pmd {
+        toolVersion = '5.8.1'
+        ignoreFailures = true
+
+        ruleSets = [
+            'java-basic',
+            'java-braces',
+            'java-clone',
+            'java-codesize',
+            'java-design',
+            'java-empty',
+            'java-imports',
+            'java-optimizations',
+            'java-strictexception',
+            'java-strings',
+            'java-typeresolution',
+            'java-unnecessary',
+            'java-unusedcode'
+        ]
+    }
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    group 'com.tesco.aqueduct'
+
+    version scmVersion.version
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom 'io.micronaut:micronaut-bom:1.0.4'
+        }
+    }
+
+    dependencies {
+
+        // Groovy and Spock dependencies
+        testCompile 'org.codehaus.groovy:groovy-all:2.5.5'
+        testCompile 'org.spockframework:spock-core:1.2-groovy-2.5'
+        testCompile "io.rest-assured:rest-assured:3.1.1"
+
+        testCompile 'com.stehno.ersatz:ersatz:1.9.0:safe@jar'
+
+        testRuntime 'ch.qos.logback:logback-classic:1.2.3'
+        testRuntime 'ch.qos.logback.contrib:logback-json-classic:0.1.5'
+        testRuntime 'ch.qos.logback.contrib:logback-jackson:0.1.5'
+        
+        testRuntime 'net.bytebuddy:byte-buddy:1.9.6' // allows mocking of classes (in addition to interfaces)
+        testRuntime 'org.objenesis:objenesis:2.6'    // allows mocking of classes without default constructor (together with CGLIB)
+    }
+
+    // add -parameters to java compile have Jackson happy
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << '-parameters'
+    }
+
+    // integration test src set
+    sourceSets {
+        integration {
+            groovy {
+                compileClasspath += main.output + test.output
+                runtimeClasspath += main.output + test.output
+                srcDir 'src/integration/groovy'
+            }
+            resources.srcDir file('src/integration/resources')
+        }
+    }
+
+    configurations {
+        integrationCompile.extendsFrom testCompile
+        integrationRuntime.extendsFrom testRuntime
+    }
+
+    task integration(type: Test, dependsOn: compileGroovy) {
+        testClassesDirs = sourceSets.integration.output.classesDirs
+        classpath = sourceSets.integration.runtimeClasspath
+    }
+
+    // test would run fast tests, check would run all, same with build
+    check.dependsOn integration
+    integration.mustRunAfter test
+}
+
+scmVersion {
+    useHighestVersion = true
+}

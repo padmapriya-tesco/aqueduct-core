@@ -1,0 +1,38 @@
+micronaut:
+  metrics.binders:
+    jvm.enabled: true
+    web.enabled: true
+    processor.enabled: true
+    jdbc.enabled: false
+  security:
+    enabled: {PIPE_READ_SECURITY_ENABLED}
+
+endpoints:
+  all:
+    enabled: true
+    path: /endpoints
+    sensitive: false
+
+pipe:
+  server:
+    url: "{PIPE_URL}"
+
+persistence:
+  read:
+    limit: 1000
+    max-batch-size: 10485760
+    retry-after: 10
+
+datasources:
+  postgres:
+    url: "jdbc:postgresql://{POSTGRE_SERVER}/{POSTGRE_DATABASE}"
+    username: "{POSTGRE_USERNAME}"
+    password: "{POSTGRE_PASSWORD}"
+    driverClassName: org.postgresql.Driver
+
+authentication:
+  read-pipe:
+    username: "{PIPE_READ_USERNAME}"
+    password: "{PIPE_READ_PASSWORD}"
+    runscope-username: "{RUNSCOPE_PIPE_READ_USERNAME}"
+    runscope-password: "{RUNSCOPE_PIPE_READ_PASSWORD}"

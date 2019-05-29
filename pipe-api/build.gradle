@@ -1,0 +1,10 @@
+dependencies {
+    // Support Java 8 dates
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.8'
+    // Support constructors without @JsonCreator and @JsonParam
+    compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.8'
+    // Optionals, streams etc.
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8'
+}
+
+addPublish()

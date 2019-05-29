@@ -1,0 +1,48 @@
+.clusters rect {
+  fill: white;
+  stroke: #999;
+  stroke-width: 1.5px;
+}
+
+text {
+  font-weight: 300;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serf;
+  font-size: 14px;
+}
+
+.node rect {
+  stroke: #999;
+  fill: #fff;
+  stroke-width: 1.5px;
+}
+
+.edgePath path {
+  stroke: #333;
+  stroke-width: 1.2px;
+}
+
+.tippy-content table {
+  text-align: left;
+}
+
+.tippy-content td {
+  vertical-align: text-top;
+}
+
+/* Specific nodes */
+
+.node.cloud rect {
+  fill: lightblue;
+}
+
+.node.following rect {
+  fill: lightgreen;
+}
+
+.node.initialising rect {
+  fill: sandybrown;
+}
+
+.node.stale rect {
+  fill: lightcoral;
+}

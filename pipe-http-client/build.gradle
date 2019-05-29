@@ -1,0 +1,12 @@
+dependencies {
+    compile project(":pipe-api")
+    compile project(":pipe-logger")
+    compile project(":registry-client")
+
+    addMicronautDependencies()
+    compile 'io.micronaut:micronaut-http-client'
+
+    compile "org.slf4j:slf4j-api:1.7.25"
+}
+
+addPublish()

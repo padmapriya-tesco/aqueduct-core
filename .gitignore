@@ -1,0 +1,17 @@
+.DS_Store
+.git/
+.gradle/
+.idea/
+.settings/
+build/
+*.db
+bin/
+.project
+.classpath
+.vscode/
+out/
+*.log
+target/
+debug.log
+.terraform/
+*.tfstate*

@@ -1,0 +1,18 @@
+rootProject.name = 'aqueduct-core'
+
+include ':pipe-api',
+        ':pipe-logger',
+        ':pipe-micronaut-common',
+        ':pipe-http-client',
+        ':pipe-http-server',
+        ':pipe-http-server-cloud',
+        ':pipe-http-server-mock',
+        ':pipe-storage-test',
+        ':pipe-storage-memory',
+        ':pipe-storage-postgresql',
+        ':pipe-storage-sqlite',
+        ':registry-core',
+        ':registry-http-server',
+        ':registry-client',
+        ':registry-ui'
+

@@ -1,0 +1,230 @@
+package com.tesco.aqueduct.pipe.storage
+
+import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.api.MessageReader
+import groovy.transform.NamedVariant
+import spock.lang.Shared
+import spock.lang.Specification
+import spock.lang.Unroll
+
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+
+abstract class StorageSpec extends Specification {
+
+    static ZonedDateTime time = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+    static limit = 1000
+
+    @Shared
+    def msg1 = message(offset: 102, key:"x", )
+
+    @Shared
+    def msg2 = message(offset: 107, key:"y")
+
+    abstract MessageReader getStorage();
+    abstract void insert(Message msg);
+
+    def "can persist messages without offset"() {
+        given:
+        insert(message(offset: null))
+        insert(message(offset: null))
+
+        when:
+        List<Message> messages = storage.read(null, 0).messages
+
+        then:
+        messages*.offset == [1,2]
+    }
+
+    // test for the test insert method
+    def "can persist message with offset if set"() {
+        given:
+        insert(msg1)
+        insert(msg2)
+
+        when:
+        List<Message> messages = storage.read(null, 0).messages
+
+        then:
+        messages*.offset == [102,107]
+    }
+
+    def "can get the message we inserted"() {
+        given: "A message in database"
+        def msg = message(offset: 1)
+        insert(msg)
+
+        when: "When we read"
+        List<Message> messages = storage.read(null, 0).messages
+
+        then: "We get exactly the message we send"
+        messages == [msg]
+    }
+
+    def "number of entities returned respects limit"() {
+        given: "more messages in database than the limit"
+        (limit * 2).times {
+            insert(message(key: "$it"))
+        }
+
+        when:
+        def messages = storage.read(null, 0).messages.toList()
+
+        then:
+        messages.size() == limit
+    }
+
+
+    @Unroll
+    def "filter by type using tags - #tags"() {
+        given:
+        insert(message(type: "type-v1"))
+        insert(message(type: "type-v2"))
+        insert(message(type: "type-v3"))
+
+        when:
+        List<Message> messages = storage.read(tags, 0).messages
+
+        then:
+        messages.size() == resultsSize
+
+        where:
+        tags | resultsSize
+        [type:["typeX"]] | 0
+        [type:["type-v1"]] | 1
+        [type:["type-v2", "type-v3"]] | 2
+        [type:["type-v1", "type-v3"]] | 2
+        [type:["type-v1", "type-v2", "type-v3"]] | 3
+        [:] | 3
+
+    }
+
+    @Unroll
+    def "can filter by tags: #tags - #resultKeys"() {
+        given:
+        def a = message(key: "a", tags: ["tag1": ["b", "c"]])
+        def z = message(key: "z", tags: ["tag1": ["q", "u", "v"], "tag2": ["y"] ])
+
+        insert(a)
+        insert(z)
+
+        when:
+        List<Message> messages = storage.read(tags, 0).messages
+
+        then:
+        messages*.key == resultKeys
+
+        where:
+        tags                                | resultKeys
+        ["tag1": ["b"]]                        | ["a"]
+        ["tag1": ["c"]]                        | ["a"]
+        ["tag1": ["b", "c"]]                   | ["a"]
+        ["tag1": ["a", "d"]]                   | []
+        ["tag2": ["a", "d"]]                   | []
+        ["tag2": ["z"]]                        | []
+        ["tag2": ["y"]]                        | ["z"]
+
+        // Filtering by two tags at once
+        ["tag1": ["q"], "tag2": ["y"]]      | ["z"]
+        // Filtering by two tags at once with more than one value
+        ["tag1": ["q", "v"], "tag2": ["y"]] | ["z"]
+    }
+
+    @Unroll
+    def "basic message behaviour - #rule"() {
+        when:
+        insert(msg1)
+        insert(msg2)
+
+        then:
+        storage.read(null, offset).messages == result
+
+        where:
+        offset          | result       | rule
+        msg2.offset + 1 | []           | "returns empty if offset after data"
+        msg1.offset - 1 | [msg1, msg2] | "returns both messages after a lower offset"
+        msg1.offset     | [msg1, msg2] | "returns both messages after or equal to a lower offset"
+        msg1.offset + 1 | [msg2]       | "returns the messages after an offset"
+        msg2.offset     | [msg2]       | "returns the messages after or equal to an offset"
+    }
+
+    def "compaction - same not immediately compacted"() {
+        when:
+        insert(message(key:"x"))
+        insert(message(key:"x"))
+        insert(message(key:"x"))
+
+        then:
+        storage.read(null, 0).messages.size() == 3
+    }
+
+    @Unroll
+    def "find latest offset for tags #tags" (){
+        given:
+        insert(message(offset:1, key: "x", tags: [tag:["first"]]))
+        insert(message(offset:2, key: "y", tags: [tag:["middle"]]))
+        insert(message(offset:3, key: "z", tags: [:]))
+        insert(message(offset:4, key: "q", tags: [tag:["middle"]]))
+        insert(message(offset:5, key: "w", tags: [tag:["last"]]))
+
+        when:
+        def actualOffset = storage.getLatestOffsetMatching(tags)
+
+        then:
+        actualOffset == offset
+
+        where:
+        tags               | offset
+        [:]                | 5
+        [tag: ["first"]]   | 1
+        [tag: ["middle"]]  | 4
+        [tag: ["last"]]    | 5
+        [tag: ["missing"]] | 0 // tag value is missing
+        [missing: ["tag"]] | 0 // tag key is missing
+    }
+
+    @Unroll
+    def "find latest offset for tags by type #tags" (){
+        given:
+        insert(message(type: "first", key: "x"))
+        insert(message(type: "middle", key: "y"))
+        insert(message(type: "other_type", key: "z"))
+        insert(message(type: "middle", key: "q"))
+        insert(message(type: "last",  key: "w"))
+
+        when:
+        def actualOffset = storage.getLatestOffsetMatching(tags)
+
+        then:
+        actualOffset == offset
+
+        where:
+        tags                | offset
+        [type: ["first"]]   | 1
+        [type: ["middle"]]  | 4
+        [type: ["last"]]    | 5
+        [type: ["missing"]] | 0 // tag value is missing
+    }
+
+    @NamedVariant // allows to use names of parameters in method call
+    Message message(
+        Long offset,
+        String type,
+        String key,
+        String contentType,
+        ZonedDateTime created,
+        Map tags,
+        String data
+    ) {
+        new Message(
+            type ?: "type",
+            key ?: "key",
+            contentType ?: "contentType",
+            offset,
+            created ?: time,
+            tags,
+            data ?: "data"
+        )
+    }
+}

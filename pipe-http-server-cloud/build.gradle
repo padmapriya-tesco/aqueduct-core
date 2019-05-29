@@ -1,0 +1,44 @@
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+distZip.enabled = false
+distTar.enabled = false
+
+mainClassName = 'com.tesco.aqueduct.pipe.http.PipeCloudServer'
+
+dependencies {
+    compile project (":pipe-api")
+    compile project (":pipe-http-server")
+    compile project (":pipe-storage-postgresql")
+    compile project (":registry-core")
+    compile project (":registry-http-server")
+    compile project (":registry-ui")
+
+    addMicronautDependencies()
+
+    testCompile 'com.opentable.components:otj-pg-embedded:0.13.0'
+}
+
+jar {
+    manifest {
+        attributes 'Specification-Version': scmVersion.version
+        attributes 'Specification-Vendor': 'Tesco PLC ltd.'
+        attributes 'Implementation-Title': 'com.tesco.aqueduct.pipe'
+        attributes 'Implementation-Version': scmVersion.version
+    }
+}
+
+task createVersionFile() {
+    doFirst {
+        // for jenkins pipeline
+        new File("VERSION.txt").text = scmVersion.version
+    }
+}
+
+processResources.dependsOn createVersionFile
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+addPublish()

@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aqueduct-pipe-deployer-role
+  namespace: app-aqueduct-pipe
+rules:
+  - apiGroups: ["extensions"]
+    resources:
+      - deployments
+    verbs:
+      - patch
+      - update
+      - get
+      - create
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aqueduct-pipe-rolebinding
+  namespace: app-aqueduct-pipe
+
+subjects:
+  - kind: ServiceAccount
+    name: jenkins
+    namespace: jenkins-ns
+
+roleRef:
+  kind: Role
+  name: aqueduct-pipe-deployer-role
+  apiGroup: rbac.authorization.k8s.io

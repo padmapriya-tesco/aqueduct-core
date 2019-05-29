@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  namespace: app-aqueduct-pipe
+  name: aqueduct-pipe
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: aqueduct-pipe
+    spec:
+      containers:
+        - name: aqueduct-pipe
+          image: ${IMAGE}
+          imagePullPolicy: Always
+          env:
+            - name: log_directory
+              value: "/var/log/"
+          ports:
+            - name: http-port
+              containerPort: 8080
+          args:
+            - "${SERVER}"
+            - "${DATABASE}"
+            - "${USERNAME}"
+            - "${PASSWORD}"
+            - "${PIPE_URL}"
+            - "${PIPE_READ_SECURITY_ENABLED}"
+            - "${PIPE_READ_USERNAME}"
+            - "${PIPE_READ_PASSWORD}"
+            - "${RUNSCOPE_PIPE_READ_USERNAME}"
+            - "${RUNSCOPE_PIPE_READ_PASSWORD}"

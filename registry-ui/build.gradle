@@ -1,0 +1,6 @@
+dependencies {
+    addMicronautDependencies()
+
+    compile 'io.micronaut:micronaut-http-server-netty'
+    testRuntime 'ch.qos.logback:logback-classic:1.2.3'
+}

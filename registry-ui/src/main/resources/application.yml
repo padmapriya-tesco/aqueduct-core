@@ -1,0 +1,14 @@
+micronaut:
+  router:
+    static-resources:
+      support-website:
+        enabled: true
+        mapping: /ui/**
+        paths:
+          - classpath:ui
+  security:
+    intercept-url-map:
+      - pattern: /ui/**
+        http-method: GET
+        access:
+          - isAnonymous()
