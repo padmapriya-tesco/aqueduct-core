@@ -200,7 +200,7 @@ ansiColor('xterm') {
             }
         } else {
             stage("GitHub Status") {
-                githubStatusUpdate("messaging/magic_pipe", "success", scmVars.GIT_COMMIT)
+                publicGithubStatusUpdate("aqueduct-core", "success", scmVars.GIT_COMMIT)
             }
         }
     }
