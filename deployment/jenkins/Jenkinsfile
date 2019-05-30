@@ -127,7 +127,7 @@ ansiColor('xterm') {
             }
 
             stage("Release") {
-                sshagent(credentials: ['github_key']) {
+                sshagent(credentials: ['public_github_key']) {
                     sh "#!/bin/sh -e\n./gradlew release -Prelease.disableChecks -Prelease.pushTagsOnly"
                 }
             }
