@@ -66,18 +66,17 @@ ansiColor('xterm') {
             stage('Integration Test') {
                 sh "./gradlew integration"
             }
-            stage('Docker build') {
+            stage('Docker build and Scan') {
                 container('docker') {
                     sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
                     dir("pipe-http-server-cloud") {
                         sh "docker build -t ${integrationImage} ."
                     }
 
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /home/jenkins/.cache/trivy:/root/.cache/trivy knqyf263/trivy --quiet --ignore-unfixed $integrationImage"
+
                     sh "docker push ${integrationImage}"
                 }
-            }
-            stage('Container Security Scan') {
-                sh "#!/bin/sh -e\nTRIVY_USERNAME=00000000-0000-0000-0000-000000000000 TRIVY_PASSWORD=$acrLoginToken trivy --ignore-unfixed $integrationImage"
             }
             stage ('Isolated System test') {
                 isolatedSystemTest(MP_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
