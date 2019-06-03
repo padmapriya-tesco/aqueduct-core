@@ -60,6 +60,9 @@ ansiColor('xterm') {
                 def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
                 publishIssues issues: [pmd]
             }
+            stage('OWASP Scan') {
+                sh "./gradlew dependencyCheckAnalyze"
+            }
             stage('Unit Test') {
                 sh "./gradlew test"
             }
