@@ -49,7 +49,7 @@ class StatusControllerSpec extends Specification {
 
     def 'a call to the status endpoint returns 200 without needing to authenticate as there is nothing to restrict yet'() {
         expect: "the status code returned by the pipe status endpoint is OK"
-        RestAssured.get("/pipe/status")
+        RestAssured.get("/pipe/_status")
             .then()
             .statusCode(HttpStatus.OK.code)
     }
@@ -64,8 +64,8 @@ class StatusControllerSpec extends Specification {
     }
 
     def "status endpoint returns 200 when pipe is online"() {
-        when: "call to /pipe/status"
-        def response = RestAssured.get("/pipe/status")
+        when: "call to /pipe/_status"
+        def response = RestAssured.get("/pipe/_status")
 
         then:
         response.statusCode() == 200
