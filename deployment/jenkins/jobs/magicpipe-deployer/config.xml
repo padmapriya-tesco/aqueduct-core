@@ -37,7 +37,7 @@
       <jenkins.branch.BranchSource>
         <source class="jenkins.plugins.git.GitSCMSource" plugin="git@4.0.0-rc">
           <id>2b35061d-1e62-4ae1-867f-66b293fe6fdc</id>
-          <remote>git@github.dev.global.tesco.org:messaging/magic_pipe.git</remote>
+          <remote>git@github.com:Tesco/aqueduct-core.git</remote>
           <credentialsId>github_key</credentialsId>
           <traits>
             <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
