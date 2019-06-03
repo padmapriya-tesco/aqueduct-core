@@ -77,7 +77,7 @@ ansiColor('xterm') {
                 }
             }
             stage('Container Security Scan') {
-                sh "TRIVY_USERNAME=00000000-0000-0000-0000-000000000000 TRIVY_PASSWORD=$acrLoginToken trivy --ignore-unfixed $integrationImage"
+                sh "#!/bin/sh -e\nTRIVY_USERNAME=00000000-0000-0000-0000-000000000000 TRIVY_PASSWORD=$acrLoginToken trivy --ignore-unfixed $integrationImage"
             }
             stage ('Isolated System test') {
                 isolatedSystemTest(MP_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
