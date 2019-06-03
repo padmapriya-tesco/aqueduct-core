@@ -68,6 +68,7 @@ ansiColor('xterm') {
                 owasp: {
                     stage('OWASP Scan') {
                         sh "./gradlew dependencyCheckAnalyze"
+                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: ''])
                     }
                 }
             )
