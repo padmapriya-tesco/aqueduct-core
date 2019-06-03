@@ -60,13 +60,12 @@ ansiColor('xterm') {
                 def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
                 publishIssues issues: [pmd]
             }
-
             stage('Unit Test') {
                 sh "./gradlew test"
             }
             stage('Integration Test') {
-                 sh "./gradlew integration"
-             }
+                sh "./gradlew integration"
+            }
             stage('Docker build') {
                 container('docker') {
                     sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
@@ -77,11 +76,9 @@ ansiColor('xterm') {
                     sh "docker push ${integrationImage}"
                 }
             }
-
             stage('Container Security Scan') {
                 sh "TRIVY_USERNAME=00000000-0000-0000-0000-000000000000 TRIVY_PASSWORD=$acrLoginToken trivy --ignore-unfixed $integrationImage"
             }
-
             stage ('Isolated System test') {
                 isolatedSystemTest(MP_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
             }
