@@ -50,19 +50,27 @@ ansiColor('xterm') {
         }
 
         stage('Run Tests') {
-            stage('Spot Bugs') {
-                sh "./gradlew spotbugsMain"
-                def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
-                publishIssues issues: [spotbugs]
-            }
-            stage('Pmd Analysis') {
-                sh "./gradlew pmdMain"
-                def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
-                publishIssues issues: [pmd]
-            }
-            stage('OWASP Scan') {
-                sh "./gradlew dependencyCheckAnalyze"
-            }
+            parallel(
+                spotbugs: {
+                    stage('Spot Bugs') {
+                        sh "./gradlew spotbugsMain"
+                        def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
+                        publishIssues issues: [spotbugs]
+                    }
+                },
+                pmd: {
+                    stage('Pmd Analysis') {
+                        sh "./gradlew pmdMain"
+                        def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
+                        publishIssues issues: [pmd]
+                    }
+                },
+                owasp: {
+                    stage('OWASP Scan') {
+                        sh "./gradlew dependencyCheckAnalyze"
+                    }
+                }
+            )
             stage('Unit Test') {
                 sh "./gradlew test"
             }
