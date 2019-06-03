@@ -15,13 +15,6 @@ import java.util.Map;
 @Measure
 public class StatusController {
 
-    //this is used for healthchecking between pipes currently - will need switching out for new standard
-    @Deprecated
-    @Get("/pipe/status")
-    Map status() {
-        return Collections.emptyMap();
-    }
-
     @Get("/pipe/_status")
     Status newStatus() {
         return new Status("ok", Version.getImplementationVersion());
