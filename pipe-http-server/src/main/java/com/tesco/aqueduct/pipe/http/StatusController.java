@@ -16,7 +16,7 @@ import java.util.Map;
 public class StatusController {
 
     @Get("/pipe/_status")
-    Status newStatus() {
+    Status status() {
         return new Status("ok", Version.getImplementationVersion());
     }
 
