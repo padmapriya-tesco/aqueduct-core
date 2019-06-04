@@ -15,16 +15,29 @@ buildscript {
         classpath "pl.allegro.tech.build:axion-release-plugin:1.10.0"
         classpath "com.adarshr:gradle-test-logger-plugin:1.6.0"
         classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.7.1"
+        classpath 'org.owasp:dependency-check-gradle:5.0.0-M3.1'
 
     }
 }
 
+apply plugin: 'org.owasp.dependencycheck'
 apply plugin: "pl.allegro.tech.build.axion-release"
 
 // This is to add settings to idea so one don't have to do that manually
 // https://github.com/JetBrains/gradle-idea-ext-plugin/wiki/DSL-spec-v.-0.1
 // currently only setting -parameters to have Jackson happy
 apply plugin: 'org.jetbrains.gradle.plugin.idea-ext'
+
+dependencyCheck {
+    data {
+        directory="$System.env.HOME/.owasp"
+    }
+
+    analyzers {
+        assemblyEnabled = false
+    }
+}
+
 idea.project.settings {
     compiler {
         javac {
