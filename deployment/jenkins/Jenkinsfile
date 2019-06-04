@@ -60,18 +60,24 @@ ansiColor('xterm') {
                 def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
                 publishIssues issues: [pmd]
             }
+            stage('OWASP Scan') {
+                sh "./gradlew dependencyCheckAnalyze"
+            }
             stage('Unit Test') {
                 sh "./gradlew test"
             }
             stage('Integration Test') {
-                 sh "./gradlew integration"
-             }
-            stage("Docker build") {
+                sh "./gradlew integration"
+            }
+            stage('Docker build and Scan') {
                 container('docker') {
                     sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
                     dir("pipe-http-server-cloud") {
                         sh "docker build -t ${integrationImage} ."
                     }
+
+                    sh "docker run --rm  -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache/trivy:/root/.cache/trivy knqyf263/trivy:0.1.2 --quiet --ignore-unfixed $integrationImage"
+
                     sh "docker push ${integrationImage}"
                 }
             }
