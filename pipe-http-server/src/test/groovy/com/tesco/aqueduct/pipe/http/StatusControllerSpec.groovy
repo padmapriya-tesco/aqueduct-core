@@ -47,28 +47,12 @@ class StatusControllerSpec extends Specification {
         RestAssured.port = RestAssured.DEFAULT_PORT
     }
 
-    def 'a call to the status endpoint returns 200 without needing to authenticate as there is nothing to restrict yet'() {
-        expect: "the status code returned by the pipe status endpoint is OK"
-        RestAssured.get("/pipe/status")
-            .then()
-            .statusCode(HttpStatus.OK.code)
-    }
-
     def "pipe status contains version in it"() {
         expect:
         when()
             .get("/pipe/_status")
             .then()
-            .statusCode(200)
+            .statusCode(HttpStatus.OK.code)
             .body("version", equalTo(Version.getImplementationVersion()))
-    }
-
-    def "status endpoint returns 200 when pipe is online"() {
-        when: "call to /pipe/status"
-        def response = RestAssured.get("/pipe/status")
-
-        then:
-        response.statusCode() == 200
-        response.contentType() == "application/json"
     }
 }
