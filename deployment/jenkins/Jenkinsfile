@@ -8,7 +8,7 @@ disableResume()
 
 ansiColor('xterm') {
 
-    podNode('JenkinsDeployer') {
+    node('jenkins-deployer') {
 
         def scmVars
         def properties
@@ -153,7 +153,7 @@ ansiColor('xterm') {
                 sh "#!/bin/sh -e\n./gradlew publish -PmavenUser=${nexusUsername} -PmavenPassword=${nexusPassword}"
             }
 
-            podNode('JenkinsLiveDeployer') {
+            node('jenkins-live-deployer') {
                 String liveRegistry = "${env.company}${env.project}${env.environment}acr${env.tag}.azurecr.io"
                 String liveAcrLoginToken = authenticate([environment: env.environment,
                                                          tag: env.tag,
