@@ -128,8 +128,10 @@ ansiColor('xterm') {
                 sh "kubectl apply -f aqueduct-pipe-deployment-sub.yaml"
             }
 
+            def version = readFile(file:"VERSION.txt")
+
             stage('Version Test') {
-                versionTest("https://api-ppe.tesco.com/messaging/v1/pipe/_status", readFile(file:"VERSION.txt"))
+                versionTest("https://api-ppe.tesco.com/messaging/v1/pipe/_status", version)
             }
 
             container('docker') {
@@ -200,8 +202,11 @@ ansiColor('xterm') {
                     sh "kubectl apply -f aqueduct-pipe-deployment-sub.yaml"
                 }
 
-                stage('Tag Latest Live') {
+                stage('Version Test Live') {
+                    versionTest("https://api.tesco.com/messaging/v1/pipe/_status", version)
+                }
 
+                stage('Tag Latest Live') {
                     container("docker") {
 
                         String liveDeployedImage = "$liveRegistry/aqueduct-pipe:latest"
