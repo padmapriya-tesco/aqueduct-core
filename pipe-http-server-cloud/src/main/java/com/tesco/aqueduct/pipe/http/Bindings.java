@@ -19,7 +19,7 @@ public class Bindings {
 
     @Singleton @Named("local")
     @Measure
-    MessageReader bindMessageReader(
+    PostgresqlStorage bindMessageReader(
         @Value("${persistence.read.limit}") int limit,
         @Value("${persistence.read.retry-after}") int retryAfter,
         @Value("${persistence.read.max-batch-size}") int maxBatchSize,
