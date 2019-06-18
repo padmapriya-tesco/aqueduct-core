@@ -181,10 +181,10 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
-    public void compactUpTo(ZonedDateTime zonedDateTime) {
+    public void compactUpTo(ZonedDateTime threasholdDate) {
         try(Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(COMPACT)) {
-            statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+            statement.setTimestamp(1, Timestamp.valueOf(threasholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
             int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
@@ -225,5 +225,13 @@ public class PostgresqlStorage implements MessageReader {
                 (tags ? " WHERE tags @> ?::JSONB;" : ";");
     }
 
-    private static final String COMPACT = "DELETE FROM events WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT GROUP BY msg_key);";
+    private static String getCompactionQuery() {
+        return "DELETE FROM events " +
+                "where msg_offset in " +
+                "(select msg_offset from events e, " +
+                "( SELECT msg_key, max(msg_offset) " +
+                "max_offset FROM events GROUP BY msg_key) " +
+                "x where created_utc <= ? " +
+                "and e.msg_key = x.msg_key and e.msg_offset <> x.max_offset);";
+    }
 }
