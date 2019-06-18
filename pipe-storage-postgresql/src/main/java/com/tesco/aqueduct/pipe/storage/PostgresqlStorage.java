@@ -9,10 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -184,6 +181,17 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
+    public void compactUpTo(ZonedDateTime thresholdDate) {
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+            statement.setTimestamp(1, Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            int rowsAffected = statement.executeUpdate();
+            LOG.info("compaction", "compacted " + rowsAffected + " rows");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static String getSelectEventsWithTypeFilteringQuery(boolean tags, long maxBatchSize) {
         return "SELECT type, msg_key, content_type, msg_offset, created_utc, tags, data FROM " +
                 "(SELECT type, msg_key, content_type, msg_offset, created_utc, tags, data, " +
@@ -215,5 +223,15 @@ public class PostgresqlStorage implements MessageReader {
     private static String getSelectLatestOffsetWithoutTypeQuery(boolean tags) {
         return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events " +
                 (tags ? " WHERE tags @> ?::JSONB;" : ";");
+    }
+
+    private static String getCompactionQuery() {
+        return "DELETE FROM events " +
+                "where msg_offset in " +
+                "(select msg_offset from events e, " +
+                "( SELECT msg_key, max(msg_offset) " +
+                "max_offset FROM events GROUP BY msg_key) " +
+                "x where created_utc <= ? " +
+                "and e.msg_key = x.msg_key and e.msg_offset <> x.max_offset);";
     }
 }

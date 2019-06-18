@@ -18,6 +18,9 @@ pipe:
     url: "{PIPE_URL}"
 
 persistence:
+  compact:
+    threshold: 3d
+    schedule.cron: "0 14 2 1/1 * ?"
   read:
     limit: 1000
     max-batch-size: 10485760
