@@ -181,10 +181,10 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
-    public void compactUpTo(ZonedDateTime threasholdDate) {
+    public void compactUpTo(ZonedDateTime thresholdDate) {
         try(Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
-            statement.setTimestamp(1, Timestamp.valueOf(threasholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            statement.setTimestamp(1, Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
             int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
