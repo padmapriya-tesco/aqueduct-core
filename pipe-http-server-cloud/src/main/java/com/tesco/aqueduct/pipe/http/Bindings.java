@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.http;
 
-import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.InMemoryNodeRegistry;
 import com.tesco.aqueduct.registry.NodeRegistry;
@@ -17,7 +16,8 @@ import java.time.Duration;
 @Singleton
 public class Bindings {
 
-    @Singleton
+    @Singleton @Named("local")
+    // This provides MessageReader as it implements it
     PostgresqlStorage bindPostgreSQL(
         @Value("${persistence.read.limit}") int limit,
         @Value("${persistence.read.retry-after}") int retryAfter,
@@ -25,12 +25,6 @@ public class Bindings {
         @Named("postgres") DataSource dataSource
     ) {
         return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize);
-    }
-
-    @Singleton @Named("local")
-    @Measure
-    MessageReader bindMessageReader(PostgresqlStorage postgresqlStorage){
-        return postgresqlStorage;
     }
 
     @Singleton

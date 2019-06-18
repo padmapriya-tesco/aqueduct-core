@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.net.URL;
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class NodeRegistryController {
 
     // This is temporary, it might be better for us to make pipe depend on registry and have it register itself in it.
     @Inject
+    @Named("local")
     private MessageReader pipe;
 
     public NodeRegistryController(NodeRegistry registry) {
