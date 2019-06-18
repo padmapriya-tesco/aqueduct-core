@@ -24,7 +24,6 @@ public class NodeRegistryController {
 
     // This is temporary, it might be better for us to make pipe depend on registry and have it register itself in it.
     @Inject
-    @Named("local")
     private MessageReader pipe;
 
     public NodeRegistryController(NodeRegistry registry) {
