@@ -9,10 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -184,6 +181,17 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
+    public void compactUpTo(ZonedDateTime zonedDateTime) {
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(COMPACT)) {
+            statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            int rowsAffected = statement.executeUpdate();
+            LOG.info("compaction", "compacted " + rowsAffected + " rows");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static String getSelectEventsWithTypeFilteringQuery(boolean tags, long maxBatchSize) {
         return "SELECT type, msg_key, content_type, msg_offset, created_utc, tags, data FROM " +
                 "(SELECT type, msg_key, content_type, msg_offset, created_utc, tags, data, " +
@@ -216,4 +224,6 @@ public class PostgresqlStorage implements MessageReader {
         return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events " +
                 (tags ? " WHERE tags @> ?::JSONB;" : ";");
     }
+
+    private static final String COMPACT = "DELETE FROM events WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT GROUP BY msg_key);";
 }
