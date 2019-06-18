@@ -91,7 +91,7 @@ ansiColor('xterm') {
                 }
             }
             stage ('Isolated System test') {
-                isolatedSystemTest(MP_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
+                isolatedSystemTest(MP_AQUEDUCT_PIPE_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
             }
         }
 
