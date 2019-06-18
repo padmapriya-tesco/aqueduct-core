@@ -11,7 +11,6 @@ import io.micronaut.scheduling.annotation.Scheduled;
 import io.micronaut.scheduling.cron.CronExpression;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -26,7 +25,7 @@ class CompactionTask {
 
     public CompactionTask(
             MeterRegistry registry,
-            @Named("local") PostgresqlStorage postgresqlStorage,
+            PostgresqlStorage postgresqlStorage,
             @Property(name = "persistence.compact.threshold") Duration threshold,
             @Property(name = "persistence.compact.schedule.cron") String cronExpression
     ) {

@@ -17,15 +17,20 @@ import java.time.Duration;
 @Singleton
 public class Bindings {
 
-    @Singleton @Named("local")
-    @Measure
-    PostgresqlStorage bindMessageReader(
+    @Singleton
+    PostgresqlStorage bindPostgreSQL(
         @Value("${persistence.read.limit}") int limit,
         @Value("${persistence.read.retry-after}") int retryAfter,
         @Value("${persistence.read.max-batch-size}") int maxBatchSize,
         @Named("postgres") DataSource dataSource
     ) {
         return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize);
+    }
+
+    @Singleton @Named("local")
+    @Measure
+    MessageReader bindMessageReader(PostgresqlStorage postgresqlStorage){
+        return postgresqlStorage;
     }
 
     @Singleton
