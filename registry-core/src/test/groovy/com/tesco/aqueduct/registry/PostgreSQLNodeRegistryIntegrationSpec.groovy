@@ -16,15 +16,13 @@ import java.util.concurrent.Executors
 
 class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
-    @Shared @ClassRule
+    @ClassRule @Shared
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
     @AutoCleanup
     Sql sql
-
     URL cloudURL = new URL("http://cloud.pipe:8080")
     DataSource dataSource
-
     NodeRegistry registry
 
     def setup() {
