@@ -2,7 +2,6 @@
 dependencies {
     compile project(":pipe-api")
     compile project(":pipe-logger")
-    compile project(":registry-core")
     
     compile 'org.postgresql:postgresql:42.2.5'
 

@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 
+@Deprecated
 public class InMemoryNodeRegistry implements NodeRegistry {
 
     private final TreeMap<String, List<Node>> nodes;

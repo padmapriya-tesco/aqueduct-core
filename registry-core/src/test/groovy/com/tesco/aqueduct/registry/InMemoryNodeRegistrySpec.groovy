@@ -7,6 +7,7 @@ import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+@Deprecated
 class InMemoryNodeRegistrySpec extends Specification {
 
     URL cloudURL = new URL("http://cloud.pipe:8080")

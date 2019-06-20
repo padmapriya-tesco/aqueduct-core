@@ -1,9 +1,9 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.InMemoryNodeRegistry;
 import com.tesco.aqueduct.registry.NodeRegistry;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
+import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Value;
 import javax.inject.Named;
@@ -30,9 +30,10 @@ public class Bindings {
     @Singleton
     @Measure
     NodeRegistry bindNodeRegistry(
+        @Named("postgres") DataSource dataSource,
         @Value("${pipe.server.url}") URL selfUrl,
         @Value("${registry.mark-offline-after:1m}") Duration markAsOffline
     ) {
-        return new InMemoryNodeRegistry(selfUrl, markAsOffline);
+        return new PostgreSQLNodeRegistry(dataSource, selfUrl, markAsOffline);
     }
 }
