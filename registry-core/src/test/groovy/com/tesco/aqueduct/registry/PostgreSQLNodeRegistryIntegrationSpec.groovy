@@ -1,6 +1,11 @@
 package com.tesco.aqueduct.registry
 
-import com.tesco.aqueduct.pipe.storage.PostgresqlStorage
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import groovy.sql.Sql
+import org.junit.ClassRule
+import spock.lang.AutoCleanup
+import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.sql.DataSource
@@ -9,12 +14,36 @@ import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class PostgreSQLNodeRegistrySpec extends Specification {
+class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
+
+    @Shared @ClassRule
+    SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
+
+    @AutoCleanup
+    Sql sql
 
     URL cloudURL = new URL("http://cloud.pipe:8080")
-    DataSource mockDataSource = Mock()
+    DataSource dataSource
 
-    NodeRegistry registry = new PostgreSQLNodeRegistry(mockDataSource, cloudURL, Duration.ofDays(1))
+    NodeRegistry registry
+
+    def setup() {
+        sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
+
+        dataSource = Mock()
+        dataSource.connection >> pg.embeddedPostgres.postgresDatabase.connection
+
+        sql.execute("""
+            DROP TABLE IF EXISTS registry;
+            
+            CREATE TABLE registry(
+            group_id VARCHAR PRIMARY KEY NOT NULL,
+            entry JSON NOT NULL
+            );
+        """)
+
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofDays(1))
+    }
 
     def "registry always contains root"() {
         when: "I call summary on an empty registry"
@@ -253,7 +282,7 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 
     def "After some time nodes are marked as offline"() {
         given: "registry with small offline mark"
-        def registry = new PostgreSQLNodeRegistry(mockDataSource, cloudURL, Duration.ofMillis(100))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofMillis(100))
 
         def offset = 100
         def now = ZonedDateTime.now()

@@ -5,6 +5,8 @@ dependencies {
     compile 'ch.qos.logback.contrib:logback-jackson:0.1.5'
     compile 'com.google.code.gson:gson:2.8.5'
     compile project (":pipe-storage-postgresql")
+
+    testCompile 'com.opentable.components:otj-pg-embedded:0.13.0'
 }
 
 addPublish()
