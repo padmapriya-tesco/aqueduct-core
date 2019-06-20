@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry
 
+import com.tesco.aqueduct.pipe.storage.PostgresqlStorage
 import spock.lang.Specification
 
 import java.time.Duration
@@ -10,8 +11,9 @@ import java.util.concurrent.Executors
 class PostgreSQLNodeRegistrySpec extends Specification {
 
     URL cloudURL = new URL("http://cloud.pipe:8080")
+    PostgresqlStorage postgresqlStorageMock = Mock()
 
-    NodeRegistry registry = new PostgreSQLNodeRegistry(cloudURL, Duration.ofDays(1))
+    NodeRegistry registry = new PostgreSQLNodeRegistry(postgresqlStorageMock, cloudURL, Duration.ofDays(1))
 
     def "registry always contains root"() {
         when: "I call summary on an empty registry"
@@ -250,7 +252,7 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 
     def "After some time nodes are marked as offline"() {
         given: "registry with small offline mark"
-        def registry = new PostgreSQLNodeRegistry(cloudURL, Duration.ofMillis(100))
+        def registry = new PostgreSQLNodeRegistry(postgresqlStorageMock, cloudURL, Duration.ofMillis(100))
 
         def offset = 100
         def now = ZonedDateTime.now()
