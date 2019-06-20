@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.MessageResults;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import com.tesco.aqueduct.registry.Node;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -13,6 +14,7 @@ import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class PostgresqlStorage implements MessageReader {
 
@@ -233,5 +235,20 @@ public class PostgresqlStorage implements MessageReader {
                 "max_offset FROM events GROUP BY msg_key) " +
                 "x where created_utc <= ? " +
                 "and e.msg_key = x.msg_key and e.msg_offset <> x.max_offset);";
+    }
+
+    public List<Node> getNodeGroup(String group) {
+        return Collections.EMPTY_LIST;
+    }
+
+    public void updateOrAddGroup(List<Node> groupNodes) {
+    }
+
+    public Stream<Node> getAllFollowers() {
+        return Collections.EMPTY_LIST.stream();
+    }
+
+    public TreeMap<String, List<Node>> getAllNodes() {
+        return new TreeMap<>();
     }
 }

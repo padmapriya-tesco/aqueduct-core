@@ -77,7 +77,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private Stream<Node> getFollowersFilteredByGroups(List<String> groups) {
-        TreeMap<String, List<Node>> nodes =  postgresqlStorage.getNodes();
+        TreeMap<String, List<Node>> nodes = postgresqlStorage.getAllNodes();
 
         return nodes.entrySet().stream()
                 .filter(entry -> groups.contains(entry.getKey()))
