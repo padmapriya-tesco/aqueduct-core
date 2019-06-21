@@ -7,6 +7,7 @@ import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import javax.sql.DataSource
 import java.sql.DriverManager
@@ -93,6 +94,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers.size() == 1
     }
 
+    @Unroll
     def "registry can filter by groups"() {
         given: "A registry with a few nodes in different groups"
         registerNode("groupA", "http://a1", 123, "following", [cloudURL])
@@ -105,7 +107,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         def followers = registry.getSummary(1111, "status", filterGroups).followers
 
         then: "Groups returned have the expected node URL's in"
-        followers*.localUrl*.toString() == resultUrls
+        followers*.localUrl*.toString().sort() == resultUrls
 
         where:
         filterGroups         | resultUrls
@@ -165,6 +167,14 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         def actualSecond = registerNode("x", "http://second")
 
         then: "It is told to call the cloud"
+        println expectedFirst
+        println expectedSecond
+        println "------"
+        println actualFirst
+        println actualSecond
+
+
+
         actualFirst == expectedFirst
         actualSecond == expectedSecond
     }

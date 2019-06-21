@@ -106,7 +106,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 groupNodes.set(i, updatedNode);
                 persistGroup(connection, groupNodes);
 
-                return updatedNode.getFollowing();
+                return updatedNode.getRequestedToFollow();
             }
         }
 
