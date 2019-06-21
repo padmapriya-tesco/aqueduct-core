@@ -66,15 +66,15 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset = 12345
 
         Node expectedNode = Node.builder()
-                .group("group")
-                .localUrl(new URL("http://1.1.1.1"))
-                .offset(offset)
-                .status("following")
-                .following([cloudURL])
-                .providerLastAckOffset(offset-1)
-                .providerLastAckTime(now)
-                .lastSeen(now)
-                .build()
+            .group("group")
+            .localUrl(new URL("http://1.1.1.1"))
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .providerLastAckOffset(offset-1)
+            .providerLastAckTime(now)
+            .lastSeen(now)
+            .build()
 
         when: "The node is registered"
         registry.register(expectedNode)
@@ -302,15 +302,15 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         def now = ZonedDateTime.now()
 
         Node theNode = Node.builder()
-                .group("x")
-                .localUrl(new URL("http://1.1.1.1"))
-                .offset(offset)
-                .status("initialising")
-                .following([])
-                .lastSeen(now)
-                .providerLastAckTime(now)
-                .providerLastAckOffset(1)
-                .build()
+            .group("x")
+            .localUrl(new URL("http://1.1.1.1"))
+            .offset(offset)
+            .status("initialising")
+            .following([])
+            .lastSeen(now)
+            .providerLastAckTime(now)
+            .providerLastAckOffset(1)
+            .build()
 
         registry.register(theNode)
 
@@ -328,27 +328,27 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     // update last seen date
 
     def registerNode(
-            String group,
-            String url,
-            long offset=0,
-            String status="initialising",
-            List<URL> following=[],
-            List<URL> requestedToFollow=[],
-            ZonedDateTime created=null
+        String group,
+        String url,
+        long offset=0,
+        String status="initialising",
+        List<URL> following=[],
+        List<URL> requestedToFollow=[],
+        ZonedDateTime created=null
     ) {
         def now = ZonedDateTime.now()
 
         Node theNode = Node.builder()
-                .localUrl(new URL(url))
-                .group(group)
-                .status(status)
-                .offset(offset)
-                .following(following)
-                .lastSeen(created)
-                .requestedToFollow(requestedToFollow)
-                .providerLastAckOffset(offset-1)
-                .providerLastAckTime(now)
-                .build()
+            .localUrl(new URL(url))
+            .group(group)
+            .status(status)
+            .offset(offset)
+            .following(following)
+            .lastSeen(created)
+            .requestedToFollow(requestedToFollow)
+            .providerLastAckOffset(offset-1)
+            .providerLastAckTime(now)
+            .build()
 
         registry.register(theNode)
     }
