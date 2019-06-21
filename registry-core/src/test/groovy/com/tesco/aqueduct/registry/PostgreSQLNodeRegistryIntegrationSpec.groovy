@@ -9,6 +9,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.sql.DataSource
+import java.sql.DriverManager
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
@@ -29,7 +30,10 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
         dataSource = Mock()
-        dataSource.connection >> pg.embeddedPostgres.postgresDatabase.connection
+
+        dataSource.connection >> {
+            DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        }
 
         sql.execute("""
             DROP TABLE IF EXISTS registry;
@@ -73,6 +77,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         when: "The node is registered"
         registry.register(expectedNode)
+
+
         def followers = registry.getSummary(
                 offset,
                 "status",

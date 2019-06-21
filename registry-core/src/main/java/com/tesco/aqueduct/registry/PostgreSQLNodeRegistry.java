@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
 import org.slf4j.LoggerFactory;
@@ -184,8 +185,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         try (ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
                 String entry = rs.getString("entry");
-
-                nodes.add(JsonHelper.MAPPER.readValue(entry, Node.class));
+                nodes.addAll(readGroupEntry(entry));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -193,6 +193,11 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
 
         return nodes;
+    }
+
+    private List<Node> readGroupEntry(String entry) throws IOException {
+        JavaType type = JsonHelper.MAPPER.getTypeFactory().constructCollectionType(List.class, Node.class);
+        return JsonHelper.MAPPER.readValue(entry, type);
     }
 
     private void persistGroup(Connection connection, List<Node> groupNodes) throws SQLException, IOException {
@@ -216,8 +221,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         try (ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
                 String entry = rs.getString("entry");
-
-                nodes.add(JsonHelper.MAPPER.readValue(entry, Node.class));
+                nodes.addAll(readGroupEntry(entry));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -243,6 +247,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private static String getAllNodesQuery() {
-        return "SELECT group_id, entry FROM registry ;";
+        return "SELECT entry FROM registry ;";
     }
 }
