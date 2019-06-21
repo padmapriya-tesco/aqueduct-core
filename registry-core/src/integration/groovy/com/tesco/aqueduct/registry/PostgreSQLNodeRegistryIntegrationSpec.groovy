@@ -81,9 +81,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
 
         def followers = registry.getSummary(
-                offset,
-                "status",
-                []
+            offset,
+            "status",
+            []
         ).followers
 
         then: "the registry contains the node"
@@ -167,14 +167,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         def actualSecond = registerNode("x", "http://second")
 
         then: "It is told to call the cloud"
-        println expectedFirst
-        println expectedSecond
-        println "------"
-        println actualFirst
-        println actualSecond
-
-
-
         actualFirst == expectedFirst
         actualSecond == expectedSecond
     }
