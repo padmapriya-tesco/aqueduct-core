@@ -1,22 +1,28 @@
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
-import com.tesco.aqueduct.registry.InMemoryNodeRegistry
 import com.tesco.aqueduct.registry.NodeRegistry
+import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
+import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.HttpStatus
 import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
+import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import javax.sql.DataSource
+import java.sql.DriverManager
 import java.time.Duration
 
 import static io.restassured.RestAssured.given
 import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.*
 
-class NodeRegistryControllerSpec extends Specification {
+class NodeRegistryControllerIntegrationSpec extends Specification {
 
     static String cloudPipeUrl = "http://cloud.pipe"
     static final String USERNAME = "username"
@@ -27,7 +33,37 @@ class NodeRegistryControllerSpec extends Specification {
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
 
+    @ClassRule @Shared
+    SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
+
+    @AutoCleanup
+    Sql sql
+    DataSource dataSource
+    NodeRegistry registry
+
+    def setupDatabase() {
+        sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
+
+        dataSource = Mock()
+
+        dataSource.connection >> {
+            DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        }
+
+        sql.execute("""
+            DROP TABLE IF EXISTS registry;
+            
+            CREATE TABLE registry(
+            group_id VARCHAR PRIMARY KEY NOT NULL,
+            entry JSON NOT NULL
+            );
+        """)
+
+        registry = new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1))
+    }
+
     void setup() {
+        setupDatabase()
         context = ApplicationContext
             .build()
             .properties(
@@ -39,7 +75,7 @@ class NodeRegistryControllerSpec extends Specification {
                 "authentication.read-pipe.runscope-password": RUNSCOPE_PASSWORD
             )
             .build()
-            .registerSingleton(NodeRegistry, new InMemoryNodeRegistry(new URL(cloudPipeUrl), Duration.ofDays(1)))
+            .registerSingleton(NodeRegistry, new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1)))
             .registerSingleton(MessageReader, Mock(MessageReader))
             .start()
 
