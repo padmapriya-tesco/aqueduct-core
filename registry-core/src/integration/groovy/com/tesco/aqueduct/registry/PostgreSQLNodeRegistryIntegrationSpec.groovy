@@ -268,7 +268,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodeList8 == "[http://1.1.1.4, http://1.1.1.2, http://1.1.1.1, http://cloud.pipe:8080]"
     }
 
-    def "node registry is thread safe"() {
+    def "node registry can handle concurrent requests safely"() {
         when: "nodes register concurrently"
         ExecutorService pool = Executors.newFixedThreadPool(1)
         PollingConditions conditions = new PollingConditions(timeout: 5)
