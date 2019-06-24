@@ -214,7 +214,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
                     nodes.addAll(readGroupEntry(entry));
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
@@ -266,7 +266,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     String entry = rs.getString("entry");
                     nodes.addAll(readGroupEntry(entry));
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
