@@ -198,23 +198,26 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     // Methods that interact with the database - possibly need to split these into another class
 
     private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(getNodeGroupQuery());
+        List<Node> nodes;
+        int version;
+        try (PreparedStatement statement = connection.prepareStatement(getNodeGroupQuery())) {
 
-        statement.setString(1, group);
+            statement.setString(1, group);
 
-        List<Node> nodes = new ArrayList<>();
-        int version = 0;
+            nodes = new ArrayList<>();
+            version = 0;
 
-        try (ResultSet rs = statement.executeQuery()) {
-            while (rs.next()) {
-                String entry = rs.getString("entry");
-                version= rs.getInt("version");
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    String entry = rs.getString("entry");
+                    version = rs.getInt("version");
 
-                nodes.addAll(readGroupEntry(entry));
+                    nodes.addAll(readGroupEntry(entry));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
         }
 
         return new NodeGroup(nodes, version);
@@ -226,28 +229,30 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private void persistGroup(Connection connection, int version, List<Node> groupNodes) throws SQLException, IOException {
-        PreparedStatement statement = connection.prepareStatement(getPersistGroupQuery());
+        try (PreparedStatement statement = connection.prepareStatement(getPersistGroupQuery())) {
 
-        String jsonNodes = JsonHelper.toJson(groupNodes);
+            String jsonNodes = JsonHelper.toJson(groupNodes);
 
-        statement.setString(1, jsonNodes);
-        statement.setString(2, groupNodes.get(0).getGroup());
-        statement.setInt(3, version);
+            statement.setString(1, jsonNodes);
+            statement.setString(2, groupNodes.get(0).getGroup());
+            statement.setInt(3, version);
 
-        if (statement.executeUpdate() == 0) {
-            throw new VersionChangedException();
+            if (statement.executeUpdate() == 0) {
+                throw new VersionChangedException();
+            }
         }
     }
 
     private void insertNewGroup(Connection connection, List<Node> groupNodes) throws IOException, SQLException {
-        PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery());
+        try (PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery())) {
 
-        String jsonNodes = JsonHelper.toJson(groupNodes);
+            String jsonNodes = JsonHelper.toJson(groupNodes);
 
-        statement.setString(1, groupNodes.get(0).getGroup());
-        statement.setString(2, jsonNodes);
+            statement.setString(1, groupNodes.get(0).getGroup());
+            statement.setString(2, jsonNodes);
 
-        statement.executeUpdate();
+            statement.executeUpdate();
+        }
     }
 
     private List<Node> getAllNodes(Connection connection) throws SQLException {
