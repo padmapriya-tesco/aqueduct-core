@@ -256,18 +256,20 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private List<Node> getAllNodes(Connection connection) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(getAllNodesQuery());
+        List<Node> nodes;
+        try (PreparedStatement statement = connection.prepareStatement(getAllNodesQuery())) {
 
-        List<Node> nodes = new ArrayList<>();
+            nodes = new ArrayList<>();
 
-        try (ResultSet rs = statement.executeQuery()) {
-            while (rs.next()) {
-                String entry = rs.getString("entry");
-                nodes.addAll(readGroupEntry(entry));
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    String entry = rs.getString("entry");
+                    nodes.addAll(readGroupEntry(entry));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
         }
 
         return nodes;
