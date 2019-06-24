@@ -38,9 +38,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public List<URL> register(Node node) {
-        boolean completed;
-
-        do {
+        while(true) {
             try (Connection connection = dataSource.getConnection()) {
                 NodeGroup groupNodes = getNodeGroup(connection, node.getGroup());
                 ZonedDateTime now = ZonedDateTime.now();
@@ -65,15 +63,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 throw new RuntimeException(exception);
             } catch (VersionChangedException exception) {
                 try {
-                    Thread.sleep(10);
-                    completed = false;
+                    Thread.sleep(5);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-        } while (!completed);
-
-        throw new RuntimeException("unreachable");
+        }
     }
 
     @Override
