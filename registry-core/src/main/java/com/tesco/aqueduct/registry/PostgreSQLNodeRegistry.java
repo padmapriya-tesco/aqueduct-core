@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -216,7 +217,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         }
 
@@ -268,7 +269,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         }
 
