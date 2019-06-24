@@ -3,7 +3,6 @@ package com.tesco.aqueduct.registry;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.http.annotation.*;
-import io.micronaut.retry.annotation.Retryable;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
