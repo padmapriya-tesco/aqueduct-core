@@ -306,17 +306,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         100        | 3       | 2       | "3 tills 100 calls"
         500        | 3       | 14      | "3 tills 500 calls"
         10         | 10      | 1       | "10 tills"
-        20         | 20      | 1       | "20 tills"
-        30         | 30      | 1       | "30 tills"
-        40         | 40      | 1       | "40 tills"
         50         | 50      | 1       | "50 tills"
-        60         | 60      | 1       | "60 tills"
-        70         | 70      | 1       | "70 tills"
-        80         | 80      | 1       | "80 tills"
-        90         | 90      | 1       | "90 tills"
-        100        | 100     | 1       | "100 tills"
+        100        | 100     | 2       | "100 tills"
         250        | 250     | 5       | "250 tills"
-        500        | 500     | 10       | "500 tills"
     }
 
     @Unroll
