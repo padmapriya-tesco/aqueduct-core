@@ -14,6 +14,7 @@ import javax.sql.DataSource
 import java.sql.DriverManager
 import java.time.Duration
 import java.time.ZonedDateTime
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -308,7 +309,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         250        | 250     | 5       | "250 tills"
     }
 
-    @Unroll
     def "node registry can handle concurrent multiple group requests (10 stores with 50 tills each)"() {
         when: "nodes register concurrently"
         ExecutorService pool = Executors.newFixedThreadPool(500)
@@ -332,6 +332,35 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             assert registry.getSummary(0, "initialising", ["x7"]).followers.size() == 50
             assert registry.getSummary(0, "initialising", ["x8"]).followers.size() == 50
             assert registry.getSummary(0, "initialising", ["x9"]).followers.size() == 50
+        }
+
+        cleanup:
+        pool.shutdown()
+    }
+
+    def "when there is contention for first node, this is handled safely"() {
+        given:
+        int tills = 200
+        int threads = tills
+
+        when: "100 nodes register concurrently"
+        ExecutorService pool = Executors.newFixedThreadPool(threads)
+        PollingConditions conditions = new PollingConditions(timeout: 10)
+
+        CompletableFuture startLock = new CompletableFuture()
+
+        tills.times { i ->
+            pool.execute{
+                startLock.get()
+                registerNode("x", "http://" + i, i)
+            }
+        }
+
+        startLock.complete(true)
+
+        then: "summary of the registry is as expected"
+        conditions.eventually {
+            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == tills
         }
 
         cleanup:

@@ -137,12 +137,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
         groupNodes.add(updatedNode);
 
-        try {
-            insertNewGroup(connection, groupNodes);
-        } catch (PSQLException exception) {
-            if(exception.getMessage().contains("ERROR: duplicate key value violates unique constraint \"registry_pkey")) {
-                persistGroup(connection, 1, groupNodes);
-            } else throw exception;
+        if (!insertNewGroup(connection, groupNodes)){
+            throw new VersionChangedException();
         }
 
         return followUrls;
@@ -239,7 +235,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private void insertNewGroup(Connection connection, List<Node> groupNodes) throws IOException, SQLException {
+    private boolean insertNewGroup(Connection connection, List<Node> groupNodes) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery())) {
 
             String jsonNodes = JsonHelper.toJson(groupNodes);
@@ -247,7 +243,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             statement.setString(1, groupNodes.get(0).getGroup());
             statement.setString(2, jsonNodes);
 
-            statement.executeUpdate();
+            return statement.executeUpdate() != 0;
         }
     }
 
@@ -292,7 +288,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 "?, " +
                 "?::JSON , " +
                 "0 " +
-                ");";
+                ")" +
+                "ON CONFLICT DO NOTHING ;";
     }
 
     private static String getAllNodesQuery() {
