@@ -45,15 +45,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 ZonedDateTime now = ZonedDateTime.now();
 
                 if (groupNodes.nodes.isEmpty()) {
-                    //new group so version is set to 1
                     return addNodeToNewGroup(connection, node, now);
                 } else {
-                    //not empty so find if node is in group
                     Optional<Node> existingNode = groupNodes
-                            .nodes
-                            .stream()
-                            .filter(n -> n.getId().equals(node.getId()))
-                            .findAny();
+                        .nodes
+                        .stream()
+                        .filter(n -> n.getId().equals(node.getId()))
+                        .findAny();
 
                     if (existingNode.isPresent()) {
                         return updateExistingNode(connection, groupNodes.version, existingNode.get(), node, groupNodes.nodes);
@@ -79,7 +77,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public StateSummary getSummary(long offset, String status, List<String> groups) {
-
         try (Connection connection = dataSource.getConnection()) {
 
             List<Node> followers;
@@ -98,8 +95,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 .stream()
                 .map(this::changeStatusIfOffline)
                 .collect(Collectors.toList());
-
-            //TODO: should this update the registry if a node is offline?
 
             Node node = Node.builder()
                 .localUrl(cloudUrl)
@@ -149,9 +144,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         try {
             insertNewGroup(connection, groupNodes);
         } catch (PSQLException exception) {
-            if(exception.getMessage().contains("ERROR: duplicate key value violates unique constraint \"registry_pkey"))
-            persistGroup(connection, 1, groupNodes);
-            else throw exception;
+            if(exception.getMessage().contains("ERROR: duplicate key value violates unique constraint \"registry_pkey")) {
+                persistGroup(connection, 1, groupNodes);
+            } else throw exception;
         }
 
         return followUrls;
@@ -175,7 +170,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 .requestedToFollow(followUrls)
                 .lastSeen(now)
                 .build()
-            );
+        );
 
         persistGroup(connection, version, groupNodes);
 

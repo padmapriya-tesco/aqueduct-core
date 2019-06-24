@@ -81,7 +81,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         when: "The node is registered"
         registry.register(expectedNode)
 
-
         def followers = registry.getSummary(
             offset,
             "status",
@@ -183,8 +182,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "It is told to call the cloud"
         registry.getSummary(0,"ok",[])
-                .followers.find {it.localUrl.toString() == "http://second" }
-                .requestedToFollow == [ new URL("http://first"), cloudURL ]
+            .followers.find {it.localUrl.toString() == "http://second" }
+            .requestedToFollow == [ new URL("http://first"), cloudURL ]
     }
 
     def "nodes can update state without changing hierachy"() {
@@ -293,13 +292,11 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         where:
 
         iterations | threads | timeout | name
-        2          | 2       | 5       | "case 1a"
-        2          | 2       | 5       | "case 1b" // we have seen bad changes to the code that make case a and b pass/fail in a non-deterministic way, hence they're here
+        2          | 2       | 5       | "case A" // we have seen bad changes to the code that make case A and B pass/fail in a non-deterministic way, hence they're here
+        2          | 2       | 5       | "case B"
         1          | 1       | 1       | "1 till"
-        5          | 1       | 1       | "1 till 5 calls"
         10         | 1       | 1       | "1 till 10 calls"
         2          | 2       | 1       | "2 tills"
-        5          | 2       | 1       | "2 tills 5 calls"
         10         | 2       | 1       | "2 tills 10 calls"
         3          | 3       | 1       | "3 tills"
         10         | 3       | 1       | "3 tills 10 calls"
