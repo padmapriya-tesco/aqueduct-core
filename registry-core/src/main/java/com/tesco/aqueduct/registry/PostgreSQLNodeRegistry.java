@@ -136,8 +136,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 .build();
 
         groupNodes.add(updatedNode);
+        boolean inserted = insertNewGroup(connection, groupNodes);
 
-        if (!insertNewGroup(connection, groupNodes)){
+        if (!inserted){
             throw new VersionChangedException();
         }
 
