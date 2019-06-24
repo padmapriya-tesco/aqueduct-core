@@ -42,7 +42,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             
             CREATE TABLE registry(
             group_id VARCHAR PRIMARY KEY NOT NULL,
-            entry JSON NOT NULL
+            entry JSON NOT NULL,
+            version integer NOT NULL
             );
         """)
 
@@ -199,6 +200,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodesState.toList().get(0).status == "stale"
     }
 
+    @Unroll
     def "first follower defines a binary tree"() {
         given: "We have a store"
         registerNode("x", "http://1.1.1.0") // that's a cloud, we can ignore it
@@ -268,19 +270,79 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodeList8 == "[http://1.1.1.4, http://1.1.1.2, http://1.1.1.1, http://cloud.pipe:8080]"
     }
 
-    def "node registry can handle concurrent requests safely"() {
+    @Unroll
+    def "node registry can handle group level concurrent requests safely #name"() {
         when: "nodes register concurrently"
-        ExecutorService pool = Executors.newFixedThreadPool(1)
-        PollingConditions conditions = new PollingConditions(timeout: 5)
-        for(int i =0 ; i<3; i++) {
+        ExecutorService pool = Executors.newFixedThreadPool(threads)
+        PollingConditions conditions = new PollingConditions(timeout: timeout)
+        for(int i =0 ; i<iterations; i++) {
+            int j = i
             pool.execute{
-                registerNode("x", "http://" + i, 0)
+                registerNode("x", "http://" + j, j)
             }
         }
 
         then: "summary of the registry is as expected"
         conditions.eventually {
-            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == 3
+            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == iterations
+        }
+
+        cleanup:
+        pool.shutdown()
+
+        where:
+
+        iterations | threads | timeout | name
+        2          | 2       | 5       | "case 1a"
+        2          | 2       | 5       | "case 1b" // we have seen bad changes to the code that make case a and b pass/fail in a non-deterministic way, hence they're here
+        1          | 1       | 1       | "1 till"
+        5          | 1       | 1       | "1 till 5 calls"
+        10         | 1       | 1       | "1 till 10 calls"
+        2          | 2       | 1       | "2 tills"
+        5          | 2       | 1       | "2 tills 5 calls"
+        10         | 2       | 1       | "2 tills 10 calls"
+        3          | 3       | 1       | "3 tills"
+        10         | 3       | 1       | "3 tills 10 calls"
+        100        | 3       | 2       | "3 tills 100 calls"
+        500        | 3       | 14      | "3 tills 500 calls"
+        10         | 10      | 1       | "10 tills"
+        20         | 20      | 1       | "20 tills"
+        30         | 30      | 1       | "30 tills"
+        40         | 40      | 1       | "40 tills"
+        50         | 50      | 1       | "50 tills"
+        60         | 60      | 1       | "60 tills"
+        70         | 70      | 1       | "70 tills"
+        80         | 80      | 1       | "80 tills"
+        90         | 90      | 1       | "90 tills"
+        100        | 100     | 1       | "100 tills"
+        250        | 250     | 5       | "250 tills"
+        500        | 500     | 10       | "500 tills"
+    }
+
+    @Unroll
+    def "node registry can handle concurrent multiple group requests (10 stores with 50 tills each)"() {
+        when: "nodes register concurrently"
+        ExecutorService pool = Executors.newFixedThreadPool(500)
+        PollingConditions conditions = new PollingConditions(timeout: 10)
+        for(int i =0 ; i<500; i++) {
+            int j = i
+            pool.execute{
+                registerNode("x" + j % 10, "http://" + j, j)
+            }
+        }
+
+        then: "summary of the registry is as expected"
+        conditions.eventually {
+            assert registry.getSummary(0, "initialising", ["x0"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x1"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x2"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x3"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x4"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x5"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x6"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x7"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x8"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x9"]).followers.size() == 50
         }
 
         cleanup:
