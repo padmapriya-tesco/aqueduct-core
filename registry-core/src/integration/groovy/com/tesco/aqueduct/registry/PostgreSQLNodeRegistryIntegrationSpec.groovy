@@ -275,10 +275,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         when: "nodes register concurrently"
         ExecutorService pool = Executors.newFixedThreadPool(threads)
         PollingConditions conditions = new PollingConditions(timeout: timeout)
-        for(int i =0 ; i<iterations; i++) {
-            int j = i
+        iterations.times{ i ->
             pool.execute{
-                registerNode("x", "http://" + j, j)
+                registerNode("x", "http://" + i, i)
             }
         }
 
@@ -311,12 +310,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
     def "node registry can handle concurrent multiple group requests (10 stores with 50 tills each)"() {
         when: "nodes register concurrently"
-        ExecutorService pool = Executors.newFixedThreadPool(500)
+        def tills = 500
+        ExecutorService pool = Executors.newFixedThreadPool(tills)
         PollingConditions conditions = new PollingConditions(timeout: 10)
-        for(int i =0 ; i<500; i++) {
-            int j = i
+        tills.times{ i ->
             pool.execute{
-                registerNode("x" + j % 10, "http://" + j, j)
+                registerNode("x" + i % 10, "http://" + i, i)
             }
         }
 
