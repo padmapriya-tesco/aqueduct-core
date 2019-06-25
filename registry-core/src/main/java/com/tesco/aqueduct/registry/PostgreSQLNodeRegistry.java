@@ -188,8 +188,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return list;
     }
 
-    // Methods that interact with the database - possibly need to split these into another class
-
     private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
         List<Node> nodes;
         int version;
