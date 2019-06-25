@@ -1,17 +1,55 @@
 package com.tesco.aqueduct.registry
 
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import groovy.sql.Sql
+import org.junit.ClassRule
+import spock.lang.AutoCleanup
+import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
+import spock.util.concurrent.PollingConditions
 
+import javax.sql.DataSource
+import java.sql.DriverManager
 import java.time.Duration
 import java.time.ZonedDateTime
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class NodeRegistrySpec extends Specification {
+class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
+    @ClassRule @Shared
+    SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
+
+    @AutoCleanup
+    Sql sql
     URL cloudURL = new URL("http://cloud.pipe:8080")
+    DataSource dataSource
+    NodeRegistry registry
 
-    NodeRegistry registry = new InMemoryNodeRegistry(cloudURL, Duration.ofDays(1))
+    def setup() {
+        sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
+
+        dataSource = Mock()
+
+        dataSource.connection >> {
+            DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        }
+
+        sql.execute("""
+            DROP TABLE IF EXISTS registry;
+            
+            CREATE TABLE registry(
+            group_id VARCHAR PRIMARY KEY NOT NULL,
+            entry JSON NOT NULL,
+            version integer NOT NULL
+            );
+        """)
+
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofDays(1))
+    }
 
     def "registry always contains root"() {
         when: "I call summary on an empty registry"
@@ -43,6 +81,7 @@ class NodeRegistrySpec extends Specification {
 
         when: "The node is registered"
         registry.register(expectedNode)
+
         def followers = registry.getSummary(
             offset,
             "status",
@@ -57,6 +96,7 @@ class NodeRegistrySpec extends Specification {
         followers.size() == 1
     }
 
+    @Unroll
     def "registry can filter by groups"() {
         given: "A registry with a few nodes in different groups"
         registerNode("groupA", "http://a1", 123, "following", [cloudURL])
@@ -69,7 +109,7 @@ class NodeRegistrySpec extends Specification {
         def followers = registry.getSummary(1111, "status", filterGroups).followers
 
         then: "Groups returned have the expected node URL's in"
-        followers*.localUrl*.toString() == resultUrls
+        followers*.localUrl*.toString().sort() == resultUrls
 
         where:
         filterGroups         | resultUrls
@@ -160,6 +200,7 @@ class NodeRegistrySpec extends Specification {
         nodesState.toList().get(0).status == "stale"
     }
 
+    @Unroll
     def "first follower defines a binary tree"() {
         given: "We have a store"
         registerNode("x", "http://1.1.1.0") // that's a cloud, we can ignore it
@@ -227,21 +268,98 @@ class NodeRegistrySpec extends Specification {
         nodeList6 == "[http://1.1.1.3, http://1.1.1.1, http://cloud.pipe:8080]"
         nodeList7 == "[http://1.1.1.3, http://1.1.1.1, http://cloud.pipe:8080]"
         nodeList8 == "[http://1.1.1.4, http://1.1.1.2, http://1.1.1.1, http://cloud.pipe:8080]"
-
     }
 
-    def "node registry is thread safe"() {
+    @Unroll
+    def "node registry can handle group level concurrent requests safely #name"() {
         when: "nodes register concurrently"
-        ExecutorService pool = Executors.newFixedThreadPool(50)
-        for(int i =0 ; i<50000; i++) {
+        ExecutorService pool = Executors.newFixedThreadPool(threads)
+        PollingConditions conditions = new PollingConditions(timeout: timeout)
+        iterations.times{ i ->
             pool.execute{
-                registerNode("x" + i % 50, "http://" + i, 0)
+                registerNode("x", "http://" + i, i)
             }
         }
 
         then: "summary of the registry is as expected"
-        for(int i =0 ; i<50; i++) {
-            registry.getSummary(0, "initialising", ["x" + i % 50]).followers.size() == 1000
+        conditions.eventually {
+            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == iterations
+        }
+
+        cleanup:
+        pool.shutdown()
+
+        where:
+
+        iterations | threads | timeout | name
+        2          | 2       | 5       | "case A" // we have seen bad changes to the code that make case A and B pass/fail in a non-deterministic way, hence they're here
+        2          | 2       | 5       | "case B"
+        1          | 1       | 1       | "1 till"
+        10         | 1       | 1       | "1 till 10 calls"
+        2          | 2       | 1       | "2 tills"
+        10         | 2       | 1       | "2 tills 10 calls"
+        3          | 3       | 1       | "3 tills"
+        10         | 3       | 1       | "3 tills 10 calls"
+        100        | 3       | 2       | "3 tills 100 calls"
+        500        | 3       | 14      | "3 tills 500 calls"
+        10         | 10      | 1       | "10 tills"
+        50         | 50      | 1       | "50 tills"
+        100        | 100     | 2       | "100 tills"
+        250        | 250     | 5       | "250 tills"
+    }
+
+    def "node registry can handle concurrent multiple group requests (10 stores with 50 tills each)"() {
+        when: "nodes register concurrently"
+        def tills = 500
+        ExecutorService pool = Executors.newFixedThreadPool(tills)
+        PollingConditions conditions = new PollingConditions(timeout: 10)
+        tills.times{ i ->
+            pool.execute{
+                registerNode("x" + i % 10, "http://" + i, i)
+            }
+        }
+
+        then: "summary of the registry is as expected"
+        conditions.eventually {
+            assert registry.getSummary(0, "initialising", ["x0"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x1"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x2"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x3"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x4"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x5"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x6"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x7"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x8"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x9"]).followers.size() == 50
+        }
+
+        cleanup:
+        pool.shutdown()
+    }
+
+    def "when there is contention for first node, this is handled safely"() {
+        given:
+        int tills = 200
+        int threads = tills
+
+        when: "100 nodes register concurrently"
+        ExecutorService pool = Executors.newFixedThreadPool(threads)
+        PollingConditions conditions = new PollingConditions(timeout: 10)
+
+        CompletableFuture startLock = new CompletableFuture()
+
+        tills.times { i ->
+            pool.execute{
+                startLock.get()
+                registerNode("x", "http://" + i, i)
+            }
+        }
+
+        startLock.complete(true)
+
+        then: "summary of the registry is as expected"
+        conditions.eventually {
+            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == tills
         }
 
         cleanup:
@@ -250,7 +368,7 @@ class NodeRegistrySpec extends Specification {
 
     def "After some time nodes are marked as offline"() {
         given: "registry with small offline mark"
-        def registry = new InMemoryNodeRegistry(cloudURL, Duration.ofMillis(100))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofMillis(100))
 
         def offset = 100
         def now = ZonedDateTime.now()

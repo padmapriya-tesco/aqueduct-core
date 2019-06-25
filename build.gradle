@@ -29,6 +29,9 @@ apply plugin: "pl.allegro.tech.build.axion-release"
 apply plugin: 'org.jetbrains.gradle.plugin.idea-ext'
 
 dependencyCheck {
+
+    failOnError = false
+
     data {
         directory="$System.env.HOME/.owasp"
     }

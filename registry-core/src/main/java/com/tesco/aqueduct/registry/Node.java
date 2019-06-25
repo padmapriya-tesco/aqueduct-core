@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,6 +11,7 @@ import java.util.Map;
 
 @Builder(toBuilder = true)
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Node {
     /**
      * Name of the group, usually store number 

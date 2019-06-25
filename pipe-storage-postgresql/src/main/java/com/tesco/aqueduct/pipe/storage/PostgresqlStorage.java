@@ -33,7 +33,7 @@ public class PostgresqlStorage implements MessageReader {
     @Override
     public MessageResults read(Map<String, List<String>> tags, long startOffset) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement messagesQuery = getMessagesStatement(connection, tags, startOffset)) {
+            PreparedStatement messagesQuery = getMessagesStatement(connection, tags, startOffset)) {
 
             long maxOffset = getLatestOffsetMatchingWithConnection(connection, tags);
             long retry = startOffset >= maxOffset ? retryAfter : 0;
