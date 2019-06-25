@@ -249,7 +249,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private List<Node> getAllNodes(Connection connection) throws SQLException {
         List<Node> nodes;
         try (PreparedStatement statement = connection.prepareStatement(getAllNodesQuery())) {
-
             nodes = new ArrayList<>();
 
             try (ResultSet rs = statement.executeQuery()) {
@@ -285,7 +284,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return "INSERT INTO registry (group_id, entry, version)" +
                 "VALUES (" +
                 "?, " +
-                "?::JSON , " +
+                "?::JSON, " +
                 "0 " +
                 ")" +
                 "ON CONFLICT DO NOTHING ;";
