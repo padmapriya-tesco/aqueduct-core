@@ -291,6 +291,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private static String getAllNodesQuery() {
-        return "SELECT entry FROM registry ;";
+        return "SELECT entry FROM registry ORDER BY group_id;";
     }
 }
