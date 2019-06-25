@@ -337,6 +337,21 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         pool.shutdown()
     }
 
+    def "groups are ordered in get summary"() {
+        given: "5 groups registered"
+        registerNode("x2", "http://2")
+        registerNode("x5", "http://5")
+        registerNode("x3", "http://3")
+        registerNode("x4", "http://4")
+        registerNode("x1", "http://1")
+
+        when: "summary is taken"
+        def summary = registry.getSummary(0, "initialising", [])
+
+        then: "groups are returned in lexicographical order"
+        summary.followers*.group == ["x1", "x2", "x3", "x4", "x5"]
+    }
+
     def "when there is contention for first node, this is handled safely"() {
         given:
         int tills = 200
