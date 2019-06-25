@@ -55,7 +55,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             
             CREATE TABLE registry(
             group_id VARCHAR PRIMARY KEY NOT NULL,
-            entry JSON NOT NULL
+            entry JSON NOT NULL,
+            version integer NOT NULL
             );
         """)
 
