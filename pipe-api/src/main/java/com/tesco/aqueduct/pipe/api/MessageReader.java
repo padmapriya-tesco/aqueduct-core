@@ -4,6 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface MessageReader {
-    MessageResults read(Map<String, List<String>> tags, long offset);
-    long getLatestOffsetMatching(Map<String, List<String>> tags);
+    MessageResults read(List<String> types, long offset);
+    long getLatestOffsetMatching(List<String> types);
 }

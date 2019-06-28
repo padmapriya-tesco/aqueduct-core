@@ -35,7 +35,6 @@ public class PipeLogger {
         fields.put("key", message.getKey());
         fields.put("contentType", message.getContentType());
         fields.put("offset", String.valueOf(message.getOffset()));
-        fields.put("tags", Arrays.toString(message.getTags().entrySet().toArray()));
 
         return new PipeLogger(this, fields);
     }

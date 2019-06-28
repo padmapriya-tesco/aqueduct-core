@@ -4,9 +4,6 @@ import lombok.Data;
 import lombok.experimental.Wither;
 
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 @Data
 @Wither
@@ -18,7 +15,6 @@ public class Message {
 
     private final ZonedDateTime created;
 
-    private final Map<String, List<String>> tags;
     private final String data;
 
     private static final int MAX_OFFSET_LENGTH = 19;
@@ -33,7 +29,6 @@ public class Message {
         String contentType,
         Long offset,
         ZonedDateTime created,
-        Map<String, List<String>> tags,
         String data
     ) {
         this.offset = offset;
@@ -41,7 +36,6 @@ public class Message {
         this.type = type;
         this.contentType = contentType;
         this.created = created;
-        this.tags = tags != null ? tags : Collections.emptyMap();
         this.data = data;
     }
 }

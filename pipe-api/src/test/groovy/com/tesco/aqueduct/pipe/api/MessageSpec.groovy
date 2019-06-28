@@ -16,10 +16,6 @@ class MessageSpec extends Specification {
             "application/json",
             123,
             ZonedDateTime.of(2018, 11, 4, 8, 57, 45, 0, ZoneOffset.UTC),
-            [
-                tag1: ["value1"],
-                tag2: ["value2", "value3"]
-            ],
             "data1"
         )
 
@@ -35,15 +31,6 @@ class MessageSpec extends Specification {
                "contentType":"application/json",
                "offset": "123",
                "created": "2018-11-04T08:57:45Z",
-               "tags":{
-                  "tag1":[
-                     "value1"
-                  ],
-                  "tag2":[
-                     "value2",
-                     "value3"
-                  ]
-               },
                "data":"data1"
             }
         '''.replaceAll(/\s|\n/, "")
@@ -58,10 +45,6 @@ class MessageSpec extends Specification {
                "contentType":"application/json",
                "offset": $jsonOffset,
                "created": "2018-11-04T08:57:45Z",
-               "tags":{
-                  "tag1":[ "value1", "value2"], // Tag is an array of values
-                  "tag1": "value3"              // But Single value can be without array
-               },
                "data":"data1"
             }
         """
@@ -76,10 +59,6 @@ class MessageSpec extends Specification {
             "application/json",
             offset,
             ZonedDateTime.of(2018, 11, 4, 8, 57, 45, 0, ZoneOffset.UTC),
-            [
-                tag1: ["value1", "value2"],
-                tag1: ["value3"],
-            ],
             "data1"
         )
 

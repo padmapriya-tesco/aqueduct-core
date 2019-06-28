@@ -16,20 +16,19 @@ import java.util.Map;
 @Client(id = "pipe")
 public interface InternalHttpPipeClient {
 
-    @Get("/pipe/{offset}{?tags*}")
+    @Get("/pipe/{offset}{?type}")
     @Consumes
     @Header(name="Accept-Encoding", value="gzip, deflate")
     HttpResponse<List<Message>> httpRead(
-            @Nullable Map<String, List<String>> tags,
+            @Nullable List<String> type,
             long offset
     );
 
-    @Get("/pipe/offset/latest{?tags*}")
+    @Get("/pipe/offset/latest{?type}")
     @Header(name="Accept-Encoding", value="gzip, deflate")
     @Retryable(attempts = "${pipe.http.latest-offset.attempts}", delay = "${pipe.http.latest-offset.delay}")
-    long getLatestOffsetMatching(Map<String, List<String>> tags);
+    long getLatestOffsetMatching(@Nullable  List<String> type);
 }
 
-// {?tags*) will inline parameters, i.e. [a:[1,2]] will be ?a=1&a2, there is no way in micronaut to
-// serialize parameters in a=1,2 for a composite, but there is for top level fields with {list}, see:
+// For usage of URI templates see
 // https://github.com/micronaut-projects/micronaut-core/blob/master/http/src/test/groovy/io/micronaut/http/uri/UriTemplateSpec.groovy
