@@ -77,58 +77,28 @@ abstract class StorageSpec extends Specification {
 
 
     @Unroll
-    def "filter by type using tags - #tags"() {
+    def "filter by types #types"() {
         given:
         insert(message(type: "type-v1"))
         insert(message(type: "type-v2"))
         insert(message(type: "type-v3"))
 
         when:
-        List<Message> messages = storage.read(tags, 0).messages
+        List<Message> messages = storage.read(types, 0).messages
 
         then:
         messages.size() == resultsSize
 
         where:
-        tags | resultsSize
-        [type:["typeX"]] | 0
-        [type:["type-v1"]] | 1
-        [type:["type-v2", "type-v3"]] | 2
-        [type:["type-v1", "type-v3"]] | 2
-        [type:["type-v1", "type-v2", "type-v3"]] | 3
-        [:] | 3
+        types                             | resultsSize
+        ["typeX"]                         | 0
+        ["type-v1"]                       | 1
+        ["type-v2", "type-v3"]            | 2
+        ["type-v1", "type-v3"]            | 2
+        ["type-v1", "type-v2", "type-v3"] | 3
+        []                                | 3
+        null                              | 3
 
-    }
-
-    @Unroll
-    def "can filter by tags: #tags - #resultKeys"() {
-        given:
-        def a = message(key: "a", tags: ["tag1": ["b", "c"]])
-        def z = message(key: "z", tags: ["tag1": ["q", "u", "v"], "tag2": ["y"] ])
-
-        insert(a)
-        insert(z)
-
-        when:
-        List<Message> messages = storage.read(tags, 0).messages
-
-        then:
-        messages*.key == resultKeys
-
-        where:
-        tags                                | resultKeys
-        ["tag1": ["b"]]                        | ["a"]
-        ["tag1": ["c"]]                        | ["a"]
-        ["tag1": ["b", "c"]]                   | ["a"]
-        ["tag1": ["a", "d"]]                   | []
-        ["tag2": ["a", "d"]]                   | []
-        ["tag2": ["z"]]                        | []
-        ["tag2": ["y"]]                        | ["z"]
-
-        // Filtering by two tags at once
-        ["tag1": ["q"], "tag2": ["y"]]      | ["z"]
-        // Filtering by two tags at once with more than one value
-        ["tag1": ["q", "v"], "tag2": ["y"]] | ["z"]
     }
 
     @Unroll
@@ -160,32 +130,7 @@ abstract class StorageSpec extends Specification {
     }
 
     @Unroll
-    def "find latest offset for tags #tags" (){
-        given:
-        insert(message(offset:1, key: "x", tags: [tag:["first"]]))
-        insert(message(offset:2, key: "y", tags: [tag:["middle"]]))
-        insert(message(offset:3, key: "z", tags: [:]))
-        insert(message(offset:4, key: "q", tags: [tag:["middle"]]))
-        insert(message(offset:5, key: "w", tags: [tag:["last"]]))
-
-        when:
-        def actualOffset = storage.getLatestOffsetMatching(tags)
-
-        then:
-        actualOffset == offset
-
-        where:
-        tags               | offset
-        [:]                | 5
-        [tag: ["first"]]   | 1
-        [tag: ["middle"]]  | 4
-        [tag: ["last"]]    | 5
-        [tag: ["missing"]] | 0 // tag value is missing
-        [missing: ["tag"]] | 0 // tag key is missing
-    }
-
-    @Unroll
-    def "find latest offset for tags by type #tags" (){
+    def "find latest offset for tags by types #types" (){
         given:
         insert(message(type: "first", key: "x"))
         insert(message(type: "middle", key: "y"))
@@ -194,17 +139,17 @@ abstract class StorageSpec extends Specification {
         insert(message(type: "last",  key: "w"))
 
         when:
-        def actualOffset = storage.getLatestOffsetMatching(tags)
+        def actualOffset = storage.getLatestOffsetMatching(types)
 
         then:
         actualOffset == offset
 
         where:
-        tags                | offset
-        [type: ["first"]]   | 1
-        [type: ["middle"]]  | 4
-        [type: ["last"]]    | 5
-        [type: ["missing"]] | 0 // tag value is missing
+        types       | offset
+        ["first"]   | 1
+        ["middle"]  | 4
+        ["last"]    | 5
+        ["missing"] | 0 // no such type
     }
 
     @NamedVariant // allows to use names of parameters in method call
@@ -214,7 +159,6 @@ abstract class StorageSpec extends Specification {
         String key,
         String contentType,
         ZonedDateTime created,
-        Map tags,
         String data
     ) {
         new Message(
@@ -223,7 +167,6 @@ abstract class StorageSpec extends Specification {
             contentType ?: "contentType",
             offset,
             created ?: time,
-            tags,
             data ?: "data"
         )
     }

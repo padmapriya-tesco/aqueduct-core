@@ -2,18 +2,14 @@ package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageStorage
-import com.tesco.aqueduct.pipe.storage.sqlite.TimedMessageStorage
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import spock.lang.Specification
 
 class TimedMessageStorageSpec extends Specification {
     final long OFFSET = 1
     final Message MOCK_MESSAGE = Mock(Message)
-    final Map<String, List<String>> MESSAGE_TAGS = Collections.emptyMap()
-    final def METER_REGISTRY = Spy(SimpleMeterRegistry)
-
-    def setup() {
-    }
+    final List<String> MESSAGE_TYPES = []
+    final SimpleMeterRegistry METER_REGISTRY = Spy(SimpleMeterRegistry)
 
     def "read events are timed"() {
         given: "we have an instance of TimedMessageStorage"
@@ -21,10 +17,10 @@ class TimedMessageStorageSpec extends Specification {
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the read method"
-        timedStorage.read(MESSAGE_TAGS, OFFSET)
+        timedStorage.read(MESSAGE_TYPES, OFFSET)
 
         then: "the read method is called on the underlying storage"
-        1 * mockedStorage.read(MESSAGE_TAGS,OFFSET)
+        1 * mockedStorage.read(MESSAGE_TYPES,OFFSET)
     }
 
     def "write message events are timed"() {
@@ -57,9 +53,9 @@ class TimedMessageStorageSpec extends Specification {
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the get latest offset method"
-        timedStorage.getLatestOffsetMatching(MESSAGE_TAGS)
+        timedStorage.getLatestOffsetMatching(MESSAGE_TYPES)
 
         then: "the get latest method is called on the underlying storage"
-        1 * mockedStorage.getLatestOffsetMatching(MESSAGE_TAGS)
+        1 * mockedStorage.getLatestOffsetMatching(MESSAGE_TYPES)
     }
 }

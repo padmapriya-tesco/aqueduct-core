@@ -68,7 +68,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
 
     def 'username and password authentication allows access to the data on the pipe'(){
         given: "a message on the pipe"
-        storage.write(Message("type", "a", "ct", 100, null, null, null))
+        storage.write(Message("type", "a", "ct", 100, null, null))
 
         expect: "to receive the message when authorized"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
@@ -82,7 +82,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
 
     def 'runscope username and password authentication allows access to the data on the pipe'(){
         given: "a message on the pipe"
-        storage.write(Message("type", "a", "ct", 100, null, null, null))
+        storage.write(Message("type", "a", "ct", 100, null, null))
 
         expect: "to receive the message when authorized"
         def encodedCredentials = "${RUNSCOPE_USERNAME}:${RUNSCOPE_PASSWORD}".bytes.encodeBase64().toString()

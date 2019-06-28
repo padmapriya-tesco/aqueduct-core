@@ -26,17 +26,17 @@ public class HttpPipeClient implements MessageReader {
     }
 
     @Override
-    public MessageResults read(@Nullable Map<String, List<String>> tags, long offset) {
+    public MessageResults read(@Nullable List<String> types, long offset) {
         try {
-            return httpRead(tags, offset);
+            return httpRead(types, offset);
         } catch (Exception e) {
             pipeLoadBalancer.recordError();
             throw e;
         }
     }
 
-    private MessageResults httpRead(@Nullable Map<String, List<String>> tags, long offset) {
-        HttpResponse<List<Message>> response = client.httpRead(tags, offset);
+    private MessageResults httpRead(@Nullable List<String> types, long offset) {
+        HttpResponse<List<Message>> response = client.httpRead(types, offset);
 
         long retryAfter = Optional
             .ofNullable(response.header("Retry-After"))
@@ -54,7 +54,7 @@ public class HttpPipeClient implements MessageReader {
     }
 
     @Override
-    public long getLatestOffsetMatching(Map<String, List<String>> tags) {
-        return client.getLatestOffsetMatching(tags);
+    public long getLatestOffsetMatching(List<String> types) {
+        return client.getLatestOffsetMatching(types);
     }
 }

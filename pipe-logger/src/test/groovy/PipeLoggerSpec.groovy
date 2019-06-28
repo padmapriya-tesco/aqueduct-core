@@ -15,7 +15,7 @@ class PipeLoggerSpec extends Specification {
         Logger logger = Mock()
         logger.isDebugEnabled() >> true
         PipeLogger LOG = new PipeLogger(logger)
-        Message message = new Message("type", "key", "contentType",0 , time, ["test":["test"]], "data")
+        Message message = new Message("type", "key", "contentType",0 , time, "data")
 
         when:
         LOG.withMessage(message).debug("testWhere", "testWhat")
@@ -29,7 +29,7 @@ class PipeLoggerSpec extends Specification {
         Logger logger = Mock()
         logger.isDebugEnabled() >> false
         PipeLogger LOG = new PipeLogger(logger)
-        Message message = new Message("type", "key", "contentType",0, time, ["test":["test"]], "data")
+        Message message = new Message("type", "key", "contentType",0, time, "data")
 
         when:
         LOG.withMessage(message).debug("testWhere", "testWhat")
@@ -43,7 +43,7 @@ class PipeLoggerSpec extends Specification {
         Logger logger = Mock()
 
         PipeLogger LOG = new PipeLogger(logger)
-        Message message = new Message("type", "key", "contentType",0, time, ["test":["test"]], "data")
+        Message message = new Message("type", "key", "contentType",0, time, "data")
 
         when:
         LOG.withMessage(message).error("testWhere", "testWhat", "testWhy")
@@ -72,10 +72,10 @@ class PipeLoggerSpec extends Specification {
         Logger logger = Mock()
 
         PipeLogger LOG = new PipeLogger(logger)
-        Message message = new Message("type", "key", "contentType",0, time, null, "data")
+        Message message = new Message("type", "key", "contentType",0, time, "data")
 
         when:
-        LOG.withTags(null).withMessage(message).error("testWhere", "testWhat", "testWhy")
+        LOG.withMessage(message).error("testWhere", "testWhat", "testWhy")
 
         then:
         true

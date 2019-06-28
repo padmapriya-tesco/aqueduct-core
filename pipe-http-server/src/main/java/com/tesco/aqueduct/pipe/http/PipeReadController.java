@@ -18,6 +18,9 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 
@@ -28,7 +31,7 @@ public class PipeReadController {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PipeReadController.class));
 
-    //Using property injection until micronaut test framework is stable
+    //TODO: Use constructor
     @Inject @Named("local")
     private MessageReader messageReader;
 
@@ -38,24 +41,24 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
-    @Get("/pipe/offset/latest")
-    long latestOffset(HttpRequest<?> request) {
-        Map<String, List<String>> tags = parseTags(request);
-        return messageReader.getLatestOffsetMatching(tags);
+    @Get("/pipe/offset/latest{?type}")
+    public long latestOffset(List<String> type) {
+        List<String> types = splitByComma(type);
+        return messageReader.getLatestOffsetMatching(types);
     }
 
-    @Get("/pipe/{offset}")
-    HttpResponse<List<Message>> readMessages(long offset, HttpRequest<?> request) {
+    @Get("/pipe/{offset}{?type}")
+    public HttpResponse<List<Message>> readMessages(long offset, HttpRequest<?> request) {
         if(offset < 0) {
             return HttpResponse.badRequest();
         }
 
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
-        Map<String, List<String>> tags = parseTags(request);
-        LOG.withTags(tags).debug("pipe read controller", "reading with tags");
+        List<String> types = splitByComma(request.getParameters().getAll("type"));
+        LOG.withTypes(types).debug("pipe read controller", "reading with tags");
 
-        val messageResults = messageReader.read(tags, offset);
+        val messageResults = messageReader.read(types, offset);
 
         //val list = takeMessagesToSizeLimit(messageResults.getMessages(), maxPayloadSizeBytes);
         val list = messageResults.getMessages();
@@ -64,8 +67,7 @@ public class PipeReadController {
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
 
-        return HttpResponse.ok(list)
-                .header("Retry-After", String.valueOf(retryTime));
+        return HttpResponse.ok(list).header("Retry-After", String.valueOf(retryTime));
     }
 
     private void logOffsetRequestFromRemoteHost(long offset, String hostName) {
@@ -78,20 +80,13 @@ public class PipeReadController {
         }
     }
 
-    /**
-     * Query parameters with many values are supported by micronaut,
-     * this method adds support for comma delimited parameters.
-     */
-    private Map<String, List<String>> parseTags(HttpRequest<?> request) {
-        val result = new LinkedHashMap<String, List<String>>();
-
-        // not the most efficient method
-        request.getParameters().forEach( (k, values) -> {
-            val list = new ArrayList<String>();
-            values.forEach( v -> list.addAll(asList(v.split(","))));
-            result.put(k, list);
-        });
-
-        return result;
+    private List<String> splitByComma(List<String> strings) {
+        if(strings == null) {
+            return Collections.emptyList();
+        }
+        return strings
+            .stream()
+            .flatMap(s -> Stream.of(s.split(",")))
+            .collect(Collectors.toList());
     }
 }

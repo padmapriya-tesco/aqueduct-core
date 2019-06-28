@@ -44,7 +44,7 @@ class SQLiteStorageSpec extends Specification {
         def sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'messages are requested to be read from a given offset'
-        sqliteStorage.read([:], 0)
+        sqliteStorage.read([], 0)
 
         then: 'a runtime exception is thrown'
         thrown(RuntimeException)

@@ -13,12 +13,12 @@ class HttpPipeClientSpec extends Specification {
     def "a read from the implemented interface method returns a result with the retry after and messages"() {
         given: "call returns a http response with retry after header"
         HttpResponse<List<Message>> response = Mock()
-        response.body() >> [ Mock(Message) ]
+        response.body() >> [Mock(Message)]
         response.header("Retry-After") >> retry
-        internalClient.httpRead(_ as Map,_ as Long) >> response
+        internalClient.httpRead(_ as List, _ as Long) >> response
 
         when: "we call read and get defined response back"
-        def results = client.read([:], 0)
+        def results = client.read([], 0)
 
         then: "we parse the retry after if its correct or return 0 otherwise"
         results.messages.size() == 1
@@ -33,20 +33,19 @@ class HttpPipeClientSpec extends Specification {
         "foo" | 0
     }
 
-    def "allows to get latest offset" () {
+    def "allows to get latest offset"() {
         given:
-        internalClient.getLatestOffsetMatching(tags) >> offset
+        internalClient.getLatestOffsetMatching(types) >> offset
 
         when:
-        def response = client.getLatestOffsetMatching(tags)
+        def response = client.getLatestOffsetMatching(types)
 
         then:
         response == offset
 
         where:
-        tags       | offset
-        [x: ["y"]] | 7
-        [x: ["y"]] | 8
-        [:]        | 9
+        types  | offset
+        ["x"]  | 1
+        []     | 2
     }
 }

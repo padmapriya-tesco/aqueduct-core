@@ -2,11 +2,11 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.micronaut.runtime.server.EmbeddedServer
-import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.restassured.RestAssured
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -109,7 +109,7 @@ class PipeReadControllerSpec extends Specification {
     @Unroll
     void "Check responses has correct payload and that Retry-After header has a value of 0 - #requestPath"() {
         given:
-        storage.write(Message(type, "a", "ct", 100, null, null, null))
+        storage.write(Message(type, "a", "ct", 100, null, null))
 
         when:
         def request = RestAssured.get(requestPath)
@@ -131,7 +131,7 @@ class PipeReadControllerSpec extends Specification {
     @Unroll
     void "non empty response returns first available element - #requestPath"() {
         given:
-        storage.write(Message(type, "a", "ct", 100, null, null, null))
+        storage.write(Message(type, "a", "ct", 100, null, null))
 
         when:
         def request = RestAssured.get(requestPath)
@@ -153,8 +153,8 @@ class PipeReadControllerSpec extends Specification {
     void "filtering by type: #types"() {
         given:
         storage.write([
-            Message("type1", "a", "ct", 100, null, null, null),
-            Message("type2", "b", "ct", 101, null, null, null)
+            Message("type1", "a", "ct", 100, null, null),
+            Message("type2", "b", "ct", 101, null, null)
         ])
 
         when:
@@ -176,39 +176,10 @@ class PipeReadControllerSpec extends Specification {
     }
 
     @Unroll
-    void "filtering by tags #query"() {
-        given:
-        storage.write([
-            Message("t", "a", "ct", 123, null, ["1": ["b", "c"]], null),
-            Message("t", "z", "ct", 125, null, ["2": ["y"]], null)
-        ])
-
-        when:
-        def request = RestAssured.get("/pipe/0?$query")
-
-        then:
-        request
-            .then()
-            .statusCode(200)
-            .body("key", equalTo(resultKeys))
-
-        where:
-        query   | resultKeys
-        "1=b"   | ["a"]
-        "1=c"   | ["a"]
-        "1=b,c" | ["a"]
-        "1=a,d" | []
-        "2=a,d" | []
-        "2=z"   | []
-        "2=y"   | ["z"]
-    }
-
-
-    @Unroll
     void "responds with messages - #requestPath"() {
         given:
         storage.write(
-            Message(type, "a", "contentType", 100, null, null, data)
+            Message(type, "a", "contentType", 100, null, data)
         )
 
         when:
@@ -230,7 +201,7 @@ class PipeReadControllerSpec extends Specification {
 
     void "A single message that is over the payload size is still transported"() {
         given:
-        Message message1 = Message(type, "a", "contentType", 100, null, null, DATA_BLOB)
+        Message message1 = Message(type, "a", "contentType", 100, null, DATA_BLOB)
         storage.write(message1)
 
         when:
@@ -250,8 +221,8 @@ class PipeReadControllerSpec extends Specification {
     def "assert response schema"() {
         given:
         storage.write([
-            Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), [tag: ["x"]], "data"),
-            Message(type, "b", null, 101, null, null, null)
+            Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+            Message(type, "b", null, 101, null, null)
         ])
 
         when:
@@ -262,25 +233,36 @@ class PipeReadControllerSpec extends Specification {
             .then()
             .content(equalTo("""
             [
-                {"type":"type1","key":"a","contentType":"contentType","offset":"100","created":"2018-12-20T15:13:01Z","tags":{"tag":["x"]},"data":"data"},
+                {"type":"type1","key":"a","contentType":"contentType","offset":"100","created":"2018-12-20T15:13:01Z","data":"data"},
                 {"type":"type1","key":"b","offset":"101"}
             ]
             """.replaceAll("\\s", "")))
     }
 
-    def "Returns latest offset"() {
+    @Unroll
+    def "Returns latest offset of #types"() {
         given:
         storage.write([
-            Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), [tag: ["x"]], "data"),
-            Message(type, "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), [tag: ["y"]], "data"),
+            Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+            Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+            Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
         ])
 
         when:
-        def request = RestAssured.get("/pipe/offset/latest?tag=x")
+        def request = RestAssured.get("/pipe/offset/latest?type=$types")
 
         then:
         request
             .then()
-            .content(equalTo('"100"'))
+            .content(equalTo(offset))
+
+        where:
+        types   | offset
+        "a"     | '"100"'
+        "b"     | '"101"'
+        "c"     | '"102"'
+        "b,a"   | '"101"'
+        "a,c"   | '"102"'
+        "a,b,c" | '"102"'
     }
 }
