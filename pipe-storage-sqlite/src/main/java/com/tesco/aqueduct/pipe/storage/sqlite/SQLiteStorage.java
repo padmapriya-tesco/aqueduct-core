@@ -58,10 +58,8 @@ public class SQLiteStorage implements MessageStorage {
             int parameterIndex = 1;
             statement.setLong(parameterIndex++, offset);
 
-            if (types != null) {
-                for (int i = 0; i < typesCount; i++, parameterIndex++) {
-                    statement.setString(parameterIndex, types.get(i));
-                }
+            for (int i = 0; i < typesCount; i++, parameterIndex++) {
+                statement.setString(parameterIndex, types.get(i));
             }
 
             statement.setLong(parameterIndex, limit);
@@ -84,16 +82,18 @@ public class SQLiteStorage implements MessageStorage {
 
     private Message mapRetrievedMessageFromResultSet(ResultSet resultSet) throws SQLException {
         Message retrievedMessage;
-        ZonedDateTime time = ZonedDateTime.of(resultSet.getTimestamp("created_utc").toLocalDateTime(),
-                ZoneId.of("UTC"));
+        ZonedDateTime time = ZonedDateTime.of(
+            resultSet.getTimestamp("created_utc").toLocalDateTime(),
+            ZoneId.of("UTC")
+        );
 
         retrievedMessage = new Message(
-                resultSet.getString("type"),
-                resultSet.getString("msg_key"),
-                resultSet.getString("content_type"),
-                resultSet.getLong("msg_offset"),
-                time,
-                resultSet.getString("data")
+            resultSet.getString("type"),
+            resultSet.getString("msg_key"),
+            resultSet.getString("content_type"),
+            resultSet.getLong("msg_offset"),
+            time,
+            resultSet.getString("data")
         );
 
         return retrievedMessage;
@@ -152,7 +152,7 @@ public class SQLiteStorage implements MessageStorage {
     public void compactUpTo(ZonedDateTime zonedDateTime) {
         // We may want a interface - Compactable - for this method signature
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
+            PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
             statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
             int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");

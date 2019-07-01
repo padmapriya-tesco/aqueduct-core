@@ -27,7 +27,7 @@ public interface InternalHttpPipeClient {
     @Get("/pipe/offset/latest{?type}")
     @Header(name="Accept-Encoding", value="gzip, deflate")
     @Retryable(attempts = "${pipe.http.latest-offset.attempts}", delay = "${pipe.http.latest-offset.delay}")
-    long getLatestOffsetMatching(@Nullable  List<String> type);
+    long getLatestOffsetMatching(@Nullable List<String> type);
 }
 
 // For usage of URI templates see

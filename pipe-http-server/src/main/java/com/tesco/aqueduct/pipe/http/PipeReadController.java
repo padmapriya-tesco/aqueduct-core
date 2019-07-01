@@ -18,11 +18,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.Arrays.asList;
 
 @Secured(SecurityRule.IS_AUTHENTICATED)
 @Measure
@@ -43,7 +40,7 @@ public class PipeReadController {
 
     @Get("/pipe/offset/latest{?type}")
     public long latestOffset(List<String> type) {
-        List<String> types = splitByComma(type);
+        List<String> types = flattenRequestParams(type);
         return messageReader.getLatestOffsetMatching(types);
     }
 
@@ -55,7 +52,7 @@ public class PipeReadController {
 
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
-        List<String> types = splitByComma(request.getParameters().getAll("type"));
+        List<String> types = flattenRequestParams(request.getParameters().getAll("type"));
         LOG.withTypes(types).debug("pipe read controller", "reading with tags");
 
         val messageResults = messageReader.read(types, offset);
@@ -80,7 +77,7 @@ public class PipeReadController {
         }
     }
 
-    private List<String> splitByComma(List<String> strings) {
+    private List<String> flattenRequestParams(List<String> strings) {
         if(strings == null) {
             return Collections.emptyList();
         }

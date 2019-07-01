@@ -46,8 +46,8 @@ public class PipeLogger {
         }
 
         Map<String, String> fields = Collections.singletonMap(
-                "types",
-                Arrays.toString(types.toArray())
+            "types",
+            Arrays.toString(types.toArray())
         );
 
         return new PipeLogger(this, fields);
