@@ -20,8 +20,8 @@ public interface InternalHttpPipeClient {
     @Consumes
     @Header(name="Accept-Encoding", value="gzip, deflate")
     HttpResponse<List<Message>> httpRead(
-            @Nullable List<String> type,
-            long offset
+        @Nullable List<String> type,
+        long offset
     );
 
     @Get("/pipe/offset/latest{?type}")
