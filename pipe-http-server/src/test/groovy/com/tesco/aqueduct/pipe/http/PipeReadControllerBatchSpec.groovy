@@ -60,9 +60,9 @@ class PipeReadControllerBatchSpec extends Specification {
     void "A batch of messages that equals the payload size is still transported"() {
         given:
         def messages = [
-                Message(type, "a", "contentType", 100, null, DATA_BLOB),
-                Message(type, "b", "contentType", 101, null, DATA_BLOB),
-                Message(type, "c", "contentType", 102, null, DATA_BLOB)
+            Message(type, "a", "contentType", 100, null, DATA_BLOB),
+            Message(type, "b", "contentType", 101, null, DATA_BLOB),
+            Message(type, "c", "contentType", 102, null, DATA_BLOB)
         ]
 
         def batchInJson = JsonHelper.toJson(messages)
@@ -77,27 +77,27 @@ class PipeReadControllerBatchSpec extends Specification {
 
         then:
         request
-                .then()
-                .statusCode(200)
-                .body("size", equalTo(3))
-                .body("[0].offset", equalTo("100"))
-                .body("[0].key", equalTo("a"))
-                .body("[0].data", equalTo(DATA_BLOB))
-                .body("[1].offset", equalTo("101"))
-                .body("[1].key", equalTo("b"))
-                .body("[1].data", equalTo(DATA_BLOB))
-                .body("[2].offset", equalTo("102"))
-                .body("[2].key", equalTo("c"))
-                .body("[2].data", equalTo(DATA_BLOB))
+            .then()
+            .statusCode(200)
+            .body("size", equalTo(3))
+            .body("[0].offset", equalTo("100"))
+            .body("[0].key", equalTo("a"))
+            .body("[0].data", equalTo(DATA_BLOB))
+            .body("[1].offset", equalTo("101"))
+            .body("[1].key", equalTo("b"))
+            .body("[1].data", equalTo(DATA_BLOB))
+            .body("[2].offset", equalTo("102"))
+            .body("[2].key", equalTo("c"))
+            .body("[2].data", equalTo(DATA_BLOB))
     }
 
     @Ignore
     void "A batch of messages that exeeds the payload size is truncated correctly"() {
         given:
         def messages = [
-                Message(type, "a", "contentType", 100, null, DATA_BLOB),
-                Message(type, "b", "contentType", 101, null, DATA_BLOB),
-                Message(type, "c", "contentType", 102, null, DATA_BLOB)
+            Message(type, "a", "contentType", 100, null, DATA_BLOB),
+            Message(type, "b", "contentType", 101, null, DATA_BLOB),
+            Message(type, "c", "contentType", 102, null, DATA_BLOB)
         ]
 
         def batchJson = JsonHelper.toJson(messages)
