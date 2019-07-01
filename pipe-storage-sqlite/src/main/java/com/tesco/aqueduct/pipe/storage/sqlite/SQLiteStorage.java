@@ -140,7 +140,7 @@ public class SQLiteStorage implements MessageStorage {
     @Override
     public void write(Message message) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
+            PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
             setStatementParametersForInsertMessageQuery(statement, message);
 
             statement.execute();
