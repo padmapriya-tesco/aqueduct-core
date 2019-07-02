@@ -10,8 +10,15 @@ spec:
       labels:
         app: aqueduct-pipe
     spec:
+      terminationGracePeriodSeconds: 10
       containers:
         - name: aqueduct-pipe
+          readinessProbe:
+            httpGet:
+              path: /pipe/_status
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
           image: ${IMAGE}
           imagePullPolicy: Always
           env:
