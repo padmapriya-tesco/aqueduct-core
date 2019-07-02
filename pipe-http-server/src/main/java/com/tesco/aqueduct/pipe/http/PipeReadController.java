@@ -53,7 +53,7 @@ public class PipeReadController {
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
         List<String> types = flattenRequestParams(request.getParameters().getAll("type"));
-        LOG.withTypes(types).debug("pipe read controller", "reading with tags");
+        LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
         val messageResults = messageReader.read(types, offset);
 

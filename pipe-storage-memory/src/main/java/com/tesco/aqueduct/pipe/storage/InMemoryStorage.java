@@ -38,7 +38,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     public MessageResults read(List<String> types, long offset) {
         val lock = rwl.readLock();
 
-        LOG.withTypes(types).debug("in memory storage", "reading with tags");
+        LOG.withTypes(types).debug("in memory storage", "reading with types");
 
         try {
             lock.lock();

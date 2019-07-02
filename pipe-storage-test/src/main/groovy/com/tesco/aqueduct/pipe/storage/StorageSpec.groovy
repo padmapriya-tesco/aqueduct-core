@@ -130,7 +130,7 @@ abstract class StorageSpec extends Specification {
     }
 
     @Unroll
-    def "find latest offset for tags by types #types" (){
+    def "find latest offset by types #types" (){
         given:
         insert(message(type: "first", key: "x"))
         insert(message(type: "middle", key: "y"))

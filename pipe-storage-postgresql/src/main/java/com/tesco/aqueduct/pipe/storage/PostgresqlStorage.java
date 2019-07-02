@@ -36,7 +36,7 @@ public class PostgresqlStorage implements MessageReader {
             long maxOffset = getLatestOffsetMatchingWithConnection(connection, types);
             long retry = startOffset >= maxOffset ? retryAfter : 0;
 
-            LOG.withTypes(types).debug("postgresql storage", "reading with tags");
+            LOG.withTypes(types).debug("postgresql storage", "reading with types");
 
             List<Message> messages = runMessagesQuery(messagesQuery);
 
@@ -148,11 +148,11 @@ public class PostgresqlStorage implements MessageReader {
     //TODO: use parameter for batch size
     private static String getSelectEventsWithTypeFilteringQuery(long maxBatchSize) {
         return
-            " SELECT type, msg_key, content_type, msg_offset, created_utc, tags, data " +
+            " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
             " FROM " +
             " ( " +
             "   SELECT " +
-            "     type, msg_key, content_type, msg_offset, created_utc, tags, data, " +
+            "     type, msg_key, content_type, msg_offset, created_utc, data, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
             "   WHERE " +
@@ -168,11 +168,11 @@ public class PostgresqlStorage implements MessageReader {
     //TODO: use parameter for batch size
     private static String getSelectEventsWithoutTypeFilteringQuery(long maxBatchSize) {
         return
-            " SELECT type, msg_key, content_type, msg_offset, created_utc, tags, data " +
+            " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
             " FROM " +
             " (" +
             "   SELECT " +
-            "     type, msg_key, content_type, msg_offset, created_utc, tags, data, " +
+            "     type, msg_key, content_type, msg_offset, created_utc, data, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
             "   WHERE msg_offset >= ? " +
