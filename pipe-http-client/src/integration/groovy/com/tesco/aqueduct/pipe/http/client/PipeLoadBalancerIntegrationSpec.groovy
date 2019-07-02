@@ -33,7 +33,6 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             .properties(
                 [
                     "pipe.http.client.url": "http://does.not.exist",
-                    "pipe.tags": [:]
                 ] + properties
             )
             .build()
@@ -107,8 +106,8 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         }
 
         when: "messages are read from server A until retry fails"
-        def firstMessages = client.read([:], 0)
-        client.read([:], 1)
+        def firstMessages = client.read([], 0)
+        client.read([], 1)
 
         then: "messages are received and an exception is thrown"
         thrown(HttpClientException)
@@ -116,7 +115,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         serverA.verify()
 
         when: "client reads again"
-        def secondMessages = client.read([:], 1)
+        def secondMessages = client.read([], 1)
 
         then: "second server is called"
         secondMessages.messages*.key == ["x1"]
@@ -154,7 +153,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         loadBalancer.update([ URL(serverUrl) ])
 
         when: "the client calls the server"
-        client.read([:], 0)
+        client.read([], 0)
 
         then: "the server has been called on the right path"
         serverA.verify()

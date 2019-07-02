@@ -44,24 +44,12 @@ public class JsonHelper {
     private static final CollectionType
         messageListType = MAPPER.getTypeFactory().constructCollectionType(List.class, Message.class);
 
-
-    private static final MapType tagsType = MAPPER.getTypeFactory()
-        .constructMapType(
-            LinkedHashMap.class,
-            MAPPER.getTypeFactory().constructType(String.class),
-            MAPPER.getTypeFactory().constructCollectionType(List.class, String.class)
-        );
-
     public static Message messageFromJson(String json) throws IOException {
         return MAPPER.readValue(json, Message.class);
     }
 
     public static List<Message> messageFromJsonArray(String json) throws IOException {
         return MAPPER.readValue(json, messageListType);
-    }
-
-    public static Map<String, List<String>> tagsFromJson(String json) throws IOException {
-        return MAPPER.readValue(json, tagsType);
     }
 
     public static String toJson(Object msg) throws IOException {

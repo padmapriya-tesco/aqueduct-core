@@ -30,7 +30,6 @@ class TimedStorageIntegrationSpec extends Specification {
             "text/plain",
             offset,
             currentUTCTime(),
-            null,
             "some-data"
         )
     }
@@ -134,7 +133,7 @@ class TimedStorageIntegrationSpec extends Specification {
         storage.write(messages)
 
         when: 'requesting the latest offset with no tags'
-        def latestOffset = storage.getLatestOffsetMatching([:])
+        def latestOffset = storage.getLatestOffsetMatching([])
 
         then: 'the latest offset is returned'
         latestOffset == 4

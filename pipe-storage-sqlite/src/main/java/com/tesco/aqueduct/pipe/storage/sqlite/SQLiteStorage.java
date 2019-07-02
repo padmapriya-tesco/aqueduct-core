@@ -13,7 +13,8 @@ import java.io.UncheckedIOException;
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SQLiteStorage implements MessageStorage {
 
@@ -46,19 +47,18 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(Map<String, List<String>> tags, long offset) {
+    public MessageResults read(List<String> types, long offset) {
         List<Message> retrievedMessages = new ArrayList<>();
+        int typesCount = types == null ? 0 : types.size();
 
-        List<String> types = Optional.ofNullable(tags)
-            .map(each -> each.get("type"))
-            .orElse(Collections.emptyList());
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.getReadEvent(types, maxBatchSize))) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(EventQueries.getReadEvent(typesCount, maxBatchSize))
+        ) {
             int parameterIndex = 1;
             statement.setLong(parameterIndex++, offset);
 
-            for (int i = 0; i < types.size(); i++, parameterIndex++) {
+            for (int i = 0; i < typesCount; i++, parameterIndex++) {
                 statement.setString(parameterIndex, types.get(i));
             }
 
@@ -82,8 +82,10 @@ public class SQLiteStorage implements MessageStorage {
 
     private Message mapRetrievedMessageFromResultSet(ResultSet resultSet) throws SQLException {
         Message retrievedMessage;
-        ZonedDateTime time = ZonedDateTime.of(resultSet.getTimestamp("created_utc").toLocalDateTime(),
-            ZoneId.of("UTC"));
+        ZonedDateTime time = ZonedDateTime.of(
+            resultSet.getTimestamp("created_utc").toLocalDateTime(),
+            ZoneId.of("UTC")
+        );
 
         retrievedMessage = new Message(
             resultSet.getString("type"),
@@ -91,7 +93,6 @@ public class SQLiteStorage implements MessageStorage {
             resultSet.getString("content_type"),
             resultSet.getLong("msg_offset"),
             time,
-            null,
             resultSet.getString("data")
         );
 
@@ -99,13 +100,14 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public long getLatestOffsetMatching(Map<String, List<String>> tags) {
-        List<String> types = Optional.ofNullable(tags.get("type")).orElse(Collections.emptyList());
+    public long getLatestOffsetMatching(List<String> types) {
+        int typesCount = types == null ? 0 : types.size();
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.getLastOffsetQuery(types))) {
-
-            for (int i = 0; i < types.size(); i++) {
+        try (
+            Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(EventQueries.getLastOffsetQuery(typesCount))
+        ) {
+            for (int i = 0; i < typesCount; i++) {
                 statement.setString(i + 1, types.get(i));
             }
 
@@ -138,7 +140,7 @@ public class SQLiteStorage implements MessageStorage {
     @Override
     public void write(Message message) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
+            PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
             setStatementParametersForInsertMessageQuery(statement, message);
 
             statement.execute();
@@ -149,9 +151,9 @@ public class SQLiteStorage implements MessageStorage {
 
     public void compactUpTo(ZonedDateTime zonedDateTime) {
         // We may want a interface - Compactable - for this method signature
-        try(Connection connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
-            statement.setTimestamp(1,Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
             int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {

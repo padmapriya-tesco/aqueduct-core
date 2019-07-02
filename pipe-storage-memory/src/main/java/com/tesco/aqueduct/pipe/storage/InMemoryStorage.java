@@ -35,10 +35,10 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
      * Complexity: O(log(n)+limit)
      */
     @Override
-    public MessageResults read(Map<String, List<String>> tags, long offset) {
+    public MessageResults read(List<String> types, long offset) {
         val lock = rwl.readLock();
 
-        LOG.withTags(tags).debug("in memory storage", "reading with tags");
+        LOG.withTypes(types).debug("in memory storage", "reading with tags");
 
         try {
             lock.lock();
@@ -47,13 +47,13 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(tags,index), 0);
+                return new MessageResults(readFrom(types,index), 0);
             } else {
                 // determine if at the head of the queue to return retry after
                 long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(tags,-index-1), retry);
+                return new MessageResults(readFrom(types,-index-1), retry);
             }
         } finally {
             lock.unlock();
@@ -65,41 +65,19 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     }
 
     @Override
-    public long getLatestOffsetMatching(Map<String, List<String>> tags) {
+    public long getLatestOffsetMatching(List<String> types) {
         for (int i = messages.size()-1 ; i >= 0 ; i--) {
             Message message = messages.get(i);
-            if (tagsMatch(message, tags)) {
+
+            if (messageMatchTypes(message, types)) {
                 return message.getOffset();
             }
         }
         return 0;
     }
 
-    /**
-     * Returns true if for all keys in filters, there is at least one value that exist in the tags.
-     */
-    boolean tagsMatch(Message m, Map<String, List<String>> tagFilters) {
-        if (tagFilters == null) {
-            return true;
-        }
-
-        Map<String, List<String>> messageTags = m.getTags();
-
-        if (messageTags == null && !tagFilters.isEmpty()) {
-            return false;
-        }
-
-        if (tagFilters.containsKey("type") && !tagFilters.get("type").contains(m.getType())) {
-            return false;
-        }
-
-        return tagFilters.entrySet().stream()
-            .filter(filterTag -> !"type".equals(filterTag.getKey()))
-            .allMatch(filterTag ->
-                filterTag.getValue().stream().anyMatch(singleTagValue ->
-                    messageTags.getOrDefault(filterTag.getKey(), Collections.emptyList()).contains(singleTagValue)
-                )
-        );
+    private boolean messageMatchTypes(Message message, List<String> types) {
+        return types == null || types.isEmpty() || types.contains(message.getType());
     }
 
     /**
@@ -110,7 +88,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     private int findIndex(long offset) {
         return Collections.binarySearch(
             messages,
-            new Message(null, null, null, offset, null, null, null),
+            new Message(null, null, null, offset, null, null),
             comparingLong(Message::getOffset)
         );
     }
@@ -118,11 +96,11 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     /**
      * Complexity: avg O(limit), worst case O(size), where limit is number of elements taken
      */
-    private List<Message> readFrom(Map<String, List<String>> tags, int index) {
+    private List<Message> readFrom(List<String> types, int index) {
         return messages
             .stream()
             .skip(index)
-            .filter(m -> tagsMatch(m, tags))
+            .filter(m -> messageMatchTypes(m, types))
             .limit(limit)
             .collect(Collectors.toList())
         ;

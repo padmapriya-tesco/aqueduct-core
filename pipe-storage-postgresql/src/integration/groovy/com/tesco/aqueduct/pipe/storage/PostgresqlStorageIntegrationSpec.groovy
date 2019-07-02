@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.storage
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.Message
@@ -72,7 +71,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         connection.prepareStatement(_ as String) >> preparedStatement
 
         when: "requesting the latest matching offset with tags specifying a type key"
-        postgresStorage.getLatestOffsetMatching([type: ["some_type"]])
+        postgresStorage.getLatestOffsetMatching(["some_type"])
 
         then: "a query is created that does not contain tags in the where clause"
         1 * preparedStatement.setString(1, "some_type")
@@ -95,7 +94,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         connection.prepareStatement(_ as String) >> preparedStatement
 
         when: "requesting messages with tags specifying a type key"
-        postgresStorage.read([type: ["some_type"]], 0)
+        postgresStorage.read(["some_type"], 0)
 
         then: "a query is created that does not contain tags in the where clause"
         1 * preparedStatement.setString(1, "some_type")
@@ -117,7 +116,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read([:], 0)
+        MessageResults result = storage.read([], 0)
 
         then: "messages that are returned are no larger than the maximum batch size when reading with a type"
         result.messages.size() == 2
@@ -138,7 +137,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read([type: ["type-1"]], 0)
+        MessageResults result = storage.read(["type-1"], 0)
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -151,7 +150,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([:], 0)
+        MessageResults result = storage.read([], 0)
 
         then:
         result.retryAfterSeconds == 0
@@ -165,7 +164,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([:], 4)
+        MessageResults result = storage.read([], 4)
 
         then:
         result.retryAfterSeconds > 0
@@ -176,7 +175,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "I have no records in the integrated database"
 
         when:
-        MessageResults result = storage.read([:], 0)
+        MessageResults result = storage.read([], 0)
 
         then:
         result.retryAfterSeconds > 0
@@ -185,18 +184,17 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     @Override
     void insert(Message msg, int maxMessageSize=0) {
-        String tagsJson = ObjectMapper.newInstance().writeValueAsString(msg.tags)
         def time = Timestamp.valueOf(msg.created.toLocalDateTime())
 
         if (msg.offset == null) {
             sql.execute(
-                "INSERT INTO EVENTS(msg_key, content_type, type, created_utc, tags, data, event_size) VALUES(?,?,?,?,?::JSON,?,?);",
-                msg.key, msg.contentType, msg.type, time, tagsJson, msg.data, maxMessageSize
+                "INSERT INTO EVENTS(msg_key, content_type, type, created_utc, data, event_size) VALUES(?,?,?,?,?,?);",
+                msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize
             )
         } else {
             sql.execute(
-                "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, tags, data, event_size) VALUES(?,?,?,?,?,?::JSON,?,?);",
-                msg.offset, msg.key, msg.contentType, msg.type, time, tagsJson, msg.data, maxMessageSize
+                "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES(?,?,?,?,?,?,?);",
+                msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize
             )
         }
     }

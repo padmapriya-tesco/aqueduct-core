@@ -35,20 +35,19 @@ public class PipeLogger {
         fields.put("key", message.getKey());
         fields.put("contentType", message.getContentType());
         fields.put("offset", String.valueOf(message.getOffset()));
-        fields.put("tags", Arrays.toString(message.getTags().entrySet().toArray()));
 
         return new PipeLogger(this, fields);
     }
 
-    public PipeLogger withTags(Map<String, List<String>> tags) {
+    public PipeLogger withTypes(List<String> types) {
 
-        if (!log.isDebugEnabled() || tags == null) {
+        if (!log.isDebugEnabled() || types == null) {
             return this;
         }
 
         Map<String, String> fields = Collections.singletonMap(
-            "tags",
-            Arrays.toString(tags.entrySet().toArray())
+            "types",
+            Arrays.toString(types.toArray())
         );
 
         return new PipeLogger(this, fields);

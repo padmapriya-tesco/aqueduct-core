@@ -25,13 +25,13 @@ public class TimedMessageStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(Map<String, List<String>> tags, long offset) {
-        return readTimer.record(() -> storage.read(tags, offset));
+    public MessageResults read(List<String> types, long offset) {
+        return readTimer.record(() -> storage.read(types, offset));
     }
 
     @Override
-    public long getLatestOffsetMatching(Map<String, List<String>> tags) {
-        return latestOffsetTimer.record(() -> storage.getLatestOffsetMatching(tags));
+    public long getLatestOffsetMatching(List<String> types) {
+        return latestOffsetTimer.record(() -> storage.getLatestOffsetMatching(types));
     }
 
     @Override

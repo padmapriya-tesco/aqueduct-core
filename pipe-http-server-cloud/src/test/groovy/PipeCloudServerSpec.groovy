@@ -1,4 +1,3 @@
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.Message
@@ -9,7 +8,6 @@ import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -35,6 +33,7 @@ class PipeCloudServerSpec extends Specification {
         dataSource = Mock()
         dataSource.connection >> sql.connection
 
+        //TODO: remove "tags" once they are removed from SCHEMA
         sql.execute("""
           DROP TABLE IF EXISTS EVENTS;
           
@@ -77,8 +76,8 @@ class PipeCloudServerSpec extends Specification {
 
     def "once I inserted some documents in database I can read them from the pipe" () {
         given:
-        insert(100,  "a", "contentType", "type1", time, [tag:["x"]], "data")
-        insert(101, "b", "contentType", "type1", time, [:], null)
+        insert(100,  "a", "contentType", "type1", time, "data")
+        insert(101, "b", "contentType", "type1", time, null)
 
         when:
         def request = RestAssured.get("/pipe/100")
@@ -89,18 +88,17 @@ class PipeCloudServerSpec extends Specification {
             // this is bit fragile on purpose, it will fail on small changes to format of Json
                 .content(equalTo("""
             [
-                {"type":"type1","key":"a","contentType":"contentType","offset":"100","created":"2018-12-20T15:13:01Z","tags":{"tag":["x"]},"data":"data"},
+                {"type":"type1","key":"a","contentType":"contentType","offset":"100","created":"2018-12-20T15:13:01Z","data":"data"},
                 {"type":"type1","key":"b","contentType":"contentType","offset":"101","created":"2018-12-20T15:13:01Z"}
             ]
             """.replaceAll("\\s", "")))
     }
 
-    void insert(Long msg_offset, String msg_key, String content_type, String type, LocalDateTime created, Map tags, String data) {
-        String tagsJson = ObjectMapper.newInstance().writeValueAsString(tags)
+    void insert(Long msg_offset, String msg_key, String content_type, String type, LocalDateTime created, String data) {
 
         sql.execute(
-            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, tags, data, event_size) VALUES(?,?,?,?,?,?::JSON,?,?);",
-            msg_offset, msg_key, content_type, type, created, tagsJson, data, 0
+            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES(?,?,?,?,?,?,?);",
+            msg_offset, msg_key, content_type, type, created, data, 0
         )
     }
 
@@ -111,7 +109,6 @@ class PipeCloudServerSpec extends Specification {
             message.getContentType(),
             message.getType(),
             message.getCreated().toLocalDateTime(),
-            message.getTags(),
             message.getData()
         )
     }

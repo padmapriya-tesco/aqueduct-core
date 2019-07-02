@@ -37,7 +37,6 @@ class AuthenticatePipeReadFilterSpec extends Specification {
         context = ApplicationContext
             .build()
             .properties(
-                "pipe.tags": [:],
                 "authentication.read-pipe.username": "admin",
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.latest-offset.attempts": 1,
@@ -50,7 +49,7 @@ class AuthenticatePipeReadFilterSpec extends Specification {
         client = context.getBean(InternalHttpPipeClient)
 
         when:
-        def latest = client.getLatestOffsetMatching([:])
+        def latest = client.getLatestOffsetMatching([])
 
         then:
         server.verify()

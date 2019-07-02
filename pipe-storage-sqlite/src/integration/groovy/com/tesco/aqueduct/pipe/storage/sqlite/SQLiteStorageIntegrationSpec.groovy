@@ -40,7 +40,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
             "text/plain",
             offset,
             createdDateTime,
-            null,
             data
         )
     }
@@ -156,7 +155,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         and: 'we retrieve the message from the database'
-        MessageResults messageResults = sqliteStorage.read([type: ['my-new-type']], offset)
+        MessageResults messageResults = sqliteStorage.read(['my-new-type'], offset)
         Message retrievedMessage = messageResults.messages.get(0)
 
         then: 'the message retrieved should be what we saved'
@@ -210,7 +209,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'requesting the latest offset with no tags'
-        def latestOffset = sqliteStorage.getLatestOffsetMatching([:])
+        def latestOffset = sqliteStorage.getLatestOffsetMatching([])
 
         then: 'the latest offset is returned'
         latestOffset == 4
@@ -227,7 +226,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'requesting the latest offset with no tags'
-        def latestOffset = sqliteStorage.getLatestOffsetMatching([type: ['my-new-type']])
+        def latestOffset = sqliteStorage.getLatestOffsetMatching(['my-new-type'])
 
         then: 'the latest offset is returned'
         latestOffset == 2
@@ -251,7 +250,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(msg3)
 
         when: "reading from the database"
-        MessageResults result = sqliteStorage.read([type: ["type-1"]], 0)
+        MessageResults result = sqliteStorage.read(["type-1"], 0)
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -271,7 +270,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'reading the messages of multiple specified types from a given offset'
-        def receivedMessages = sqliteStorage.read([type: ['type-1', 'type-2']], 1)
+        def receivedMessages = sqliteStorage.read(['type-1', 'type-2'], 1)
 
         then: 'only the messages matching the multiple specified types from the given offset are returned'
         receivedMessages.messages.size() == 2
@@ -295,7 +294,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'requesting the latest offset with multiple specified types'
-        def latestOffset = sqliteStorage.getLatestOffsetMatching([type: ['type-1', 'type-2']])
+        def latestOffset = sqliteStorage.getLatestOffsetMatching(['type-1', 'type-2'])
 
         then: 'the latest offset for the messages with one of the types is returned'
         latestOffset == 3

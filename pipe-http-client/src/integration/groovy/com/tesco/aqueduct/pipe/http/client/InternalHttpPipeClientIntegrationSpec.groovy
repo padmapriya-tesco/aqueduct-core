@@ -29,8 +29,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             .properties(
                 "pipe.http.latest-offset.attempts": 1,
                 "pipe.http.latest-offset.delay": "1s",
-                "pipe.http.client.url": server.getHttpUrl(),
-                "pipe.tags": [:]
+                "pipe.http.client.url": server.getHttpUrl()
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
@@ -55,7 +54,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             get("/pipe/$offset") {
                 header('Accept', 'application/json')
                 header('Accept-Encoding', 'gzip, deflate')
-                queries(store: store)
+                queries(type: type)
                 called(1)
 
                 responder {
@@ -68,7 +67,6 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
                             "contentType": "$ct",
                             "offset": $offset,
                             "created": "2018-10-01T13:45:00Z", 
-                            "tags": { "example":"value"}, 
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
                     ]""")
@@ -77,7 +75,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         }
 
         when:
-        def messages = client.httpRead([store: [store]], offset).body()
+        def messages = client.httpRead([type], offset).body()
 
         def expectedMessage = new Message(
             type,
@@ -85,7 +83,6 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             ct,
             offset,
             ZonedDateTime.parse("2018-10-01T13:45:00Z"),
-            [example: ["value"]],
             '{ "valid": "json" }'
         )
         then:
@@ -93,11 +90,11 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         messages[0] == expectedMessage
 
         where:
-        type    | ct             | offset | store
-        "type1" | "contentType1" | 123    | "6735"
-        "type2" | "contentType2" | 123    | "6735"
-        "type1" | "contentType3" | 111    | "6735"
-        "type2" | "contentType4" | 123    | "4896"
+        type    | ct             | offset
+        "type1" | "contentType1" | 123
+        "type2" | "contentType2" | 123
+        "type1" | "contentType3" | 111
+        "type2" | "contentType4" | 123
     }
 
     def "can get latest offset"(){
@@ -114,7 +111,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         }
 
         when:
-        def latest = client.getLatestOffsetMatching([:])
+        def latest = client.getLatestOffsetMatching([])
         then:
         server.verify()
         latest == 123
@@ -125,7 +122,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         server.expectations {
             get("/pipe/offset/latest") {
                 called(1)
-                query("tag","a")
+                query("type","a,b,c")
 
                 responder {
                     contentType('application/json')
@@ -135,7 +132,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         }
 
         when:
-        def latest = client.getLatestOffsetMatching([tag:["a"]])
+        def latest = client.getLatestOffsetMatching(["a", "b", "c"])
 
         then:
         server.verify()
