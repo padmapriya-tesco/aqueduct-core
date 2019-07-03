@@ -423,7 +423,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         List<Node> nodesState = registry.getSummary(0, "initialising", ["x"]).followers
         nodesState.size() == 1
         nodesState.get(0).id == "x|http://second"
-
     }
 
     // provided hierarchy, vs expected hierarchy

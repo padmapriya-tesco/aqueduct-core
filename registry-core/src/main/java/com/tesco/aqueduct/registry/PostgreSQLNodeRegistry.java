@@ -26,6 +26,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final URL cloudUrl;
     private final Duration offlineDelta;
     private final DataSource dataSource;
+    private static final int OPTIMISTIC_LOCKING_COOLDOWN = 5;
     private static final int NUMBER_OF_CHILDREN = 2;
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
@@ -63,7 +64,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 throw new RuntimeException(exception);
             } catch (VersionChangedException exception) {
                 try {
-                    Thread.sleep(5);
+                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -118,13 +119,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 } else {
                     return deleteExistingNode(connection, nodeIdentifier, group);
                 }
-
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "deleteNode", exception);
                 throw new RuntimeException(exception);
             } catch (VersionChangedException exception) {
                 try {
-                    Thread.sleep(5);
+                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -144,7 +144,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 for (int i = 0; i < allUrls.size(); i++) {
                     List<URL> followUrls = getFollowerUrls(allUrls, i);
 
-                    Node updatedNode = nodeGroup.nodes.get(i).toBuilder()
+                    Node updatedNode = nodeGroup
+                        .nodes.get(i)
+                        .toBuilder()
                         .requestedToFollow(followUrls)
                         .build();
 
@@ -303,7 +305,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private boolean insertNewGroup(Connection connection, List<Node> groupNodes) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery())) {
-
             String jsonNodes = JsonHelper.toJson(groupNodes);
 
             statement.setString(1, groupNodes.get(0).getGroup());
