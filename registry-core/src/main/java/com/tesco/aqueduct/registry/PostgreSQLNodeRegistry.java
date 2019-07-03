@@ -133,30 +133,41 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private boolean deleteExistingNode(Connection connection, NodeIdentifier nodeIdentifier, NodeGroup nodeGroup) throws IOException, SQLException {
-        boolean foundNode = nodeGroup.nodes.removeIf( node -> node.getId().equals(nodeIdentifier.getId()));
+        boolean foundNode = nodeGroup.nodes.removeIf(node -> node.getId().equals(nodeIdentifier.getId()));
+
         if (foundNode) {
             if (nodeGroup.nodes.isEmpty()) {
                 deleteGroup(connection, nodeGroup.version, nodeIdentifier.getGroup());
+
             } else {
-                List<URL> allUrls = nodeGroup.nodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
-                List<Node> rebalancedNodes = new ArrayList<>();
+                List<URL> allUrls = nodeGroup.nodes.stream()
+                    .map(Node::getLocalUrl)
+                    .collect(Collectors.toList());
 
-                for (int i = 0; i < allUrls.size(); i++) {
-                    List<URL> followUrls = getFollowerUrls(allUrls, i);
+                List<Node> rebalancedNodes = getRebalancedNodes(nodeGroup, allUrls);
 
-                    Node updatedNode = nodeGroup
-                        .nodes.get(i)
-                        .toBuilder()
-                        .requestedToFollow(followUrls)
-                        .build();
-
-                    rebalancedNodes.add(updatedNode);
-                }
                 persistGroup(connection, nodeGroup.version, rebalancedNodes);
             }
             return true;
         }
         return false;
+    }
+
+    private List<Node> getRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
+        List<Node> rebalancedNodes = new ArrayList<>();
+
+        for (int i = 0; i < allUrls.size(); i++) {
+            List<URL> followUrls = getFollowerUrls(allUrls, i);
+
+            Node updatedNode = nodeGroup
+                .nodes.get(i)
+                .toBuilder()
+                .requestedToFollow(followUrls)
+                .build();
+
+            rebalancedNodes.add(updatedNode);
+        }
+        return rebalancedNodes;
     }
 
     private void deleteGroup(Connection connection, int version, String group) throws SQLException {
