@@ -2,7 +2,13 @@ package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import io.micronaut.http.annotation.*;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
@@ -43,5 +49,17 @@ public class NodeRegistryController {
         String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
         LOG.withNode(node).info("requested to follow", followStr);
         return requestedToFollow;
+    }
+
+    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Delete
+    public HttpResponse deleteNode(@Body NodeIdentifier nodeIdentifier) {
+        boolean deleted = registry.deleteNode(nodeIdentifier);
+
+        if (deleted) {
+            return HttpResponse.status(HttpStatus.OK);
+        } else {
+            return HttpResponse.status(HttpStatus.NOT_FOUND);
+        }
     }
 }

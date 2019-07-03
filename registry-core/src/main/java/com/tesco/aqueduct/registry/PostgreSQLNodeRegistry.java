@@ -107,6 +107,57 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
+    @Override
+    public boolean deleteNode(NodeIdentifier nodeIdentifier) {
+        while(true) {
+            try (Connection connection = dataSource.getConnection()) {
+                NodeGroup group = getNodeGroup(connection, nodeIdentifier.getGroup());
+
+                if(group.nodes.isEmpty()) {
+                    return false;
+                } else {
+                    return deleteExistingNode(connection, nodeIdentifier, group);
+                }
+
+            } catch (SQLException | IOException exception) {
+                LOG.error("Postgresql node registry", "deleteNode", exception);
+                throw new RuntimeException(exception);
+            } catch (VersionChangedException exception) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    private boolean deleteExistingNode(Connection connection, NodeIdentifier nodeIdentifier, NodeGroup nodeGroup) throws IOException, SQLException {
+        boolean foundNode = nodeGroup.nodes.removeIf( node -> node.getId().equals(nodeIdentifier.getId()));
+        if (foundNode) {
+            //TODO: need to rebalance
+            if (nodeGroup.nodes.isEmpty()) {
+                deleteGroup(connection, nodeGroup.version, nodeIdentifier.getGroup());
+            } else {
+                persistGroup(connection, nodeGroup.version, nodeGroup.nodes);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void deleteGroup(Connection connection, int version, String group) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getDeleteGroupQuery())) {
+
+            statement.setString(1, group);
+            statement.setInt(2, version);
+
+            if (statement.executeUpdate() == 0) {
+                throw new VersionChangedException();
+            }
+        }
+    }
+
     private List<URL> updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, List<Node> groupNodes) throws SQLException, IOException {
         for (int i = 0; i < groupNodes.size(); i++) {
             if (groupNodes.get(i).getId().equals(newValues.getId())) {
@@ -280,7 +331,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 ";";
     }
 
-    private String getInsertGroupQuery() {
+    private static String getInsertGroupQuery() {
         return "INSERT INTO registry (group_id, entry, version)" +
                 "VALUES (" +
                 "?, " +
@@ -292,5 +343,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private static String getAllNodesQuery() {
         return "SELECT entry FROM registry ORDER BY group_id;";
+    }
+
+    private static String getDeleteGroupQuery() {
+        return "DELETE from registry where group_id = ? and version = ? ;";
     }
 }

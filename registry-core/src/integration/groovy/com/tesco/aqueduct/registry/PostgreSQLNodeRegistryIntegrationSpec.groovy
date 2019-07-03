@@ -411,6 +411,21 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodeAfterSomeTime.status == "offline"
     }
 
+    def "Delete node from database if exists"() {
+        given: "two tills register"
+        registerNode("x", "http://first")
+        registerNode("x", "http://second")
+
+        when: "delete a node"
+        registry.deleteNode(new NodeIdentifier("x", "x|http://first"))
+
+        then: "It's state is updated"
+        List<Node> nodesState = registry.getSummary(0, "initialising", ["x"]).followers
+        nodesState.size() == 1
+        nodesState.get(0).id == "x|http://second"
+
+    }
+
     // provided hierarchy, vs expected hierarchy
     // update last seen date
 
