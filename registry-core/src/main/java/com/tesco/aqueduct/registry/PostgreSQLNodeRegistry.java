@@ -108,15 +108,15 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public boolean deleteNode(NodeIdentifier nodeIdentifier) {
+    public boolean deleteNode(String group, String id) {
         while(true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup group = getNodeGroup(connection, nodeIdentifier.getGroup());
+                NodeGroup nodeGroup = getNodeGroup(connection, group);
 
-                if(group.nodes.isEmpty()) {
+                if(nodeGroup.nodes.isEmpty()) {
                     return false;
                 } else {
-                    return deleteExistingNode(connection, nodeIdentifier, group);
+                    return deleteExistingNode(connection, group, id, nodeGroup);
                 }
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "deleteNode", exception);
@@ -131,12 +131,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, NodeIdentifier nodeIdentifier, NodeGroup nodeGroup) throws IOException, SQLException {
-        boolean foundNode = nodeGroup.nodes.removeIf(node -> node.getId().equals(nodeIdentifier.getId()));
+    private boolean deleteExistingNode(Connection connection, String group, String id, NodeGroup nodeGroup) throws IOException, SQLException {
+        boolean foundNode = nodeGroup.nodes.removeIf(node -> node.getId().equals(id));
 
         if (foundNode) {
             if (nodeGroup.nodes.isEmpty()) {
-                deleteGroup(connection, nodeGroup.version, nodeIdentifier.getGroup());
+                deleteGroup(connection, nodeGroup.version, group);
 
             } else {
                 List<URL> allUrls = nodeGroup.nodes.stream()
