@@ -212,12 +212,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         given()
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
-            .body("""{
-                "group": "1234",
-                "id": "1234|http://1.1.1.1:1234"
-            }""")
             .when()
-            .delete("/registry")
+            .delete("/registry/1234/1234|http://1.1.1.1:1234")
             .then()
             .statusCode(200)
 
@@ -244,12 +240,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         given()
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
-            .body("""{
-                "group": "1234",
-                "id": "1234|http://1.1.1.1:0001"
-            }""")
             .when()
-            .delete("/registry")
+            .delete("/registry/1234/1234|http://1.1.1.1:0001")
             .then()
             .statusCode(200)
 
