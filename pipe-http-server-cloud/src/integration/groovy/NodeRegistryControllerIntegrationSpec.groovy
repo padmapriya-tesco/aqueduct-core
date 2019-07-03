@@ -201,7 +201,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         //"?groups=a,c"               | ["a", "c"]      | "some stores, comma separated"
     }
 
-    def "deleting node from registry different groups"() {
+    def "deleting a singleton node from the registry"() {
         given: "We register two nodes"
         server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
@@ -221,7 +221,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             .then()
             .statusCode(200)
 
-        then: "node has been deleted, and other node still exists"
+        then: "node has been deleted, and other groups are unaffected"
         def request = when().get("/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
@@ -230,8 +230,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
-    def "deleting node from registry same groups"() {
-        given: "We register two nodes"
+    def "deleting a node from the registry and rebalancing a group"() {
+        given: "We register multiple nodes"
         server.start()
         registerNode(1234, "http://1.1.1.1:0001", 123, "status")
         registerNode(1234, "http://1.1.1.1:0002", 123, "status")
