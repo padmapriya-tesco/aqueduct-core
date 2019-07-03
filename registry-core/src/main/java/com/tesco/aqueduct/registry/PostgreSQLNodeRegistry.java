@@ -2,7 +2,6 @@ package com.tesco.aqueduct.registry;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import org.postgresql.util.PSQLException;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -144,7 +143,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     .map(Node::getLocalUrl)
                     .collect(Collectors.toList());
 
-                List<Node> rebalancedNodes = getRebalancedNodes(nodeGroup, allUrls);
+                List<Node> rebalancedNodes = calculateRebalancedNodes(nodeGroup, allUrls);
 
                 persistGroup(connection, nodeGroup.version, rebalancedNodes);
             }
@@ -153,7 +152,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private List<Node> getRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
+    private List<Node> calculateRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
         List<Node> rebalancedNodes = new ArrayList<>();
 
         for (int i = 0; i < allUrls.size(); i++) {
