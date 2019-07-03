@@ -201,7 +201,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         //"?groups=a,c"               | ["a", "c"]      | "some stores, comma separated"
     }
 
-    def "deleting a singleton node from the registry"() {
+    def "deleting a single node from the registry"() {
         given: "We register two nodes"
         server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
