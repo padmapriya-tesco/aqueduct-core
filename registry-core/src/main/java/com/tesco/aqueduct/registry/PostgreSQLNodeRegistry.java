@@ -135,11 +135,22 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private boolean deleteExistingNode(Connection connection, NodeIdentifier nodeIdentifier, NodeGroup nodeGroup) throws IOException, SQLException {
         boolean foundNode = nodeGroup.nodes.removeIf( node -> node.getId().equals(nodeIdentifier.getId()));
         if (foundNode) {
-            //TODO: need to rebalance
             if (nodeGroup.nodes.isEmpty()) {
                 deleteGroup(connection, nodeGroup.version, nodeIdentifier.getGroup());
             } else {
-                persistGroup(connection, nodeGroup.version, nodeGroup.nodes);
+                List<URL> allUrls = nodeGroup.nodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
+                List<Node> rebalancedNodes = new ArrayList<>();
+
+                for (int i = 0; i < allUrls.size(); i++) {
+                    List<URL> followUrls = getFollowerUrls(allUrls, i);
+
+                    Node updatedNode = nodeGroup.nodes.get(i).toBuilder()
+                        .requestedToFollow(followUrls)
+                        .build();
+
+                    rebalancedNodes.add(updatedNode);
+                }
+                persistGroup(connection, nodeGroup.version, rebalancedNodes);
             }
             return true;
         }
@@ -200,14 +211,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         List<URL> allUrls = groupNodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
 
         int nodeIndex = allUrls.size();
-        List<URL> followUrls = new ArrayList<>();
-
-        while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex+1)/NUMBER_OF_CHILDREN) - 1;
-            followUrls.add(allUrls.get(nodeIndex));
-        }
-
-        followUrls.add(cloudUrl);
+        List<URL> followUrls = getFollowerUrls(allUrls, nodeIndex);
 
         groupNodes.add(
             node.toBuilder()
@@ -218,6 +222,18 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
         persistGroup(connection, version, groupNodes);
 
+        return followUrls;
+    }
+
+    private List<URL> getFollowerUrls(List<URL> allUrls, int nodeIndex) {
+        List<URL> followUrls = new ArrayList<>();
+
+        while (nodeIndex != 0) {
+            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN) - 1;
+            followUrls.add(allUrls.get(nodeIndex));
+        }
+
+        followUrls.add(cloudUrl);
         return followUrls;
     }
 

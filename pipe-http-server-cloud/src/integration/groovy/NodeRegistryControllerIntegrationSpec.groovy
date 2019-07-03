@@ -201,7 +201,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         //"?groups=a,c"               | ["a", "c"]      | "some stores, comma separated"
     }
 
-    def "deleting node from registry"() {
+    def "deleting node from registry different groups"() {
         given: "We register two nodes"
         server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
@@ -226,6 +226,48 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         !request.body().prettyPrint().contains("http://1.1.1.1:1234")
+
+        request.then()
+                .statusCode(200)
+    }
+
+    def "deleting node from registry same groups"() {
+        given: "We register two nodes"
+        server.start()
+        registerNode(1234, "http://1.1.1.1:0001", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0002", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0003", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0004", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0005", 123, "status")
+
+        when: "first node is deleted"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+        given()
+                .header("Authorization", "Basic $encodedCredentials")
+                .contentType("application/json")
+                .body("""{
+                "group": "1234",
+                "id": "1234|http://1.1.1.1:0001"
+            }""")
+                .when()
+                .delete("/registry")
+                .then()
+                .statusCode(200)
+
+        then: "registry has been rebalanced"
+        def request = when().get("/registry")
+
+        request.then().body(
+                "followers[0].localUrl", equalTo("http://1.1.1.1:0002"),
+                "followers[1].localUrl", equalTo("http://1.1.1.1:0003"),
+                "followers[2].localUrl", equalTo("http://1.1.1.1:0004"),
+                "followers[3].localUrl", equalTo("http://1.1.1.1:0005"),
+                //following lists
+                "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
+                "followers[1].requestedToFollow", equalTo(["http://1.1.1.1:0002","http://cloud.pipe"]),
+                "followers[2].requestedToFollow", equalTo(["http://1.1.1.1:0002","http://cloud.pipe"]),
+                "followers[3].requestedToFollow", equalTo(["http://1.1.1.1:0003","http://1.1.1.1:0002","http://cloud.pipe"])
+        )
 
         request.then()
                 .statusCode(200)
