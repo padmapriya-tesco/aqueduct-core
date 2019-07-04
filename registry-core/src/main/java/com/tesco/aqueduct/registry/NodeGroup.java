@@ -15,4 +15,8 @@ public class NodeGroup {
     public boolean isEmpty() {
         return nodes.isEmpty();
     }
+
+    public boolean removeById(String nodeId) {
+        return nodes.removeIf(node -> node.getId().equals(nodeId));
+    }
 }

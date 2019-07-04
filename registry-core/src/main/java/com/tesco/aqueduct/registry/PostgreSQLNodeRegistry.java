@@ -132,12 +132,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, String group, String id, NodeGroup nodeGroup) throws IOException, SQLException {
-        boolean foundNode = nodeGroup.nodes.removeIf(node -> node.getId().equals(id));
+    private boolean deleteExistingNode(Connection connection, String groupId, String nodeId, NodeGroup nodeGroup) throws IOException, SQLException {
+        boolean foundNode = nodeGroup.removeById(nodeId);
 
         if (foundNode) {
             if (nodeGroup.isEmpty()) {
-                deleteGroup(connection, nodeGroup.version, group);
+                deleteGroup(connection, nodeGroup.version, groupId);
 
             } else {
                 List<URL> allUrls = nodeGroup.nodes.stream()
