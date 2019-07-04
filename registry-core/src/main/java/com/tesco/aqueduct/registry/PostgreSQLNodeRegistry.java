@@ -140,11 +140,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 deleteGroup(connection, nodeGroup.version, groupId);
 
             } else {
-                List<URL> allUrls = nodeGroup.nodes.stream()
-                    .map(Node::getLocalUrl)
-                    .collect(Collectors.toList());
-
-                NodeGroup rebalancedGroup = calculateRebalancedNodes(nodeGroup, allUrls);
+                NodeGroup rebalancedGroup = rebalanceGroup(nodeGroup);
 
                 persistGroup(connection, nodeGroup.version, rebalancedGroup);
             }
@@ -153,7 +149,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private NodeGroup calculateRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
+    private NodeGroup rebalanceGroup(NodeGroup nodeGroup) {
+        List<URL> allUrls = nodeGroup.getNodeUrls();
         List<Node> rebalancedNodes = new ArrayList<>();
 
         for (int i = 0; i < allUrls.size(); i++) {
@@ -226,20 +223,20 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return followUrls;
     }
 
-    private Node addNodeToExistingGroup(Connection connection, int version, NodeGroup groupNodes, Node node, ZonedDateTime now) throws SQLException, IOException {
-        List<URL> allUrls = groupNodes.nodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
+    private Node addNodeToExistingGroup(Connection connection, int version, NodeGroup group, Node node, ZonedDateTime now) throws SQLException, IOException {
+        List<URL> nodeUrls = group.getNodeUrls();
 
-        int nodeIndex = allUrls.size();
-        List<URL> followUrls = getFollowerUrls(allUrls, nodeIndex);
+        int nodeIndex = nodeUrls.size();
+        List<URL> followUrls = getFollowerUrls(nodeUrls, nodeIndex);
 
         Node newNode = node.toBuilder()
                 .requestedToFollow(followUrls)
                 .lastSeen(now)
                 .build();
 
-        groupNodes.add(newNode);
+        group.add(newNode);
 
-        persistGroup(connection, version, groupNodes);
+        persistGroup(connection, version, group);
 
         return newNode;
     }

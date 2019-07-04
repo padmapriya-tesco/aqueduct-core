@@ -1,7 +1,10 @@
 package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.registry.model.Node;
+
+import java.net.URL;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class NodeGroup {
     final List<Node> nodes;
@@ -26,5 +29,11 @@ public class NodeGroup {
 
     public Node get(int index) {
         return this.nodes.get(index);
+    }
+
+    public List<URL> getNodeUrls() {
+        return nodes.stream()
+            .map(Node::getLocalUrl)
+            .collect(Collectors.toList());
     }
 }

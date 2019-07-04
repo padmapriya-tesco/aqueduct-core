@@ -77,4 +77,25 @@ class NodeGroupSpec extends Specification {
 		then: "the correct node is returned"
 		result == anotherNode
 	}
+
+	def "Fetch URLs for all nodes"() {
+		given: "A node with a local url"
+		def nodeUrl = new URL("http://test_node_1")
+		def node = Mock Node
+		node.localUrl >> nodeUrl
+
+		and: "A node with a different id"
+		def anotherNodeUrl = new URL("http://test_node_2")
+		def anotherNode = Mock Node
+		anotherNode.localUrl >> anotherNodeUrl
+
+		and: "a Group with these nodes"
+		def group = new NodeGroup([node, anotherNode], 1)
+
+		when: "all Node urls have been fetched"
+		def result = group.getNodeUrls()
+
+		then: "Both URLs have been returned"
+		result == [nodeUrl, anotherNodeUrl]
+	}
 }
