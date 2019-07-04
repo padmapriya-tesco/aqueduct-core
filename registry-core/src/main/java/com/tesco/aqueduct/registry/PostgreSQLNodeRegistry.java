@@ -54,9 +54,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                         .findAny();
 
                     if (existingNode.isPresent()) {
-                        return updateExistingNode(connection, group.version, existingNode.get(), node, group);
+                        return updateExistingNode(connection, group.version, existingNode.get(), node, group).getRequestedToFollow();
                     } else {
-                        return addNodeToExistingGroup(connection, group.version, group, node, now);
+                        return addNodeToExistingGroup(connection, group.version, group, node, now).getRequestedToFollow();
                     }
                 }
             } catch (SQLException | IOException exception) {
@@ -182,18 +182,24 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private List<URL> updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, NodeGroup group) throws SQLException, IOException {
+    private Node updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, NodeGroup group) throws SQLException, IOException {
         for (int i = 0; i < group.nodes.size(); i++) {
+            //Find the exising node
             if (group.get(i).getId().equals(newValues.getId())) {
+                //create a new node, with the existing "requestedToFollow" values
                 Node updatedNode = newValues.toBuilder()
                     .requestedToFollow(existingValue.getRequestedToFollow())
                     .lastSeen(ZonedDateTime.now())
                     .build();
 
+                //Update the node
                 group.nodes.set(i, updatedNode);
+
+                //Persist to the DB
                 persistGroup(connection, version, group);
 
-                return updatedNode.getRequestedToFollow();
+                //return the follow values
+                return updatedNode;
             }
         }
 
@@ -220,22 +226,22 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return followUrls;
     }
 
-    private List<URL> addNodeToExistingGroup(Connection connection, int version, NodeGroup groupNodes, Node node, ZonedDateTime now) throws SQLException, IOException {
+    private Node addNodeToExistingGroup(Connection connection, int version, NodeGroup groupNodes, Node node, ZonedDateTime now) throws SQLException, IOException {
         List<URL> allUrls = groupNodes.nodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
 
         int nodeIndex = allUrls.size();
         List<URL> followUrls = getFollowerUrls(allUrls, nodeIndex);
 
-        groupNodes.add(
-            node.toBuilder()
+        Node newNode = node.toBuilder()
                 .requestedToFollow(followUrls)
                 .lastSeen(now)
-                .build()
-        );
+                .build();
+
+        groupNodes.add(newNode);
 
         persistGroup(connection, version, groupNodes);
 
-        return followUrls;
+        return newNode;
     }
 
     private List<URL> getFollowerUrls(List<URL> allUrls, int nodeIndex) {
