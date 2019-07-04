@@ -2,6 +2,7 @@ package com.tesco.aqueduct.registry;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
+import com.tesco.aqueduct.registry.model.Node;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
