@@ -44,7 +44,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 NodeGroup groupNodes = getNodeGroup(connection, node.getGroup());
                 ZonedDateTime now = ZonedDateTime.now();
 
-                if (groupNodes.nodes.isEmpty()) {
+                if (groupNodes.isEmpty()) {
                     return addNodeToNewGroup(connection, node, now);
                 } else {
                     Optional<Node> existingNode = groupNodes
@@ -114,7 +114,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             try (Connection connection = dataSource.getConnection()) {
                 NodeGroup nodeGroup = getNodeGroup(connection, group);
 
-                if(nodeGroup.nodes.isEmpty()) {
+                if(nodeGroup.isEmpty()) {
                     return false;
                 } else {
                     return deleteExistingNode(connection, group, id, nodeGroup);
@@ -136,7 +136,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         boolean foundNode = nodeGroup.nodes.removeIf(node -> node.getId().equals(id));
 
         if (foundNode) {
-            if (nodeGroup.nodes.isEmpty()) {
+            if (nodeGroup.isEmpty()) {
                 deleteGroup(connection, nodeGroup.version, group);
 
             } else {

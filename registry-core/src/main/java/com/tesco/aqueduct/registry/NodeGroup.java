@@ -8,4 +8,8 @@ import java.util.List;
 public class NodeGroup {
     final List<Node> nodes;
     final int version;
+
+    public boolean isEmpty() {
+        return nodes.isEmpty();
+    }
 }
