@@ -44,4 +44,14 @@ public class NodeGroup {
             .map(Node::getLocalUrl)
             .collect(Collectors.toList());
     }
+
+    public Node updateNode(Node updatedNode) {
+        for (int i = 0; i < nodes.size(); i++) {
+            if (nodes.get(i).getId().equals(updatedNode.getId())) {
+                return nodes.set(i, updatedNode);
+            }
+        }
+
+        throw new IllegalStateException("The node was not found " + updatedNode.getId());
+    }
 }

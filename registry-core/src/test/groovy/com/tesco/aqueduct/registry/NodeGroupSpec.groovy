@@ -129,4 +129,36 @@ class NodeGroupSpec extends Specification {
 		then: "null is returned"
 		result == null
 	}
+
+	def "A node can be updated in the Group"() {
+		given: "A node with a local url"
+		def nodeUrl = new URL("http://test_node_1")
+		def node = Mock Node
+		node.id >> "test_node_id"
+		node.localUrl >> nodeUrl
+
+		and: "A node with a different id"
+		def anotherNode = Mock Node
+		anotherNode.id >> "another_node_id"
+
+		and: "a Group with these nodes"
+		def group = new NodeGroup([node, anotherNode], 1)
+
+		when: "An updated node is provided to the group"
+		def updatedNode = Mock(Node)
+		updatedNode.id >> "test_node_id"
+		group.updateNode(updatedNode)
+
+		then: "The group contains the updated node"
+		group.nodes == [updatedNode, anotherNode]
+
+		when: "Another updated node is provided to the group"
+		def anotherUpdatedNode = Mock(Node)
+		anotherUpdatedNode.id >> "another_node_id"
+		group.updateNode(anotherUpdatedNode)
+
+		then: "The group contains the updated nodes"
+		group.nodes == [updatedNode, anotherUpdatedNode]
+
+	}
 }

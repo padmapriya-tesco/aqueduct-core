@@ -177,24 +177,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
-        for (int i = 0; i < group.nodes.size(); i++) {
-            //Find the exising node
-            if (group.get(i).getId().equals(newValues.getId())) {
-                //create a new node, with the existing "requestedToFollow" values
-                Node updatedNode = newValues.toBuilder()
-                    .requestedToFollow(existingValue.getRequestedToFollow())
-                    .lastSeen(ZonedDateTime.now())
-                    .build();
-
-                //Update the node
-                group.nodes.set(i, updatedNode);
-
-                //return the follow values
-                return updatedNode;
-            }
-        }
-
-        throw new IllegalStateException("The node was not found " + newValues.getId());
+        //create a new node, with the existing "requestedToFollow" values
+        Node updatedNode = newValues.toBuilder()
+                .requestedToFollow(existingValue.getRequestedToFollow())
+                .lastSeen(ZonedDateTime.now())
+                .build();
+        return group.updateNode(updatedNode);
     }
 
     private List<URL> addNodeToNewGroup(Connection connection, Node node, ZonedDateTime now) throws SQLException, IOException {
