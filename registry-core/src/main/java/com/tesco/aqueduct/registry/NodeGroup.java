@@ -20,7 +20,11 @@ public class NodeGroup {
         return nodes.removeIf(node -> node.getId().equals(nodeId));
     }
 
-    public void add(Node node){
+    public void add(Node node) {
         this.nodes.add(node);
+    }
+
+    public Node get(int index) {
+        return this.nodes.get(index);
     }
 }

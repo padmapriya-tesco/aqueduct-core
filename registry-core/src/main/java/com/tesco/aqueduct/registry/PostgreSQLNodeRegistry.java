@@ -160,7 +160,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             List<URL> followUrls = getFollowerUrls(allUrls, i);
 
             Node updatedNode = nodeGroup
-                .nodes.get(i)
+                . nodes.get(i)
                 .toBuilder()
                 .requestedToFollow(followUrls)
                 .build();

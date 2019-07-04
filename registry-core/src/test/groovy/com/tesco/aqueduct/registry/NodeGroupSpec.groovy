@@ -31,7 +31,7 @@ class NodeGroupSpec extends Specification {
 		def anotherNode = Mock Node
 		anotherNode.id >> "another_node_id"
 
-		and: "a Group with only this node"
+		and: "a Group with these nodes"
 		def group = new NodeGroup([node, anotherNode], 1)
 
 		when: "Removing the node from the group using the id"
@@ -51,5 +51,30 @@ class NodeGroupSpec extends Specification {
 		group.add(Mock(Node))
 		then: "the node group is no longer empty"
 		!group.isEmpty()
+	}
+
+	def "a node can be fetched from the group"() {
+		given: "A node with an id"
+		def node = Mock Node
+		node.id >> "test_node_id"
+
+		and: "A node with a different id"
+		def anotherNode = Mock Node
+		anotherNode.id >> "another_node_id"
+
+		and: "a Group with these nodes"
+		def group = new NodeGroup([node, anotherNode], 1)
+
+		when: "fetching the node at index 0"
+		def result = group.get(0)
+
+		then: "the correct node is returned"
+		result == node
+
+		when: "fetching the node at index 1"
+		result = group.get(1)
+
+		then: "the correct node is returned"
+		result == anotherNode
 	}
 }
