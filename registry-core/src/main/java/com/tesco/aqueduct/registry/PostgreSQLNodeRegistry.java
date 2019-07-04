@@ -41,22 +41,22 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(Node node) {
         while(true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup groupNodes = getNodeGroup(connection, node.getGroup());
+                NodeGroup group = getNodeGroup(connection, node.getGroup());
                 ZonedDateTime now = ZonedDateTime.now();
 
-                if (groupNodes.isEmpty()) {
+                if (group.isEmpty()) {
                     return addNodeToNewGroup(connection, node, now);
                 } else {
-                    Optional<Node> existingNode = groupNodes
+                    Optional<Node> existingNode = group
                         .nodes
                         .stream()
                         .filter(n -> n.getId().equals(node.getId()))
                         .findAny();
 
                     if (existingNode.isPresent()) {
-                        return updateExistingNode(connection, groupNodes.version, existingNode.get(), node, groupNodes.nodes);
+                        return updateExistingNode(connection, group.version, existingNode.get(), node, group.nodes);
                     } else {
-                        return addNodeToExistingGroup(connection, groupNodes.version, groupNodes.nodes, node, now);
+                        return addNodeToExistingGroup(connection, group.version, group.nodes, node, now);
                     }
                 }
             } catch (SQLException | IOException exception) {
