@@ -167,7 +167,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(getDeleteGroupQuery())) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
 
             statement.setString(1, groupId);
             statement.setInt(2, version);
@@ -244,7 +244,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
         List<Node> nodes;
         int version;
-        try (PreparedStatement statement = connection.prepareStatement(getNodeGroupQuery())) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_FOR_NODE)) {
 
             statement.setString(1, group);
 
@@ -273,7 +273,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private void persistGroup(Connection connection, int version, NodeGroup group) throws SQLException, IOException {
-        try (PreparedStatement statement = connection.prepareStatement(getPersistGroupQuery())) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             String jsonNodes = JsonHelper.toJson(group.nodes);
 
             statement.setString(1, jsonNodes);
@@ -287,7 +287,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery())) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
             String jsonNodes = JsonHelper.toJson(group.nodes);
             statement.setString(1, group.get(0).getGroup());
             statement.setString(2, jsonNodes);
@@ -302,7 +302,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private List<Node> getAllNodes(Connection connection) throws SQLException {
         List<Node> nodes;
-        try (PreparedStatement statement = connection.prepareStatement(getAllNodesQuery())) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_NODES)) {
             nodes = new ArrayList<>();
 
             try (ResultSet rs = statement.executeQuery()) {
@@ -319,36 +319,27 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return nodes;
     }
 
-    private static String getNodeGroupQuery() {
-        return "SELECT entry, version FROM registry where group_id = ? ;";
-    }
+    private static final String QUERY_GET_GROUP_FOR_NODE = "SELECT entry, version FROM registry where group_id = ? ;";
 
-    private static String getPersistGroupQuery() {
-        return "UPDATE registry SET " +
-                    "entry = ?::JSON , " +
-                    "version = registry.version + 1 " +
-                "WHERE " +
-                    "registry.group_id = ? " +
-                "AND " +
-                    "registry.version = ? " +
-                ";";
-    }
+    private static final String QUERY_UPDATE_GROUP =
+        "UPDATE registry SET " +
+            "entry = ?::JSON , " +
+            "version = registry.version + 1 " +
+        "WHERE " +
+            "registry.group_id = ? " +
+        "AND " +
+            "registry.version = ? " +
+        ";";
 
-    private static String getInsertGroupQuery() {
-        return "INSERT INTO registry (group_id, entry, version)" +
-                "VALUES (" +
-                "?, " +
-                "?::JSON, " +
-                "0 " +
-                ")" +
-                "ON CONFLICT DO NOTHING ;";
-    }
+    private static final String QUERY_INSERT_GROUP =
+        "INSERT INTO registry (group_id, entry, version)" +
+        "VALUES (" +
+            "?, " +
+            "?::JSON, " +
+            "0 " +
+        ")" +
+        "ON CONFLICT DO NOTHING ;";
 
-    private static String getAllNodesQuery() {
-        return "SELECT entry FROM registry ORDER BY group_id;";
-    }
-
-    private static String getDeleteGroupQuery() {
-        return "DELETE from registry where group_id = ? and version = ? ;";
-    }
+    private static final String QUERY_GET_ALL_NODES = "SELECT entry FROM registry ORDER BY group_id;";
+    private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 }
