@@ -160,7 +160,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             List<URL> followUrls = getFollowerUrls(allUrls, i);
 
             Node updatedNode = nodeGroup
-                . nodes.get(i)
+                .get(i)
                 .toBuilder()
                 .requestedToFollow(followUrls)
                 .build();
@@ -184,7 +184,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private List<URL> updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, NodeGroup group) throws SQLException, IOException {
         for (int i = 0; i < group.nodes.size(); i++) {
-            if (group.nodes.get(i).getId().equals(newValues.getId())) {
+            if (group.get(i).getId().equals(newValues.getId())) {
                 Node updatedNode = newValues.toBuilder()
                     .requestedToFollow(existingValue.getRequestedToFollow())
                     .lastSeen(ZonedDateTime.now())
@@ -304,7 +304,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             String jsonNodes = JsonHelper.toJson(group.nodes);
 
             statement.setString(1, jsonNodes);
-            statement.setString(2, group.nodes.get(0).getGroup());
+            statement.setString(2, group.get(0).getGroup());
             statement.setInt(3, version);
 
             if (statement.executeUpdate() == 0) {
