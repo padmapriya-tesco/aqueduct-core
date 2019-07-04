@@ -54,9 +54,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                         .findAny();
 
                     if (existingNode.isPresent()) {
-                        return updateExistingNode(connection, group.version, existingNode.get(), node, group.nodes);
+                        return updateExistingNode(connection, group.version, existingNode.get(), node, group);
                     } else {
-                        return addNodeToExistingGroup(connection, group.version, group.nodes, node, now);
+                        return addNodeToExistingGroup(connection, group.version, group, node, now);
                     }
                 }
             } catch (SQLException | IOException exception) {
@@ -144,16 +144,16 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     .map(Node::getLocalUrl)
                     .collect(Collectors.toList());
 
-                List<Node> rebalancedNodes = calculateRebalancedNodes(nodeGroup, allUrls);
+                NodeGroup rebalancedGroup = calculateRebalancedNodes(nodeGroup, allUrls);
 
-                persistGroup(connection, nodeGroup.version, rebalancedNodes);
+                persistGroup(connection, nodeGroup.version, rebalancedGroup);
             }
             return true;
         }
         return false;
     }
 
-    private List<Node> calculateRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
+    private NodeGroup calculateRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
         List<Node> rebalancedNodes = new ArrayList<>();
 
         for (int i = 0; i < allUrls.size(); i++) {
@@ -167,7 +167,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
             rebalancedNodes.add(updatedNode);
         }
-        return rebalancedNodes;
+        return new NodeGroup(rebalancedNodes, nodeGroup.version);
     }
 
     private void deleteGroup(Connection connection, int version, String group) throws SQLException {
@@ -182,16 +182,16 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private List<URL> updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, List<Node> groupNodes) throws SQLException, IOException {
-        for (int i = 0; i < groupNodes.size(); i++) {
-            if (groupNodes.get(i).getId().equals(newValues.getId())) {
+    private List<URL> updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, NodeGroup group) throws SQLException, IOException {
+        for (int i = 0; i < group.nodes.size(); i++) {
+            if (group.nodes.get(i).getId().equals(newValues.getId())) {
                 Node updatedNode = newValues.toBuilder()
                     .requestedToFollow(existingValue.getRequestedToFollow())
                     .lastSeen(ZonedDateTime.now())
                     .build();
 
-                groupNodes.set(i, updatedNode);
-                persistGroup(connection, version, groupNodes);
+                group.nodes.set(i, updatedNode);
+                persistGroup(connection, version, group);
 
                 return updatedNode.getRequestedToFollow();
             }
@@ -220,13 +220,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return followUrls;
     }
 
-    private List<URL> addNodeToExistingGroup(Connection connection, int version, List<Node> groupNodes, Node node, ZonedDateTime now) throws SQLException, IOException {
-        List<URL> allUrls = groupNodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
+    private List<URL> addNodeToExistingGroup(Connection connection, int version, NodeGroup groupNodes, Node node, ZonedDateTime now) throws SQLException, IOException {
+        List<URL> allUrls = groupNodes.nodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
 
         int nodeIndex = allUrls.size();
         List<URL> followUrls = getFollowerUrls(allUrls, nodeIndex);
 
-        groupNodes.add(
+        groupNodes.nodes.add(
             node.toBuilder()
                 .requestedToFollow(followUrls)
                 .lastSeen(now)
@@ -299,13 +299,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return JsonHelper.MAPPER.readValue(entry, type);
     }
 
-    private void persistGroup(Connection connection, int version, List<Node> groupNodes) throws SQLException, IOException {
+    private void persistGroup(Connection connection, int version, NodeGroup group) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(getPersistGroupQuery())) {
-
-            String jsonNodes = JsonHelper.toJson(groupNodes);
+            String jsonNodes = JsonHelper.toJson(group.nodes);
 
             statement.setString(1, jsonNodes);
-            statement.setString(2, groupNodes.get(0).getGroup());
+            statement.setString(2, group.nodes.get(0).getGroup());
             statement.setInt(3, version);
 
             if (statement.executeUpdate() == 0) {
