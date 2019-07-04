@@ -109,7 +109,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             .statusCode(HttpStatus.UNAUTHORIZED.code)
     }
 
-    void "Can post to registry"() {
+    def "Can post to registry"() {
         setup: "A started server"
         server.start()
 
@@ -133,7 +133,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             .body("", equalTo([cloudPipeUrl]))
     }
 
-    void "Can get registry summary"() {
+    def "Can get registry summary"() {
         setup: "A started server"
         server.start()
 
@@ -150,7 +150,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             )
     }
 
-    void "Registered nodes are returned"() {
+    def "Registered nodes are returned"() {
         given: "We register a node"
         server.start()
         registerNode(6735, "http://1.1.1.1:1234", 123, "status", ["http://x"])
@@ -172,7 +172,7 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
     }
 
     @Unroll
-    void "Summary can filter by stores - #comment"() {
+    def "Summary can filter by stores - #comment"() {
         given: "We register nodes from different groups"
         server.start()
         registerNode("a", "http://a")
@@ -199,6 +199,68 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         //Below cases not currently supported, uncomment once they are supported !
         //"?groups=a,c,b"             | ["a", "b", "c"] | "all stores, comma separated"
         //"?groups=a,c"               | ["a", "c"]      | "some stores, comma separated"
+    }
+
+    def "deleting a single node from the registry"() {
+        given: "We register two nodes"
+        server.start()
+        registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
+        registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
+
+        when: "node is deleted"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+        given()
+            .header("Authorization", "Basic $encodedCredentials")
+            .contentType("application/json")
+            .when()
+            .delete("/registry/1234/1234|http://1.1.1.1:1234")
+            .then()
+            .statusCode(200)
+
+        then: "node has been deleted, and other groups are unaffected"
+        def request = when().get("/registry")
+
+        request.body().prettyPrint().contains("http://1.1.1.1:4321")
+        !request.body().prettyPrint().contains("http://1.1.1.1:1234")
+
+        request.then().statusCode(200)
+    }
+
+    def "deleting a node from the registry and rebalancing a group"() {
+        given: "We register multiple nodes"
+        server.start()
+        registerNode(1234, "http://1.1.1.1:0001", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0002", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0003", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0004", 123, "status")
+        registerNode(1234, "http://1.1.1.1:0005", 123, "status")
+
+        when: "first node is deleted"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+        given()
+            .header("Authorization", "Basic $encodedCredentials")
+            .contentType("application/json")
+            .when()
+            .delete("/registry/1234/1234|http://1.1.1.1:0001")
+            .then()
+            .statusCode(200)
+
+        then: "registry has been rebalanced"
+        def request = when().get("/registry")
+
+        request.then().body(
+            "followers[0].localUrl", equalTo("http://1.1.1.1:0002"),
+            "followers[1].localUrl", equalTo("http://1.1.1.1:0003"),
+            "followers[2].localUrl", equalTo("http://1.1.1.1:0004"),
+            "followers[3].localUrl", equalTo("http://1.1.1.1:0005"),
+            //following lists
+            "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.1:0002","http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.1:0002","http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.1:0003","http://1.1.1.1:0002","http://cloud.pipe"])
+        )
+
+        request.then().statusCode(200)
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

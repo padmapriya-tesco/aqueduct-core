@@ -17,4 +17,6 @@ public interface NodeRegistry {
      * @return Summary of all currently known nodes
      */
     StateSummary getSummary(long offset, String status, List<String> groups);
+
+    boolean deleteNode(String group, String id);
 }

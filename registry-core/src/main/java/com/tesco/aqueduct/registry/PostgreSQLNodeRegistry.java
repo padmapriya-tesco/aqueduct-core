@@ -2,7 +2,6 @@ package com.tesco.aqueduct.registry;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import org.postgresql.util.PSQLException;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -26,6 +25,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final URL cloudUrl;
     private final Duration offlineDelta;
     private final DataSource dataSource;
+    private static final int OPTIMISTIC_LOCKING_COOLDOWN = 5;
     private static final int NUMBER_OF_CHILDREN = 2;
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
@@ -63,7 +63,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 throw new RuntimeException(exception);
             } catch (VersionChangedException exception) {
                 try {
-                    Thread.sleep(5);
+                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -104,6 +104,80 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         } catch (SQLException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);
+        }
+    }
+
+    @Override
+    public boolean deleteNode(String group, String id) {
+        while(true) {
+            try (Connection connection = dataSource.getConnection()) {
+                NodeGroup nodeGroup = getNodeGroup(connection, group);
+
+                if(nodeGroup.nodes.isEmpty()) {
+                    return false;
+                } else {
+                    return deleteExistingNode(connection, group, id, nodeGroup);
+                }
+            } catch (SQLException | IOException exception) {
+                LOG.error("Postgresql node registry", "deleteNode", exception);
+                throw new RuntimeException(exception);
+            } catch (VersionChangedException exception) {
+                try {
+                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    private boolean deleteExistingNode(Connection connection, String group, String id, NodeGroup nodeGroup) throws IOException, SQLException {
+        boolean foundNode = nodeGroup.nodes.removeIf(node -> node.getId().equals(id));
+
+        if (foundNode) {
+            if (nodeGroup.nodes.isEmpty()) {
+                deleteGroup(connection, nodeGroup.version, group);
+
+            } else {
+                List<URL> allUrls = nodeGroup.nodes.stream()
+                    .map(Node::getLocalUrl)
+                    .collect(Collectors.toList());
+
+                List<Node> rebalancedNodes = calculateRebalancedNodes(nodeGroup, allUrls);
+
+                persistGroup(connection, nodeGroup.version, rebalancedNodes);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private List<Node> calculateRebalancedNodes(NodeGroup nodeGroup, List<URL> allUrls) {
+        List<Node> rebalancedNodes = new ArrayList<>();
+
+        for (int i = 0; i < allUrls.size(); i++) {
+            List<URL> followUrls = getFollowerUrls(allUrls, i);
+
+            Node updatedNode = nodeGroup
+                .nodes.get(i)
+                .toBuilder()
+                .requestedToFollow(followUrls)
+                .build();
+
+            rebalancedNodes.add(updatedNode);
+        }
+        return rebalancedNodes;
+    }
+
+    private void deleteGroup(Connection connection, int version, String group) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getDeleteGroupQuery())) {
+
+            statement.setString(1, group);
+            statement.setInt(2, version);
+
+            if (statement.executeUpdate() == 0) {
+                throw new VersionChangedException();
+            }
         }
     }
 
@@ -149,14 +223,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         List<URL> allUrls = groupNodes.stream().map(Node::getLocalUrl).collect(Collectors.toList());
 
         int nodeIndex = allUrls.size();
-        List<URL> followUrls = new ArrayList<>();
-
-        while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex+1)/NUMBER_OF_CHILDREN) - 1;
-            followUrls.add(allUrls.get(nodeIndex));
-        }
-
-        followUrls.add(cloudUrl);
+        List<URL> followUrls = getFollowerUrls(allUrls, nodeIndex);
 
         groupNodes.add(
             node.toBuilder()
@@ -167,6 +234,18 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
         persistGroup(connection, version, groupNodes);
 
+        return followUrls;
+    }
+
+    private List<URL> getFollowerUrls(List<URL> allUrls, int nodeIndex) {
+        List<URL> followUrls = new ArrayList<>();
+
+        while (nodeIndex != 0) {
+            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN) - 1;
+            followUrls.add(allUrls.get(nodeIndex));
+        }
+
+        followUrls.add(cloudUrl);
         return followUrls;
     }
 
@@ -236,7 +315,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private boolean insertNewGroup(Connection connection, List<Node> groupNodes) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery())) {
-
             String jsonNodes = JsonHelper.toJson(groupNodes);
 
             statement.setString(1, groupNodes.get(0).getGroup());
@@ -280,7 +358,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 ";";
     }
 
-    private String getInsertGroupQuery() {
+    private static String getInsertGroupQuery() {
         return "INSERT INTO registry (group_id, entry, version)" +
                 "VALUES (" +
                 "?, " +
@@ -292,5 +370,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private static String getAllNodesQuery() {
         return "SELECT entry FROM registry ORDER BY group_id;";
+    }
+
+    private static String getDeleteGroupQuery() {
+        return "DELETE from registry where group_id = ? and version = ? ;";
     }
 }
