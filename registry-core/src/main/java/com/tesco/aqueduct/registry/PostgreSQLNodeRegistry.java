@@ -44,11 +44,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 ZonedDateTime now = ZonedDateTime.now();
 
                 if (group.isEmpty()) {
-                    //add node follow urls
                     node = makeNodeFollowCloud(node, now);
-                    //create Group
                     group = new NodeGroup(node);
-                    //insert group into database
                     insertNewGroup(connection, group);
                 } else {
                     Node existingNode = group.getById(node.getId());
@@ -57,7 +54,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     } else {
                         node = addNodeToExistingGroup(group, node, now);
                     }
-                    persistGroup(connection, group.version, group);
+                    persistGroup(connection, group);
                 }
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
@@ -141,7 +138,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 deleteGroup(connection, group.version, groupId);
             } else {
                 NodeGroup rebalancedGroup = rebalanceGroup(group);
-                persistGroup(connection, group.version, rebalancedGroup);
+                persistGroup(connection, rebalancedGroup);
             }
             return true;
         }
@@ -272,13 +269,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return JsonHelper.MAPPER.readValue(entry, type);
     }
 
-    private void persistGroup(Connection connection, int version, NodeGroup group) throws SQLException, IOException {
+    private void persistGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             String jsonNodes = JsonHelper.toJson(group.nodes);
 
             statement.setString(1, jsonNodes);
             statement.setString(2, group.get(0).getGroup());
-            statement.setInt(3, version);
+            statement.setInt(3, group.version);
 
             if (statement.executeUpdate() == 0) {
                 throw new VersionChangedException();
