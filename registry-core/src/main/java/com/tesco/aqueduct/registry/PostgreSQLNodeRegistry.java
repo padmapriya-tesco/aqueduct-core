@@ -53,11 +53,14 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                         .filter(n -> n.getId().equals(node.getId()))
                         .findAny();
 
+                    Node newNode;
                     if (existingNode.isPresent()) {
-                        return updateExistingNode(connection, group.version, existingNode.get(), node, group).getRequestedToFollow();
+                        newNode = updateExistingNode(existingNode.get(), node, group);
                     } else {
-                        return addNodeToExistingGroup(connection, group.version, group, node, now).getRequestedToFollow();
+                        newNode = addNodeToExistingGroup(group, node, now);
                     }
+                    persistGroup(connection, group.version, group);
+                    return newNode.getRequestedToFollow();
                 }
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
@@ -138,10 +141,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         if (foundNode) {
             if (nodeGroup.isEmpty()) {
                 deleteGroup(connection, nodeGroup.version, groupId);
-
             } else {
                 NodeGroup rebalancedGroup = rebalanceGroup(nodeGroup);
-
                 persistGroup(connection, nodeGroup.version, rebalancedGroup);
             }
             return true;
@@ -167,10 +168,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return new NodeGroup(rebalancedNodes, nodeGroup.version);
     }
 
-    private void deleteGroup(Connection connection, int version, String group) throws SQLException {
+    private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(getDeleteGroupQuery())) {
 
-            statement.setString(1, group);
+            statement.setString(1, groupId);
             statement.setInt(2, version);
 
             if (statement.executeUpdate() == 0) {
@@ -179,7 +180,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private Node updateExistingNode(Connection connection, int version, Node existingValue, Node newValues, NodeGroup group) throws SQLException, IOException {
+    private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
         for (int i = 0; i < group.nodes.size(); i++) {
             //Find the exising node
             if (group.get(i).getId().equals(newValues.getId())) {
@@ -191,9 +192,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
                 //Update the node
                 group.nodes.set(i, updatedNode);
-
-                //Persist to the DB
-                persistGroup(connection, version, group);
 
                 //return the follow values
                 return updatedNode;
@@ -223,7 +221,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return followUrls;
     }
 
-    private Node addNodeToExistingGroup(Connection connection, int version, NodeGroup group, Node node, ZonedDateTime now) throws SQLException, IOException {
+    private Node addNodeToExistingGroup(NodeGroup group, Node node, ZonedDateTime now) {
         List<URL> nodeUrls = group.getNodeUrls();
 
         int nodeIndex = nodeUrls.size();
@@ -235,8 +233,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 .build();
 
         group.add(newNode);
-
-        persistGroup(connection, version, group);
 
         return newNode;
     }
