@@ -43,4 +43,13 @@ class NodeGroupSpec extends Specification {
 		and: "The group no longer contains the removed node"
 		group.nodes == [anotherNode]
 	}
+
+	def "a node can be added to the group"() {
+		given: "an empty node group"
+		def group = new NodeGroup([], 1)
+		when: "a new node is added"
+		group.add(Mock(Node))
+		then: "the node group is no longer empty"
+		!group.isEmpty()
+	}
 }

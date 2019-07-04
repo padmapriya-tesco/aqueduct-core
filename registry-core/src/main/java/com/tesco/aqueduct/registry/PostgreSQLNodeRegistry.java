@@ -226,7 +226,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         int nodeIndex = allUrls.size();
         List<URL> followUrls = getFollowerUrls(allUrls, nodeIndex);
 
-        groupNodes.nodes.add(
+        groupNodes.add(
             node.toBuilder()
                 .requestedToFollow(followUrls)
                 .lastSeen(now)

@@ -19,4 +19,8 @@ public class NodeGroup {
     public boolean removeById(String nodeId) {
         return nodes.removeIf(node -> node.getId().equals(nodeId));
     }
+
+    public void add(Node node){
+        this.nodes.add(node);
+    }
 }
