@@ -3,12 +3,19 @@ package com.tesco.aqueduct.registry;
 import com.tesco.aqueduct.registry.model.Node;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
+    private static final int NEW_GROUP_VERSION = Integer.MIN_VALUE;
+
     final List<Node> nodes;
     final int version;
+
+    public NodeGroup(Node... nodes){
+        this(Arrays.asList(nodes), NEW_GROUP_VERSION);
+    }
 
     public NodeGroup(List<Node> nodes, int version) {
         this.nodes = nodes;

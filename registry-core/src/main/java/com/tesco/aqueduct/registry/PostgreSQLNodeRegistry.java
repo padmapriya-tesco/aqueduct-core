@@ -18,7 +18,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class PostgreSQLNodeRegistry implements NodeRegistry {
@@ -45,19 +44,22 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 ZonedDateTime now = ZonedDateTime.now();
 
                 if (group.isEmpty()) {
-                    return addNodeToNewGroup(connection, node, now);
+                    //add node follow urls
+                    node = makeNodeFollowCloud(node, now);
+                    //create Group
+                    group = new NodeGroup(node);
+                    //insert group into database
+                    insertNewGroup(connection, group);
                 } else {
                     Node existingNode = group.getById(node.getId());
-
-                    Node newNode;
                     if (existingNode != null) {
-                        newNode = updateExistingNode(existingNode, node, group);
+                        node = updateExistingNode(existingNode, node, group);
                     } else {
-                        newNode = addNodeToExistingGroup(group, node, now);
+                        node = addNodeToExistingGroup(group, node, now);
                     }
                     persistGroup(connection, group.version, group);
-                    return newNode.getRequestedToFollow();
                 }
+                return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
                 throw new RuntimeException(exception);
@@ -185,24 +187,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return group.updateNode(updatedNode);
     }
 
-    private List<URL> addNodeToNewGroup(Connection connection, Node node, ZonedDateTime now) throws SQLException, IOException {
-        List<Node> groupNodes = new ArrayList<>();
+    private Node makeNodeFollowCloud(final Node node, final ZonedDateTime now){
         List<URL> followUrls = Collections.singletonList(cloudUrl);
-
-        Node updatedNode =
-            node.toBuilder()
-                .requestedToFollow(followUrls)
-                .lastSeen(now)
-                .build();
-
-        groupNodes.add(updatedNode);
-        boolean inserted = insertNewGroup(connection, groupNodes);
-
-        if (!inserted){
-            throw new VersionChangedException();
-        }
-
-        return followUrls;
+        return node.toBuilder()
+                        .requestedToFollow(followUrls)
+                        .lastSeen(now)
+                        .build();
     }
 
     private Node addNodeToExistingGroup(NodeGroup group, Node node, ZonedDateTime now) {
@@ -296,14 +286,17 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean insertNewGroup(Connection connection, List<Node> groupNodes) throws IOException, SQLException {
+    private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(getInsertGroupQuery())) {
-            String jsonNodes = JsonHelper.toJson(groupNodes);
-
-            statement.setString(1, groupNodes.get(0).getGroup());
+            String jsonNodes = JsonHelper.toJson(group.nodes);
+            statement.setString(1, group.get(0).getGroup());
             statement.setString(2, jsonNodes);
 
-            return statement.executeUpdate() != 0;
+            if (statement.executeUpdate() == 0) {
+                //No rows updated
+                throw new VersionChangedException();
+            }
+            return true;
         }
     }
 
