@@ -110,15 +110,15 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public boolean deleteNode(String group, String id) {
+    public boolean deleteNode(String groupId, String nodeId) {
         while(true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup nodeGroup = getNodeGroup(connection, group);
+                NodeGroup nodeGroup = getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
                 } else {
-                    return deleteExistingNode(connection, group, id, nodeGroup);
+                    return deleteExistingNode(connection, groupId, nodeId, nodeGroup);
                 }
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "deleteNode", exception);
@@ -133,29 +133,29 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, String groupId, String nodeId, NodeGroup nodeGroup) throws IOException, SQLException {
-        boolean foundNode = nodeGroup.removeById(nodeId);
+    private boolean deleteExistingNode(Connection connection, String groupId, String nodeId, NodeGroup group) throws IOException, SQLException {
+        boolean foundNode = group.removeById(nodeId);
 
         if (foundNode) {
-            if (nodeGroup.isEmpty()) {
-                deleteGroup(connection, nodeGroup.version, groupId);
+            if (group.isEmpty()) {
+                deleteGroup(connection, group.version, groupId);
             } else {
-                NodeGroup rebalancedGroup = rebalanceGroup(nodeGroup);
-                persistGroup(connection, nodeGroup.version, rebalancedGroup);
+                NodeGroup rebalancedGroup = rebalanceGroup(group);
+                persistGroup(connection, group.version, rebalancedGroup);
             }
             return true;
         }
         return false;
     }
 
-    private NodeGroup rebalanceGroup(NodeGroup nodeGroup) {
-        List<URL> allUrls = nodeGroup.getNodeUrls();
+    private NodeGroup rebalanceGroup(NodeGroup group) {
+        List<URL> allUrls = group.getNodeUrls();
         List<Node> rebalancedNodes = new ArrayList<>();
 
         for (int i = 0; i < allUrls.size(); i++) {
             List<URL> followUrls = getFollowerUrls(allUrls, i);
 
-            Node updatedNode = nodeGroup
+            Node updatedNode = group
                 .get(i)
                 .toBuilder()
                 .requestedToFollow(followUrls)
@@ -163,7 +163,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
             rebalancedNodes.add(updatedNode);
         }
-        return new NodeGroup(rebalancedNodes, nodeGroup.version);
+        return new NodeGroup(rebalancedNodes, group.version);
     }
 
     private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
