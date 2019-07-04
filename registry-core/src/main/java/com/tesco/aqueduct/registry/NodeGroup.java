@@ -31,6 +31,14 @@ public class NodeGroup {
         return this.nodes.get(index);
     }
 
+    public Node getById(String nodeId){
+        return nodes
+                .stream()
+                .filter(n -> n.getId().equals(nodeId))
+                .findAny()
+                .orElse(null);
+    }
+
     public List<URL> getNodeUrls() {
         return nodes.stream()
             .map(Node::getLocalUrl)

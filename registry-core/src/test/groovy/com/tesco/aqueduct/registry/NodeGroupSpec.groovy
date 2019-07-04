@@ -53,7 +53,7 @@ class NodeGroupSpec extends Specification {
 		!group.isEmpty()
 	}
 
-	def "a node can be fetched from the group"() {
+	def "a node can be fetched from the group by index"() {
 		given: "A node with an id"
 		def node = Mock Node
 		node.id >> "test_node_id"
@@ -97,5 +97,36 @@ class NodeGroupSpec extends Specification {
 
 		then: "Both URLs have been returned"
 		result == [nodeUrl, anotherNodeUrl]
+	}
+
+	def "get node by id"() {
+		given: "A node with an id"
+		def node = Mock Node
+		node.id >> "test_node_id"
+
+		and: "A node with a different id"
+		def anotherNode = Mock Node
+		anotherNode.id >> "another_node_id"
+
+		and: "a Group with these nodes"
+		def group = new NodeGroup([node, anotherNode], 1)
+
+		when: "fetching a node by id"
+		def result = group.getById("test_node_id")
+
+		then: "the correct node is returned"
+		result == node
+
+		when: "fetching the other node by id"
+		result = group.getById("another_node_id")
+
+		then: "the correct node is returned"
+		result == anotherNode
+
+		when: "fetching a node with an id that doesn't exist"
+		result = group.getById("non_existent_id")
+
+		then: "null is returned"
+		result == null
 	}
 }

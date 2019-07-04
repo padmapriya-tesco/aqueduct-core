@@ -47,15 +47,11 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 if (group.isEmpty()) {
                     return addNodeToNewGroup(connection, node, now);
                 } else {
-                    Optional<Node> existingNode = group
-                        .nodes
-                        .stream()
-                        .filter(n -> n.getId().equals(node.getId()))
-                        .findAny();
+                    Node existingNode = group.getById(node.getId());
 
                     Node newNode;
-                    if (existingNode.isPresent()) {
-                        newNode = updateExistingNode(existingNode.get(), node, group);
+                    if (existingNode != null) {
+                        newNode = updateExistingNode(existingNode, node, group);
                     } else {
                         newNode = addNodeToExistingGroup(group, node, now);
                     }
