@@ -38,7 +38,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public List<URL> register(Node node) {
-        while(true) {
+        while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 NodeGroup group = getNodeGroup(connection, node.getGroup());
                 ZonedDateTime now = ZonedDateTime.now();
@@ -73,7 +73,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public StateSummary getSummary(long offset, String status, List<String> groups) {
         try (Connection connection = dataSource.getConnection()) {
-
             List<Node> followers;
 
             if (groups == null || groups.isEmpty()) {
@@ -108,7 +107,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public boolean deleteNode(String groupId, String nodeId) {
-        while(true) {
+        while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 NodeGroup nodeGroup = getNodeGroup(connection, groupId);
 
@@ -187,9 +186,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private Node makeNodeFollowCloud(final Node node, final ZonedDateTime now){
         List<URL> followUrls = Collections.singletonList(cloudUrl);
         return node.toBuilder()
-                        .requestedToFollow(followUrls)
-                        .lastSeen(now)
-                        .build();
+            .requestedToFollow(followUrls)
+            .lastSeen(now)
+            .build();
     }
 
     private Node addNodeToExistingGroup(NodeGroup group, Node node, ZonedDateTime now) {
@@ -199,9 +198,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         List<URL> followUrls = getFollowerUrls(nodeUrls, nodeIndex);
 
         Node newNode = node.toBuilder()
-                .requestedToFollow(followUrls)
-                .lastSeen(now)
-                .build();
+            .requestedToFollow(followUrls)
+            .lastSeen(now)
+            .build();
 
         group.add(newNode);
 

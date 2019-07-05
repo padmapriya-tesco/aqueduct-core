@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
-    private static final int NEW_GROUP_VERSION = Integer.MIN_VALUE;
+    private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
 
     final List<Node> nodes;
     final int version;
 
-    public NodeGroup(Node... nodes){
-        this(Arrays.asList(nodes), NEW_GROUP_VERSION);
+    public NodeGroup(Node... nodes) {
+        this(Arrays.asList(nodes), UNPERSISTED_GROUP_VERSION);
     }
 
     public NodeGroup(List<Node> nodes, int version) {
@@ -38,7 +38,7 @@ public class NodeGroup {
         return this.nodes.get(index);
     }
 
-    public Node getById(String nodeId){
+    public Node getById(String nodeId) {
         return nodes
                 .stream()
                 .filter(n -> n.getId().equals(nodeId))
