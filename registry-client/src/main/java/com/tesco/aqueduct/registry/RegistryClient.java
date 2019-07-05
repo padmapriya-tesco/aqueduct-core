@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry;
 
+import com.tesco.aqueduct.registry.model.Node;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Header;

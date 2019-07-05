@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry
 
+import com.tesco.aqueduct.registry.model.Node
 import org.slf4j.Logger
 import spock.lang.Specification
 

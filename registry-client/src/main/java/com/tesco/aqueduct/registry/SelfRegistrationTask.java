@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry;
 
+import com.tesco.aqueduct.registry.model.Node;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
@@ -10,10 +11,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 @Context

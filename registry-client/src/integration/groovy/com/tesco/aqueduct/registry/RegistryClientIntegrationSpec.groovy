@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
 import io.micronaut.inject.qualifiers.Qualifiers
 import spock.lang.AutoCleanup

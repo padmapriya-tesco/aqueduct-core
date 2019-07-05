@@ -2,6 +2,7 @@ package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.registry.model.Node;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Body;

@@ -2,6 +2,7 @@ package com.tesco.aqueduct.registry
 
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.tesco.aqueduct.registry.model.Node
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup

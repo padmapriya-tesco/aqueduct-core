@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
