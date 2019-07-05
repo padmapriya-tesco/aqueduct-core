@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @Measure
 @Controller("/registry")
 public class NodeRegistryController {
+    private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryController.class));
 
@@ -52,7 +53,7 @@ public class NodeRegistryController {
         return requestedToFollow;
     }
 
-    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Secured(REGISTRY_DELETE)
     @Delete("/{group}/{id}")
     public HttpResponse deleteNode(String group, String id) {
         boolean deleted = registry.deleteNode(group, id);
