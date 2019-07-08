@@ -78,11 +78,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             if (groups == null || groups.isEmpty()) {
                 followers = getAllNodes(connection);
             } else {
-                followers = getNodesFilteredByGroup(connection, groups)
-                    .stream()
-                    .flatMap(
-                        group -> group.nodes.stream()
-                    ).collect(Collectors.toList());
+                followers = getNodesFilteredByGroup(connection, groups);
             }
 
             followers = followers
@@ -228,39 +224,34 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return node;
     }
 
-    private List<NodeGroup> getNodesFilteredByGroup(Connection connection, List<String> groups) throws SQLException {
-        List<NodeGroup> list = new ArrayList<>();
+    private List<Node> getNodesFilteredByGroup(Connection connection, List<String> groups) throws SQLException {
+        List<Node> list = new ArrayList<>();
         for (String group : groups) {
             NodeGroup nodeGroup = getNodeGroup(connection, group);
-            list.add(nodeGroup);
+            list.addAll(nodeGroup.nodes);
         }
         return list;
     }
 
     private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
-        List<Node> nodes;
-        int version;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_FOR_NODE)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
             statement.setString(1, group);
 
-            nodes = new ArrayList<>();
-            version = 0;
-
             try (ResultSet rs = statement.executeQuery()) {
+                List<Node> nodes = new ArrayList<>();
+                int version = 0;
                 while (rs.next()) {
                     String entry = rs.getString("entry");
                     version = rs.getInt("version");
 
                     nodes.addAll(readGroupEntry(entry));
                 }
+                return new NodeGroup(nodes, version);
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new UncheckedIOException(e);
             }
         }
-
-        return new NodeGroup(nodes, version);
     }
 
     private List<Node> readGroupEntry(String entry) throws IOException {
@@ -315,7 +306,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return nodes;
     }
 
-    private static final String QUERY_GET_GROUP_FOR_NODE = "SELECT entry, version FROM registry where group_id = ? ;";
+    private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
 
     private static final String QUERY_UPDATE_GROUP =
         "UPDATE registry SET " +
