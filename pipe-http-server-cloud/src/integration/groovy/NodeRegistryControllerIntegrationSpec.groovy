@@ -29,8 +29,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
     static String cloudPipeUrl = "http://cloud.pipe"
     static final String USERNAME = "username"
     static final String PASSWORD = "password"
-    static final String RUNSCOPE_USERNAME = "runscope-username"
-    static final String RUNSCOPE_PASSWORD = "runscope-password"
+    static final String USERNAME_TWO = "username-two"
+    static final String PASSWORD_TWO = "password-two"
 
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
@@ -80,8 +80,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
                           password: $PASSWORD
                           roles:
                             - REGISTRY_DELETE
-                        $RUNSCOPE_USERNAME:
-                          password: $RUNSCOPE_PASSWORD
+                        $USERNAME_TWO:
+                          password: $PASSWORD_TWO
                     """
                 )
             )
@@ -273,7 +273,53 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
-    //TODO: test to prove that user without the role is not allowed to delete the node
+    def "authenticated user without deletion role cannot delete from the database"() {
+        given: "We register two nodes"
+        server.start()
+        registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
+        registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
+
+        when: "node is deleted"
+        def encodedCredentials = "${USERNAME_TWO}:${PASSWORD_TWO}".bytes.encodeBase64().toString()
+        given()
+                .header("Authorization", "Basic $encodedCredentials")
+                .contentType("application/json")
+                .when()
+                .delete("/registry/1234/1234|http://1.1.1.1:1234")
+                .then()
+                .statusCode(403)
+
+        then: "registry is unaffected by request"
+        def request = when().get("/registry")
+
+        request.body().prettyPrint().contains("http://1.1.1.1:4321")
+        request.body().prettyPrint().contains("http://1.1.1.1:1234")
+
+        request.then().statusCode(200)
+    }
+
+    def "anonymous user without deletion role cannot delete from the database"() {
+        given: "We register two nodes"
+        server.start()
+        registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
+        registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
+
+        when: "node is deleted"
+        given()
+                .contentType("application/json")
+                .when()
+                .delete("/registry/1234/1234|http://1.1.1.1:1234")
+                .then()
+                .statusCode(401)
+
+        then: "registry is unaffected by request"
+        def request = when().get("/registry")
+
+        request.body().prettyPrint().contains("http://1.1.1.1:4321")
+        request.body().prettyPrint().contains("http://1.1.1.1:1234")
+
+        request.then().statusCode(200)
+    }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
