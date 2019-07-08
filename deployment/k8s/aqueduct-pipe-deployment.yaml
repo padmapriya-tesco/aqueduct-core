@@ -38,3 +38,5 @@ spec:
             - "${PIPE_READ_PASSWORD}"
             - "${RUNSCOPE_PIPE_READ_USERNAME}"
             - "${RUNSCOPE_PIPE_READ_PASSWORD}"
+            - "${SUPPORT_USERNAME}"
+            - "${SUPPORT_PASSWORD}"
