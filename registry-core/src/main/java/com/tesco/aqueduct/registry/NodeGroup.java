@@ -40,10 +40,10 @@ public class NodeGroup {
 
     public Node getById(String nodeId) {
         return nodes
-                .stream()
-                .filter(n -> n.getId().equals(nodeId))
-                .findAny()
-                .orElse(null);
+            .stream()
+            .filter(n -> n.getId().equals(nodeId))
+            .findAny()
+            .orElse(null);
     }
 
     public List<URL> getNodeUrls() {
