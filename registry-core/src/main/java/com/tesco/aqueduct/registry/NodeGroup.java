@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public class NodeGroup {
     private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
-    private static final int NUMBER_OF_CHILDREN_PER_BRANCH = 2;
+    private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;
 
     final List<Node> nodes;
     final int version;
@@ -99,7 +99,7 @@ public class NodeGroup {
     }
 
     private List<URL> getFollowerUrls(URL cloudUrl) {
-        return getFollowerUrls(cloudUrl, -1);
+        return getFollowerUrls(cloudUrl, getNodeUrls().size());
     }
 
     private List<URL> getFollowerUrls(URL cloudUrl, int nodeIndex) {
@@ -108,7 +108,7 @@ public class NodeGroup {
         List<URL> allUrls = getNodeUrls();
         if (nodeIndex < 0) nodeIndex = allUrls.size();
         while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_BRANCH) - 1;
+            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
             followUrls.add(allUrls.get(nodeIndex));
         }
 
