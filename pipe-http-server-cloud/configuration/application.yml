@@ -33,7 +33,7 @@ datasources:
     password: "{POSTGRE_PASSWORD}"
     driverClassName: org.postgresql.Driver
 
-authenticcation:
+authentication:
   users:
     {PIPE_READ_USERNAME}:
       password: "{PIPE_READ_PASSWORD}"
