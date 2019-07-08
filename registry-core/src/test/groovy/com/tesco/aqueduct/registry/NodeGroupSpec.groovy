@@ -48,7 +48,8 @@ class NodeGroupSpec extends Specification {
         given: "an empty node group"
         def group = new NodeGroup([], 1)
         when: "a new node is added"
-        group.add(Mock(Node))
+        def node = Node.builder().build()
+        group.add(node, new URL("http://test-url"))
         then: "the node group is no longer empty"
         !group.isEmpty()
     }

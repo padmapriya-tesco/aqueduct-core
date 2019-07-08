@@ -26,7 +26,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final Duration offlineDelta;
     private final DataSource dataSource;
     private static final int OPTIMISTIC_LOCKING_COOLDOWN = 5;
-    private static final int NUMBER_OF_CHILDREN = 2;
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 
@@ -52,7 +51,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     if (existingNode != null) {
                         node = updateExistingNode(existingNode, node, group);
                     } else {
-                        node = addNodeToExistingGroup(group, node, now);
+                        node = group.add(node, cloudUrl);
                     }
                     persistGroup(connection, group);
                 }
@@ -132,30 +131,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             if (group.isEmpty()) {
                 deleteGroup(connection, group.version, groupId);
             } else {
-                NodeGroup rebalancedGroup = rebalanceGroup(group);
+                NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
                 persistGroup(connection, rebalancedGroup);
             }
             return true;
         }
         return false;
-    }
-
-    private NodeGroup rebalanceGroup(NodeGroup group) {
-        List<URL> allUrls = group.getNodeUrls();
-        List<Node> rebalancedNodes = new ArrayList<>();
-
-        for (int i = 0; i < allUrls.size(); i++) {
-            List<URL> followUrls = getFollowerUrls(allUrls, i);
-
-            Node updatedNode = group
-                .get(i)
-                .toBuilder()
-                .requestedToFollow(followUrls)
-                .build();
-
-            rebalancedNodes.add(updatedNode);
-        }
-        return new NodeGroup(rebalancedNodes, group.version);
     }
 
     private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
@@ -185,34 +166,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             .requestedToFollow(followUrls)
             .lastSeen(now)
             .build();
-    }
-
-    private Node addNodeToExistingGroup(NodeGroup group, Node node, ZonedDateTime now) {
-        List<URL> nodeUrls = group.getNodeUrls();
-
-        int nodeIndex = nodeUrls.size();
-        List<URL> followUrls = getFollowerUrls(nodeUrls, nodeIndex);
-
-        Node newNode = node.toBuilder()
-            .requestedToFollow(followUrls)
-            .lastSeen(now)
-            .build();
-
-        group.add(newNode);
-
-        return newNode;
-    }
-
-    private List<URL> getFollowerUrls(List<URL> allUrls, int nodeIndex) {
-        List<URL> followUrls = new ArrayList<>();
-
-        while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN) - 1;
-            followUrls.add(allUrls.get(nodeIndex));
-        }
-
-        followUrls.add(cloudUrl);
-        return followUrls;
     }
 
     private Node changeStatusIfOffline(Node node) {
