@@ -4,6 +4,7 @@ import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.HttpStatus
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.micronaut.runtime.server.EmbeddedServer
@@ -33,11 +34,17 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
         context = ApplicationContext
                 .build()
                 .properties(
-                    "micronaut.security.enabled": true,
-                    "authentication.read-pipe.username": USERNAME,
-                    "authentication.read-pipe.password": PASSWORD,
-                    "authentication.read-pipe.runscope-username": RUNSCOPE_USERNAME,
-                    "authentication.read-pipe.runscope-password": RUNSCOPE_PASSWORD
+                    parseYamlConfig(
+                        """
+                        micronaut.security.enabled: true
+                        authentication:
+                          users:
+                            $USERNAME:
+                              password: $PASSWORD
+                            $RUNSCOPE_USERNAME:
+                              password: $RUNSCOPE_PASSWORD
+                        """
+                    )
                 )
                 .mainClass(PipeReadController)
                 .build()
@@ -92,5 +99,10 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
                 .then()
                 .statusCode(HttpStatus.OK.code)
                 .content(equalTo('[{"type":"type","key":"a","contentType":"ct","offset":"100"}]'))
+    }
+
+    Map<String, Object> parseYamlConfig(String str) {
+        def loader = new YamlPropertySourceLoader()
+        loader.read("config", str.bytes)
     }
 }

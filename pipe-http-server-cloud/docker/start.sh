@@ -10,6 +10,8 @@ pipe_read_username=$(printf "%q" $7)
 pipe_read_password=$(printf "%q" $8)
 runscope_pipe_read_username=$(printf "%q" $9)
 runscope_pipe_read_password=$(printf "%q" ${10})
+support_username=$(printf "%q" ${11})
+support_password=$(printf "%q" ${12})
 
 if [[ "$pipe_read_security_enabled" = "''" ]]; then
     pipe_read_security_enabled="false"
@@ -25,6 +27,8 @@ sed -i "s/{PIPE_READ_USERNAME}/$pipe_read_username/" /etc/aqueduct/pipe/applicat
 sed -i "s/{PIPE_READ_PASSWORD}/$pipe_read_password/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{RUNSCOPE_PIPE_READ_USERNAME}/$runscope_pipe_read_username/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{RUNSCOPE_PIPE_READ_PASSWORD}/$runscope_pipe_read_password/" /etc/aqueduct/pipe/application.yml
+sed -i "s/{SUPPORT_USERNAME}/$support_username/" /etc/aqueduct/pipe/application.yml
+sed -i "s/{SUPPORT_PASSWORD}/$support_password/" /etc/aqueduct/pipe/application.yml
 
 java \
     -Dmicronaut.config.files=/etc/aqueduct/pipe/application.yml \

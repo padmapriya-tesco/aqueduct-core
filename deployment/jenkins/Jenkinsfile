@@ -31,7 +31,10 @@ ansiColor('xterm') {
                 pipeReadUsername = getKubeSecret("pipe.read", "username")
                 pipeReadPassword = getKubeSecret("pipe.read", "password")
                 runscopePipeReadUsername = getKubeSecret("runscope.pipe.read", "username")
-                runscopePipeReadPassword = getKubeSecret("runscope.pipe.read", "password")}
+                runscopePipeReadPassword = getKubeSecret("runscope.pipe.read", "password")
+                supportUsername = getKubeSecret("user.support", "username")
+                supportPassword = getKubeSecret("user.support", "password")
+            }
         }
 
         stage("Gradle Build") {
@@ -120,7 +123,10 @@ ansiColor('xterm') {
                          "PIPE_READ_USERNAME=$pipeReadUsername",
                          "PIPE_READ_PASSWORD=$pipeReadPassword",
                          "RUNSCOPE_PIPE_READ_USERNAME=$runscopePipeReadUsername",
-                         "RUNSCOPE_PIPE_READ_PASSWORD=$runscopePipeReadPassword"]) {
+                         "RUNSCOPE_PIPE_READ_PASSWORD=$runscopePipeReadPassword",
+                         "SUPPORT_USERNAME=$supportUsername",
+                         "SUPPORT_PASSWORD=$supportPassword"
+                ]) {
 
                     sh "/usr/bin/envsubst < aqueduct-pipe-deployment.yaml > aqueduct-pipe-deployment-sub.yaml"
                 }
@@ -194,7 +200,10 @@ ansiColor('xterm') {
                              "PIPE_READ_USERNAME=$pipeReadUsername",
                              "PIPE_READ_PASSWORD=$pipeReadPassword",
                              "RUNSCOPE_PIPE_READ_USERNAME=$runscopePipeReadUsername",
-                             "RUNSCOPE_PIPE_READ_PASSWORD=$runscopePipeReadPassword"]) {
+                             "RUNSCOPE_PIPE_READ_PASSWORD=$runscopePipeReadPassword",
+                             "SUPPORT_USERNAME=$supportUsername",
+                             "SUPPORT_PASSWORD=$supportPassword"
+                    ]) {
 
                         sh "/usr/bin/envsubst < aqueduct-pipe-deployment.yaml > aqueduct-pipe-deployment-sub.yaml"
                     }

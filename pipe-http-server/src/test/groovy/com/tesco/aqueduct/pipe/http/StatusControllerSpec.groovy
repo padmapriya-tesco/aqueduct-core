@@ -12,11 +12,6 @@ import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.equalTo
 
 class StatusControllerSpec extends Specification {
-    static final String USERNAME = "username"
-    static final String PASSWORD = "password"
-
-    static final String RUNSCOPE_USERNAME = "runscope-username"
-    static final String RUNSCOPE_PASSWORD = "runscope-password"
 
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
@@ -24,13 +19,6 @@ class StatusControllerSpec extends Specification {
     void setupSpec() {
         context = ApplicationContext
             .build()
-            .properties(
-                "micronaut.security.enabled": true,
-                "authentication.read-pipe.username": USERNAME,
-                "authentication.read-pipe.password": PASSWORD,
-                "authentication.read-pipe.runscope-username": RUNSCOPE_USERNAME,
-                "authentication.read-pipe.runscope-password": RUNSCOPE_PASSWORD
-            )
             .mainClass(StatusController)
             .build()
 
