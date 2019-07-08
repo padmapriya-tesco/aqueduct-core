@@ -1,7 +1,9 @@
 package com.tesco.aqueduct.registry;
 
+import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.model.Node;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -31,11 +33,11 @@ public class NodeGroup {
     }
 
     public void add(Node node) {
-        this.nodes.add(node);
+        nodes.add(node);
     }
 
     public Node get(int index) {
-        return this.nodes.get(index);
+        return nodes.get(index);
     }
 
     public Node getById(String nodeId) {
@@ -60,5 +62,9 @@ public class NodeGroup {
         }
 
         throw new IllegalStateException("The node was not found " + updatedNode.getId());
+    }
+
+    public String nodesToJson() throws IOException {
+        return JsonHelper.toJson(nodes);
     }
 }

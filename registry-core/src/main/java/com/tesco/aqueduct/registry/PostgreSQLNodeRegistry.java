@@ -270,7 +270,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private void persistGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
-            String jsonNodes = JsonHelper.toJson(group.nodes);
+            String jsonNodes = group.nodesToJson();
 
             statement.setString(1, jsonNodes);
             statement.setString(2, group.get(0).getGroup());
@@ -284,7 +284,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
-            String jsonNodes = JsonHelper.toJson(group.nodes);
+            String jsonNodes = group.nodesToJson();
             statement.setString(1, group.get(0).getGroup());
             statement.setString(2, jsonNodes);
 
