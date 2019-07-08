@@ -2,9 +2,11 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.NodeRegistry
+import com.tesco.aqueduct.registry.NodeRegistryController
 import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.HttpStatus
 import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
@@ -69,11 +71,19 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             .build()
             .properties(
                 // enabling security to prove that registry is accessible anyway
-                "micronaut.security.enabled": true,
-                "authentication.read-pipe.username": USERNAME,
-                "authentication.read-pipe.password": PASSWORD,
-                "authentication.read-pipe.runscope-username": RUNSCOPE_USERNAME,
-                "authentication.read-pipe.runscope-password": RUNSCOPE_PASSWORD
+                parseYamlConfig(
+                    """
+                    micronaut.security.enabled: true
+                    authentication:
+                      users:
+                        $USERNAME:
+                          password: $PASSWORD
+                          roles:
+                            - REGISTRY_DELETE
+                        $RUNSCOPE_USERNAME:
+                          password: $RUNSCOPE_PASSWORD
+                    """
+                )
             )
             .build()
             .registerSingleton(NodeRegistry, new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1)))
@@ -263,6 +273,8 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
+    //TODO: test to prove that user without the role is not allowed to delete the node
+
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
         given()
@@ -279,5 +291,10 @@ class NodeRegistryControllerIntegrationSpec extends Specification {
             .post("/registry")
         .then()
             .statusCode(200)
+    }
+
+    private static Map<String, Object> parseYamlConfig(String str) {
+        def loader = new YamlPropertySourceLoader()
+        loader.read("config", str.bytes)
     }
 }

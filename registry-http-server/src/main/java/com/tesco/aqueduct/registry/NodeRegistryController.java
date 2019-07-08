@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @Measure
 @Controller("/registry")
 public class NodeRegistryController {
+    private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryController.class));
 
