@@ -53,7 +53,7 @@ public class NodeRegistryController {
         return requestedToFollow;
     }
 
-    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Secured(REGISTRY_DELETE)
     @Delete("/{group}/{id}")
     public HttpResponse deleteNode(String group, String id) {
         boolean deleted = registry.deleteNode(group, id);
