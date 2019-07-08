@@ -33,9 +33,9 @@ datasources:
     password: "{POSTGRE_PASSWORD}"
     driverClassName: org.postgresql.Driver
 
-authentication:
-  read-pipe:
-    username: "{PIPE_READ_USERNAME}"
-    password: "{PIPE_READ_PASSWORD}"
-    runscope-username: "{RUNSCOPE_PIPE_READ_USERNAME}"
-    runscope-password: "{RUNSCOPE_PIPE_READ_PASSWORD}"
+authenticcation:
+  users:
+    {PIPE_READ_USERNAME}:
+      password: "{PIPE_READ_PASSWORD}"
+    {RUNSCOPE_PIPE_READ_USERNAME}:
+      password: "{RUNSCOPE_PIPE_READ_PASSWORD}"
