@@ -32,7 +32,7 @@ ansiColor('xterm') {
                 pipeReadPassword = getKubeSecret("pipe.read", "password")
                 runscopePipeReadUsername = getKubeSecret("runscope.pipe.read", "username")
                 runscopePipeReadPassword = getKubeSecret("runscope.pipe.read", "password")
-                supportUsername = getKubueSecret("user.support", "username")
+                supportUsername = getKubeSecret("user.support", "username")
                 supportPassword = getKubeSecret("user.support", "password")
             }
         }
