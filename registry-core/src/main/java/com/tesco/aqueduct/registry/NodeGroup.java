@@ -39,9 +39,9 @@ public class NodeGroup {
         List<URL> followUrls = getFollowerUrls(cloudUrl);
 
         Node newNode = node.toBuilder()
-                .requestedToFollow(followUrls)
-                .lastSeen(ZonedDateTime.now())
-                .build();
+            .requestedToFollow(followUrls)
+            .lastSeen(ZonedDateTime.now())
+            .build();
 
         nodes.add(newNode);
 
@@ -88,10 +88,10 @@ public class NodeGroup {
             List<URL> followUrls = getFollowerUrls(cloudUrl, i);
 
             Node updatedNode = nodes
-                    .get(i)
-                    .toBuilder()
-                    .requestedToFollow(followUrls)
-                    .build();
+                .get(i)
+                .toBuilder()
+                .requestedToFollow(followUrls)
+                .build();
 
             rebalancedNodes.add(updatedNode);
         }
