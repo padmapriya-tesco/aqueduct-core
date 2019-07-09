@@ -2,7 +2,6 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.NodeRegistry
-import com.tesco.aqueduct.registry.NodeRegistryController
 import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext

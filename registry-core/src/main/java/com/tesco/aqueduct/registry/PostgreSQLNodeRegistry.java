@@ -3,6 +3,7 @@ package com.tesco.aqueduct.registry;
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.model.Node;
+import com.tesco.aqueduct.registry.model.NodeGroup;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -16,6 +17,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,11 +42,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 NodeGroup group = getNodeGroup(connection, node.getGroup());
-                ZonedDateTime now = ZonedDateTime.now();
-
                 if (group.isEmpty()) {
-                    node = makeNodeFollowCloud(node, now);
-                    group = new NodeGroup(node);
+                    node = group.add(node, cloudUrl);
                     insertNewGroup(connection, group);
                 } else {
                     Node existingNode = group.getById(node.getId());
@@ -70,34 +69,38 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public StateSummary getSummary(long offset, String status, List<String> groups) {
+    public StateSummary getSummary(long offset, String status, List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
-            List<Node> followers;
+            List<NodeGroup> groups;
 
-            if (groups == null || groups.isEmpty()) {
-                followers = getAllNodes(connection);
+            if (groupIds == null || groupIds.isEmpty()) {
+                groups = getAllGroups(connection);
             } else {
-                followers = getNodesFilteredByGroup(connection, groups);
+                groups = getNodeGroups(connection, groupIds);
             }
 
-            followers = followers
-                .stream()
-                .map(this::changeStatusIfOffline)
+            ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
+            List<Node> followers = groups.stream()
+                .map(group -> group.markNodesOfflineIfNotSeenSince(threshold))
+                .map(group -> group.nodes)
+                .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-            Node node = Node.builder()
-                .localUrl(cloudUrl)
-                .offset(offset)
-                .status(status)
-                .following(Collections.emptyList())
-                .lastSeen(ZonedDateTime.now())
-                .build();
-
-            return new StateSummary(node, followers);
+            return new StateSummary(getCloudNode(offset, status), followers);
         } catch (SQLException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    private Node getCloudNode(long offset, String status) {
+        return Node.builder()
+            .localUrl(cloudUrl)
+            .offset(offset)
+            .status(status)
+            .following(Collections.emptyList())
+            .lastSeen(ZonedDateTime.now())
+            .build();
     }
 
     @Override
@@ -141,7 +144,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
-
             statement.setString(1, groupId);
             statement.setInt(2, version);
 
@@ -154,34 +156,16 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
         //create a new node, with the existing "requestedToFollow" values
         Node updatedNode = newValues.toBuilder()
-                .requestedToFollow(existingValue.getRequestedToFollow())
-                .lastSeen(ZonedDateTime.now())
-                .build();
+            .requestedToFollow(existingValue.getRequestedToFollow())
+            .lastSeen(ZonedDateTime.now())
+            .build();
         return group.updateNode(updatedNode);
     }
 
-    private Node makeNodeFollowCloud(final Node node, final ZonedDateTime now){
-        List<URL> followUrls = Collections.singletonList(cloudUrl);
-        return node.toBuilder()
-            .requestedToFollow(followUrls)
-            .lastSeen(now)
-            .build();
-    }
-
-    private Node changeStatusIfOffline(Node node) {
-        ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
-
-        if (node.getLastSeen().compareTo(threshold) < 0) {
-            return node.toBuilder().status("offline").build();
-        }
-        return node;
-    }
-
-    private List<Node> getNodesFilteredByGroup(Connection connection, List<String> groups) throws SQLException {
-        List<Node> list = new ArrayList<>();
-        for (String group : groups) {
-            NodeGroup nodeGroup = getNodeGroup(connection, group);
-            list.addAll(nodeGroup.nodes);
+    private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
+        List<NodeGroup> list = new ArrayList<>();
+        for (String group : groupIds) {
+            list.add(getNodeGroup(connection, group));
         }
         return list;
     }
@@ -191,20 +175,23 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             statement.setString(1, group);
 
             try (ResultSet rs = statement.executeQuery()) {
-                List<Node> nodes = new ArrayList<>();
-                int version = 0;
-                while (rs.next()) {
-                    String entry = rs.getString("entry");
-                    version = rs.getInt("version");
-
-                    nodes.addAll(readGroupEntry(entry));
+                if (rs.next()) {
+                    return createNodeGroup(rs);
+                } else {
+                    return new NodeGroup();
                 }
-                return new NodeGroup(nodes, version);
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    private NodeGroup createNodeGroup(ResultSet rs) throws SQLException, IOException {
+        String entry = rs.getString("entry");
+        int version = rs.getInt("version");
+        List<Node> nodes = readGroupEntry(entry);
+        return new NodeGroup(nodes, version);
     }
 
     private List<Node> readGroupEntry(String entry) throws IOException {
@@ -240,25 +227,23 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private List<Node> getAllNodes(Connection connection) throws SQLException {
-        List<Node> nodes;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_NODES)) {
-            nodes = new ArrayList<>();
-
+    private List<NodeGroup> getAllGroups(Connection connection) throws SQLException {
+        List<NodeGroup> groups;
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
+            groups = new ArrayList<>();
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    String entry = rs.getString("entry");
-                    nodes.addAll(readGroupEntry(entry));
+                    groups.add(createNodeGroup(rs));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new UncheckedIOException(e);
             }
         }
-
-        return nodes;
+        return groups;
     }
 
+    private static final String QUERY_GET_ALL_GROUPS = "SELECT entry, version FROM registry ORDER BY group_id";
     private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
 
     private static final String QUERY_UPDATE_GROUP =
@@ -280,6 +265,5 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         ")" +
         "ON CONFLICT DO NOTHING ;";
 
-    private static final String QUERY_GET_ALL_NODES = "SELECT entry FROM registry ORDER BY group_id;";
     private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 }

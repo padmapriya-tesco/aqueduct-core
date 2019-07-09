@@ -1,7 +1,6 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.model;
 
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.registry.model.Node;
 
 import java.io.IOException;
 import java.net.URL;
@@ -15,11 +14,11 @@ public class NodeGroup {
     private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
     private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;
 
-    final List<Node> nodes;
-    final int version;
+    public final List<Node> nodes;
+    public final int version;
 
-    public NodeGroup(Node... nodes) {
-        this(Arrays.asList(nodes), UNPERSISTED_GROUP_VERSION);
+    public NodeGroup() {
+        this(new ArrayList<>(), UNPERSISTED_GROUP_VERSION);
     }
 
     public NodeGroup(List<Node> nodes, int version) {
@@ -114,5 +113,17 @@ public class NodeGroup {
 
         followUrls.add(cloudUrl);
         return followUrls;
+    }
+
+    public NodeGroup markNodesOfflineIfNotSeenSince(ZonedDateTime threshold) {
+        List<Node> updatedNodes = new ArrayList<>();
+        for (Node node : nodes) {
+            if (node.getLastSeen().compareTo(threshold) < 0) {
+                updatedNodes.add(node.toBuilder().status("offline").build());
+            } else {
+                updatedNodes.add(node);
+            }
+        }
+        return new NodeGroup(updatedNodes, version);
     }
 }
