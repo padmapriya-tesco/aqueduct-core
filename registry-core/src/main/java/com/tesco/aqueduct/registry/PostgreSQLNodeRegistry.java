@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -72,16 +73,17 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public StateSummary getSummary(long offset, String status, List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
-            List<Node> followers;
+            List<NodeGroup> groups;
 
             if (groupIds == null || groupIds.isEmpty()) {
-                followers = getNodesFromGroups(getAllGroups(connection));
+                groups = getAllGroups(connection);
             } else {
-                followers = getNodesFromGroups(getNodeGroups(connection, groupIds));
+                groups = getNodeGroups(connection, groupIds);
             }
 
-            followers = followers
-                .stream()
+            List<Node> followers = groups.stream()
+                .map(group -> group.nodes)
+                .flatMap(Collection::stream)
                 .map(this::changeStatusIfOffline)
                 .collect(Collectors.toList());
 
@@ -177,14 +179,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return node;
     }
 
-    private List<Node> getNodesFromGroups(List<NodeGroup> groups) {
-        List<Node> list = new ArrayList<>();
-        for (NodeGroup group : groups) {
-            list.addAll(group.nodes);
-        }
-        return list;
-    }
-
     private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
         List<NodeGroup> list = new ArrayList<>();
         for (String group : groupIds) {
@@ -198,12 +192,11 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             statement.setString(1, group);
 
             try (ResultSet rs = statement.executeQuery()) {
+                List<Node> nodes = new ArrayList<>();
+                int version = 0;
                 while (rs.next()) {
-                    List<Node> nodes = new ArrayList<>();
-                    int version = 0;
                     String entry = rs.getString("entry");
                     version = rs.getInt("version");
-
                     nodes.addAll(readGroupEntry(entry));
                 }
                 return new NodeGroup(nodes, version);
