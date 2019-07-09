@@ -44,7 +44,15 @@ public class PostgresNodeGroup extends NodeGroup {
         this.version = version;
     }
 
-    public void insert(final Connection connection) throws IOException, SQLException {
+    public void persist(final Connection connection) throws IOException, SQLException {
+        if (version == UNPERSISTED_GROUP_VERSION) {
+            insert(connection);
+        } else {
+            update(connection);
+        }
+    }
+
+    private void insert(final Connection connection) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
             statement.setString(1, groupId);
             statement.setString(2, nodesToJson());
@@ -56,7 +64,7 @@ public class PostgresNodeGroup extends NodeGroup {
         }
     }
 
-    public void update(final Connection connection) throws SQLException, IOException {
+    private void update(final Connection connection) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             statement.setString(1, nodesToJson());
             statement.setString(2, groupId);

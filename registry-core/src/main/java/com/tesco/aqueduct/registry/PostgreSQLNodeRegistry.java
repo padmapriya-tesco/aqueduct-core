@@ -40,7 +40,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 PostgresNodeGroup group = NodeGroupFactory.getNodeGroup(connection, node.getGroup());
                 if (group.isEmpty()) {
                     node = group.add(node, cloudUrl);
-                    group.insert(connection);
                 } else {
                     Node existingNode = group.getById(node.getId());
                     if (existingNode != null) {
@@ -49,8 +48,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     } else {
                         node = group.add(node, cloudUrl);
                     }
-                    group.update(connection);
                 }
+                group.persist(connection);
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
@@ -132,7 +131,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 group.delete(connection);
             } else {
                 group.rebalance(cloudUrl);
-                group.update(connection);
+                group.persist(connection);
             }
             return true;
         }
