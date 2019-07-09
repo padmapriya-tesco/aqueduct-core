@@ -7,7 +7,7 @@ import java.time.ZonedDateTime
 class NodeGroupSpec extends Specification {
     def "Group has node"() {
         given: "A Group with Nodes"
-        def group = new NodeGroup([Mock(Node)], 1)
+        def group = new NodeGroup([Mock(Node)])
         when: "checking the group has nodes"
         def result = group.isEmpty()
         then: "the result is false"
@@ -16,7 +16,7 @@ class NodeGroupSpec extends Specification {
 
     def "Group does not have nodes"() {
         given: "A Group with no Nodes"
-        def group = new NodeGroup([], 1)
+        def group = new NodeGroup([])
         when: "checking the group has nodes"
         def result = group.isEmpty()
         then: "the result is true"
@@ -33,7 +33,7 @@ class NodeGroupSpec extends Specification {
         anotherNode.id >> "another_node_id"
 
         and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode], 1)
+        def group = new NodeGroup([node, anotherNode])
 
         when: "Removing the node from the group using the id"
         def result = group.removeById("test_node_id")
@@ -47,7 +47,7 @@ class NodeGroupSpec extends Specification {
 
     def "a node can be added to the group"() {
         given: "an empty node group"
-        def group = new NodeGroup([], 1)
+        def group = new NodeGroup([])
         when: "a new node is added"
         def node = Node.builder().build()
         group.add(node, new URL("http://test-url"))
@@ -65,7 +65,7 @@ class NodeGroupSpec extends Specification {
         anotherNode.id >> "another_node_id"
 
         and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode], 1)
+        def group = new NodeGroup([node, anotherNode])
 
         when: "fetching the node at index 0"
         def result = group.get(0)
@@ -92,7 +92,7 @@ class NodeGroupSpec extends Specification {
         anotherNode.localUrl >> anotherNodeUrl
 
         and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode], 1)
+        def group = new NodeGroup([node, anotherNode])
 
         when: "all Node urls have been fetched"
         def result = group.getNodeUrls()
@@ -111,7 +111,7 @@ class NodeGroupSpec extends Specification {
         anotherNode.id >> "another_node_id"
 
         and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode], 1)
+        def group = new NodeGroup([node, anotherNode])
 
         when: "fetching a node by id"
         def result = group.getById("test_node_id")
@@ -144,7 +144,7 @@ class NodeGroupSpec extends Specification {
         anotherNode.id >> "another_node_id"
 
         and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode], 1)
+        def group = new NodeGroup([node, anotherNode])
 
         when: "An updated node is provided to the group"
         def updatedNode = Mock(Node)
@@ -179,7 +179,7 @@ class NodeGroupSpec extends Specification {
         Node n3 = Node.builder()
             .localUrl(n3Url)
             .build()
-        NodeGroup group = new NodeGroup([n1, n2, n3], 1)
+        NodeGroup group = new NodeGroup([n1, n2, n3])
         when: "the group is rebalanced"
         group.rebalance(cloudUrl)
         then: "the result is a balanced group"
@@ -198,7 +198,7 @@ class NodeGroupSpec extends Specification {
         Node n2 = Node.builder()
             .localUrl(n2Url)
             .build()
-        NodeGroup group = new NodeGroup([n1, n2], 1)
+        NodeGroup group = new NodeGroup([n1, n2])
         when: "the NodeGroup nodes are output as JSON"
         String result = group.nodesToJson()
         then: "the JSON format is correct"
@@ -236,7 +236,7 @@ class NodeGroupSpec extends Specification {
             .lastSeen(ZonedDateTime.now().minusDays(3))
             .status("online")
             .build()
-        NodeGroup group = new NodeGroup([n1, n2, n3], 1)
+        NodeGroup group = new NodeGroup([n1, n2, n3])
         when: "requesting nodes be marked offline"
         group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minusDays(5))
         then: "Only nodes not seen since the threshold are marked offline"

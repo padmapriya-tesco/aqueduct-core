@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class PostgresNodeGroup extends NodeGroup {
+    private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
     private static final String QUERY_INSERT_GROUP =
             "INSERT INTO registry (group_id, entry, version)" +
                     "VALUES (" +
@@ -28,16 +29,19 @@ public class PostgresNodeGroup extends NodeGroup {
                     ";";
     private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 
-    private String groupId;
+    private final String groupId;
+    private final int version;
 
     PostgresNodeGroup(String groupId) {
         super();
         this.groupId = groupId;
+        this.version = UNPERSISTED_GROUP_VERSION;
     }
 
     PostgresNodeGroup(String groupId, int version, List<Node> nodes) {
-        super(nodes, version);
+        super(nodes);
         this.groupId = groupId;
+        this.version = version;
     }
 
     public void insert(final Connection connection) throws IOException, SQLException {

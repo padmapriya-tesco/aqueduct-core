@@ -11,19 +11,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
-    private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
     private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;
 
     public final List<Node> nodes;
-    final int version;
 
     NodeGroup() {
-        this(new ArrayList<>(), UNPERSISTED_GROUP_VERSION);
+        this(new ArrayList<>());
     }
 
-    public NodeGroup(List<Node> nodes, int version) {
+    public NodeGroup(List<Node> nodes) {
         this.nodes = nodes;
-        this.version = version;
     }
 
     public boolean isEmpty() {
