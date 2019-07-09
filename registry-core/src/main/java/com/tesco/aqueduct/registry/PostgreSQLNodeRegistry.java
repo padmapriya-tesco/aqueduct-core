@@ -49,7 +49,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     } else {
                         node = group.add(node, cloudUrl);
                     }
-                    persistGroup(connection, group);
+                    updateGroup(connection, group);
                 }
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
@@ -132,7 +132,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 deleteGroup(connection, group.version, groupId);
             } else {
                 NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
-                persistGroup(connection, rebalancedGroup);
+                updateGroup(connection, rebalancedGroup);
             }
             return true;
         }
@@ -159,7 +159,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return group.updateNode(updatedNode);
     }
 
-    private void persistGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
+    private void updateGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             String jsonNodes = group.nodesToJson();
 

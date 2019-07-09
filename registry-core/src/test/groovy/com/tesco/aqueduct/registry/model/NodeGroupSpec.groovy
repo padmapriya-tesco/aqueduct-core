@@ -222,14 +222,17 @@ class NodeGroupSpec extends Specification {
     def "Nodes are correctly marked as offline"() {
         given: "A node group"
         Node n1 = Node.builder()
+            .localUrl(new URL("http://node-1"))
             .lastSeen(ZonedDateTime.now())
             .status("online")
             .build()
         Node n2 = Node.builder()
+            .localUrl(new URL("http://node-2"))
             .lastSeen(ZonedDateTime.now().minusDays(10))
             .status("online")
             .build()
         Node n3 = Node.builder()
+            .localUrl(new URL("http://node-3"))
             .lastSeen(ZonedDateTime.now().minusDays(3))
             .status("online")
             .build()

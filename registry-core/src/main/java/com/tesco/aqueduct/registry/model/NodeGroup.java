@@ -30,11 +30,11 @@ public class NodeGroup {
         return nodes.isEmpty();
     }
 
-    public boolean removeById(String nodeId) {
+    public boolean removeById(final String nodeId) {
         return nodes.removeIf(node -> node.getId().equals(nodeId));
     }
 
-    public Node add(Node node, URL cloudUrl) {
+    public Node add(final Node node, final URL cloudUrl) {
         List<URL> followUrls = getFollowerUrls(cloudUrl);
 
         Node newNode = node.toBuilder()
@@ -47,11 +47,11 @@ public class NodeGroup {
         return newNode;
     }
 
-    public Node get(int index) {
+    public Node get(final int index) {
         return nodes.get(index);
     }
 
-    public Node getById(String nodeId) {
+    public Node getById(final String nodeId) {
         return nodes
             .stream()
             .filter(n -> n.getId().equals(nodeId))
@@ -65,7 +65,7 @@ public class NodeGroup {
             .collect(Collectors.toList());
     }
 
-    public Node updateNode(Node updatedNode) {
+    public Node updateNode(final Node updatedNode) {
         for (int i = 0; i < nodes.size(); i++) {
             if (nodes.get(i).getId().equals(updatedNode.getId())) {
                 return nodes.set(i, updatedNode);
@@ -79,7 +79,7 @@ public class NodeGroup {
         return JsonHelper.toJson(nodes);
     }
 
-    public NodeGroup rebalance(URL cloudUrl) {
+    public NodeGroup rebalance(final URL cloudUrl) {
         List<URL> allUrls = getNodeUrls();
         List<Node> rebalancedNodes = new ArrayList<>();
 
@@ -97,11 +97,11 @@ public class NodeGroup {
         return new NodeGroup(rebalancedNodes, version);
     }
 
-    private List<URL> getFollowerUrls(URL cloudUrl) {
+    private List<URL> getFollowerUrls(final URL cloudUrl) {
         return getFollowerUrls(cloudUrl, getNodeUrls().size());
     }
 
-    private List<URL> getFollowerUrls(URL cloudUrl, int nodeIndex) {
+    private List<URL> getFollowerUrls(final URL cloudUrl, int nodeIndex) {
         List<URL> followUrls = new ArrayList<>();
 
         List<URL> allUrls = getNodeUrls();
@@ -115,15 +115,12 @@ public class NodeGroup {
         return followUrls;
     }
 
-    public NodeGroup markNodesOfflineIfNotSeenSince(ZonedDateTime threshold) {
-        List<Node> updatedNodes = new ArrayList<>();
+    public NodeGroup markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
         for (Node node : nodes) {
             if (node.getLastSeen().compareTo(threshold) < 0) {
-                updatedNodes.add(node.toBuilder().status("offline").build());
-            } else {
-                updatedNodes.add(node);
+                this.updateNode(node.toBuilder().status("offline").build());
             }
         }
-        return new NodeGroup(updatedNodes, version);
+        return this;
     }
 }
