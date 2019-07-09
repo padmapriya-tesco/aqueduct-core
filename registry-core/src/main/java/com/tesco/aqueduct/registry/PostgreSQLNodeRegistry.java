@@ -38,7 +38,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(Node node) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup group = NodeGroupFactory.getNodeGroup(connection, node.getGroup());
+                PostgresNodeGroup group = NodeGroupFactory.getNodeGroup(connection, node.getGroup());
                 if (group.isEmpty()) {
                     node = group.add(node, cloudUrl);
                     insertNewGroup(connection, group);
@@ -49,7 +49,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     } else {
                         node = group.add(node, cloudUrl);
                     }
-                    updateGroup(connection, group);
+                    group.update(connection);
                 }
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
@@ -126,13 +126,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private boolean deleteExistingNode(Connection connection, String nodeId, PostgresNodeGroup group) throws IOException, SQLException {
         boolean foundNode = group.removeById(nodeId);
-
         if (foundNode) {
             if (group.isEmpty()) {
                 group.delete(connection);
             } else {
-                NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
-                updateGroup(connection, rebalancedGroup);
+                group.rebalance(cloudUrl);
+                group.update(connection);
             }
             return true;
         }
@@ -148,20 +147,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return group.updateNode(updatedNode);
     }
 
-    private void updateGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
-            String jsonNodes = group.nodesToJson();
-
-            statement.setString(1, jsonNodes);
-            statement.setString(2, group.get(0).getGroup());
-            statement.setInt(3, group.version);
-
-            if (statement.executeUpdate() == 0) {
-                throw new VersionChangedException();
-            }
-        }
-    }
-
     private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
             String jsonNodes = group.nodesToJson();
@@ -175,16 +160,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             return true;
         }
     }
-
-    private static final String QUERY_UPDATE_GROUP =
-        "UPDATE registry SET " +
-            "entry = ?::JSON , " +
-            "version = registry.version + 1 " +
-        "WHERE " +
-            "registry.group_id = ? " +
-        "AND " +
-            "registry.version = ? " +
-        ";";
 
     private static final String QUERY_INSERT_GROUP =
         "INSERT INTO registry (group_id, entry, version)" +

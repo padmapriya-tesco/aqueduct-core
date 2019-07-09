@@ -79,22 +79,18 @@ public class NodeGroup {
         return JsonHelper.toJson(nodes);
     }
 
-    public NodeGroup rebalance(final URL cloudUrl) {
+    public void rebalance(final URL cloudUrl) {
         List<URL> allUrls = getNodeUrls();
-        List<Node> rebalancedNodes = new ArrayList<>();
-
         for (int i = 0; i < allUrls.size(); i++) {
             List<URL> followUrls = getFollowerUrls(cloudUrl, i);
-
             Node updatedNode = nodes
                 .get(i)
                 .toBuilder()
                 .requestedToFollow(followUrls)
                 .build();
 
-            rebalancedNodes.add(updatedNode);
+            this.updateNode(updatedNode);
         }
-        return new NodeGroup(rebalancedNodes, version);
     }
 
     private List<URL> getFollowerUrls(final URL cloudUrl) {
