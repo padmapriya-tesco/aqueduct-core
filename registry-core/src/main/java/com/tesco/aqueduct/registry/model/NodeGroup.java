@@ -1,7 +1,6 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.model;
 
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.registry.model.Node;
 
 import java.io.IOException;
 import java.net.URL;
@@ -15,8 +14,8 @@ public class NodeGroup {
     private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
     private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;
 
-    final List<Node> nodes;
-    final int version;
+    public final List<Node> nodes;
+    public final int version;
 
     public NodeGroup(Node... nodes) {
         this(Arrays.asList(nodes), UNPERSISTED_GROUP_VERSION);

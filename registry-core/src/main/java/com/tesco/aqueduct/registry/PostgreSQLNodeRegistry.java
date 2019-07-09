@@ -3,6 +3,7 @@ package com.tesco.aqueduct.registry;
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.model.Node;
+import com.tesco.aqueduct.registry.model.NodeGroup;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -88,19 +89,21 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-            Node node = Node.builder()
-                .localUrl(cloudUrl)
-                .offset(offset)
-                .status(status)
-                .following(Collections.emptyList())
-                .lastSeen(ZonedDateTime.now())
-                .build();
-
-            return new StateSummary(node, followers);
+            return new StateSummary(getCloudNode(offset, status), followers);
         } catch (SQLException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    private Node getCloudNode(long offset, String status) {
+        return Node.builder()
+                    .localUrl(cloudUrl)
+                    .offset(offset)
+                    .status(status)
+                    .following(Collections.emptyList())
+                    .lastSeen(ZonedDateTime.now())
+                    .build();
     }
 
     @Override
