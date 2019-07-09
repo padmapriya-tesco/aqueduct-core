@@ -81,10 +81,11 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 groups = getNodeGroups(connection, groupIds);
             }
 
+            ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
             List<Node> followers = groups.stream()
+                .map(group -> group.changeStatusIfOffline(threshold))
                 .map(group -> group.nodes)
                 .flatMap(Collection::stream)
-                .map(this::changeStatusIfOffline)
                 .collect(Collectors.toList());
 
             Node node = Node.builder()
@@ -143,7 +144,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
-
             statement.setString(1, groupId);
             statement.setInt(2, version);
 
@@ -170,15 +170,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             .build();
     }
 
-    private Node changeStatusIfOffline(Node node) {
-        ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
-
-        if (node.getLastSeen().compareTo(threshold) < 0) {
-            return node.toBuilder().status("offline").build();
-        }
-        return node;
-    }
-
     private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
         List<NodeGroup> list = new ArrayList<>();
         for (String group : groupIds) {
@@ -192,19 +183,23 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             statement.setString(1, group);
 
             try (ResultSet rs = statement.executeQuery()) {
-                List<Node> nodes = new ArrayList<>();
-                int version = 0;
-                while (rs.next()) {
-                    String entry = rs.getString("entry");
-                    version = rs.getInt("version");
-                    nodes.addAll(readGroupEntry(entry));
+                if (rs.next()) {
+                    return createNodeGroup(rs);
+                } else {
+                    return new NodeGroup();
                 }
-                return new NodeGroup(nodes, version);
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    private NodeGroup createNodeGroup(ResultSet rs) throws SQLException, IOException {
+        String entry = rs.getString("entry");
+        int version = rs.getInt("version");
+        List<Node> nodes = readGroupEntry(entry);
+        return new NodeGroup(nodes, version);
     }
 
     private List<Node> readGroupEntry(String entry) throws IOException {
@@ -246,10 +241,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             groups = new ArrayList<>();
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    String entry = rs.getString("entry");
-                    int version = rs.getInt("version");
-                    List<Node> nodes = readGroupEntry(entry);
-                    groups.add(new NodeGroup(nodes, version));
+                    groups.add(createNodeGroup(rs));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -281,6 +273,5 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         ")" +
         "ON CONFLICT DO NOTHING ;";
 
-    private static final String QUERY_GET_ALL_NODES = "SELECT entry FROM registry ORDER BY group_id;";
     private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 }

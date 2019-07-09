@@ -115,4 +115,16 @@ public class NodeGroup {
         followUrls.add(cloudUrl);
         return followUrls;
     }
+
+    public NodeGroup changeStatusIfOffline(ZonedDateTime threshold) {
+        List<Node> updatedNodes = new ArrayList<>();
+        for (Node node : nodes) {
+            if (node.getLastSeen().compareTo(threshold) < 0) {
+                updatedNodes.add(node.toBuilder().status("offline").build());
+            } else {
+                updatedNodes.add(node);
+            }
+        }
+        return new NodeGroup(updatedNodes, version);
+    }
 }
