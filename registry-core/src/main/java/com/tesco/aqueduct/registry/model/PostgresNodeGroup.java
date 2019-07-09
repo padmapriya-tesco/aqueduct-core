@@ -53,6 +53,4 @@ public class PostgresNodeGroup extends NodeGroup {
             }
         }
     }
-
-
 }
