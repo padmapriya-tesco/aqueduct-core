@@ -83,7 +83,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
             ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
             List<Node> followers = groups.stream()
-                .map(group -> group.changeStatusIfOffline(threshold))
+                .map(group -> group.markNodesOfflineIfNotSeenSince(threshold))
                 .map(group -> group.nodes)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());

@@ -3,6 +3,8 @@ package com.tesco.aqueduct.registry
 import com.tesco.aqueduct.registry.model.Node
 import spock.lang.Specification
 
+import java.time.ZonedDateTime
+
 class NodeGroupSpec extends Specification {
     def "Group has node"() {
         given: "A Group with Nodes"
@@ -216,5 +218,28 @@ class NodeGroupSpec extends Specification {
                     "\"id\":\"http://node-2\"" +
                 "}" +
             "]"
+    }
+
+    def "Nodes are correctly marked as offline"() {
+        given: "A node group"
+        Node n1 = Node.builder()
+            .lastSeen(ZonedDateTime.now())
+            .status("online")
+            .build()
+        Node n2 = Node.builder()
+            .lastSeen(ZonedDateTime.now().minusDays(10))
+            .status("online")
+            .build()
+        Node n3 = Node.builder()
+            .lastSeen(ZonedDateTime.now().minusDays(3))
+            .status("online")
+            .build()
+        NodeGroup group = new NodeGroup([n1, n2, n3], 1)
+        when: "requesting nodes be marked offline"
+        NodeGroup result = group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minusDays(5))
+        then: "Only nodes not seen since the threshold are marked offline"
+        result.nodes.get(0).status == "online"
+        result.nodes.get(1).status == "offline"
+        result.nodes.get(0).status == "online"
     }
 }

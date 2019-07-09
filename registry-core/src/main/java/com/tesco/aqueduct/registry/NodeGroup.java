@@ -116,7 +116,7 @@ public class NodeGroup {
         return followUrls;
     }
 
-    public NodeGroup changeStatusIfOffline(ZonedDateTime threshold) {
+    public NodeGroup markNodesOfflineIfNotSeenSince(ZonedDateTime threshold) {
         List<Node> updatedNodes = new ArrayList<>();
         for (Node node : nodes) {
             if (node.getLastSeen().compareTo(threshold) < 0) {
