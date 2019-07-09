@@ -95,12 +95,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private Node getCloudNode(long offset, String status) {
         return Node.builder()
-                    .localUrl(cloudUrl)
-                    .offset(offset)
-                    .status(status)
-                    .following(Collections.emptyList())
-                    .lastSeen(ZonedDateTime.now())
-                    .build();
+            .localUrl(cloudUrl)
+            .offset(offset)
+            .status(status)
+            .following(Collections.emptyList())
+            .lastSeen(ZonedDateTime.now())
+            .build();
     }
 
     @Override
@@ -156,9 +156,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
         //create a new node, with the existing "requestedToFollow" values
         Node updatedNode = newValues.toBuilder()
-                .requestedToFollow(existingValue.getRequestedToFollow())
-                .lastSeen(ZonedDateTime.now())
-                .build();
+            .requestedToFollow(existingValue.getRequestedToFollow())
+            .lastSeen(ZonedDateTime.now())
+            .build();
         return group.updateNode(updatedNode);
     }
 
