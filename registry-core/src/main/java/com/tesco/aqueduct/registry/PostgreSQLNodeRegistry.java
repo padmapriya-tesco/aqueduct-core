@@ -129,7 +129,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
         if (foundNode) {
             if (group.isEmpty()) {
-                deleteGroup(connection, group);
+                group.delete(connection);
             } else {
                 NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
                 updateGroup(connection, rebalancedGroup);
@@ -137,17 +137,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             return true;
         }
         return false;
-    }
-
-    private void deleteGroup(Connection connection, PostgresNodeGroup group) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
-            statement.setString(1, group.groupId);
-            statement.setInt(2, group.version);
-
-            if (statement.executeUpdate() == 0) {
-                throw new VersionChangedException();
-            }
-        }
     }
 
     private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
@@ -205,6 +194,4 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             "0 " +
         ")" +
         "ON CONFLICT DO NOTHING ;";
-
-    private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 }
