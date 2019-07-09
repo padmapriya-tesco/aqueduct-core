@@ -21,10 +21,6 @@ public class NodeGroup {
         this(new ArrayList<>(), UNPERSISTED_GROUP_VERSION);
     }
 
-    public NodeGroup(Node... nodes) {
-        this(Arrays.asList(nodes), UNPERSISTED_GROUP_VERSION);
-    }
-
     public NodeGroup(List<Node> nodes, int version) {
         this.nodes = nodes;
         this.version = version;
