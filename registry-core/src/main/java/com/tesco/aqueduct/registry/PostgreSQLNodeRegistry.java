@@ -104,12 +104,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public boolean deleteNode(String groupId, String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup nodeGroup = NodeGroupFactory.getNodeGroup(connection, groupId);
+                PostgresNodeGroup nodeGroup = NodeGroupFactory.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
                 } else {
-                    return deleteExistingNode(connection, groupId, nodeId, nodeGroup);
+                    return deleteExistingNode(connection, nodeId, nodeGroup);
                 }
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "deleteNode", exception);
@@ -124,12 +124,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, String groupId, String nodeId, NodeGroup group) throws IOException, SQLException {
+    private boolean deleteExistingNode(Connection connection, String nodeId, PostgresNodeGroup group) throws IOException, SQLException {
         boolean foundNode = group.removeById(nodeId);
 
         if (foundNode) {
             if (group.isEmpty()) {
-                deleteGroup(connection, group.version, groupId);
+                deleteGroup(connection, group);
             } else {
                 NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
                 updateGroup(connection, rebalancedGroup);
@@ -139,10 +139,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
+    private void deleteGroup(Connection connection, PostgresNodeGroup group) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
-            statement.setString(1, groupId);
-            statement.setInt(2, version);
+            statement.setString(1, group.groupId);
+            statement.setInt(2, group.version);
 
             if (statement.executeUpdate() == 0) {
                 throw new VersionChangedException();

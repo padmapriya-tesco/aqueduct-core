@@ -3,7 +3,7 @@ package com.tesco.aqueduct.registry.model;
 import java.util.List;
 
 public class PostgresNodeGroup extends NodeGroup {
-    private String groupId;
+    public String groupId;
 
     PostgresNodeGroup() {
         super();
