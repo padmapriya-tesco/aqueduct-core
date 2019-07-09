@@ -42,11 +42,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 NodeGroup group = getNodeGroup(connection, node.getGroup());
-                ZonedDateTime now = ZonedDateTime.now();
-
                 if (group.isEmpty()) {
-                    node = makeNodeFollowCloud(node, now);
-                    group = new NodeGroup(node);
+                    node = group.add(node, cloudUrl);
                     insertNewGroup(connection, group);
                 } else {
                     Node existingNode = group.getById(node.getId());
@@ -163,14 +160,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 .lastSeen(ZonedDateTime.now())
                 .build();
         return group.updateNode(updatedNode);
-    }
-
-    private Node makeNodeFollowCloud(final Node node, final ZonedDateTime now){
-        List<URL> followUrls = Collections.singletonList(cloudUrl);
-        return node.toBuilder()
-            .requestedToFollow(followUrls)
-            .lastSeen(now)
-            .build();
     }
 
     private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
