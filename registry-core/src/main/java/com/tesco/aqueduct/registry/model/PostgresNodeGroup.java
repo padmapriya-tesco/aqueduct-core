@@ -9,6 +9,14 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class PostgresNodeGroup extends NodeGroup {
+    private static final String QUERY_INSERT_GROUP =
+            "INSERT INTO registry (group_id, entry, version)" +
+                    "VALUES (" +
+                    "?, " +
+                    "?::JSON, " +
+                    "0 " +
+                    ")" +
+                    "ON CONFLICT DO NOTHING ;";
     private static final String QUERY_UPDATE_GROUP =
             "UPDATE registry SET " +
                     "entry = ?::JSON , " +
@@ -22,13 +30,26 @@ public class PostgresNodeGroup extends NodeGroup {
 
     private String groupId;
 
-    PostgresNodeGroup() {
+    PostgresNodeGroup(String groupId) {
         super();
+        this.groupId = groupId;
     }
 
     PostgresNodeGroup(String groupId, int version, List<Node> nodes) {
         super(nodes, version);
         this.groupId = groupId;
+    }
+
+    public void insert(Connection connection) throws IOException, SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
+            statement.setString(1, groupId);
+            statement.setString(2, nodesToJson());
+
+            if (statement.executeUpdate() == 0) {
+                //No rows updated
+                throw new VersionChangedException();
+            }
+        }
     }
 
     public void update(Connection connection) throws SQLException, IOException {

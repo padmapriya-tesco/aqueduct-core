@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -41,7 +40,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 PostgresNodeGroup group = NodeGroupFactory.getNodeGroup(connection, node.getGroup());
                 if (group.isEmpty()) {
                     node = group.add(node, cloudUrl);
-                    insertNewGroup(connection, group);
+                    group.insert(connection);
                 } else {
                     Node existingNode = group.getById(node.getId());
                     if (existingNode != null) {
@@ -146,27 +145,4 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             .build();
         return group.updateNode(updatedNode);
     }
-
-    private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
-            String jsonNodes = group.nodesToJson();
-            statement.setString(1, group.get(0).getGroup());
-            statement.setString(2, jsonNodes);
-
-            if (statement.executeUpdate() == 0) {
-                //No rows updated
-                throw new VersionChangedException();
-            }
-            return true;
-        }
-    }
-
-    private static final String QUERY_INSERT_GROUP =
-        "INSERT INTO registry (group_id, entry, version)" +
-        "VALUES (" +
-            "?, " +
-            "?::JSON, " +
-            "0 " +
-        ")" +
-        "ON CONFLICT DO NOTHING ;";
 }

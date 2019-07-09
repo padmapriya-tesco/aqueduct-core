@@ -15,9 +15,9 @@ public class NodeGroup {
     private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;
 
     public final List<Node> nodes;
-    public final int version;
+    final int version;
 
-    public NodeGroup() {
+    NodeGroup() {
         this(new ArrayList<>(), UNPERSISTED_GROUP_VERSION);
     }
 
@@ -36,14 +36,11 @@ public class NodeGroup {
 
     public Node add(final Node node, final URL cloudUrl) {
         List<URL> followUrls = getFollowerUrls(cloudUrl);
-
         Node newNode = node.toBuilder()
             .requestedToFollow(followUrls)
             .lastSeen(ZonedDateTime.now())
             .build();
-
         nodes.add(newNode);
-
         return newNode;
     }
 

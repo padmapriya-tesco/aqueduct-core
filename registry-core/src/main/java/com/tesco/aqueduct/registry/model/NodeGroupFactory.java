@@ -24,7 +24,7 @@ public class NodeGroupFactory {
                 if (rs.next()) {
                     return createNodeGroup(rs);
                 } else {
-                    return new PostgresNodeGroup();
+                    return new PostgresNodeGroup(groupId);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
