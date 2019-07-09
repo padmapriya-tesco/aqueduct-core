@@ -40,7 +40,7 @@ public class PostgresNodeGroup extends NodeGroup {
         this.groupId = groupId;
     }
 
-    public void insert(Connection connection) throws IOException, SQLException {
+    public void insert(final Connection connection) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
             statement.setString(1, groupId);
             statement.setString(2, nodesToJson());
@@ -52,7 +52,7 @@ public class PostgresNodeGroup extends NodeGroup {
         }
     }
 
-    public void update(Connection connection) throws SQLException, IOException {
+    public void update(final Connection connection) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             statement.setString(1, nodesToJson());
             statement.setString(2, groupId);
@@ -64,7 +64,7 @@ public class PostgresNodeGroup extends NodeGroup {
         }
     }
 
-    public void delete(Connection connection) throws SQLException {
+    public void delete(final Connection connection) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
             statement.setString(1, groupId);
             statement.setInt(2, version);
