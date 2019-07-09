@@ -181,11 +181,11 @@ class NodeGroupSpec extends Specification {
             .build()
         NodeGroup group = new NodeGroup([n1, n2, n3], 1)
         when: "the group is rebalanced"
-        NodeGroup result = group.rebalance(cloudUrl)
+        group.rebalance(cloudUrl)
         then: "the result is a balanced group"
-        result.nodes.get(0).requestedToFollow == [cloudUrl]
-        result.nodes.get(1).requestedToFollow == [n1Url, cloudUrl]
-        result.nodes.get(2).requestedToFollow == [n1Url, cloudUrl]
+        group.nodes.get(0).requestedToFollow == [cloudUrl]
+        group.nodes.get(1).requestedToFollow == [n1Url, cloudUrl]
+        group.nodes.get(2).requestedToFollow == [n1Url, cloudUrl]
     }
 
     def "NodeGroup nodes json format is correct"() {
