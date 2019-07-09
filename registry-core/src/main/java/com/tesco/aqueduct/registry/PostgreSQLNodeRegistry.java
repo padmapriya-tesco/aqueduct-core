@@ -26,7 +26,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final Duration offlineDelta;
     private final DataSource dataSource;
     private static final int OPTIMISTIC_LOCKING_COOLDOWN = 5;
-    private static final int NUMBER_OF_CHILDREN = 2;
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 
@@ -52,7 +51,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     if (existingNode != null) {
                         node = updateExistingNode(existingNode, node, group);
                     } else {
-                        node = addNodeToExistingGroup(group, node, now);
+                        node = group.add(node, cloudUrl);
                     }
                     persistGroup(connection, group);
                 }
@@ -78,11 +77,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             if (groups == null || groups.isEmpty()) {
                 followers = getAllNodes(connection);
             } else {
-                followers = getNodesFilteredByGroup(connection, groups)
-                    .stream()
-                    .flatMap(
-                        group -> group.nodes.stream()
-                    ).collect(Collectors.toList());
+                followers = getNodesFilteredByGroup(connection, groups);
             }
 
             followers = followers
@@ -136,30 +131,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             if (group.isEmpty()) {
                 deleteGroup(connection, group.version, groupId);
             } else {
-                NodeGroup rebalancedGroup = rebalanceGroup(group);
+                NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
                 persistGroup(connection, rebalancedGroup);
             }
             return true;
         }
         return false;
-    }
-
-    private NodeGroup rebalanceGroup(NodeGroup group) {
-        List<URL> allUrls = group.getNodeUrls();
-        List<Node> rebalancedNodes = new ArrayList<>();
-
-        for (int i = 0; i < allUrls.size(); i++) {
-            List<URL> followUrls = getFollowerUrls(allUrls, i);
-
-            Node updatedNode = group
-                .get(i)
-                .toBuilder()
-                .requestedToFollow(followUrls)
-                .build();
-
-            rebalancedNodes.add(updatedNode);
-        }
-        return new NodeGroup(rebalancedNodes, group.version);
     }
 
     private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
@@ -191,34 +168,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             .build();
     }
 
-    private Node addNodeToExistingGroup(NodeGroup group, Node node, ZonedDateTime now) {
-        List<URL> nodeUrls = group.getNodeUrls();
-
-        int nodeIndex = nodeUrls.size();
-        List<URL> followUrls = getFollowerUrls(nodeUrls, nodeIndex);
-
-        Node newNode = node.toBuilder()
-            .requestedToFollow(followUrls)
-            .lastSeen(now)
-            .build();
-
-        group.add(newNode);
-
-        return newNode;
-    }
-
-    private List<URL> getFollowerUrls(List<URL> allUrls, int nodeIndex) {
-        List<URL> followUrls = new ArrayList<>();
-
-        while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN) - 1;
-            followUrls.add(allUrls.get(nodeIndex));
-        }
-
-        followUrls.add(cloudUrl);
-        return followUrls;
-    }
-
     private Node changeStatusIfOffline(Node node) {
         ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
 
@@ -228,39 +177,34 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return node;
     }
 
-    private List<NodeGroup> getNodesFilteredByGroup(Connection connection, List<String> groups) throws SQLException {
-        List<NodeGroup> list = new ArrayList<>();
+    private List<Node> getNodesFilteredByGroup(Connection connection, List<String> groups) throws SQLException {
+        List<Node> list = new ArrayList<>();
         for (String group : groups) {
             NodeGroup nodeGroup = getNodeGroup(connection, group);
-            list.add(nodeGroup);
+            list.addAll(nodeGroup.nodes);
         }
         return list;
     }
 
     private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
-        List<Node> nodes;
-        int version;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_FOR_NODE)) {
-
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
             statement.setString(1, group);
 
-            nodes = new ArrayList<>();
-            version = 0;
-
             try (ResultSet rs = statement.executeQuery()) {
+                List<Node> nodes = new ArrayList<>();
+                int version = 0;
                 while (rs.next()) {
                     String entry = rs.getString("entry");
                     version = rs.getInt("version");
 
                     nodes.addAll(readGroupEntry(entry));
                 }
+                return new NodeGroup(nodes, version);
             } catch (IOException e) {
                 e.printStackTrace();
                 throw new UncheckedIOException(e);
             }
         }
-
-        return new NodeGroup(nodes, version);
     }
 
     private List<Node> readGroupEntry(String entry) throws IOException {
@@ -270,7 +214,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private void persistGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
-            String jsonNodes = JsonHelper.toJson(group.nodes);
+            String jsonNodes = group.nodesToJson();
 
             statement.setString(1, jsonNodes);
             statement.setString(2, group.get(0).getGroup());
@@ -284,7 +228,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
-            String jsonNodes = JsonHelper.toJson(group.nodes);
+            String jsonNodes = group.nodesToJson();
             statement.setString(1, group.get(0).getGroup());
             statement.setString(2, jsonNodes);
 
@@ -315,7 +259,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return nodes;
     }
 
-    private static final String QUERY_GET_GROUP_FOR_NODE = "SELECT entry, version FROM registry where group_id = ? ;";
+    private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
 
     private static final String QUERY_UPDATE_GROUP =
         "UPDATE registry SET " +

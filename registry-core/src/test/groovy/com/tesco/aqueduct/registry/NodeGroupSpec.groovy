@@ -48,7 +48,8 @@ class NodeGroupSpec extends Specification {
         given: "an empty node group"
         def group = new NodeGroup([], 1)
         when: "a new node is added"
-        group.add(Mock(Node))
+        def node = Node.builder().build()
+        group.add(node, new URL("http://test-url"))
         then: "the node group is no longer empty"
         !group.isEmpty()
     }
@@ -159,6 +160,61 @@ class NodeGroupSpec extends Specification {
 
         then: "The group contains the updated nodes"
         group.nodes == [updatedNode, anotherUpdatedNode]
+    }
 
+    def "Nodes are correctly rebalanced"() {
+        given: "a cloud url"
+        URL cloudUrl = new URL("http://cloud")
+        and: "a nodegroup with unbalanced Nodes"
+        URL n1Url = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(n1Url)
+            .build()
+        URL n2Url = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(n2Url)
+            .build()
+        URL n3Url = new URL("http://node-3")
+        Node n3 = Node.builder()
+            .localUrl(n3Url)
+            .build()
+        NodeGroup group = new NodeGroup([n1, n2, n3], 1)
+        when: "the group is rebalanced"
+        NodeGroup result = group.rebalance(cloudUrl)
+        then: "the result is a balanced group"
+        result.nodes.get(0).requestedToFollow == [cloudUrl]
+        result.nodes.get(1).requestedToFollow == [n1Url, cloudUrl]
+        result.nodes.get(2).requestedToFollow == [n1Url, cloudUrl]
+    }
+
+    def "NodeGroup nodes json format is correct"() {
+        given: "a NodeGroup"
+        URL n1Url = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(n1Url)
+            .build()
+        URL n2Url = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(n2Url)
+            .build()
+        NodeGroup group = new NodeGroup([n1, n2], 1)
+        when: "the NodeGroup nodes are output as JSON"
+        String result = group.nodesToJson()
+        then: "the JSON format is correct"
+        result ==
+            "[" +
+                "{" +
+                    "\"localUrl\":\"http://node-1\"," +
+                    "\"offset\":\"0\"," +
+                    "\"providerLastAckOffset\":\"0\"," +
+                    "\"id\":\"http://node-1\"" +
+                "}," +
+                "{" +
+                    "\"localUrl\":\"http://node-2\"," +
+                    "\"offset\":\"0\"," +
+                    "\"providerLastAckOffset\":\"0\"," +
+                    "\"id\":\"http://node-2\"" +
+                "}" +
+            "]"
     }
 }
