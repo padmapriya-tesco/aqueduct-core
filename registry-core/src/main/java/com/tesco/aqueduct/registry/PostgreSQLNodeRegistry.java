@@ -3,6 +3,7 @@ package com.tesco.aqueduct.registry;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.NodeGroup;
 import com.tesco.aqueduct.registry.model.NodeGroupFactory;
+import com.tesco.aqueduct.registry.model.PostgresNodeGroup;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -67,7 +68,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public StateSummary getSummary(long offset, String status, List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
-            List<NodeGroup> groups;
+            List<PostgresNodeGroup> groups;
 
             if (groupIds == null || groupIds.isEmpty()) {
                 groups = NodeGroupFactory.getNodeGroups(connection);

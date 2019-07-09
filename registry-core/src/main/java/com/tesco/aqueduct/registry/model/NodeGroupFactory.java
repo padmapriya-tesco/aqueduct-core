@@ -13,10 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NodeGroupFactory {
-    private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
-    private static final String QUERY_GET_ALL_GROUPS = "SELECT entry, version FROM registry ORDER BY group_id";
+    private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? ;";
+    private static final String QUERY_GET_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
 
-    public static NodeGroup getNodeGroup(Connection connection, String groupId) throws SQLException {
+    public static PostgresNodeGroup getNodeGroup(Connection connection, String groupId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
             statement.setString(1, groupId);
 
@@ -24,7 +24,7 @@ public class NodeGroupFactory {
                 if (rs.next()) {
                     return createNodeGroup(rs);
                 } else {
-                    return new NodeGroup();
+                    return new PostgresNodeGroup();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -33,16 +33,16 @@ public class NodeGroupFactory {
         }
     }
 
-    public static List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
-        List<NodeGroup> list = new ArrayList<>();
+    public static List<PostgresNodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
+        List<PostgresNodeGroup> list = new ArrayList<>();
         for (String group : groupIds) {
             list.add(getNodeGroup(connection, group));
         }
         return list;
     }
 
-    public static List<NodeGroup> getNodeGroups(Connection connection) throws SQLException {
-        List<NodeGroup> groups;
+    public static List<PostgresNodeGroup> getNodeGroups(Connection connection) throws SQLException {
+        List<PostgresNodeGroup> groups;
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
             groups = new ArrayList<>();
             try (ResultSet rs = statement.executeQuery()) {
@@ -57,11 +57,12 @@ public class NodeGroupFactory {
         return groups;
     }
 
-    private static NodeGroup createNodeGroup(ResultSet rs) throws SQLException, IOException {
+    private static PostgresNodeGroup createNodeGroup(ResultSet rs) throws SQLException, IOException {
         String entry = rs.getString("entry");
         int version = rs.getInt("version");
+        String groupId = rs.getString("group_id");
         List<Node> nodes = readGroupEntry(entry);
-        return new NodeGroup(nodes, version);
+        return new PostgresNodeGroup(groupId, version, nodes);
     }
 
     private static List<Node> readGroupEntry(String entry) throws IOException {
