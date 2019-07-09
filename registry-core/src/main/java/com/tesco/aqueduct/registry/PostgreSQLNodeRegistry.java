@@ -77,7 +77,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             if (groups == null || groups.isEmpty()) {
                 followers = getAllNodes(connection);
             } else {
-                followers = getNodesFilteredByGroup(connection, groups);
+                followers = getNodesFilteredByGroup(getNodeGroups(connection, groups));
             }
 
             followers = followers
@@ -177,11 +177,18 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return node;
     }
 
-    private List<Node> getNodesFilteredByGroup(Connection connection, List<String> groups) throws SQLException {
+    private List<Node> getNodesFilteredByGroup(List<NodeGroup> groups) {
         List<Node> list = new ArrayList<>();
-        for (String group : groups) {
-            NodeGroup nodeGroup = getNodeGroup(connection, group);
-            list.addAll(nodeGroup.nodes);
+        for (NodeGroup group : groups) {
+            list.addAll(group.nodes);
+        }
+        return list;
+    }
+
+    private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
+        List<NodeGroup> list = new ArrayList<>();
+        for (String group : groupIds) {
+            list.add(getNodeGroup(connection, group));
         }
         return list;
     }
