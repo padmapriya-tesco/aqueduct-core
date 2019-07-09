@@ -247,25 +247,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private List<Node> getAllNodes(Connection connection) throws SQLException {
-        List<Node> nodes;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_NODES)) {
-            nodes = new ArrayList<>();
-
-            try (ResultSet rs = statement.executeQuery()) {
-                while (rs.next()) {
-                    String entry = rs.getString("entry");
-                    nodes.addAll(readGroupEntry(entry));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        return nodes;
-    }
-
     private List<NodeGroup> getAllGroups(Connection connection) throws SQLException {
         List<NodeGroup> groups;
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
