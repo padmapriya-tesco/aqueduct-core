@@ -75,9 +75,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             List<Node> followers;
 
             if (groups == null || groups.isEmpty()) {
-                followers = getAllNodes(connection);
+                followers = getNodesFromGroups(getAllGroups(connection));
             } else {
-                followers = getNodesFilteredByGroup(getNodeGroups(connection, groups));
+                followers = getNodesFromGroups(getNodeGroups(connection, groups));
             }
 
             followers = followers
@@ -177,7 +177,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return node;
     }
 
-    private List<Node> getNodesFilteredByGroup(List<NodeGroup> groups) {
+    private List<Node> getNodesFromGroups(List<NodeGroup> groups) {
         List<Node> list = new ArrayList<>();
         for (NodeGroup group : groups) {
             list.addAll(group.nodes);
@@ -266,6 +266,26 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return nodes;
     }
 
+    private List<NodeGroup> getAllGroups(Connection connection) throws SQLException {
+        List<NodeGroup> groups;
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
+            groups = new ArrayList<>();
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    String entry = rs.getString("entry");
+                    int version = rs.getInt("version");
+                    List<Node> nodes = readGroupEntry(entry);
+                    groups.add(new NodeGroup(nodes, version));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new UncheckedIOException(e);
+            }
+        }
+        return groups;
+    }
+
+    private static final String QUERY_GET_ALL_GROUPS = "SELECT entry, version FROM registry ORDER BY group_id";
     private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
 
     private static final String QUERY_UPDATE_GROUP =
