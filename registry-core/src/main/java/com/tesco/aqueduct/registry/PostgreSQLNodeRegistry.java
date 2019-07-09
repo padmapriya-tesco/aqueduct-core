@@ -43,7 +43,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 } else {
                     Node existingNode = group.getById(node.getId());
                     if (existingNode != null) {
-                        node = updateExistingNode(existingNode, node, group);
+                        node = updateExistingNode(existingNode, node);
+                        group.updateNode(node);
                     } else {
                         node = group.add(node, cloudUrl);
                     }
@@ -137,12 +138,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private Node updateExistingNode(Node existingValue, Node newValues, PostgresNodeGroup group) {
-        //create a new node, with the existing "requestedToFollow" values
-        Node updatedNode = newValues.toBuilder()
+    private Node updateExistingNode(Node existingValue, Node newValues) {
+        return newValues.toBuilder()
             .requestedToFollow(existingValue.getRequestedToFollow())
             .lastSeen(ZonedDateTime.now())
             .build();
-        return group.updateNode(updatedNode);
     }
 }
