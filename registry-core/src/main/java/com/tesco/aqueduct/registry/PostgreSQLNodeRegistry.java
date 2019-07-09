@@ -70,14 +70,14 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public StateSummary getSummary(long offset, String status, List<String> groups) {
+    public StateSummary getSummary(long offset, String status, List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
             List<Node> followers;
 
-            if (groups == null || groups.isEmpty()) {
+            if (groupIds == null || groupIds.isEmpty()) {
                 followers = getNodesFromGroups(getAllGroups(connection));
             } else {
-                followers = getNodesFromGroups(getNodeGroups(connection, groups));
+                followers = getNodesFromGroups(getNodeGroups(connection, groupIds));
             }
 
             followers = followers
@@ -198,9 +198,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             statement.setString(1, group);
 
             try (ResultSet rs = statement.executeQuery()) {
-                List<Node> nodes = new ArrayList<>();
-                int version = 0;
                 while (rs.next()) {
+                    List<Node> nodes = new ArrayList<>();
+                    int version = 0;
                     String entry = rs.getString("entry");
                     version = rs.getInt("version");
 
