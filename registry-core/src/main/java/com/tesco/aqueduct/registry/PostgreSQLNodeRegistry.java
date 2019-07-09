@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.NodeGroup;
 import com.tesco.aqueduct.registry.model.NodeGroupFactory;
 import com.tesco.aqueduct.registry.model.PostgresNodeGroup;
 import org.slf4j.LoggerFactory;
@@ -76,8 +75,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             }
 
             ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
+            groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
+
             List<Node> followers = groups.stream()
-                .map(group -> group.markNodesOfflineIfNotSeenSince(threshold))
                 .map(group -> group.nodes)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -137,7 +137,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
+    private Node updateExistingNode(Node existingValue, Node newValues, PostgresNodeGroup group) {
         //create a new node, with the existing "requestedToFollow" values
         Node updatedNode = newValues.toBuilder()
             .requestedToFollow(existingValue.getRequestedToFollow())

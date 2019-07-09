@@ -238,10 +238,10 @@ class NodeGroupSpec extends Specification {
             .build()
         NodeGroup group = new NodeGroup([n1, n2, n3], 1)
         when: "requesting nodes be marked offline"
-        NodeGroup result = group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minusDays(5))
+        group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minusDays(5))
         then: "Only nodes not seen since the threshold are marked offline"
-        result.nodes.get(0).status == "online"
-        result.nodes.get(1).status == "offline"
-        result.nodes.get(0).status == "online"
+        group.nodes.get(0).status == "online"
+        group.nodes.get(1).status == "offline"
+        group.nodes.get(0).status == "online"
     }
 }

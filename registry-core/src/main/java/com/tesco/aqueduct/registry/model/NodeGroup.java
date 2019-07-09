@@ -108,12 +108,11 @@ public class NodeGroup {
         return followUrls;
     }
 
-    public NodeGroup markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
+    public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
         for (Node node : nodes) {
             if (node.getLastSeen().compareTo(threshold) < 0) {
                 this.updateNode(node.toBuilder().status("offline").build());
             }
         }
-        return this;
     }
 }
