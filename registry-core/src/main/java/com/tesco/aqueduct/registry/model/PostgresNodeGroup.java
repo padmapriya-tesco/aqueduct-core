@@ -33,9 +33,7 @@ public class PostgresNodeGroup extends NodeGroup {
 
     public void update(Connection connection) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
-            String jsonNodes = nodesToJson();
-
-            statement.setString(1, jsonNodes);
+            statement.setString(1, nodesToJson());
             statement.setString(2, groupId);
             statement.setInt(3, version);
 
