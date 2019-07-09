@@ -1,22 +1,18 @@
 package com.tesco.aqueduct.registry;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.NodeGroup;
+import com.tesco.aqueduct.registry.model.NodeGroupFactory;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +37,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(Node node) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup group = getNodeGroup(connection, node.getGroup());
+                NodeGroup group = NodeGroupFactory.getNodeGroup(connection, node.getGroup());
                 if (group.isEmpty()) {
                     node = group.add(node, cloudUrl);
                     insertNewGroup(connection, group);
@@ -74,9 +70,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             List<NodeGroup> groups;
 
             if (groupIds == null || groupIds.isEmpty()) {
-                groups = getAllGroups(connection);
+                groups = NodeGroupFactory.getNodeGroups(connection);
             } else {
-                groups = getNodeGroups(connection, groupIds);
+                groups = NodeGroupFactory.getNodeGroups(connection, groupIds);
             }
 
             ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
@@ -107,7 +103,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public boolean deleteNode(String groupId, String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup nodeGroup = getNodeGroup(connection, groupId);
+                NodeGroup nodeGroup = NodeGroupFactory.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
@@ -162,43 +158,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return group.updateNode(updatedNode);
     }
 
-    private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
-        List<NodeGroup> list = new ArrayList<>();
-        for (String group : groupIds) {
-            list.add(getNodeGroup(connection, group));
-        }
-        return list;
-    }
-
-    private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
-            statement.setString(1, group);
-
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return createNodeGroup(rs);
-                } else {
-                    return new NodeGroup();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
-    private NodeGroup createNodeGroup(ResultSet rs) throws SQLException, IOException {
-        String entry = rs.getString("entry");
-        int version = rs.getInt("version");
-        List<Node> nodes = readGroupEntry(entry);
-        return new NodeGroup(nodes, version);
-    }
-
-    private List<Node> readGroupEntry(String entry) throws IOException {
-        JavaType type = JsonHelper.MAPPER.getTypeFactory().constructCollectionType(List.class, Node.class);
-        return JsonHelper.MAPPER.readValue(entry, type);
-    }
-
     private void persistGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             String jsonNodes = group.nodesToJson();
@@ -226,25 +185,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             return true;
         }
     }
-
-    private List<NodeGroup> getAllGroups(Connection connection) throws SQLException {
-        List<NodeGroup> groups;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
-            groups = new ArrayList<>();
-            try (ResultSet rs = statement.executeQuery()) {
-                while (rs.next()) {
-                    groups.add(createNodeGroup(rs));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-        return groups;
-    }
-
-    private static final String QUERY_GET_ALL_GROUPS = "SELECT entry, version FROM registry ORDER BY group_id";
-    private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
 
     private static final String QUERY_UPDATE_GROUP =
         "UPDATE registry SET " +
