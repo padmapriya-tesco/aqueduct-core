@@ -1,22 +1,17 @@
 package com.tesco.aqueduct.registry;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.NodeGroup;
+import com.tesco.aqueduct.registry.postgres.PostgresNodeGroup;
+import com.tesco.aqueduct.registry.model.StateSummary;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,19 +36,15 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(Node node) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup group = getNodeGroup(connection, node.getGroup());
-                if (group.isEmpty()) {
-                    node = group.add(node, cloudUrl);
-                    insertNewGroup(connection, group);
+                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, node.getGroup());
+                Node existingNode = group.getById(node.getId());
+                if (existingNode != null) {
+                    node = updateExistingNode(existingNode, node);
+                    group.updateNode(node);
                 } else {
-                    Node existingNode = group.getById(node.getId());
-                    if (existingNode != null) {
-                        node = updateExistingNode(existingNode, node, group);
-                    } else {
-                        node = group.add(node, cloudUrl);
-                    }
-                    persistGroup(connection, group);
+                    node = group.add(node, cloudUrl);
                 }
+                group.persist(connection);
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
@@ -71,17 +62,18 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public StateSummary getSummary(long offset, String status, List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
-            List<NodeGroup> groups;
+            List<PostgresNodeGroup> groups;
 
             if (groupIds == null || groupIds.isEmpty()) {
-                groups = getAllGroups(connection);
+                groups = PostgresNodeGroup.getNodeGroups(connection);
             } else {
-                groups = getNodeGroups(connection, groupIds);
+                groups = PostgresNodeGroup.getNodeGroups(connection, groupIds);
             }
 
             ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
+            groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
+
             List<Node> followers = groups.stream()
-                .map(group -> group.markNodesOfflineIfNotSeenSince(threshold))
                 .map(group -> group.nodes)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -107,12 +99,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public boolean deleteNode(String groupId, String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                NodeGroup nodeGroup = getNodeGroup(connection, groupId);
+                PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
                 } else {
-                    return deleteExistingNode(connection, groupId, nodeId, nodeGroup);
+                    return deleteExistingNode(connection, nodeId, nodeGroup);
                 }
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "deleteNode", exception);
@@ -127,143 +119,24 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, String groupId, String nodeId, NodeGroup group) throws IOException, SQLException {
+    private boolean deleteExistingNode(Connection connection, String nodeId, PostgresNodeGroup group) throws IOException, SQLException {
         boolean foundNode = group.removeById(nodeId);
-
         if (foundNode) {
             if (group.isEmpty()) {
-                deleteGroup(connection, group.version, groupId);
+                group.delete(connection);
             } else {
-                NodeGroup rebalancedGroup = group.rebalance(cloudUrl);
-                persistGroup(connection, rebalancedGroup);
+                group.rebalance(cloudUrl);
+                group.persist(connection);
             }
             return true;
         }
         return false;
     }
 
-    private void deleteGroup(Connection connection, int version, String groupId) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
-            statement.setString(1, groupId);
-            statement.setInt(2, version);
-
-            if (statement.executeUpdate() == 0) {
-                throw new VersionChangedException();
-            }
-        }
-    }
-
-    private Node updateExistingNode(Node existingValue, Node newValues, NodeGroup group) {
-        //create a new node, with the existing "requestedToFollow" values
-        Node updatedNode = newValues.toBuilder()
+    private Node updateExistingNode(Node existingValue, Node newValues) {
+        return newValues.toBuilder()
             .requestedToFollow(existingValue.getRequestedToFollow())
             .lastSeen(ZonedDateTime.now())
             .build();
-        return group.updateNode(updatedNode);
     }
-
-    private List<NodeGroup> getNodeGroups(Connection connection, List<String> groupIds) throws SQLException {
-        List<NodeGroup> list = new ArrayList<>();
-        for (String group : groupIds) {
-            list.add(getNodeGroup(connection, group));
-        }
-        return list;
-    }
-
-    private NodeGroup getNodeGroup(Connection connection, String group) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
-            statement.setString(1, group);
-
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return createNodeGroup(rs);
-                } else {
-                    return new NodeGroup();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
-    private NodeGroup createNodeGroup(ResultSet rs) throws SQLException, IOException {
-        String entry = rs.getString("entry");
-        int version = rs.getInt("version");
-        List<Node> nodes = readGroupEntry(entry);
-        return new NodeGroup(nodes, version);
-    }
-
-    private List<Node> readGroupEntry(String entry) throws IOException {
-        JavaType type = JsonHelper.MAPPER.getTypeFactory().constructCollectionType(List.class, Node.class);
-        return JsonHelper.MAPPER.readValue(entry, type);
-    }
-
-    private void persistGroup(Connection connection, NodeGroup group) throws SQLException, IOException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
-            String jsonNodes = group.nodesToJson();
-
-            statement.setString(1, jsonNodes);
-            statement.setString(2, group.get(0).getGroup());
-            statement.setInt(3, group.version);
-
-            if (statement.executeUpdate() == 0) {
-                throw new VersionChangedException();
-            }
-        }
-    }
-
-    private boolean insertNewGroup(Connection connection, NodeGroup group) throws IOException, SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
-            String jsonNodes = group.nodesToJson();
-            statement.setString(1, group.get(0).getGroup());
-            statement.setString(2, jsonNodes);
-
-            if (statement.executeUpdate() == 0) {
-                //No rows updated
-                throw new VersionChangedException();
-            }
-            return true;
-        }
-    }
-
-    private List<NodeGroup> getAllGroups(Connection connection) throws SQLException {
-        List<NodeGroup> groups;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
-            groups = new ArrayList<>();
-            try (ResultSet rs = statement.executeQuery()) {
-                while (rs.next()) {
-                    groups.add(createNodeGroup(rs));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-        return groups;
-    }
-
-    private static final String QUERY_GET_ALL_GROUPS = "SELECT entry, version FROM registry ORDER BY group_id";
-    private static final String QUERY_GET_GROUP_BY_ID = "SELECT entry, version FROM registry where group_id = ? ;";
-
-    private static final String QUERY_UPDATE_GROUP =
-        "UPDATE registry SET " +
-            "entry = ?::JSON , " +
-            "version = registry.version + 1 " +
-        "WHERE " +
-            "registry.group_id = ? " +
-        "AND " +
-            "registry.version = ? " +
-        ";";
-
-    private static final String QUERY_INSERT_GROUP =
-        "INSERT INTO registry (group_id, entry, version)" +
-        "VALUES (" +
-            "?, " +
-            "?::JSON, " +
-            "0 " +
-        ")" +
-        "ON CONFLICT DO NOTHING ;";
-
-    private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 }

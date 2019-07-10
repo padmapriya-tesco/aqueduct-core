@@ -11,47 +11,41 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
-    private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
     private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;
 
     public final List<Node> nodes;
-    public final int version;
 
     public NodeGroup() {
-        this(new ArrayList<>(), UNPERSISTED_GROUP_VERSION);
+        this(new ArrayList<>());
     }
 
-    public NodeGroup(List<Node> nodes, int version) {
+    public NodeGroup(List<Node> nodes) {
         this.nodes = nodes;
-        this.version = version;
     }
 
     public boolean isEmpty() {
         return nodes.isEmpty();
     }
 
-    public boolean removeById(String nodeId) {
+    public boolean removeById(final String nodeId) {
         return nodes.removeIf(node -> node.getId().equals(nodeId));
     }
 
-    public Node add(Node node, URL cloudUrl) {
+    public Node add(final Node node, final URL cloudUrl) {
         List<URL> followUrls = getFollowerUrls(cloudUrl);
-
         Node newNode = node.toBuilder()
             .requestedToFollow(followUrls)
             .lastSeen(ZonedDateTime.now())
             .build();
-
         nodes.add(newNode);
-
         return newNode;
     }
 
-    public Node get(int index) {
+    public Node get(final int index) {
         return nodes.get(index);
     }
 
-    public Node getById(String nodeId) {
+    public Node getById(final String nodeId) {
         return nodes
             .stream()
             .filter(n -> n.getId().equals(nodeId))
@@ -65,7 +59,7 @@ public class NodeGroup {
             .collect(Collectors.toList());
     }
 
-    public Node updateNode(Node updatedNode) {
+    public Node updateNode(final Node updatedNode) {
         for (int i = 0; i < nodes.size(); i++) {
             if (nodes.get(i).getId().equals(updatedNode.getId())) {
                 return nodes.set(i, updatedNode);
@@ -79,29 +73,25 @@ public class NodeGroup {
         return JsonHelper.toJson(nodes);
     }
 
-    public NodeGroup rebalance(URL cloudUrl) {
+    public void rebalance(final URL cloudUrl) {
         List<URL> allUrls = getNodeUrls();
-        List<Node> rebalancedNodes = new ArrayList<>();
-
         for (int i = 0; i < allUrls.size(); i++) {
             List<URL> followUrls = getFollowerUrls(cloudUrl, i);
-
             Node updatedNode = nodes
                 .get(i)
                 .toBuilder()
                 .requestedToFollow(followUrls)
                 .build();
 
-            rebalancedNodes.add(updatedNode);
+            this.updateNode(updatedNode);
         }
-        return new NodeGroup(rebalancedNodes, version);
     }
 
-    private List<URL> getFollowerUrls(URL cloudUrl) {
+    private List<URL> getFollowerUrls(final URL cloudUrl) {
         return getFollowerUrls(cloudUrl, getNodeUrls().size());
     }
 
-    private List<URL> getFollowerUrls(URL cloudUrl, int nodeIndex) {
+    private List<URL> getFollowerUrls(final URL cloudUrl, int nodeIndex) {
         List<URL> followUrls = new ArrayList<>();
 
         List<URL> allUrls = getNodeUrls();
@@ -115,15 +105,11 @@ public class NodeGroup {
         return followUrls;
     }
 
-    public NodeGroup markNodesOfflineIfNotSeenSince(ZonedDateTime threshold) {
-        List<Node> updatedNodes = new ArrayList<>();
+    public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
         for (Node node : nodes) {
             if (node.getLastSeen().compareTo(threshold) < 0) {
-                updatedNodes.add(node.toBuilder().status("offline").build());
-            } else {
-                updatedNodes.add(node);
+                this.updateNode(node.toBuilder().status("offline").build());
             }
         }
-        return new NodeGroup(updatedNodes, version);
     }
 }
