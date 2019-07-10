@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.NodeGroupFactory;
 import com.tesco.aqueduct.registry.model.PostgresNodeGroup;
 import com.tesco.aqueduct.registry.model.StateSummary;
 import org.slf4j.LoggerFactory;
@@ -37,7 +36,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(Node node) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                PostgresNodeGroup group = NodeGroupFactory.getNodeGroup(connection, node.getGroup());
+                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, node.getGroup());
                 if (group.isEmpty()) {
                     node = group.add(node, cloudUrl);
                 } else {
@@ -70,9 +69,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             List<PostgresNodeGroup> groups;
 
             if (groupIds == null || groupIds.isEmpty()) {
-                groups = NodeGroupFactory.getNodeGroups(connection);
+                groups = PostgresNodeGroup.getNodeGroups(connection);
             } else {
-                groups = NodeGroupFactory.getNodeGroups(connection, groupIds);
+                groups = PostgresNodeGroup.getNodeGroups(connection, groupIds);
             }
 
             ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
@@ -104,7 +103,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public boolean deleteNode(String groupId, String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                PostgresNodeGroup nodeGroup = NodeGroupFactory.getNodeGroup(connection, groupId);
+                PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
