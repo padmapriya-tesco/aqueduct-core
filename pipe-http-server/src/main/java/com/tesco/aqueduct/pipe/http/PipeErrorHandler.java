@@ -17,7 +17,7 @@ public class PipeErrorHandler {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PipeErrorHandler.class));
 
     @Error(global = true, status = HttpStatus.METHOD_NOT_ALLOWED)
-    public MutableHttpResponse<JsonError> handleMethodNotAllowed(HttpRequest<?> request){
+    public MutableHttpResponse<JsonError> handleMethodNotAllowed(final HttpRequest<?> request){
         // Following micronaut standard for now. It is different than Tesco standard
         JsonError error = new JsonError("Page Not Found");
         error.link(Link.SELF, Link.of(request.getUri()));

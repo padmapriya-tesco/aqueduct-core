@@ -9,7 +9,7 @@ public class PipeCloudServer {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PipeCloudServer.class));
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 
         LOG.info("Pipe cloud server", "server started");
 

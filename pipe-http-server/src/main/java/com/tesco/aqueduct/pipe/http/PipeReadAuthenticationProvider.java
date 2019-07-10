@@ -16,12 +16,12 @@ public class PipeReadAuthenticationProvider implements AuthenticationProvider {
     private final List<User> users;
 
     @Inject
-    public PipeReadAuthenticationProvider(List<User> users) {
+    public PipeReadAuthenticationProvider(final List<User> users) {
         this.users = users;
     }
 
     @Override
-    public Publisher<AuthenticationResponse> authenticate(AuthenticationRequest authenticationRequest) {
+    public Publisher<AuthenticationResponse> authenticate(final AuthenticationRequest authenticationRequest) {
         Object identity  = authenticationRequest.getIdentity();
         Object secret = authenticationRequest.getSecret();
 
@@ -30,7 +30,7 @@ public class PipeReadAuthenticationProvider implements AuthenticationProvider {
         );
     }
 
-    AuthenticationResponse authenticate(Object username, Object password) {
+    AuthenticationResponse authenticate(final Object username, final Object password) {
         return users.stream()
             .filter(user -> user.isAuthenticated(username, password))
             .findAny()
