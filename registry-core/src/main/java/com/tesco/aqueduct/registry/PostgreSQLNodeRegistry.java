@@ -37,16 +37,12 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, node.getGroup());
-                if (group.isEmpty()) {
-                    node = group.add(node, cloudUrl);
+                Node existingNode = group.getById(node.getId());
+                if (existingNode != null) {
+                    node = updateExistingNode(existingNode, node);
+                    group.updateNode(node);
                 } else {
-                    Node existingNode = group.getById(node.getId());
-                    if (existingNode != null) {
-                        node = updateExistingNode(existingNode, node);
-                        group.updateNode(node);
-                    } else {
-                        node = group.add(node, cloudUrl);
-                    }
+                    node = group.add(node, cloudUrl);
                 }
                 group.persist(connection);
                 return node.getRequestedToFollow();
