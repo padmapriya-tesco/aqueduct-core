@@ -22,7 +22,7 @@ public class JsonHelper {
     public static final ObjectMapper MAPPER = configureObjectMapper(new ObjectMapper());
 
 
-    public static ObjectMapper configureObjectMapper(ObjectMapper mapper) {
+    public static ObjectMapper configureObjectMapper(final ObjectMapper mapper) {
         return mapper.registerModule(new JavaTimeModule())
             .registerModule(new Jdk8Module())
             .registerModule(new ParameterNamesModule())
@@ -41,19 +41,19 @@ public class JsonHelper {
     private static final CollectionType
         messageListType = MAPPER.getTypeFactory().constructCollectionType(List.class, Message.class);
 
-    public static Message messageFromJson(String json) throws IOException {
+    public static Message messageFromJson(final String json) throws IOException {
         return MAPPER.readValue(json, Message.class);
     }
 
-    public static List<Message> messageFromJsonArray(String json) throws IOException {
+    public static List<Message> messageFromJsonArray(final String json) throws IOException {
         return MAPPER.readValue(json, messageListType);
     }
 
-    public static String toJson(Object msg) throws IOException {
+    public static String toJson(final Object msg) throws IOException {
         return MAPPER.writeValueAsString(msg);
     }
 
-    public static String toJson(List<?> msg) throws IOException {
+    public static String toJson(final List<?> msg) throws IOException {
         return MAPPER.writeValueAsString(msg);
     }
 }

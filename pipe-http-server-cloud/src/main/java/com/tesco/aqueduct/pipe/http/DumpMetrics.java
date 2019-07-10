@@ -25,7 +25,7 @@ public class DumpMetrics {
         names.stream().forEach(this::dumpMetric);
     }
 
-    private void dumpMetric(String metricName) {
+    private void dumpMetric(final String metricName) {
         MetricsEndpoint.MetricDetails details = metrics.getMetricDetails(metricName, null);
 
         dumpMetric(metricName, details);
@@ -34,7 +34,7 @@ public class DumpMetrics {
             .forEach(tag -> dumpTag(metricName, tag));
     }
 
-    private void dumpTag(String metricName, @NotNull MetricsEndpoint.AvailableTag tag) {
+    private void dumpTag(final String metricName, @NotNull final MetricsEndpoint.AvailableTag tag) {
         tag.getValues().stream()
             .map(v -> tag.getTag() + ":" + v)
             .forEach(tagValue ->
@@ -45,7 +45,7 @@ public class DumpMetrics {
             );
     }
 
-    private void dumpMetric(String metricName, MetricsEndpoint.MetricDetails details) {
+    private void dumpMetric(final String metricName, final MetricsEndpoint.MetricDetails details) {
         details.getMeasurements().stream().forEach(sample -> {
             MDC.put("statistic", sample.getStatistic().name());
             MDC.put("value", String.format("%.2f", sample.getValue()));

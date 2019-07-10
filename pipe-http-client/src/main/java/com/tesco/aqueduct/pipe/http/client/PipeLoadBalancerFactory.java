@@ -15,13 +15,13 @@ public class PipeLoadBalancerFactory extends DiscoveryClientLoadBalancerFactory 
     public static final String SERVICE_ID = "pipe";
     private PipeLoadBalancer pipeLoadBalancer;
 
-    public PipeLoadBalancerFactory(PipeLoadBalancer pipeLoadBalancer, DiscoveryClient discoveryClient) {
+    public PipeLoadBalancerFactory(PipeLoadBalancer pipeLoadBalancer, final DiscoveryClient discoveryClient) {
         super(discoveryClient);
         this.pipeLoadBalancer = pipeLoadBalancer;
     }
 
     @Override
-    public LoadBalancer create(String serviceID) {
+    public LoadBalancer create(final String serviceID) {
         if(serviceID.equals(SERVICE_ID)) {
             return pipeLoadBalancer;
         }

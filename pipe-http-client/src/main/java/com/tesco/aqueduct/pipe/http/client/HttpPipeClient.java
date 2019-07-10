@@ -19,13 +19,13 @@ public class HttpPipeClient implements MessageReader {
     private final PipeLoadBalancer pipeLoadBalancer;
 
     @Inject
-    public HttpPipeClient(InternalHttpPipeClient client, PipeLoadBalancer pipeLoadBalancer) {
+    public HttpPipeClient(final InternalHttpPipeClient client, final PipeLoadBalancer pipeLoadBalancer) {
         this.client = client;
         this.pipeLoadBalancer = pipeLoadBalancer;
     }
 
     @Override
-    public MessageResults read(@Nullable List<String> types, long offset) {
+    public MessageResults read(@Nullable final List<String> types, final long offset) {
         try {
             return httpRead(types, offset);
         } catch (Exception e) {
@@ -34,7 +34,7 @@ public class HttpPipeClient implements MessageReader {
         }
     }
 
-    private MessageResults httpRead(@Nullable List<String> types, long offset) {
+    private MessageResults httpRead(@Nullable final List<String> types, final long offset) {
         HttpResponse<List<Message>> response = client.httpRead(types, offset);
 
         long retryAfter = Optional
@@ -53,7 +53,7 @@ public class HttpPipeClient implements MessageReader {
     }
 
     @Override
-    public long getLatestOffsetMatching(List<String> types) {
+    public long getLatestOffsetMatching(final List<String> types) {
         return client.getLatestOffsetMatching(types);
     }
 }
