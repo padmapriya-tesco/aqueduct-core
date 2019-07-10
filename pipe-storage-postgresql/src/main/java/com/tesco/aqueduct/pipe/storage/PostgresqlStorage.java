@@ -21,7 +21,7 @@ public class PostgresqlStorage implements MessageReader {
     private final long maxBatchSize;
     private final long retryAfter;
 
-    public PostgresqlStorage(DataSource dataSource, int limit, long retryAfter, long maxBatchSize) {
+    public PostgresqlStorage(final DataSource dataSource, final int limit, final long retryAfter, final long maxBatchSize) {
         this.retryAfter = retryAfter;
         this.limit = limit;
         this.dataSource = dataSource;
@@ -29,7 +29,7 @@ public class PostgresqlStorage implements MessageReader {
     }
 
     @Override
-    public MessageResults read(List<String> types, long startOffset) {
+    public MessageResults read(final List<String> types, final long startOffset) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {
 
@@ -48,7 +48,7 @@ public class PostgresqlStorage implements MessageReader {
     }
 
     @Override
-    public long getLatestOffsetMatching(List<String> types) {
+    public long getLatestOffsetMatching(final List<String> types) {
         try (Connection connection = dataSource.getConnection()) {
             return getLatestOffsetMatchingWithConnection(connection, types);
         } catch (SQLException exception) {
@@ -57,7 +57,7 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
-    private long getLatestOffsetMatchingWithConnection(Connection connection, List<String> types)
+    private long getLatestOffsetMatchingWithConnection(final Connection connection, final List<String> types)
             throws SQLException {
 
         try (PreparedStatement statement = getLatestOffsetStatement(connection, types);
@@ -68,7 +68,7 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
-    private List<Message> runMessagesQuery(PreparedStatement query) throws SQLException {
+    private List<Message> runMessagesQuery(final PreparedStatement query) throws SQLException {
         List<Message> messages = new ArrayList<>();
 
         try (ResultSet rs = query.executeQuery()) {
@@ -86,7 +86,7 @@ public class PostgresqlStorage implements MessageReader {
         return messages;
     }
 
-    private PreparedStatement getLatestOffsetStatement(Connection connection, List<String> types) {
+    private PreparedStatement getLatestOffsetStatement(final Connection connection, final List<String> types) {
 
         try {
             PreparedStatement query;
@@ -103,12 +103,11 @@ public class PostgresqlStorage implements MessageReader {
 
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset statement", exception);
-
             throw new RuntimeException(exception);
         }
     }
 
-    private PreparedStatement getMessagesStatement(Connection connection, List<String> types, long startOffset) {
+    private PreparedStatement getMessagesStatement(final Connection connection, final List<String> types, long startOffset) {
         try {
             PreparedStatement query;
 
@@ -134,7 +133,7 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
-    public void compactUpTo(ZonedDateTime thresholdDate) {
+    public void compactUpTo(final ZonedDateTime thresholdDate) {
         try(Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
             statement.setTimestamp(1, Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
@@ -146,7 +145,7 @@ public class PostgresqlStorage implements MessageReader {
     }
 
     //TODO: use parameter for batch size
-    private static String getSelectEventsWithTypeFilteringQuery(long maxBatchSize) {
+    private static String getSelectEventsWithTypeFilteringQuery(final long maxBatchSize) {
         return
             " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
             " FROM " +
@@ -166,7 +165,7 @@ public class PostgresqlStorage implements MessageReader {
     }
 
     //TODO: use parameter for batch size
-    private static String getSelectEventsWithoutTypeFilteringQuery(long maxBatchSize) {
+    private static String getSelectEventsWithoutTypeFilteringQuery(final long maxBatchSize) {
         return
             " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
             " FROM " +

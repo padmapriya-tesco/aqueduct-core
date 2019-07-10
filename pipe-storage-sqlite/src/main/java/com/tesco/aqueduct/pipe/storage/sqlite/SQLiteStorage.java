@@ -25,7 +25,7 @@ public class SQLiteStorage implements MessageStorage {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(SQLiteStorage.class));
 
-    public SQLiteStorage(DataSource dataSource, int limit, int retryAfterSeconds, long maxBatchSize) {
+    public SQLiteStorage(final DataSource dataSource, final int limit, final int retryAfterSeconds, final long maxBatchSize) {
 
         this.dataSource = dataSource;
         this.limit = limit;
@@ -47,7 +47,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(List<String> types, long offset) {
+    public MessageResults read(final List<String> types, final long offset) {
         List<Message> retrievedMessages = new ArrayList<>();
         int typesCount = types == null ? 0 : types.size();
 
@@ -76,11 +76,11 @@ public class SQLiteStorage implements MessageStorage {
         return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()));
     }
 
-    public int calculateRetryAfter(int messageCount) {
+    public int calculateRetryAfter(final int messageCount) {
         return messageCount < limit ? retryAfterSeconds : 0;
     }
 
-    private Message mapRetrievedMessageFromResultSet(ResultSet resultSet) throws SQLException {
+    private Message mapRetrievedMessageFromResultSet(final ResultSet resultSet) throws SQLException {
         Message retrievedMessage;
         ZonedDateTime time = ZonedDateTime.of(
             resultSet.getTimestamp("created_utc").toLocalDateTime(),
@@ -100,7 +100,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public long getLatestOffsetMatching(List<String> types) {
+    public long getLatestOffsetMatching(final List<String> types) {
         int typesCount = types == null ? 0 : types.size();
 
         try (
@@ -120,7 +120,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public void write(Iterable<Message> messages) {
+    public void write(final Iterable<Message> messages) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
             connection.setAutoCommit(false);
@@ -138,7 +138,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public void write(Message message) {
+    public void write(final Message message) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
             setStatementParametersForInsertMessageQuery(statement, message);
@@ -149,7 +149,7 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    public void compactUpTo(ZonedDateTime zonedDateTime) {
+    public void compactUpTo(final ZonedDateTime zonedDateTime) {
         // We may want a interface - Compactable - for this method signature
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
@@ -161,7 +161,7 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    private void setStatementParametersForInsertMessageQuery(PreparedStatement statement, Message message)
+    private void setStatementParametersForInsertMessageQuery(final PreparedStatement statement, final Message message)
             throws SQLException {
         try {
             statement.setLong(1, message.getOffset());

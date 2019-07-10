@@ -28,19 +28,15 @@ public class PipeLogger {
     }
 
     public PipeLogger withMessage(final Message message) {
-
         Map<String, String> fields = new HashMap<>();
-
         fields.put("type", message.getType());
         fields.put("key", message.getKey());
         fields.put("contentType", message.getContentType());
         fields.put("offset", String.valueOf(message.getOffset()));
-
         return new PipeLogger(this, fields);
     }
 
     public PipeLogger withTypes(final List<String> types) {
-
         if (!log.isDebugEnabled() || types == null) {
             return this;
         }
@@ -49,7 +45,6 @@ public class PipeLogger {
             "types",
             Arrays.toString(types.toArray())
         );
-
         return new PipeLogger(this, fields);
     }
 

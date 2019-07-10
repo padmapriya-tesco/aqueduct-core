@@ -26,7 +26,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     final private List<Message> messages = new ArrayList<>();
     final private int limit;
 
-    public InMemoryStorage(int limit, long retryAfter) {
+    public InMemoryStorage(final int limit, final long retryAfter) {
         this.limit = limit;
         this.retryAfter = retryAfter;
     }
@@ -35,7 +35,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
      * Complexity: O(log(n)+limit)
      */
     @Override
-    public MessageResults read(List<String> types, long offset) {
+    public MessageResults read(final List<String> types, final long offset) {
         val lock = rwl.readLock();
 
         LOG.withTypes(types).debug("in memory storage", "reading with types");
@@ -60,12 +60,12 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
         }
     }
 
-    private long getRetry(long offset) {
+    private long getRetry(final long offset) {
         return messages.isEmpty() || offset >= messages.get(messages.size()-1).getOffset() ? retryAfter : 0;
     }
 
     @Override
-    public long getLatestOffsetMatching(List<String> types) {
+    public long getLatestOffsetMatching(final List<String> types) {
         for (int i = messages.size()-1 ; i >= 0 ; i--) {
             Message message = messages.get(i);
 
@@ -76,7 +76,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
         return 0;
     }
 
-    private boolean messageMatchTypes(Message message, List<String> types) {
+    private boolean messageMatchTypes(final Message message, final List<String> types) {
         return types == null || types.isEmpty() || types.contains(message.getType());
     }
 
@@ -85,7 +85,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
      *         If not found returns negative index = (-expectedPosition) - 1.
      *         Where expected position is the index where the element would finish after inserting.
      */
-    private int findIndex(long offset) {
+    private int findIndex(final long offset) {
         return Collections.binarySearch(
             messages,
             new Message(null, null, null, offset, null, null),
@@ -96,7 +96,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     /**
      * Complexity: avg O(limit), worst case O(size), where limit is number of elements taken
      */
-    private List<Message> readFrom(List<String> types, int index) {
+    private List<Message> readFrom(final List<String> types, final int index) {
         return messages
             .stream()
             .skip(index)

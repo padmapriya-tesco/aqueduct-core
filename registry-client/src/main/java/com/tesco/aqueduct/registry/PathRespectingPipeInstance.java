@@ -12,7 +12,7 @@ public class PathRespectingPipeInstance implements ServiceInstance {
     private final URL url;
     private boolean up;
 
-    public PathRespectingPipeInstance(URL url, boolean up) {
+    public PathRespectingPipeInstance(final URL url, boolean up) {
         this.url = url;
         this.up = up;
     }
@@ -21,7 +21,7 @@ public class PathRespectingPipeInstance implements ServiceInstance {
         return up;
     }
 
-    public void setUp(boolean isServiceUp) {
+    public void setUp(final boolean isServiceUp) {
         up = isServiceUp;
     }
 
@@ -55,9 +55,9 @@ public class PathRespectingPipeInstance implements ServiceInstance {
         }
     }
 
-    private URI getUriWithBasePath(URI relativeURI) throws URISyntaxException {
+    private URI getUriWithBasePath(final URI relativeURI) throws URISyntaxException {
         String path = Paths.get(url.getPath(), relativeURI.getPath()).toString();
-        relativeURI = new URI(
+        return new URI(
             relativeURI.getScheme(),
             relativeURI.getUserInfo(),
             relativeURI.getHost(),
@@ -66,6 +66,5 @@ public class PathRespectingPipeInstance implements ServiceInstance {
             relativeURI.getQuery(),
             relativeURI.getFragment()
         );
-        return relativeURI;
     }
 }
