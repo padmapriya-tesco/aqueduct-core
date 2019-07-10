@@ -26,26 +26,26 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 
-    public PostgreSQLNodeRegistry(DataSource dataSource, URL cloudUrl, Duration offlineDelta) {
+    public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta) {
         this.cloudUrl = cloudUrl;
         this.offlineDelta = offlineDelta;
         this.dataSource = dataSource;
     }
 
     @Override
-    public List<URL> register(Node node) {
+    public List<URL> register(final Node nodeToRegister) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, node.getGroup());
-                Node existingNode = group.getById(node.getId());
-                if (existingNode != null) {
-                    node = updateExistingNode(existingNode, node);
+                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
+                Node node = group.getById(nodeToRegister.getId());
+                if (node != null) {
+                    node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
                     group.updateNode(node);
                 } else {
-                    node = group.add(node, cloudUrl);
+                    group.add(nodeToRegister, cloudUrl);
                 }
                 group.persist(connection);
-                return node.getRequestedToFollow();
+                return nodeToRegister.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
                 throw new RuntimeException(exception);
@@ -133,9 +133,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private Node updateExistingNode(Node existingValue, Node newValues) {
-        return newValues.toBuilder()
-            .requestedToFollow(existingValue.getRequestedToFollow())
+    private Node updateNodeToFollow(final Node node, final List<URL> followURLs) {
+        return node.toBuilder()
+            .requestedToFollow(followURLs)
             .lastSeen(ZonedDateTime.now())
             .build();
     }

@@ -30,10 +30,10 @@ public class SelfRegistrationTask {
 
     @Inject
     public SelfRegistrationTask(
-        RegistryClient client,
-        RegistryHitList hitList,
-        @Named("selfSummarySupplier") Supplier<Node> selfSummary,
-        @Property(name = "pipe.http.client.url") String cloudPipeUrl
+        final RegistryClient client,
+        final RegistryHitList hitList,
+        @Named("selfSummarySupplier") final Supplier<Node> selfSummary,
+        @Property(name = "pipe.http.client.url") final String cloudPipeUrl
     ) {
         this.client = client;
         this.hitList = hitList;
