@@ -7,7 +7,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 import java.util.List;
-import java.util.Map;
 
 public class TimedMessageStorage implements MessageStorage {
     private final MessageStorage storage;

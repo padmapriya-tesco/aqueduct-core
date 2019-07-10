@@ -9,7 +9,6 @@ import org.slf4j.MDC;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.SortedSet;
 

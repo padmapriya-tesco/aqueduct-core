@@ -10,7 +10,6 @@ import io.micronaut.retry.annotation.Retryable;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 @Retryable(attempts = "3")
 @Client(id = "pipe")
