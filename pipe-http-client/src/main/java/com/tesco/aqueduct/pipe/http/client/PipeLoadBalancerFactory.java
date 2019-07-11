@@ -13,9 +13,9 @@ import javax.inject.Singleton;
 public class PipeLoadBalancerFactory extends DiscoveryClientLoadBalancerFactory {
 
     public static final String SERVICE_ID = "pipe";
-    private PipeLoadBalancer pipeLoadBalancer;
+    private final PipeLoadBalancer pipeLoadBalancer;
 
-    public PipeLoadBalancerFactory(PipeLoadBalancer pipeLoadBalancer, final DiscoveryClient discoveryClient) {
+    public PipeLoadBalancerFactory(final PipeLoadBalancer pipeLoadBalancer, final DiscoveryClient discoveryClient) {
         super(discoveryClient);
         this.pipeLoadBalancer = pipeLoadBalancer;
     }

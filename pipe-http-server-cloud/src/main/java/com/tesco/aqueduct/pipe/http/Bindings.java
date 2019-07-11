@@ -19,10 +19,10 @@ public class Bindings {
     @Singleton @Named("local")
     // This provides MessageReader as it implements it
     PostgresqlStorage bindPostgreSQL(
-        @Value("${persistence.read.limit}") int limit,
-        @Value("${persistence.read.retry-after}") int retryAfter,
-        @Value("${persistence.read.max-batch-size}") int maxBatchSize,
-        @Named("postgres") DataSource dataSource
+        @Value("${persistence.read.limit}") final int limit,
+        @Value("${persistence.read.retry-after}") final int retryAfter,
+        @Value("${persistence.read.max-batch-size}") final int maxBatchSize,
+        @Named("postgres") final DataSource dataSource
     ) {
         return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize);
     }
@@ -30,9 +30,9 @@ public class Bindings {
     @Singleton
     @Measure
     NodeRegistry bindNodeRegistry(
-        @Named("postgres") DataSource dataSource,
-        @Value("${pipe.server.url}") URL selfUrl,
-        @Value("${registry.mark-offline-after:1m}") Duration markAsOffline
+        @Named("postgres") final DataSource dataSource,
+        @Value("${pipe.server.url}") final URL selfUrl,
+        @Value("${registry.mark-offline-after:1m}") final Duration markAsOffline
     ) {
         return new PostgreSQLNodeRegistry(dataSource, selfUrl, markAsOffline);
     }

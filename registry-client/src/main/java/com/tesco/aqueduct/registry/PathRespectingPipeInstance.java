@@ -12,7 +12,7 @@ public class PathRespectingPipeInstance implements ServiceInstance {
     private final URL url;
     private boolean up;
 
-    public PathRespectingPipeInstance(final URL url, boolean up) {
+    public PathRespectingPipeInstance(final URL url, final boolean up) {
         this.url = url;
         this.up = up;
     }

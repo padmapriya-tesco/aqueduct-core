@@ -42,10 +42,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
                     group.updateNode(node);
                 } else {
-                    group.add(nodeToRegister, cloudUrl);
+                    node = group.add(nodeToRegister, cloudUrl);
                 }
                 group.persist(connection);
-                return nodeToRegister.getRequestedToFollow();
+                return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
                 throw new RuntimeException(exception);
@@ -60,7 +60,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public StateSummary getSummary(long offset, String status, List<String> groupIds) {
+    public StateSummary getSummary(final long offset, final String status, final List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
             List<PostgresNodeGroup> groups;
 
@@ -85,7 +85,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private Node getCloudNode(long offset, String status) {
+    private Node getCloudNode(final long offset, final String status) {
         return Node.builder()
             .localUrl(cloudUrl)
             .offset(offset)
@@ -96,7 +96,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public boolean deleteNode(String groupId, String nodeId) {
+    public boolean deleteNode(final String groupId, final String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
@@ -119,7 +119,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, String nodeId, PostgresNodeGroup group) throws IOException, SQLException {
+    private boolean deleteExistingNode(final Connection connection, final String nodeId, final PostgresNodeGroup group) throws IOException, SQLException {
         boolean foundNode = group.removeById(nodeId);
         if (foundNode) {
             if (group.isEmpty()) {

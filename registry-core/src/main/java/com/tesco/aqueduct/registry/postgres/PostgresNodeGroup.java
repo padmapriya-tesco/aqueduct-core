@@ -97,13 +97,13 @@ public class PostgresNodeGroup extends NodeGroup {
     private final String groupId;
     private final int version;
 
-    private PostgresNodeGroup(String groupId) {
+    private PostgresNodeGroup(final String groupId) {
         super();
         this.groupId = groupId;
         this.version = UNPERSISTED_GROUP_VERSION;
     }
 
-    private PostgresNodeGroup(String groupId, int version, List<Node> nodes) {
+    private PostgresNodeGroup(final String groupId, final int version, final List<Node> nodes) {
         super(nodes);
         this.groupId = groupId;
         this.version = version;

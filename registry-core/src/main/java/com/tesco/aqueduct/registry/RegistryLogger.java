@@ -16,12 +16,12 @@ public class RegistryLogger {
 
     private final Map<String, String> fields;
 
-    public RegistryLogger(Logger logger) {
+    public RegistryLogger(final Logger logger) {
         this.log = logger;
         this.fields = new HashMap<>();
     }
 
-    private RegistryLogger(RegistryLogger logger, Map<String, String> logFields) {
+    private RegistryLogger(final RegistryLogger logger, final Map<String, String> logFields) {
         this.log = logger.log;
 
         this.fields = new HashMap<>();
@@ -29,7 +29,7 @@ public class RegistryLogger {
         this.fields.putAll(logFields);
     }
 
-    public RegistryLogger withNode(Node node) {
+    public RegistryLogger withNode(final Node node) {
 
         Map<String, String> fields = new HashMap<>();
 
@@ -73,39 +73,39 @@ public class RegistryLogger {
         return new RegistryLogger(this, fields);
     }
 
-    public void error(String where, String what, String why) {
+    public void error(final String where, final String what, final String why) {
         log(where, what, why, log::error);
     }
 
-    public void error(String where, String what, Throwable why) {
+    public void error(final String where, final String what, final Throwable why) {
         log(where, what, why, log::error);
     }
 
-    public void info(String where, String what) {
+    public void info(final String where, final String what) {
         if (log.isInfoEnabled()) {
             log(where, what, log::info);
         }
     }
 
-    public void info(String where, String what, Throwable why) {
+    public void info(final String where, final String what, final Throwable why) {
         if (log.isInfoEnabled()) {
             log(where, what, why, log::info);
         }
     }
 
-    public void debug(String where, String what) {
+    public void debug(final String where, final String what) {
         if (log.isDebugEnabled()) {
             log(where, what, log::debug);
         }
     }
 
-    public void debug(String where, String what, Throwable why) {
+    public void debug(final String where, final String what, final Throwable why) {
         if (log.isDebugEnabled()) {
             log(where, what, why, log::debug);
         }
     }
 
-    private void log(String where, String what, Consumer<String> loggerFunc) {
+    private void log(final String where, final String what, final Consumer<String> loggerFunc) {
         try {
             fields.put("method", where);
             MDC.setContextMap(fields);
@@ -115,7 +115,7 @@ public class RegistryLogger {
         }
     }
 
-    private void log(String where, String what, Object why, BiConsumer<String, Object> loggerFunc) {
+    private void log(final String where, final String what, final Object why, final BiConsumer<String, Object> loggerFunc) {
         try {
             fields.put("method", where);
             MDC.setContextMap(fields);

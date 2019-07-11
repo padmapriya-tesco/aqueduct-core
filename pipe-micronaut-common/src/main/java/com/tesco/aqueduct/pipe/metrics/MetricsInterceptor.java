@@ -14,7 +14,7 @@ public class MetricsInterceptor implements MethodInterceptor<Object, Object> {
     private static final Logger LOG = LoggerFactory.getLogger("metrics");
 
     @Override
-    public Object intercept(MethodInvocationContext<Object, Object> context) {
+    public Object intercept(final MethodInvocationContext<Object, Object> context) {
         long methodStartTime = System.currentTimeMillis();
         try {
             return context.proceed();

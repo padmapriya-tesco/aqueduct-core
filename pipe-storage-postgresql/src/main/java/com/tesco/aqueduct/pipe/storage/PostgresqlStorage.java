@@ -107,7 +107,7 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
-    private PreparedStatement getMessagesStatement(final Connection connection, final List<String> types, long startOffset) {
+    private PreparedStatement getMessagesStatement(final Connection connection, final List<String> types, final long startOffset) {
         try {
             PreparedStatement query;
 

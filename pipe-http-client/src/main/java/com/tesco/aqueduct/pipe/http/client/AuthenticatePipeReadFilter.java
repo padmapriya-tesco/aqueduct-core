@@ -18,15 +18,15 @@ public class AuthenticatePipeReadFilter implements HttpClientFilter {
     private String password;
 
     public AuthenticatePipeReadFilter(
-        @Property(name = "authentication.read-pipe.username") String username,
-        @Property(name = "authentication.read-pipe.password") String password
+        @Property(name = "authentication.read-pipe.username") final String username,
+        @Property(name = "authentication.read-pipe.password") final String password
     ) {
         this.username = username;
         this.password = password;
     }
 
     @Override
-    public Publisher<? extends HttpResponse<?>> doFilter(MutableHttpRequest<?> request, ClientFilterChain chain) {
+    public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
         return chain.proceed(request.basicAuth(username, password));
     }
 }

@@ -18,7 +18,7 @@ public class NodeGroup {
         this(new ArrayList<>());
     }
 
-    public NodeGroup(List<Node> nodes) {
+    public NodeGroup(final List<Node> nodes) {
         this.nodes = nodes;
     }
 

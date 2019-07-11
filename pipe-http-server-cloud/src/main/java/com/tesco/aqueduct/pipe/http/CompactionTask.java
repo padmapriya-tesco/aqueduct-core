@@ -26,8 +26,8 @@ class CompactionTask {
     public CompactionTask(
             final MeterRegistry registry,
             final PostgresqlStorage postgresqlStorage,
-            @Property(name = "persistence.compact.threshold") Duration threshold,
-            @Property(name = "persistence.compact.schedule.cron") String cronExpression
+            @Property(name = "persistence.compact.threshold") final Duration threshold,
+            @Property(name = "persistence.compact.schedule.cron") final String cronExpression
     ) {
         this.postgresqlStorage = postgresqlStorage;
         this.threshold = threshold;
