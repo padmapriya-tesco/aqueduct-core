@@ -36,7 +36,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(final Node nodeToRegister) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
+                final PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
                 Node node = group.getById(nodeToRegister.getId());
                 if (node != null) {
                     node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
@@ -70,10 +70,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 groups = PostgresNodeGroup.getNodeGroups(connection, groupIds);
             }
 
-            ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
+            final ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
             groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
 
-            List<Node> followers = groups.stream()
+            final List<Node> followers = groups.stream()
                 .map(group -> group.nodes)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
@@ -99,7 +99,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public boolean deleteNode(final String groupId, final String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
+                final PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
@@ -120,7 +120,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     private boolean deleteExistingNode(final Connection connection, final String nodeId, final PostgresNodeGroup group) throws IOException, SQLException {
-        boolean foundNode = group.removeById(nodeId);
+        final boolean foundNode = group.removeById(nodeId);
         if (foundNode) {
             if (group.isEmpty()) {
                 group.delete(connection);

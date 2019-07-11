@@ -15,7 +15,7 @@ public class MetricsInterceptor implements MethodInterceptor<Object, Object> {
 
     @Override
     public Object intercept(final MethodInvocationContext<Object, Object> context) {
-        long methodStartTime = System.currentTimeMillis();
+        final long methodStartTime = System.currentTimeMillis();
         try {
             return context.proceed();
         } finally {

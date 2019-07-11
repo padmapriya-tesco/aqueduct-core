@@ -36,21 +36,21 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
      */
     @Override
     public MessageResults read(final List<String> types, final long offset) {
-        val lock = rwl.readLock();
+        final val lock = rwl.readLock();
 
         LOG.withTypes(types).debug("in memory storage", "reading with types");
 
         try {
             lock.lock();
 
-            int index = findIndex(offset);
+            final int index = findIndex(offset);
 
             if (index >= 0) {
                 // found
                 return new MessageResults(readFrom(types,index), 0);
             } else {
                 // determine if at the head of the queue to return retry after
-                long retry = getRetry(offset);
+                final long retry = getRetry(offset);
 
                 // not found
                 return new MessageResults(readFrom(types,-index-1), retry);
@@ -67,7 +67,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     @Override
     public long getLatestOffsetMatching(final List<String> types) {
         for (int i = messages.size()-1 ; i >= 0 ; i--) {
-            Message message = messages.get(i);
+            final Message message = messages.get(i);
 
             if (messageMatchTypes(message, types)) {
                 return message.getOffset();
@@ -115,7 +115,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
      */
     @Override
     public void write(Message message) {
-        val lock = rwl.writeLock();
+        final val lock = rwl.writeLock();
 
         LOG.withMessage(message).info("in memory storage", "writing message");
 
@@ -142,7 +142,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     }
 
     public void clear() {
-        val lock = rwl.writeLock();
+        final val lock = rwl.writeLock();
 
         try {
             lock.lock();

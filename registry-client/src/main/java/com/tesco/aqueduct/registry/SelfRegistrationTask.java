@@ -44,8 +44,8 @@ public class SelfRegistrationTask {
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
     void register() {
         try {
-            Node node = selfSummary.get();
-            List<URL> upstreamEndpoints = client.register(node);
+            final Node node = selfSummary.get();
+            final List<URL> upstreamEndpoints = client.register(node);
             hitList.update(upstreamEndpoints);
             hasRegistered = true;
         } catch (Exception e) {

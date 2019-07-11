@@ -28,7 +28,7 @@ public class PipeLogger {
     }
 
     public PipeLogger withMessage(final Message message) {
-        Map<String, String> fields = new HashMap<>();
+        final Map<String, String> fields = new HashMap<>();
         fields.put("type", message.getType());
         fields.put("key", message.getKey());
         fields.put("contentType", message.getContentType());
@@ -41,7 +41,7 @@ public class PipeLogger {
             return this;
         }
 
-        Map<String, String> fields = Collections.singletonMap(
+        final Map<String, String> fields = Collections.singletonMap(
             "types",
             Arrays.toString(types.toArray())
         );

@@ -40,7 +40,7 @@ public class PipeReadController {
 
     @Get("/pipe/offset/latest{?type}")
     public long latestOffset(final List<String> type) {
-        List<String> types = flattenRequestParams(type);
+        final List<String> types = flattenRequestParams(type);
         return messageReader.getLatestOffsetMatching(types);
     }
 
@@ -52,15 +52,15 @@ public class PipeReadController {
 
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
-        List<String> types = flattenRequestParams(request.getParameters().getAll("type"));
+        final List<String> types = flattenRequestParams(request.getParameters().getAll("type"));
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
-        val messageResults = messageReader.read(types, offset);
+        final val messageResults = messageReader.read(types, offset);
 
         //val list = takeMessagesToSizeLimit(messageResults.getMessages(), maxPayloadSizeBytes);
-        val list = messageResults.getMessages();
+        final val list = messageResults.getMessages();
 
-        long retryTime = messageResults.getRetryAfterSeconds();
+        final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
 

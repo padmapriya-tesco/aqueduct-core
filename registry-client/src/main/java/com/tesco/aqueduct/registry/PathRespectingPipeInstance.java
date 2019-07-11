@@ -56,7 +56,7 @@ public class PathRespectingPipeInstance implements ServiceInstance {
     }
 
     private URI getUriWithBasePath(final URI relativeURI) throws URISyntaxException {
-        String path = Paths.get(url.getPath(), relativeURI.getPath()).toString();
+        final String path = Paths.get(url.getPath(), relativeURI.getPath()).toString();
         return new URI(
             relativeURI.getScheme(),
             relativeURI.getUserInfo(),
