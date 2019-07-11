@@ -48,8 +48,8 @@ public class NodeRegistryController {
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Post
     public List<URL> registerNode(@Body final Node node) {
-        List<URL> requestedToFollow = registry.register(node);
-        String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
+        final List<URL> requestedToFollow = registry.register(node);
+        final String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
         LOG.withNode(node).info("requested to follow", followStr);
         return requestedToFollow;
     }
@@ -57,9 +57,7 @@ public class NodeRegistryController {
     @Secured(REGISTRY_DELETE)
     @Delete("/{group}/{id}")
     public HttpResponse deleteNode(final String group, final String id) {
-        boolean deleted = registry.deleteNode(group, id);
-
-        if (deleted) {
+        if (registry.deleteNode(group, id)) {
             return HttpResponse.status(HttpStatus.OK);
         } else {
             return HttpResponse.status(HttpStatus.NOT_FOUND);

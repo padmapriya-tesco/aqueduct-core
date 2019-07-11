@@ -30,9 +30,7 @@ public class RegistryLogger {
     }
 
     public RegistryLogger withNode(final Node node) {
-
-        Map<String, String> fields = new HashMap<>();
-
+        final Map<String, String> fields = new HashMap<>();
         fields.put("id", node.getId());
         fields.put("group", node.getGroup());
         fields.put("localUrl", node.getLocalUrl().toString());

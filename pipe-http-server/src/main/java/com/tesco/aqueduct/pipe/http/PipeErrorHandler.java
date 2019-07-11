@@ -19,7 +19,7 @@ public class PipeErrorHandler {
     @Error(global = true, status = HttpStatus.METHOD_NOT_ALLOWED)
     public MutableHttpResponse<JsonError> handleMethodNotAllowed(final HttpRequest<?> request){
         // Following micronaut standard for now. It is different than Tesco standard
-        JsonError error = new JsonError("Page Not Found");
+        final JsonError error = new JsonError("Page Not Found");
         error.link(Link.SELF, Link.of(request.getUri()));
 
         LOG.error("pipe error handler", "method not allowed", error.getMessage());

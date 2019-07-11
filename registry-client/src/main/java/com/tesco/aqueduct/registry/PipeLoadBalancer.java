@@ -83,7 +83,7 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
         try {
             // We have to use URIs for this comparison as URLs are converted to IPs under the hood, which causes issues
             // for local testing
-            URI uri = url.toURI();
+            final URI uri = url.toURI();
             return services.stream()
                 .filter(oldInstance -> uri.equals(oldInstance.getURI()))
                 .findFirst();
@@ -101,9 +101,7 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     }
 
     private Completable checkState(final RxHttpClient client, final PathRespectingPipeInstance instance) {
-
-        String urlWithPath = UriBuilder.of(instance.getURI()).path("/pipe/_status").build().toString();
-
+        final String urlWithPath = UriBuilder.of(instance.getURI()).path("/pipe/_status").build().toString();
         return client.retrieve(urlWithPath)
             // if got response, then it's a true
             .map(response -> true )

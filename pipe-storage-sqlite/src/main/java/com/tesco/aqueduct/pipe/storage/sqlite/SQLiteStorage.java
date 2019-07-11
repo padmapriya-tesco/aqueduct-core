@@ -48,8 +48,8 @@ public class SQLiteStorage implements MessageStorage {
 
     @Override
     public MessageResults read(final List<String> types, final long offset) {
-        List<Message> retrievedMessages = new ArrayList<>();
-        int typesCount = types == null ? 0 : types.size();
+        final List<Message> retrievedMessages = new ArrayList<>();
+        final int typesCount = types == null ? 0 : types.size();
 
         try (
             Connection connection = dataSource.getConnection();
@@ -82,7 +82,7 @@ public class SQLiteStorage implements MessageStorage {
 
     private Message mapRetrievedMessageFromResultSet(final ResultSet resultSet) throws SQLException {
         Message retrievedMessage;
-        ZonedDateTime time = ZonedDateTime.of(
+        final ZonedDateTime time = ZonedDateTime.of(
             resultSet.getTimestamp("created_utc").toLocalDateTime(),
             ZoneId.of("UTC")
         );
@@ -101,7 +101,7 @@ public class SQLiteStorage implements MessageStorage {
 
     @Override
     public long getLatestOffsetMatching(final List<String> types) {
-        int typesCount = types == null ? 0 : types.size();
+        final int typesCount = types == null ? 0 : types.size();
 
         try (
             Connection connection = dataSource.getConnection();
@@ -125,7 +125,7 @@ public class SQLiteStorage implements MessageStorage {
              PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
             connection.setAutoCommit(false);
 
-            for (Message message : messages) {
+            for (final Message message : messages) {
                 setStatementParametersForInsertMessageQuery(statement, message);
                 statement.addBatch();
             }
@@ -154,7 +154,7 @@ public class SQLiteStorage implements MessageStorage {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
             statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
-            int rowsAffected = statement.executeUpdate();
+            final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
             throw new RuntimeException(e);

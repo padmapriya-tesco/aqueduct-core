@@ -21,15 +21,13 @@ public class DumpMetrics {
 
     @Scheduled(fixedDelay = "1m")
     public void dumpMetrics() {
-        SortedSet<String> names = metrics.listNames().getNames();
+        final SortedSet<String> names = metrics.listNames().getNames();
         names.stream().forEach(this::dumpMetric);
     }
 
     private void dumpMetric(final String metricName) {
-        MetricsEndpoint.MetricDetails details = metrics.getMetricDetails(metricName, null);
-
+        final MetricsEndpoint.MetricDetails details = metrics.getMetricDetails(metricName, null);
         dumpMetric(metricName, details);
-
         details.getAvailableTags().stream()
             .forEach(tag -> dumpTag(metricName, tag));
     }

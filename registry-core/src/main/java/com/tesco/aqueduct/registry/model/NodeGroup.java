@@ -31,8 +31,8 @@ public class NodeGroup {
     }
 
     public Node add(final Node node, final URL cloudUrl) {
-        List<URL> followUrls = getFollowerUrls(cloudUrl);
-        Node newNode = node.toBuilder()
+        final List<URL> followUrls = getFollowerUrls(cloudUrl);
+        final Node newNode = node.toBuilder()
             .requestedToFollow(followUrls)
             .lastSeen(ZonedDateTime.now())
             .build();
@@ -73,10 +73,10 @@ public class NodeGroup {
     }
 
     public void rebalance(final URL cloudUrl) {
-        List<URL> allUrls = getNodeUrls();
+        final List<URL> allUrls = getNodeUrls();
         for (int i = 0; i < allUrls.size(); i++) {
-            List<URL> followUrls = getFollowerUrls(cloudUrl, i);
-            Node updatedNode = nodes
+            final List<URL> followUrls = getFollowerUrls(cloudUrl, i);
+            final Node updatedNode = nodes
                 .get(i)
                 .toBuilder()
                 .requestedToFollow(followUrls)
@@ -91,21 +91,19 @@ public class NodeGroup {
     }
 
     private List<URL> getFollowerUrls(final URL cloudUrl, int nodeIndex) {
-        List<URL> followUrls = new ArrayList<>();
-
-        List<URL> allUrls = getNodeUrls();
+        final List<URL> followUrls = new ArrayList<>();
+        final List<URL> allUrls = getNodeUrls();
         if (nodeIndex < 0) nodeIndex = allUrls.size();
         while (nodeIndex != 0) {
             nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
             followUrls.add(allUrls.get(nodeIndex));
         }
-
         followUrls.add(cloudUrl);
         return followUrls;
     }
 
     public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
-        for (Node node : nodes) {
+        for (final Node node : nodes) {
             if (node.getLastSeen().compareTo(threshold) < 0) {
                 this.updateNode(node.toBuilder().status("offline").build());
             }

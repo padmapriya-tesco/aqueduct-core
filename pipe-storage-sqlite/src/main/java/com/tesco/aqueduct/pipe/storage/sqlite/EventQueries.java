@@ -23,7 +23,7 @@ final class EventQueries {
             "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT GROUP BY msg_key);";
 
     static String getReadEvent(final int typesCount, final long maxBatchSize) {
-        StringBuilder queryBuilder = new StringBuilder(
+        final StringBuilder queryBuilder = new StringBuilder(
             " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
             " FROM " +
             "   (" +
@@ -54,7 +54,7 @@ final class EventQueries {
     }
 
     static String getLastOffsetQuery(final int typesCount) {
-        StringBuilder queryBuilder = new StringBuilder();
+        final StringBuilder queryBuilder = new StringBuilder();
         queryBuilder.append("SELECT coalesce(max(msg_offset),0) as last_offset FROM EVENT");
 
         if (typesCount != 0) {

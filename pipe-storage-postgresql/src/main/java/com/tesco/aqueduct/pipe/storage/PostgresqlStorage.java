@@ -33,12 +33,12 @@ public class PostgresqlStorage implements MessageReader {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {
 
-            long maxOffset = getLatestOffsetMatchingWithConnection(connection, types);
-            long retry = startOffset >= maxOffset ? retryAfter : 0;
+            final long maxOffset = getLatestOffsetMatchingWithConnection(connection, types);
+            final long retry = startOffset >= maxOffset ? retryAfter : 0;
 
             LOG.withTypes(types).debug("postgresql storage", "reading with types");
 
-            List<Message> messages = runMessagesQuery(messagesQuery);
+            final List<Message> messages = runMessagesQuery(messagesQuery);
 
             return new MessageResults(messages, retry);
         } catch (SQLException exception) {
@@ -69,16 +69,16 @@ public class PostgresqlStorage implements MessageReader {
     }
 
     private List<Message> runMessagesQuery(final PreparedStatement query) throws SQLException {
-        List<Message> messages = new ArrayList<>();
+        final List<Message> messages = new ArrayList<>();
 
         try (ResultSet rs = query.executeQuery()) {
             while (rs.next()) {
-                String type = rs.getString("type");
-                String key = rs.getString("msg_key");
-                String contentType = rs.getString("content_type");
-                Long offset = rs.getLong("msg_offset");
-                ZonedDateTime created = ZonedDateTime.of(rs.getTimestamp("created_utc").toLocalDateTime(), ZoneId.of("UTC"));
-                String data = rs.getString("data");
+                final String type = rs.getString("type");
+                final String key = rs.getString("msg_key");
+                final String contentType = rs.getString("content_type");
+                final Long offset = rs.getLong("msg_offset");
+                final ZonedDateTime created = ZonedDateTime.of(rs.getTimestamp("created_utc").toLocalDateTime(), ZoneId.of("UTC"));
+                final String data = rs.getString("data");
 
                 messages.add(new Message(type, key, contentType, offset, created, data));
             }
@@ -94,7 +94,7 @@ public class PostgresqlStorage implements MessageReader {
             if (types == null || types.isEmpty()) {
                 query = connection.prepareStatement(getSelectLatestOffsetWithoutTypeQuery());
             } else {
-                String strTypes = String.join(",", types);
+                final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectLatestOffsetWithTypeQuery());
                 query.setString(1, strTypes);
             }
@@ -117,7 +117,7 @@ public class PostgresqlStorage implements MessageReader {
                 query.setLong(2, limit);
 
             } else {
-                String strTypes = String.join(",", types);
+                final String strTypes = String.join(",", types);
 
                 query = connection.prepareStatement(getSelectEventsWithTypeFilteringQuery(maxBatchSize));
                 query.setLong(1, startOffset);
@@ -137,7 +137,7 @@ public class PostgresqlStorage implements MessageReader {
         try(Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
             statement.setTimestamp(1, Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
-            int rowsAffected = statement.executeUpdate();
+            final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
             throw new RuntimeException(e);

@@ -35,9 +35,9 @@ public class HttpPipeClient implements MessageReader {
     }
 
     private MessageResults httpRead(@Nullable final List<String> types, final long offset) {
-        HttpResponse<List<Message>> response = client.httpRead(types, offset);
+        final HttpResponse<List<Message>> response = client.httpRead(types, offset);
 
-        long retryAfter = Optional
+        final long retryAfter = Optional
             .ofNullable(response.header("Retry-After"))
             .map(value -> {
                 try {

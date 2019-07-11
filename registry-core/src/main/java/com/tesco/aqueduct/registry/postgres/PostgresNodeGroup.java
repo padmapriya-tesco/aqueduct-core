@@ -58,8 +58,8 @@ public class PostgresNodeGroup extends NodeGroup {
     }
 
     public static List<PostgresNodeGroup> getNodeGroups(final Connection connection, final List<String> groupIds) throws SQLException {
-        List<PostgresNodeGroup> list = new ArrayList<>();
-        for (String group : groupIds) {
+        final List<PostgresNodeGroup> list = new ArrayList<>();
+        for (final String group : groupIds) {
             list.add(getNodeGroup(connection, group));
         }
         return list;
@@ -82,15 +82,15 @@ public class PostgresNodeGroup extends NodeGroup {
     }
 
     private static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
-        String entry = rs.getString("entry");
-        int version = rs.getInt("version");
-        String groupId = rs.getString("group_id");
-        List<Node> nodes = readGroupEntry(entry);
+        final String entry = rs.getString("entry");
+        final int version = rs.getInt("version");
+        final String groupId = rs.getString("group_id");
+        final List<Node> nodes = readGroupEntry(entry);
         return new PostgresNodeGroup(groupId, version, nodes);
     }
 
     private static List<Node> readGroupEntry(final String entry) throws IOException {
-        JavaType type = JsonHelper.MAPPER.getTypeFactory().constructCollectionType(List.class, Node.class);
+        final JavaType type = JsonHelper.MAPPER.getTypeFactory().constructCollectionType(List.class, Node.class);
         return JsonHelper.MAPPER.readValue(entry, type);
     }
 

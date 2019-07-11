@@ -22,9 +22,8 @@ public class PipeReadAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Publisher<AuthenticationResponse> authenticate(final AuthenticationRequest authenticationRequest) {
-        Object identity  = authenticationRequest.getIdentity();
-        Object secret = authenticationRequest.getSecret();
-
+        final Object identity  = authenticationRequest.getIdentity();
+        final Object secret = authenticationRequest.getSecret();
         return Flowable.just(
             authenticate(identity, secret)
         );
