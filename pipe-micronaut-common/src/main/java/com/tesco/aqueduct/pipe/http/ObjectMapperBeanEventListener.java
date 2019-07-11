@@ -10,7 +10,7 @@ import javax.inject.Singleton;
 @Singleton
 public class ObjectMapperBeanEventListener implements BeanCreatedEventListener<ObjectMapper> {
     @Override
-    public ObjectMapper onCreated(BeanCreatedEvent<ObjectMapper> event) {
+    public ObjectMapper onCreated(final BeanCreatedEvent<ObjectMapper> event) {
         final ObjectMapper mapper = event.getBean();
         return JsonHelper.configureObjectMapper(mapper);
     }

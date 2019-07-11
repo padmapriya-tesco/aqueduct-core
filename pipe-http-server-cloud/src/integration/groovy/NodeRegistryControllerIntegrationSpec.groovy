@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.*
 
 class NodeRegistryControllerIntegrationSpec extends Specification {
 
-    static String cloudPipeUrl = "http://cloud.pipe"
+    static final String cloudPipeUrl = "http://cloud.pipe"
     static final String USERNAME = "username"
     static final String PASSWORD = "password"
     static final String USERNAME_TWO = "username-two"

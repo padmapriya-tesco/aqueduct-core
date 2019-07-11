@@ -8,7 +8,7 @@ import java.util.Map;
 public class JsonLogger extends JsonLayout {
     private final String version = Version.getImplementationVersion();
     @Override
-    protected void addCustomDataToJsonMap(Map<String, Object> map, ILoggingEvent event) {
+    protected void addCustomDataToJsonMap(final Map<String, Object> map, final ILoggingEvent event) {
         map.put("v", version);
     }
 }

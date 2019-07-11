@@ -24,10 +24,10 @@ class CompactionTask {
     private final LongTaskTimer longTaskTimer;
 
     public CompactionTask(
-            MeterRegistry registry,
-            PostgresqlStorage postgresqlStorage,
-            @Property(name = "persistence.compact.threshold") Duration threshold,
-            @Property(name = "persistence.compact.schedule.cron") String cronExpression
+            final MeterRegistry registry,
+            final PostgresqlStorage postgresqlStorage,
+            @Property(name = "persistence.compact.threshold") final Duration threshold,
+            @Property(name = "persistence.compact.schedule.cron") final String cronExpression
     ) {
         this.postgresqlStorage = postgresqlStorage;
         this.threshold = threshold;
@@ -45,7 +45,7 @@ class CompactionTask {
         });
     }
 
-    private void isValid(String cronExpression) {
+    private void isValid(final String cronExpression) {
         CronExpression.create(cronExpression);
     }
 }

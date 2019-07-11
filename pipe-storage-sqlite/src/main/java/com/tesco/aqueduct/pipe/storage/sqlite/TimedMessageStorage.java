@@ -7,7 +7,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 import java.util.List;
-import java.util.Map;
 
 public class TimedMessageStorage implements MessageStorage {
     private final MessageStorage storage;
@@ -16,7 +15,7 @@ public class TimedMessageStorage implements MessageStorage {
     private final Timer writeMessageTimer;
     private final Timer writeMessagesTimer;
 
-    public TimedMessageStorage(MessageStorage storage, MeterRegistry meterRegistry) {
+    public TimedMessageStorage(final MessageStorage storage, final MeterRegistry meterRegistry) {
         this.storage = storage;
         readTimer = meterRegistry.timer("pipe.storage.read");
         latestOffsetTimer = meterRegistry.timer("pipe.storage.latestOffset");
@@ -25,22 +24,22 @@ public class TimedMessageStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(List<String> types, long offset) {
+    public MessageResults read(final List<String> types, final long offset) {
         return readTimer.record(() -> storage.read(types, offset));
     }
 
     @Override
-    public long getLatestOffsetMatching(List<String> types) {
+    public long getLatestOffsetMatching(final List<String> types) {
         return latestOffsetTimer.record(() -> storage.getLatestOffsetMatching(types));
     }
 
     @Override
-    public void write(Iterable<Message> messages) {
+    public void write(final Iterable<Message> messages) {
         writeMessageTimer.record(() -> storage.write(messages));
     }
 
     @Override
-    public void write(Message message) {
+    public void write(final Message message) {
         writeMessagesTimer.record(() -> storage.write(message));
     }
 }

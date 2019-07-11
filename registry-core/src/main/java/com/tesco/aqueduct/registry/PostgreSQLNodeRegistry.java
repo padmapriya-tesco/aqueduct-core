@@ -26,23 +26,23 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 
-    public PostgreSQLNodeRegistry(DataSource dataSource, URL cloudUrl, Duration offlineDelta) {
+    public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta) {
         this.cloudUrl = cloudUrl;
         this.offlineDelta = offlineDelta;
         this.dataSource = dataSource;
     }
 
     @Override
-    public List<URL> register(Node node) {
+    public List<URL> register(final Node nodeToRegister) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
-                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, node.getGroup());
-                Node existingNode = group.getById(node.getId());
-                if (existingNode != null) {
-                    node = updateExistingNode(existingNode, node);
+                PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
+                Node node = group.getById(nodeToRegister.getId());
+                if (node != null) {
+                    node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
                     group.updateNode(node);
                 } else {
-                    node = group.add(node, cloudUrl);
+                    node = group.add(nodeToRegister, cloudUrl);
                 }
                 group.persist(connection);
                 return node.getRequestedToFollow();
@@ -60,7 +60,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public StateSummary getSummary(long offset, String status, List<String> groupIds) {
+    public StateSummary getSummary(final long offset, final String status, final List<String> groupIds) {
         try (Connection connection = dataSource.getConnection()) {
             List<PostgresNodeGroup> groups;
 
@@ -85,7 +85,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private Node getCloudNode(long offset, String status) {
+    private Node getCloudNode(final long offset, final String status) {
         return Node.builder()
             .localUrl(cloudUrl)
             .offset(offset)
@@ -96,7 +96,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     }
 
     @Override
-    public boolean deleteNode(String groupId, String nodeId) {
+    public boolean deleteNode(final String groupId, final String nodeId) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
                 PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
@@ -119,7 +119,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
     }
 
-    private boolean deleteExistingNode(Connection connection, String nodeId, PostgresNodeGroup group) throws IOException, SQLException {
+    private boolean deleteExistingNode(final Connection connection, final String nodeId, final PostgresNodeGroup group) throws IOException, SQLException {
         boolean foundNode = group.removeById(nodeId);
         if (foundNode) {
             if (group.isEmpty()) {
@@ -133,9 +133,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private Node updateExistingNode(Node existingValue, Node newValues) {
-        return newValues.toBuilder()
-            .requestedToFollow(existingValue.getRequestedToFollow())
+    private Node updateNodeToFollow(final Node node, final List<URL> followURLs) {
+        return node.toBuilder()
+            .requestedToFollow(followURLs)
             .lastSeen(ZonedDateTime.now())
             .build();
     }

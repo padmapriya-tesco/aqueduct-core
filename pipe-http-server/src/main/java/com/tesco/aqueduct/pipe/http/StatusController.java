@@ -7,9 +7,6 @@ import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import lombok.Data;
 
-import java.util.Collections;
-import java.util.Map;
-
 @Secured(SecurityRule.IS_ANONYMOUS)
 @Controller
 @Measure

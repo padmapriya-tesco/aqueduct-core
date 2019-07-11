@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,7 +18,7 @@ public class NodeGroup {
         this(new ArrayList<>());
     }
 
-    public NodeGroup(List<Node> nodes) {
+    public NodeGroup(final List<Node> nodes) {
         this.nodes = nodes;
     }
 

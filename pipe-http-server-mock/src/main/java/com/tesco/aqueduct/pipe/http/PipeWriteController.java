@@ -15,7 +15,7 @@ public class PipeWriteController {
     private MessageWriter messageWriter;
 
     @Post("/pipe")
-    public Status writeMessages(@Body List<Message> messages) {
+    public Status writeMessages(@Body final List<Message> messages) {
         messageWriter.write(messages);
         return Status.ok();
     }

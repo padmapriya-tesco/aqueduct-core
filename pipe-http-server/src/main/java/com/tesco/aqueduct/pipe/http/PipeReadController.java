@@ -39,13 +39,13 @@ public class PipeReadController {
     private int maxPayloadSizeBytes;
 
     @Get("/pipe/offset/latest{?type}")
-    public long latestOffset(List<String> type) {
+    public long latestOffset(final List<String> type) {
         List<String> types = flattenRequestParams(type);
         return messageReader.getLatestOffsetMatching(types);
     }
 
     @Get("/pipe/{offset}{?type}")
-    public HttpResponse<List<Message>> readMessages(long offset, HttpRequest<?> request) {
+    public HttpResponse<List<Message>> readMessages(final long offset, final HttpRequest<?> request) {
         if(offset < 0) {
             return HttpResponse.badRequest();
         }
@@ -67,7 +67,7 @@ public class PipeReadController {
         return HttpResponse.ok(list).header("Retry-After", String.valueOf(retryTime));
     }
 
-    private void logOffsetRequestFromRemoteHost(long offset, String hostName) {
+    private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {
         if(LOG.isDebugEnabled()) {
             LOG.debug("pipe read controller",
                     String.format(
@@ -77,7 +77,7 @@ public class PipeReadController {
         }
     }
 
-    private List<String> flattenRequestParams(List<String> strings) {
+    private List<String> flattenRequestParams(final List<String> strings) {
         if(strings == null) {
             return Collections.emptyList();
         }

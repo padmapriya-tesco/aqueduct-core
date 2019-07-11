@@ -34,13 +34,13 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     private List<PathRespectingPipeInstance> services;
 
     @Inject
-    PipeLoadBalancer(HttpClientConfiguration configuration){
+    PipeLoadBalancer(final HttpClientConfiguration configuration){
         this.configuration = configuration;
         services = Collections.emptyList();
     }
 
     @Override
-    public Publisher<ServiceInstance> select(@Nullable Object discriminator) {
+    public Publisher<ServiceInstance> select(@Nullable final Object discriminator) {
         return services.stream()
             .filter(PathRespectingPipeInstance::isUp)
             .findFirst()
@@ -50,14 +50,14 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     }
 
     @Override
-    public void update(List<URL> newUrls) {
+    public void update(final List<URL> newUrls) {
         LOG.info("update services urls", servicesString());
         services = newUrls.stream()
             .map(this::newServiceInstance)
             .collect(Collectors.toList());
     }
 
-    private PathRespectingPipeInstance newServiceInstance(URL url) {
+    private PathRespectingPipeInstance newServiceInstance(final URL url) {
         return
             findPreviousInstance(url)
             .map(oldInstance -> new PathRespectingPipeInstance(url, oldInstance.isUp()))
@@ -79,7 +79,7 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .ifPresent(instance -> instance.setUp(false));
     }
 
-    private Optional<PathRespectingPipeInstance> findPreviousInstance(URL url) {
+    private Optional<PathRespectingPipeInstance> findPreviousInstance(final URL url) {
         try {
             // We have to use URIs for this comparison as URLs are converted to IPs under the hood, which causes issues
             // for local testing
@@ -100,7 +100,7 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .blockingAwait();
     }
 
-    private Completable checkState(RxHttpClient client, PathRespectingPipeInstance instance) {
+    private Completable checkState(final RxHttpClient client, final PathRespectingPipeInstance instance) {
 
         String urlWithPath = UriBuilder.of(instance.getURI()).path("/pipe/_status").build().toString();
 

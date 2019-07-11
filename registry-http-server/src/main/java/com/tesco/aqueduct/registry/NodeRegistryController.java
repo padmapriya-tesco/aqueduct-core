@@ -35,19 +35,19 @@ public class NodeRegistryController {
     @Inject
     private MessageReader pipe;
 
-    public NodeRegistryController(NodeRegistry registry) {
+    public NodeRegistryController(final NodeRegistry registry) {
         this.registry = registry;
     }
 
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Get
-    public StateSummary getSummary(@Nullable List<String> groups) {
+    public StateSummary getSummary(@Nullable final List<String> groups) {
         return registry.getSummary(pipe.getLatestOffsetMatching(null), "ok", groups);
     }
 
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Post
-    public List<URL> registerNode(@Body Node node) {
+    public List<URL> registerNode(@Body final Node node) {
         List<URL> requestedToFollow = registry.register(node);
         String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
         LOG.withNode(node).info("requested to follow", followStr);
@@ -56,7 +56,7 @@ public class NodeRegistryController {
 
     @Secured(REGISTRY_DELETE)
     @Delete("/{group}/{id}")
-    public HttpResponse deleteNode(String group, String id) {
+    public HttpResponse deleteNode(final String group, final String id) {
         boolean deleted = registry.deleteNode(group, id);
 
         if (deleted) {

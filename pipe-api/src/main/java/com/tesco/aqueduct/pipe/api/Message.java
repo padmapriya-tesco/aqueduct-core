@@ -24,12 +24,12 @@ public class Message {
     public static final int MAX_OVERHEAD_SIZE = MAX_OFFSET_LENGTH + MAX_DATE_LENGTH + EXTRA_ENCODING_CHARACTERS;
 
     public Message(
-        String type,
-        String key,
-        String contentType,
-        Long offset,
-        ZonedDateTime created,
-        String data
+        final String type,
+        final String key,
+        final String contentType,
+        final Long offset,
+        final ZonedDateTime created,
+        final String data
     ) {
         this.offset = offset;
         this.key = key;

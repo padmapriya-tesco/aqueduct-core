@@ -20,11 +20,11 @@ class User {
     String password;
     List<String> roles;
 
-    User(@Parameter String username) {
+    User(@Parameter final String username) {
         this.username = username;
     }
 
-    boolean isAuthenticated(Object identity, Object secret) {
+    boolean isAuthenticated(final Object identity, final Object secret) {
         return username.equals(identity) && password.equals(secret);
     }
 
