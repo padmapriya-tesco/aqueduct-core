@@ -1,4 +1,5 @@
 # Aqueduct
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/Tesco/aqueduct-core.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Tesco/aqueduct-core/alerts/)
 
 Delivers data to specific network locations in an efficient, secure and near real-time manner.
 
