@@ -30,7 +30,7 @@ public class SQLiteStorage implements MessageStorage {
         this.dataSource = dataSource;
         this.limit = limit;
         this.retryAfterSeconds = retryAfterSeconds;
-        this.maxBatchSize = maxBatchSize + (Message.MAX_OVERHEAD_SIZE * limit);
+        this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
 
         createEventTableIfExists();
     }

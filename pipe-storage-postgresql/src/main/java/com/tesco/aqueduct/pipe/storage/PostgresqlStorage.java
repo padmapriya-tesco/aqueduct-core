@@ -25,7 +25,7 @@ public class PostgresqlStorage implements MessageReader {
         this.retryAfter = retryAfter;
         this.limit = limit;
         this.dataSource = dataSource;
-        this.maxBatchSize = maxBatchSize + (Message.MAX_OVERHEAD_SIZE * limit);
+        this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
     }
 
     @Override
