@@ -227,8 +227,7 @@
                 });
                 
                 data.followers.forEach((node) => {
-                    let {group, localUrl, id, offset,  status} = node;
-                    let name = localUrl;
+                    let {group, localUrl, id, status} = node;
                     var path;
                     
                     g.setParent(id, group);
@@ -240,7 +239,8 @@
                         } else {
                             return path = group + "|" + url;
                         }
-                    } 
+                    };
+
                     let parentSelector = $("#parentSelector").val();
                     if(parentSelector === "requestedVsActual") {
                         //
