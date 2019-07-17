@@ -37,13 +37,13 @@ public class Message {
     }
 
     public Message(
-            final String type,
-            final String key,
-            final String contentType,
-            final Long offset,
-            final ZonedDateTime created,
-            final String data,
-            final Long size
+        final String type,
+        final String key,
+        final String contentType,
+        final Long offset,
+        final ZonedDateTime created,
+        final String data,
+        final Long size
     ) {
         this.offset = offset;
         this.key = key;
