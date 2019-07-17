@@ -93,7 +93,8 @@ public class SQLiteStorage implements MessageStorage {
             resultSet.getString("content_type"),
             resultSet.getLong("msg_offset"),
             time,
-            resultSet.getString("data")
+            resultSet.getString("data"),
+            resultSet.getLong("event_size")
         );
 
         return retrievedMessage;

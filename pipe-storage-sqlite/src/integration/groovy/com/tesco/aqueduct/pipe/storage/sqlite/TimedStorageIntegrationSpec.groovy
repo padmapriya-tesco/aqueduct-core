@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
+import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
 import groovy.sql.Sql
@@ -24,13 +25,23 @@ class TimedStorageIntegrationSpec extends Specification {
     }
 
     def message(long offset) {
-        return new Message(
+        def messageForSizing = new Message(
             "some-key",
             "some-type",
             "text/plain",
             offset,
             currentUTCTime(),
             "some-data"
+        )
+
+        return new Message(
+            "some-key",
+            "some-type",
+            "text/plain",
+            offset,
+            currentUTCTime(),
+            "some-data",
+            JsonHelper.toJson(messageForSizing).length()
         )
     }
 

@@ -24,11 +24,11 @@ final class EventQueries {
 
     static String getReadEvent(final int typesCount, final long maxBatchSize) {
         final StringBuilder queryBuilder = new StringBuilder(
-            " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
+            " SELECT type, msg_key, content_type, msg_offset, created_utc, data, event_size " +
             " FROM " +
             "   (" +
             "      SELECT " +
-            "        type, msg_key, content_type, msg_offset, created_utc, data, " +
+            "        type, msg_key, content_type, msg_offset, created_utc, data, event_size, " +
             "        SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "      FROM event  " +
             "      WHERE msg_offset >= ? " +
