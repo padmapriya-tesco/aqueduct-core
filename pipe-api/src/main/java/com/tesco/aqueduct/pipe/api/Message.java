@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe.api;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.experimental.Wither;
 
@@ -12,10 +14,9 @@ public class Message {
     private final String key;
     private final String contentType;
     private final Long offset;
-
     private final ZonedDateTime created;
-
     private final String data;
+    @JsonIgnore private final Long size;
 
     private static final int MAX_OFFSET_LENGTH = 19;
     private static final int MAX_DATE_LENGTH = 64;
@@ -23,6 +24,7 @@ public class Message {
 
     public static final int MAX_OVERHEAD_SIZE = MAX_OFFSET_LENGTH + MAX_DATE_LENGTH + EXTRA_ENCODING_CHARACTERS;
 
+    @JsonCreator
     public Message(
         final String type,
         final String key,
@@ -31,11 +33,24 @@ public class Message {
         final ZonedDateTime created,
         final String data
     ) {
+        this(type, key, contentType, offset, created, data, 0L);
+    }
+
+    public Message(
+        final String type,
+        final String key,
+        final String contentType,
+        final Long offset,
+        final ZonedDateTime created,
+        final String data,
+        final Long size
+    ) {
         this.offset = offset;
         this.key = key;
         this.type = type;
         this.contentType = contentType;
         this.created = created;
         this.data = data;
+        this.size = size;
     }
 }
