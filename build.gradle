@@ -218,6 +218,21 @@ subprojects {
     // test would run fast tests, check would run all, same with build
     check.dependsOn integration
     integration.mustRunAfter test
+
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.4"
+        reportsDir = file("${buildDir}/reports/jacoco")
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+            csv.enabled true
+            html.destination file("${buildDir}/reports/jacoco/Html")
+        }
+    }
 }
 
 scmVersion {
