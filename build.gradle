@@ -49,6 +49,15 @@ idea.project.settings {
     }
 }
 
+allprojects {
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.4"
+        reportsDir = file("${rootProject.buildDir}/reports/jacoco/${project.name}")
+    }
+}
+
 subprojects {
     apply plugin: 'java'
     apply plugin: 'groovy'
@@ -219,22 +228,21 @@ subprojects {
     check.dependsOn integration
     integration.mustRunAfter test
 
-    apply plugin: 'jacoco'
-
-    jacoco {
-        toolVersion = "0.8.4"
-        reportsDir = file("${buildDir}/reports/jacoco")
-    }
-
     jacocoTestReport {
         reports {
-            xml.enabled true
-            csv.enabled true
-            html.destination file("${buildDir}/reports/jacoco/Html")
+            xml.enabled = true
+            csv.enabled = true
+            html.enabled = true
         }
+        dependsOn(test, integration)
     }
 }
 
 scmVersion {
     useHighestVersion = true
+}
+
+task jacocoMerge(type: JacocoMerge) {
+    dependsOn = subprojects.test
+    executionData files(subprojects.jacocoTestReport.executionData).filter { f -> f.exists() }
 }
