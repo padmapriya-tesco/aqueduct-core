@@ -75,11 +75,13 @@ ansiColor('xterm') {
                     }
                 }
             )
-            stage('Unit Test') {
-                sh "./gradlew test"
-            }
-            stage('Integration Test') {
-                sh "./gradlew integration"
+            stage('Unit & Integration Test') {
+                try {
+                    sh "./gradlew test integration jacocoRootReport"
+                } finally {
+                    junit '**/build/test-results/test/*.xml'
+                    jacoco buildOverBuild: true, deltaClassCoverage: '5', deltaLineCoverage: '5', deltaMethodCoverage: '5', exclusionPattern: '**/*Spec.class', execPattern: '**/jacocoMerge.exec'
+                }
             }
             stage('Docker build and Scan') {
                 container('docker') {
