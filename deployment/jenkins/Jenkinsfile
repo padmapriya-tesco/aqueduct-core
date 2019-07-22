@@ -76,10 +76,12 @@ ansiColor('xterm') {
                 }
             )
             stage('Unit Test') {
-                sh "./gradlew test"
-            }
-            stage('Integration Test') {
-                sh "./gradlew integration"
+                try {
+                    sh "./gradlew test integration jacocoRootReport"
+                } finally {
+                    junit '**/build/test-results/test/*.xml'
+                    jacoco execPattern: '**/jacocoMerge.exec'
+                }
             }
             stage('Docker build and Scan') {
                 container('docker') {

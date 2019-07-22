@@ -261,7 +261,7 @@ task jacocoRootReport(type: JacocoReport) {
     sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
     classDirectories = files(subprojects.sourceSets.main.output)
     reports {
-        xml.enabled = false
+        xml.enabled = true
         csv.enabled = false
         html.enabled = true
     }
