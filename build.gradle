@@ -237,8 +237,8 @@ subprojects {
 
     jacocoTestReport {
         reports {
-            xml.enabled = true
-            csv.enabled = true
+            xml.enabled = false
+            csv.enabled = false
             html.enabled = true
         }
         dependsOn(test, integration)
@@ -261,7 +261,7 @@ task jacocoRootReport(type: JacocoReport) {
     sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
     classDirectories = files(subprojects.sourceSets.main.output)
     reports {
-        xml.enabled = true
+        xml.enabled = false
         csv.enabled = false
         html.enabled = true
     }
