@@ -210,28 +210,45 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def 'All duplicate messages are compacted to a given offset with 3 duplicates'() {
         given: 'an existing data store with duplicate messages for the same key'
+        insert(message(1, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type", "A","content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(4, "type", "B","content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(3, "type", "A","content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
 
         when: 'compaction is run up to the timestamp of offset 1'
+        storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-
+        MessageResults messageResults = storage.read(null, 1)
 
         then: 'duplicate messages are not deleted as they are beyond the threshold'
+        messageResults.messages.size() == 4
+        messageResults.messages*.offset*.intValue() == [1, 2, 3, 4]
+        messageResults.messages*.key == ["A", "A", "A", "B"]
 
     }
 
     def 'All duplicate messages are compacted to a given offset, complex case'() {
         given: 'an existing data store with duplicate messages for the same key'
-
-
+        insert(message(1, "type","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type","A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(6, "type","B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(7, "type","B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(8, "type","D", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
 
         when: 'compaction is run up to the timestamp of offset 4'
-
+        storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-
+        MessageResults messageResults = storage.read(null, 1)
 
         then: 'duplicate messages are deleted that are within the threshold'
+        messageResults.messages.size() == 7
+        messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
+        messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
 
     }
 
