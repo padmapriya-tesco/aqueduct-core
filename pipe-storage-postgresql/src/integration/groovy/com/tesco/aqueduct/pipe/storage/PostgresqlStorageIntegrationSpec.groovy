@@ -11,6 +11,7 @@ import spock.lang.Shared
 
 import javax.sql.DataSource
 import java.sql.Connection
+import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -37,7 +38,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
         dataSource = Mock()
-        dataSource.connection >> pg.embeddedPostgres.postgresDatabase.connection
+
+        dataSource.connection >> {
+            DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        }
 
         sql.execute("""
         DROP TABLE IF EXISTS EVENTS;
@@ -183,19 +187,17 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         result.messages.isEmpty()
     }
 
-
-    //TODO: this test should work but doesn't
     def 'All duplicate messages are compacted for whole data store'() {
         given: 'an existing data store with duplicate messages for the same key'
         insert(message(1, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type", "B","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type", "B","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'compaction is run on the whole data store'
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults result = storage.read(["type"], 0)
+        MessageResults result = storage.read(null, 0)
         List<Message> retrievedMessages = result.messages
 
         then: 'duplicate messages are deleted'
@@ -203,8 +205,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         and: 'the correct compacted message list is returned in the message results'
         result.messages*.offset*.intValue() == [2, 3]
-        result.messages*.key == ["A", "B"]
-
+        result.messages*.key == ["B", "A"]
     }
 
     def 'All duplicate messages are compacted to a given offset with 3 duplicates'() {
