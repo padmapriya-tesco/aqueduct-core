@@ -16,7 +16,6 @@ buildscript {
         classpath "com.adarshr:gradle-test-logger-plugin:1.6.0"
         classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.7.1"
         classpath 'org.owasp:dependency-check-gradle:5.0.0-M3.1'
-
     }
 }
 
@@ -46,6 +45,23 @@ idea.project.settings {
         javac {
             javacAdditionalOptions "-parameters"
         }
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.4"
+        reportsDir = file("${rootProject.buildDir}/reports/jacoco/${project.name}")
     }
 }
 
@@ -218,8 +234,36 @@ subprojects {
     // test would run fast tests, check would run all, same with build
     check.dependsOn integration
     integration.mustRunAfter test
+
+    jacocoTestReport {
+        reports {
+            xml.enabled = false
+            csv.enabled = false
+            html.enabled = true
+        }
+        dependsOn(test, integration)
+    }
 }
 
 scmVersion {
     useHighestVersion = true
+}
+
+task jacocoMerge(type: JacocoMerge) {
+    dependsOn = subprojects.jacocoTestReport
+    executionData files(subprojects.jacocoTestReport.executionData).filter { f -> f.exists() }
+}
+
+task jacocoRootReport(type: JacocoReport) {
+    onlyIf = { true }
+    executionData(jacocoMerge.executionData)
+    additionalSourceDirs = files(subprojects.sourceSets.main.allSource.srcDirs)
+    sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
+    classDirectories = files(subprojects.sourceSets.main.output)
+    reports {
+        xml.enabled = false
+        csv.enabled = false
+        html.enabled = true
+    }
+    dependsOn(jacocoMerge)
 }
