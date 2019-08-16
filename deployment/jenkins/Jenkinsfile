@@ -100,6 +100,7 @@ ansiColor('xterm') {
                 } finally {
                     jacoco buildOverBuild: true, changeBuildStatus: true, deltaBranchCoverage: '50', deltaClassCoverage: '50', deltaComplexityCoverage: '50', deltaInstructionCoverage: '50', deltaLineCoverage: '50', deltaMethodCoverage: '50', exclusionPattern: '**/*Spec.class'
                 }
+                echo "RESULT: ${currentBuild.result}"
             }
             stage('Docker build and Scan') {
                 container('docker') {
