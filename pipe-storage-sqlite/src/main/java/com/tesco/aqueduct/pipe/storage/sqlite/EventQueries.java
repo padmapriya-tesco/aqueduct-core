@@ -20,7 +20,7 @@ final class EventQueries {
             "INSERT INTO EVENT (msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES (?,?,?,?,?,?,?);";
 
     static final String COMPACT =
-            "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT GROUP BY msg_key);";
+            "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
     static String getReadEvent(final int typesCount, final long maxBatchSize) {
         final StringBuilder queryBuilder = new StringBuilder(

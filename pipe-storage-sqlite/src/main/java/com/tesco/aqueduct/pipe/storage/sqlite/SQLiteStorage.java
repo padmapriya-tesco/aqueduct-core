@@ -155,6 +155,7 @@ public class SQLiteStorage implements MessageStorage {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
             statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            statement.setTimestamp(2, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
