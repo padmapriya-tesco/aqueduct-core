@@ -98,7 +98,7 @@ ansiColor('xterm') {
                 try {
                     sh "#!/bin/sh -e\n./gradlew jacocoRootReport -PmavenUser=$nexusUsername -PmavenPassword=$nexusPassword"
                 } finally {
-                    jacoco buildOverBuild: true, exclusionPattern: '**/*Spec.class', execPattern: '**/jacocoMerge.exec'
+                    jacoco buildOverBuild: true, changeBuildStatus: true, exclusionPattern: '**/*Spec.class', execPattern: '**/jacocoMerge.exec'
                 }
             }
             stage('Docker build and Scan') {
