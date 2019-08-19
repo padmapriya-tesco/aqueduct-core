@@ -154,7 +154,9 @@ public class SQLiteStorage implements MessageStorage {
         // We may want a interface - Compactable - for this method signature
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
-            statement.setTimestamp(1, Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            Timestamp threshold = Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+            statement.setTimestamp(1, threshold);
+            statement.setTimestamp(2, threshold);
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {

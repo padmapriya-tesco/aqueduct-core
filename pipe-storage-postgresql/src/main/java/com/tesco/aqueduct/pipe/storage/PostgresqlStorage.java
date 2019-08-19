@@ -136,9 +136,11 @@ public class PostgresqlStorage implements MessageReader {
     public void compactUpTo(final ZonedDateTime thresholdDate) {
         try(Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
-            statement.setTimestamp(1, Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
-            final int rowsAffected = statement.executeUpdate();
-            LOG.info("compaction", "compacted " + rowsAffected + " rows");
+                Timestamp threshold = Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+                statement.setTimestamp(1, threshold);
+                statement.setTimestamp(2, threshold);
+                final int rowsAffected = statement.executeUpdate();
+                LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -197,17 +199,19 @@ public class PostgresqlStorage implements MessageReader {
             " DELETE FROM events " +
             " WHERE msg_offset in " +
             " (" +
-            "   select msg_offset " +
-            "   from " +
+            "   SELECT msg_offset " +
+            "   FROM " +
             "   events e, " +
             "   ( " +
-            "     select msg_key, max(msg_offset) max_offset " +
-            "     from events " +
-            "     group by msg_key " +
+            "     SELECT msg_key, max(msg_offset) max_offset " +
+            "     FROM events " +
+            "     WHERE " +
+            "       created_utc <= ? " +
+            "     GROUP BY msg_key " +
             "   ) x " +
-            "   where " +
+            "   WHERE " +
             "     created_utc <= ? " +
-            "     and e.msg_key = x.msg_key and e.msg_offset <> x.max_offset " +
+            "     AND e.msg_key = x.msg_key AND e.msg_offset <> x.max_offset " +
             " );";
     }
 }

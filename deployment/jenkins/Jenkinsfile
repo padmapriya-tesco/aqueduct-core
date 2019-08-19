@@ -75,13 +75,28 @@ ansiColor('xterm') {
                     }
                 }
             )
-            stage('Unit & Integration Test') {
+            stage('Unit Test') {
                 try {
-                    sh "./gradlew test integration jacocoRootReport"
-                } finally {
+                    sh "./gradlew test"
+                } catch(err) {
                     junit '**/build/test-results/test/*.xml'
-                    jacoco buildOverBuild: true, deltaClassCoverage: '5', deltaLineCoverage: '5', deltaMethodCoverage: '5', exclusionPattern: '**/*Spec.class', execPattern: '**/jacocoMerge.exec'
+                    throw err
                 }
+            }
+            stage('Integration Test') {
+                try {
+                    sh "./gradlew integration"
+                } catch(err) {
+                    junit '**/build/test-results/test/*.xml'
+                    throw err
+                }
+            }
+            stage('Publish Test Report') {
+                junit '**/build/test-results/test/*.xml'
+            }
+            stage('Publish Coverage Report') {
+                jacoco buildOverBuild: true, changeBuildStatus: true, deltaBranchCoverage: '50', deltaClassCoverage: '50', deltaComplexityCoverage: '50', deltaInstructionCoverage: '50', deltaLineCoverage: '50', deltaMethodCoverage: '50', exclusionPattern: '**/*Spec.class'
+                echo "RESULT: ${currentBuild.result}"
             }
             stage('Docker build and Scan') {
                 container('docker') {

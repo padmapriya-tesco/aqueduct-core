@@ -378,10 +378,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1)
 
-        then: 'duplicate messages are deleted'
-        messageResults.messages.size() == 3
-        messageResults.messages*.offset*.intValue() == [2, 3, 4]
-        messageResults.messages*.key == ["A", "A", "B"]
+        then: 'duplicate messages are not deleted as they are beyond the threshold'
+        messageResults.messages.size() == 4
+        messageResults.messages*.offset*.intValue() == [1, 2, 3, 4]
+        messageResults.messages*.key == ["A", "A", "A", "B"]
     }
 
     def 'All duplicate messages are compacted to a given offset, complex case'() {
@@ -390,23 +390,24 @@ class SQLiteStorageIntegrationSpec extends Specification {
                 message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
                 message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
                 message(3, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(4, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(5, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+                message(4, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+                message(5, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
                 message(6, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(7, "D", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
+                message(7, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+                message(8, "D", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
         ]
         def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
         sqliteStorage.write(messages)
 
-        when: 'compaction is run up to the timestamp of offset 3'
+        when: 'compaction is run up to the timestamp of offset 4'
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1)
 
-        then: 'duplicate messages are deleted'
-        messageResults.messages.size() == 5
-        messageResults.messages*.offset*.intValue() == [3, 4, 5, 6, 7]
-        messageResults.messages*.key == ["C", "A", "B", "B", "D"]
+        then: 'duplicate messages are deleted that are within the threshold'
+        messageResults.messages.size() == 7
+        messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
+        messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
     }
 }
