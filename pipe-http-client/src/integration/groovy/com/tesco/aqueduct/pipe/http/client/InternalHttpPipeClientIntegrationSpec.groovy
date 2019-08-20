@@ -149,7 +149,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
 
                 responder {
                     contentType('application/json')
-                    body("""{"isUpToDate":true,"offset":"1000"}""")
+                    body('{"isUpToDate":true,"offset":"1000"}')
                 }
             }
         }
