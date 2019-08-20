@@ -1,7 +1,9 @@
 package com.tesco.aqueduct.pipe.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode
 public class PipeStateResponse {
     @JsonProperty
     private final boolean isUpToDate;
