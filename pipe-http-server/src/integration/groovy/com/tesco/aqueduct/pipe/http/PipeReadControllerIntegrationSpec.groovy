@@ -271,6 +271,23 @@ class PipeReadControllerIntegrationSpec extends Specification {
         "a,b,c" | '"102"'
     }
 
+    def "Returns latest offset without types"() {
+        given:
+        storage.write([
+                Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+                Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+                Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+        ])
+
+        when:
+        def request = RestAssured.get("/pipe/offset/latest")
+
+        then:
+        request
+            .then()
+            .statusCode(400)
+    }
+
     def "state endpoint returns result of state provider"() {
         given: "A pipe state provider mocked"
 
