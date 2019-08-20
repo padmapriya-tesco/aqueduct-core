@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.registry.PipeLoadBalancer
 import com.tesco.aqueduct.registry.SelfRegistrationTask
 import io.micronaut.context.ApplicationContext
@@ -137,5 +138,27 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         then:
         server.verify()
         latest == 100
+    }
+
+    def "can get pipe state"(){
+        given:
+        server.expectations {
+            get("/pipe/state") {
+                called(1)
+                query("type", "a")
+
+                responder {
+                    contentType('application/json')
+                    body("""{"isUpToDate":true,"offset":"1000"}""")
+                }
+            }
+        }
+
+        when:
+        def state = client.getPipeState(["a"])
+
+        then:
+        server.verify()
+        state == new PipeStateResponse(true, 1000)
     }
 }
