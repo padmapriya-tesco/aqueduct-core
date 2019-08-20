@@ -283,9 +283,11 @@ class PipeReadControllerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/offset/latest")
 
         then:
+        def response = """{"_links":{"self":{"href":"/pipe/offset/latest","templated":false}},"message":"Required argument [List type] not specified","path":"/type"}"""
         request
             .then()
             .statusCode(400)
+            .body(equalTo(response))
     }
 
     def "state endpoint returns result of state provider"() {
