@@ -32,6 +32,9 @@ public class PipeReadController {
     @Inject @Named("local")
     private MessageReader messageReader;
 
+    @Inject
+    private PipeStateProvider pipeStateProvider;
+
     @Value("${pipe.http.server.read.poll-seconds:0}")
     private int pollSeconds;
 
@@ -42,6 +45,12 @@ public class PipeReadController {
     public long latestOffset(final List<String> type) {
         final List<String> types = flattenRequestParams(type);
         return messageReader.getLatestOffsetMatching(types);
+    }
+
+    @Get("/pipe/state{?type}")
+    public PipeStateResponse state(final List<String> type) {
+        final List<String> types = flattenRequestParams(type);
+        return pipeStateProvider.getState(types, messageReader);
     }
 
     @Get("/pipe/{offset}{?type}")

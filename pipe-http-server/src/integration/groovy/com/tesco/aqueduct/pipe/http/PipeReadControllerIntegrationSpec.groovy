@@ -18,7 +18,7 @@ import java.time.ZonedDateTime
 import static org.hamcrest.Matchers.equalTo
 
 @Newify(Message)
-class PipeReadControllerSpec extends Specification {
+class PipeReadControllerIntegrationSpec extends Specification {
     static final String DATA_BLOB = "aaaaaaaaaaaaabbbbbbbbbbbbcccccccccccccdddddddeeeeeeeee"
     static String type = "type1"
     static int RETRY_AFTER_SECONDS = 600
@@ -26,6 +26,7 @@ class PipeReadControllerSpec extends Specification {
     @Shared InMemoryStorage storage = new InMemoryStorage(10, RETRY_AFTER_SECONDS)
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
+    @Shared PipeStateProvider pipeStateProvider= Mock()
 
     // overloads of settings for this test
     @Shared propertyOverloads = [
@@ -44,6 +45,10 @@ class PipeReadControllerSpec extends Specification {
             .build()
 
         context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+
+        pipeStateProvider.getState(_ ,_) >> new PipeStateResponse(true, 1000)
+
+        context.registerSingleton(pipeStateProvider)
         context.start()
 
         server = context.getBean(EmbeddedServer)
@@ -264,5 +269,19 @@ class PipeReadControllerSpec extends Specification {
         "b,a"   | '"101"'
         "a,c"   | '"102"'
         "a,b,c" | '"102"'
+    }
+
+    def "state endpoint returns result of state provider"() {
+        given: "A pipe state provider mocked"
+
+        when: "we call to get state"
+        def request = RestAssured.get("/pipe/state?type=a")
+
+        then: "response is serialised correctly"
+        def response = """{"isUpToDate":true,"offset":"1000"}"""
+        request
+            .then()
+            .statusCode(200)
+            .body(equalTo(response))
     }
 }
