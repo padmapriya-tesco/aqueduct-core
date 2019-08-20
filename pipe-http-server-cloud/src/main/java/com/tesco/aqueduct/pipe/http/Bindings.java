@@ -36,4 +36,9 @@ public class Bindings {
     ) {
         return new PostgreSQLNodeRegistry(dataSource, selfUrl, markAsOffline);
     }
+
+    @Singleton
+    PipeStateProvider bindPipeStateProvider() {
+        return new CloudPipeStateProvider();
+    }
 }

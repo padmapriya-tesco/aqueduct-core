@@ -38,6 +38,7 @@ class PipeReadControllerBatchSpec extends Specification {
             .build()
 
         context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+        context.registerSingleton(PipeStateProvider, Mock(PipeStateProvider))
         context.start()
 
         EmbeddedServer server = context.getBean(EmbeddedServer)
