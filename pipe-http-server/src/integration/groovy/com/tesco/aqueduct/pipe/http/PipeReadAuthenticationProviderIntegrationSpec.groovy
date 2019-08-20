@@ -50,6 +50,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
                 .build()
 
         context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+        context.registerSingleton(Mock(PipeStateProvider))
         context.start()
 
         server = context.getBean(EmbeddedServer)
