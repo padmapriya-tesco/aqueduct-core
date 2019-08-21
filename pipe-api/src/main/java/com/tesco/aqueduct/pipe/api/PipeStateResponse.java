@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 
@@ -9,10 +10,20 @@ public class PipeStateResponse {
     private final boolean isUpToDate;
 
     @JsonProperty
-    private final long offset;
+    private final long localOffset;
 
-    public PipeStateResponse(final boolean isUpToDate, final long offset) {
+    public PipeStateResponse(final boolean isUpToDate, final long localOffset) {
         this.isUpToDate = isUpToDate;
-        this.offset = offset;
+        this.localOffset = localOffset;
+    }
+
+    @JsonIgnore
+    public boolean isUpToDate() {
+        return isUpToDate;
+    }
+
+    @JsonIgnore
+    public long getLocalOffset() {
+        return localOffset;
     }
 }

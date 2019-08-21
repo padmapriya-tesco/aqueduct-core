@@ -298,7 +298,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/state?type=a")
 
         then: "response is serialised correctly"
-        def response = """{"isUpToDate":true,"offset":"1000"}"""
+        def response = """{"isUpToDate":true,"localOffset":"1000"}"""
         request
             .then()
             .statusCode(200)
