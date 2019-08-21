@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 
 import static org.hamcrest.Matchers.equalTo
 
-class PipeCloudServerSpec extends Specification {
+class PipeCloudServerIntegrationSpec extends Specification {
     static LocalDateTime time = LocalDateTime.parse("2018-12-20T15:13:01")
 
     // Starts real PostgreSQL database, takes some time to create it and clean it up.
@@ -92,6 +92,21 @@ class PipeCloudServerSpec extends Specification {
                 {"type":"type1","key":"b","contentType":"contentType","offset":"101","created":"2018-12-20T15:13:01Z"}
             ]
             """.replaceAll("\\s", "")))
+    }
+
+    def "state endpoint returns true and the correct offset"() {
+        given: "A data store with offset 100"
+        insert(100,  "a", "contentType", "type1", time, "data")
+
+        when: "we call to get state"
+        def request = RestAssured.get("/pipe/state?type=type1")
+
+        then: "response is correct"
+        def response = """{"isUpToDate":true,"offset":"100"}"""
+        request
+                .then()
+                .statusCode(200)
+                .body(equalTo(response))
     }
 
     void insert(Long msg_offset, String msg_key, String content_type, String type, LocalDateTime created, String data) {

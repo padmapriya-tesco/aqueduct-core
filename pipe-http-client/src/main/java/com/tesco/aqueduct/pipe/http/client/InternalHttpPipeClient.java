@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.http.client;
 
 import com.tesco.aqueduct.pipe.api.Message;
+import com.tesco.aqueduct.pipe.api.PipeStateResponse;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Consumes;
 import io.micronaut.http.annotation.Get;
@@ -27,6 +28,10 @@ public interface InternalHttpPipeClient {
     @Header(name="Accept-Encoding", value="gzip, deflate")
     @Retryable(attempts = "${pipe.http.latest-offset.attempts}", delay = "${pipe.http.latest-offset.delay}")
     long getLatestOffsetMatching(@Nullable List<String> type);
+
+    @Get("/pipe/state{?type}")
+    @Retryable(attempts = "${pipe.http.latest-offset.attempts}", delay = "${pipe.http.latest-offset.delay}")
+    PipeStateResponse getPipeState(List<String> type);
 }
 
 // For usage of URI templates see
