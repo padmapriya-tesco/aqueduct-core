@@ -102,7 +102,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/state?type=type1")
 
         then: "response is correct"
-        def response = """{"isUpToDate":true,"localOffset":"100"}"""
+        def response = """{"upToDate":true,"localOffset":"100"}"""
         request
                 .then()
                 .statusCode(200)
