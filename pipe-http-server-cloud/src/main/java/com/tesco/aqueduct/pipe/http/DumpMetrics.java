@@ -12,12 +12,15 @@ import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.SortedSet;
 
-@Context
 public class DumpMetrics {
     private static final Logger log = LoggerFactory.getLogger("metrics");
 
-    @Inject
     private MetricsEndpoint metrics;
+
+    @Inject
+    public DumpMetrics(MetricsEndpoint metrics){
+        this.metrics = metrics;
+    }
 
     @Scheduled(fixedDelay = "1m")
     public void dumpMetrics() {
