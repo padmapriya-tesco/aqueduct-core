@@ -1,23 +1,27 @@
 package com.tesco.aqueduct.pipe.http;
 
 import io.micronaut.configuration.metrics.management.endpoint.MetricsEndpoint;
-import io.micronaut.context.annotation.Context;
 import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.SortedSet;
 
-@Context
+@Singleton
 public class DumpMetrics {
     private static final Logger log = LoggerFactory.getLogger("metrics");
 
-    @Inject private
-    MetricsEndpoint metrics;
+    private MetricsEndpoint metrics;
+
+    @Inject
+    public DumpMetrics(MetricsEndpoint metrics){
+        this.metrics = metrics;
+    }
 
     @Scheduled(fixedDelay = "1m")
     public void dumpMetrics() {
