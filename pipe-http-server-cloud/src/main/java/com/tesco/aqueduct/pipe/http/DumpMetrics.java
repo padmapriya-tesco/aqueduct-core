@@ -16,8 +16,8 @@ import java.util.SortedSet;
 public class DumpMetrics {
     private static final Logger log = LoggerFactory.getLogger("metrics");
 
-    @Inject private
-    MetricsEndpoint metrics;
+    @Inject
+    private MetricsEndpoint metrics;
 
     @Scheduled(fixedDelay = "1m")
     public void dumpMetrics() {
