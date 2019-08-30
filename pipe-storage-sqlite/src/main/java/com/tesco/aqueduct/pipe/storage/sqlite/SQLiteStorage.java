@@ -26,7 +26,6 @@ public class SQLiteStorage implements MessageStorage {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(SQLiteStorage.class));
 
     public SQLiteStorage(final DataSource dataSource, final int limit, final int retryAfterSeconds, final long maxBatchSize) {
-
         this.dataSource = dataSource;
         this.limit = limit;
         this.retryAfterSeconds = retryAfterSeconds;
@@ -77,7 +76,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     public int calculateRetryAfter(final int messageCount) {
-        return messageCount < limit ? retryAfterSeconds : 0;
+        return messageCount > 0 ? 0 : retryAfterSeconds;
     }
 
     private Message mapRetrievedMessageFromResultSet(final ResultSet resultSet) throws SQLException {

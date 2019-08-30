@@ -76,24 +76,25 @@ class SQLiteStorageSpec extends Specification {
         thrown(RuntimeException)
     }
 
-    def 'retry read time limit should be activated only when the amount of received messages is less than the maximum message limit'() {
+    def 'retry read time limit should be activated only when the amount of received messages is 0'() {
         given: 'a data store controller'
         def dataSource = Mock(DataSource)
+        def retryAfter = 10
         dataSource.getConnection() >> DriverManager.getConnection(connectionUrl) >> { throw new SQLException() }
-        def sqliteStorage = new SQLiteStorage(dataSource, testLimit, 10, batchSize)
+        def sqliteStorage = new SQLiteStorage(dataSource, testLimit, retryAfter, batchSize)
 
         when: 'the retry after is calculated'
         def actualRetryAfter = sqliteStorage.calculateRetryAfter(messageCount)
 
-        then: 'the calculated retry after is 0 if more messages exist, or as configured'
+        then: 'the calculated retry after is 0 if more than 0 messages were returned'
         actualRetryAfter == expectedRetryAfter
 
         where:
         testLimit | messageCount | expectedRetryAfter
-        100       | 50           | 10
+        100       | 50           | 0
         100       | 0            | 10
-        100       | 99           | 10
-        99        | 98           | 10
+        100       | 99           | 0
+        99        | 98           | 0
         99        | 0            | 10
         100       | 101          | 0
         101       | 102          | 0
