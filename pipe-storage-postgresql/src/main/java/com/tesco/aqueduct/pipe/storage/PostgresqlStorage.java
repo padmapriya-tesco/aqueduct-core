@@ -136,6 +136,7 @@ public class PostgresqlStorage implements MessageReader {
     public void compactUpTo(final ZonedDateTime thresholdDate) {
         try(Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+                connection.setTransactionIsolation(Connection.TRANSACTION_NONE);
                 Timestamp threshold = Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
                 statement.setTimestamp(1, threshold);
                 statement.setTimestamp(2, threshold);
