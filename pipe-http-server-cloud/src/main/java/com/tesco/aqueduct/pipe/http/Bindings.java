@@ -17,6 +17,7 @@ import java.time.Duration;
 public class Bindings {
 
     @Singleton @Named("local")
+    @Measure
     // This provides MessageReader as it implements it
     PostgresqlStorage bindPostgreSQL(
         @Value("${persistence.read.limit}") final int limit,
