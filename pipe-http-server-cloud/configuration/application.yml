@@ -20,7 +20,7 @@ pipe:
 persistence:
   compact:
     threshold: 3d
-    schedule.cron: "0 0 12 1/1 * ?"
+    schedule.cron: "0 14 2 1/1 * ?"
   read:
     limit: 1000
     max-batch-size: 10485760
