@@ -61,28 +61,32 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public StateSummary getSummary(final long offset, final String status, final List<String> groupIds) {
-        try (Connection connection = dataSource.getConnection()) {
-            List<PostgresNodeGroup> groups;
+        List<PostgresNodeGroup> groups = getPostgresNodeGroups(groupIds);
 
+        final ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
+        groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
+
+        final List<Node> followers = groups.stream()
+            .map(group -> group.nodes)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+
+        return new StateSummary(getCloudNode(offset, status), followers);
+    }
+
+    private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
+        List<PostgresNodeGroup> groups;
+        try (Connection connection = dataSource.getConnection()) {
             if (groupIds == null || groupIds.isEmpty()) {
                 groups = PostgresNodeGroup.getNodeGroups(connection);
             } else {
                 groups = PostgresNodeGroup.getNodeGroups(connection, groupIds);
             }
-
-            final ZonedDateTime threshold = ZonedDateTime.now().minus(offlineDelta);
-            groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
-
-            final List<Node> followers = groups.stream()
-                .map(group -> group.nodes)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-
-            return new StateSummary(getCloudNode(offset, status), followers);
         } catch (SQLException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);
         }
+        return groups;
     }
 
     private Node getCloudNode(final long offset, final String status) {
