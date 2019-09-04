@@ -34,8 +34,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public List<URL> register(final Node nodeToRegister) {
+        int count = 0;
         while (true) {
-            try (Connection connection = dataSource.getConnection()) {
+            try (Connection connection = getConnection()) {
                 final PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
                 Node node = group.getById(nodeToRegister.getId());
                 if (node != null) {
@@ -51,11 +52,22 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 throw new RuntimeException(exception);
             } catch (VersionChangedException exception) {
                 try {
+                    LOG.info("Postgresql version changed exception", Integer.toString(++count));
                     Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
+        }
+    }
+
+    private Connection getConnection() throws SQLException {
+        long start = System.currentTimeMillis();
+        try {
+            return dataSource.getConnection();
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("getConnection:time", Long.toString(end - start));
         }
     }
 
@@ -76,7 +88,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = getConnection()) {
             if (groupIds == null || groupIds.isEmpty()) {
                 groups = PostgresNodeGroup.getNodeGroups(connection);
             } else {
@@ -102,7 +114,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public boolean deleteNode(final String groupId, final String nodeId) {
         while (true) {
-            try (Connection connection = dataSource.getConnection()) {
+            try (Connection connection = getConnection()) {
                 final PostgresNodeGroup nodeGroup = PostgresNodeGroup.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
