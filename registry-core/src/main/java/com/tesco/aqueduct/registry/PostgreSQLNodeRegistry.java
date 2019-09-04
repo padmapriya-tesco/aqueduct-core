@@ -15,6 +15,7 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public class PostgreSQLNodeRegistry implements NodeRegistry {
@@ -22,7 +23,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final URL cloudUrl;
     private final Duration offlineDelta;
     private final DataSource dataSource;
-    private static final int OPTIMISTIC_LOCKING_COOLDOWN = 5;
+    private static final int OPTIMISTIC_LOCKING_COOLDOWN_MS = 500;
+    private static final int OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND = 500;
+    private static final Random random = new Random();
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 
@@ -35,7 +38,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public List<URL> register(final Node nodeToRegister) {
         int count = 0;
-        while (true) {
+        while (count < 10) {
             try (Connection connection = getConnection()) {
                 connection.setAutoCommit(false);
                 final PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
@@ -55,12 +58,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             } catch (VersionChangedException exception) {
                 try {
                     LOG.info("Postgresql version changed exception", Integer.toString(++count));
-                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
+                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN_MS + random.nextInt(OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
+        throw new RuntimeException("Failed to register");
     }
 
     private Connection getConnection() throws SQLException {
@@ -129,7 +133,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 throw new RuntimeException(exception);
             } catch (VersionChangedException exception) {
                 try {
-                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN);
+                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN_MS);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
