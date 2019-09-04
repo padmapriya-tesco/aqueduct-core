@@ -36,6 +36,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(final Node nodeToRegister) {
         while (true) {
             try (Connection connection = dataSource.getConnection()) {
+                connection.setAutoCommit(false);
                 final PostgresNodeGroup group = PostgresNodeGroup.getNodeGroup(connection, nodeToRegister.getGroup());
                 Node node = group.getById(nodeToRegister.getId());
                 if (node != null) {
@@ -45,6 +46,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     node = group.add(nodeToRegister, cloudUrl);
                 }
                 group.persist(connection);
+                connection.commit();
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
