@@ -30,6 +30,7 @@ public class PostgresqlStorage implements MessageReader {
 
     @Override
     public MessageResults read(final List<String> types, final long startOffset) {
+        long start = System.currentTimeMillis();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {
 
@@ -44,6 +45,9 @@ public class PostgresqlStorage implements MessageReader {
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("read:time", Long.toString(end - start));
         }
     }
 
@@ -59,17 +63,22 @@ public class PostgresqlStorage implements MessageReader {
 
     private long getLatestOffsetMatchingWithConnection(final Connection connection, final List<String> types)
             throws SQLException {
+        long start = System.currentTimeMillis();
 
         try (PreparedStatement statement = getLatestOffsetStatement(connection, types);
             ResultSet resultSet = statement.executeQuery()) {
             resultSet.next();
 
             return resultSet.getLong("last_offset");
+        }finally {
+            long end = System.currentTimeMillis();
+            LOG.info("getLatestOffsetMatchingWithConnection:time", Long.toString(end - start));
         }
     }
 
     private List<Message> runMessagesQuery(final PreparedStatement query) throws SQLException {
         final List<Message> messages = new ArrayList<>();
+        long start = System.currentTimeMillis();
 
         try (ResultSet rs = query.executeQuery()) {
             while (rs.next()) {
@@ -82,6 +91,9 @@ public class PostgresqlStorage implements MessageReader {
 
                 messages.add(new Message(type, key, contentType, offset, created, data));
             }
+        }finally {
+            long end = System.currentTimeMillis();
+            LOG.info("runMessagesQuery:time", Long.toString(end - start));
         }
         return messages;
     }
