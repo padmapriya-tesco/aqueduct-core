@@ -304,9 +304,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         100        | 3       | 2       | "3 tills 100 calls"
         500        | 3       | 14      | "3 tills 500 calls"
         10         | 10      | 1       | "10 tills"
-        50         | 50      | 1       | "50 tills"
-        100        | 100     | 2       | "100 tills"
-        250        | 250     | 5       | "250 tills"
+        50         | 50      | 3       | "50 tills"
+        100        | 100     | 5       | "100 tills"
+        250        | 250     | 10       | "250 tills"
     }
 
     def "node registry can handle concurrent multiple group requests (10 stores with 50 tills each)"() {
