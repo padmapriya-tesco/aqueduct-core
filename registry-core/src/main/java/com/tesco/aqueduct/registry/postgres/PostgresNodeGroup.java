@@ -2,9 +2,11 @@ package com.tesco.aqueduct.registry.postgres;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
+import com.tesco.aqueduct.registry.RegistryLogger;
 import com.tesco.aqueduct.registry.VersionChangedException;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.NodeGroup;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -20,6 +22,8 @@ public class PostgresNodeGroup extends NodeGroup {
 
     private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? ;";
     private static final String QUERY_GET_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
+
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgresNodeGroup.class));
 
     private static final String QUERY_INSERT_GROUP =
             "INSERT INTO registry (group_id, entry, version)" +
@@ -118,6 +122,7 @@ public class PostgresNodeGroup extends NodeGroup {
     }
 
     private void insert(final Connection connection) throws IOException, SQLException {
+        long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
             statement.setString(1, groupId);
             statement.setString(2, nodesToJson());
@@ -126,10 +131,14 @@ public class PostgresNodeGroup extends NodeGroup {
                 //No rows updated
                 throw new VersionChangedException();
             }
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("node group insert:time", Long.toString(end - start));
         }
     }
 
     private void update(final Connection connection) throws SQLException, IOException {
+        long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             statement.setString(1, nodesToJson());
             statement.setString(2, groupId);
@@ -138,10 +147,14 @@ public class PostgresNodeGroup extends NodeGroup {
             if (statement.executeUpdate() == 0) {
                 throw new VersionChangedException();
             }
+        }finally {
+            long end = System.currentTimeMillis();
+            LOG.info("node group update:time", Long.toString(end - start));
         }
     }
 
     public void delete(final Connection connection) throws SQLException {
+        long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
             statement.setString(1, groupId);
             statement.setInt(2, version);
@@ -149,6 +162,9 @@ public class PostgresNodeGroup extends NodeGroup {
             if (statement.executeUpdate() == 0) {
                 throw new VersionChangedException();
             }
+        }finally {
+            long end = System.currentTimeMillis();
+            LOG.info("node group delete:time", Long.toString(end - start));
         }
     }
 }
