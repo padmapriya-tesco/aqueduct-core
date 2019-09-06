@@ -35,6 +35,10 @@ text {
   fill: lightblue;
 }
 
+.node.pending rect {
+  fill: salmon;
+}
+
 .node.following rect {
   fill: lightgreen;
 }
@@ -44,5 +48,5 @@ text {
 }
 
 .node.stale rect {
-  fill: lightcoral;
+  fill: khaki;
 }
