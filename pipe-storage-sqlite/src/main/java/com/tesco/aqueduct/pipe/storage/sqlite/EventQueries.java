@@ -23,34 +23,36 @@ final class EventQueries {
             "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
     static String getReadEvent(final int typesCount, final long maxBatchSize) {
-        final StringBuilder queryBuilder = new StringBuilder(
-            " SELECT type, msg_key, content_type, msg_offset, created_utc, data, event_size " +
-            " FROM " +
-            "   (" +
-            "      SELECT " +
-            "        type, msg_key, content_type, msg_offset, created_utc, data, event_size, " +
-            "        SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
-            "      FROM event  " +
-            "      WHERE msg_offset >= ? " +
-            "   ) unused "
-        );
+        final StringBuilder queryBuilder = new StringBuilder()
+            .append(" SELECT type, msg_key, content_type, msg_offset, created_utc, data, event_size ")
+            .append(" FROM ")
+            .append("    ( ")
+            .append("       SELECT ")
+            .append("         \"type\", msg_key, content_type, msg_offset, created_utc, \"data\", event_size, ")
+            .append("         SUM(event.event_size) OVER (ORDER BY event.msg_offset ASC) AS running_size ")
+            .append("       FROM event ")
+            .append("       WHERE msg_offset >= ? ");
 
-        if (typesCount == 0) {
-            queryBuilder.append(" WHERE running_size <= ");
-            queryBuilder.append(maxBatchSize);
-        } else {
-            queryBuilder
-                .append(" WHERE type IN (")
-                .append(generateQuestionMarks(typesCount))
-                .append(")");
+        appendFilterByTypes(queryBuilder, typesCount);
 
-            queryBuilder.append(" AND running_size <= ");
-            queryBuilder.append(maxBatchSize);
-        }
-
-        queryBuilder.append(" LIMIT ?;");
+        queryBuilder
+            .append("       ORDER BY msg_offset ASC ")
+            .append("       LIMIT ?")
+            .append("    ) unused ")
+            .append(" WHERE running_size <  ").append(maxBatchSize)
+            .append(" ORDER BY msg_offset ASC;")
+        ;
 
         return queryBuilder.toString();
+    }
+
+    static void appendFilterByTypes(final StringBuilder queryBuilder, int typesCount) {
+        if (typesCount != 0) {
+            queryBuilder
+                .append(" AND type IN (")
+                .append(generateQuestionMarks(typesCount))
+                .append(")");
+        }
     }
 
     static String getLastOffsetQuery(final int typesCount) {
