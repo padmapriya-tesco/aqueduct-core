@@ -30,7 +30,9 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             .properties(
                 "pipe.http.latest-offset.attempts": 1,
                 "pipe.http.latest-offset.delay": "1s",
-                "pipe.http.client.url": server.getHttpUrl()
+                "pipe.http.client.url": server.getHttpUrl(),
+                "micronaut.caches.health-check.maximum-size": 20,
+                "micronaut.caches.health-check.expire-after-write": "5s"
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
@@ -154,11 +156,19 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             }
         }
 
-        when:
+        when: "I call state once"
         def state = client.getPipeState(["a"])
 
-        then:
-        server.verify()
+        and: "I call state again"
+        def state2 = client.getPipeState(["a"])
+
+        then: "the first result was 'up to date'"
         state == new PipeStateResponse(true, 1000)
+
+        and: "I got the same result from the second call"
+        state2 == state
+
+        and: "the server has only been called once (the result was cached)"
+        server.verify()
     }
 }
