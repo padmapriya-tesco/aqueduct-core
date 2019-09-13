@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.http.client;
 
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.PipeStateResponse;
+import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Consumes;
 import io.micronaut.http.annotation.Get;
@@ -31,6 +32,7 @@ public interface InternalHttpPipeClient {
 
     @Get("/pipe/state{?type}")
     @Retryable(attempts = "${pipe.http.latest-offset.attempts}", delay = "${pipe.http.latest-offset.delay}")
+    @Cacheable(value = "health-check", parameters = "type")
     PipeStateResponse getPipeState(List<String> type);
 }
 
