@@ -63,7 +63,7 @@ public class HttpPipeClient implements MessageReader {
         return client.getLatestOffsetMatching(types);
     }
 
-    PipeStateResponse getPipeState(List<String> type) {
+    public PipeStateResponse getPipeState(List<String> type) {
         PipeStateResponse pipeState = client.getPipeState(type);
         if (!pipeState.isUpToDate()) cacheManager.getCache("health-check").invalidateAll();
         return pipeState;
