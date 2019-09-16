@@ -110,16 +110,12 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
         return client.retrieve(statusUrl)
             // if got response, then it's a true
             .map(response -> true )
-
-            // log result
-            .doOnNext(b -> instanceIsUp(instance, b))
-            .doOnError(t -> errorCheckingState(instance, t))
-
-            // change exception to "false"
+            // unless we got an exception, in which case change to "false"
             .onErrorResumeNext(Flowable.just(false))
 
-            // set the status of the instance
-            .doOnNext(instance::setUp)
+            // act on result
+            .doOnNext(b -> instanceIsUp(instance, b))
+            .doOnError(t -> errorCheckingState(instance, t))
 
             // return as completable, close client and ignore any errors
             .ignoreElements() // returns completable
@@ -127,12 +123,12 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .onErrorComplete();
     }
 
-    private void instanceIsUp(PathRespectingPipeInstance instance, boolean isUp) {
+    private void instanceIsUp(final PathRespectingPipeInstance instance, boolean isUp) {
         LOG.info("healthcheck.success", instance.getUrl().toString());
-        //instance.setUp(isUp);
+        instance.setUp(isUp);
     }
 
-    private void errorCheckingState(PathRespectingPipeInstance instance, Throwable t) {
+    private void errorCheckingState(final PathRespectingPipeInstance instance, final Throwable t) {
         LOG.error("healthcheck.failed", instance.getUrl().toString(), t);
     }
 

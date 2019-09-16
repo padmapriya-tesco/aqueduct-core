@@ -159,6 +159,9 @@ class PipeLoadBalancerSpec extends Specification {
 
         then:
         noExceptionThrown()
+
+        and:
+        !serviceInstance.isUp()
     }
 
     ErsatzServer serverWithPipeStatus(int status) {
