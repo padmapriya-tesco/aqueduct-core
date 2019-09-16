@@ -102,14 +102,18 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
 
     private Completable checkState(final PathRespectingPipeInstance instance) {
         final RxHttpClient client = new DefaultHttpClient(instance.getUrl(), configuration);
-        final String urlWithPath = UriBuilder.of(instance.getURI()).path("/pipe/_status").build().toString();
-        return client.retrieve(urlWithPath)
+        return checkState(instance, client);
+    }
+
+    private Completable checkState(final PathRespectingPipeInstance instance, final RxHttpClient client) {
+        final String statusUrl = generateStatusUrlFromBaseURI(instance.getURI());
+        return client.retrieve(statusUrl)
             // if got response, then it's a true
             .map(response -> true )
 
             // log result
-            .doOnNext(b -> LOG.info("healthcheck.success", instance.getUrl().toString()))
-            .doOnError(t -> LOG.error("healthcheck.failed", instance.getUrl().toString(), t))
+            .doOnNext(b -> instanceIsUp(instance, b))
+            .doOnError(t -> errorCheckingState(instance, t))
 
             // change exception to "false"
             .onErrorResumeNext(Flowable.just(false))
@@ -123,10 +127,23 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .onErrorComplete();
     }
 
+    private void instanceIsUp(PathRespectingPipeInstance instance, boolean isUp) {
+        LOG.info("healthcheck.success", instance.getUrl().toString());
+        //instance.setUp(isUp);
+    }
+
+    private void errorCheckingState(PathRespectingPipeInstance instance, Throwable t) {
+        LOG.error("healthcheck.failed", instance.getUrl().toString(), t);
+    }
+
     private String servicesString() {
         return services.stream()
             .map(PathRespectingPipeInstance::getUrl)
             .map(URL::toString)
             .collect(Collectors.joining(","));
+    }
+
+    private String generateStatusUrlFromBaseURI(final URI baseURI) {
+        return UriBuilder.of(baseURI).path("/pipe/_status").build().toString();
     }
 }

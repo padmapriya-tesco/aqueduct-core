@@ -155,7 +155,7 @@ class PipeLoadBalancerSpec extends Specification {
         }
 
         when: "we check the state"
-        loadBalancer.checkState(client, serviceInstance).blockingAwait()
+        loadBalancer.checkState(serviceInstance, client).blockingAwait()
 
         then:
         noExceptionThrown()
