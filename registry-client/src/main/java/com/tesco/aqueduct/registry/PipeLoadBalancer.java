@@ -123,7 +123,7 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .onErrorComplete();
     }
 
-    private void instanceIsUp(final PathRespectingPipeInstance instance, boolean isUp) {
+    private void instanceIsUp(final PathRespectingPipeInstance instance, final boolean isUp) {
         LOG.info("healthcheck.success", instance.getUrl().toString());
         instance.setUp(isUp);
     }
