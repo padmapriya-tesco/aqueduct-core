@@ -96,11 +96,12 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     public void checkState() {
         LOG.info("healthcheck urls", servicesString());
         fromIterable(services)
-            .flatMapCompletable(instance -> checkState(new DefaultHttpClient(instance.getUrl(), configuration), instance))
+            .flatMapCompletable(this::checkState)
             .blockingAwait();
     }
 
-    private Completable checkState(final RxHttpClient client, final PathRespectingPipeInstance instance) {
+    private Completable checkState(final PathRespectingPipeInstance instance) {
+        final RxHttpClient client = new DefaultHttpClient(instance.getUrl(), configuration);
         final String urlWithPath = UriBuilder.of(instance.getURI()).path("/pipe/_status").build().toString();
         return client.retrieve(urlWithPath)
             // if got response, then it's a true
