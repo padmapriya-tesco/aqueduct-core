@@ -147,15 +147,10 @@ class PipeLoadBalancerSpec extends Specification {
 
     def "RxClient errors are not rethrown"() {
         given: "client throwing errors"
-        def serviceInstance = new PathRespectingPipeInstance(new URL("http://localhost"), true)
-        RxHttpClient client = Mock()
-        client.retrieve(_) >> Flowable.error(new RuntimeException())
-        client.close() >> {
-            throw new RuntimeException()
-        }
+        def serviceInstance = new PathRespectingPipeInstance(new URL("http://not.a.url"), true)
 
         when: "we check the state"
-        loadBalancer.checkState(serviceInstance, client).blockingAwait()
+        loadBalancer.checkState(serviceInstance).blockingAwait()
 
         then:
         noExceptionThrown()
