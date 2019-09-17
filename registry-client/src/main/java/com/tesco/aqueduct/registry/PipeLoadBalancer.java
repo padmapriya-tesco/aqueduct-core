@@ -6,6 +6,7 @@ import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.HttpClientConfiguration;
 import io.micronaut.http.client.LoadBalancer;
 import io.micronaut.http.client.RxHttpClient;
+import io.micronaut.http.client.exceptions.HttpClientException;
 import io.micronaut.http.uri.UriBuilder;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -96,26 +97,27 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     public void checkState() {
         LOG.info("healthcheck urls", servicesString());
         fromIterable(services)
-            .flatMapCompletable(instance -> checkState(new DefaultHttpClient(instance.getUrl(), configuration), instance))
+            .flatMapCompletable(this::checkState)
             .blockingAwait();
     }
 
-    private Completable checkState(final RxHttpClient client, final PathRespectingPipeInstance instance) {
-        final String urlWithPath = UriBuilder.of(instance.getURI()).path("/pipe/_status").build().toString();
-        return client.retrieve(urlWithPath)
+    private Completable checkState(final PathRespectingPipeInstance instance) {
+        final RxHttpClient client = new DefaultHttpClient(instance.getUrl(), configuration);
+        return checkState(instance, client);
+    }
+
+    private Completable checkState(final PathRespectingPipeInstance instance, final RxHttpClient client) {
+        final String statusUrl = generateStatusUrlFromBaseURI(instance.getURI());
+        return client.retrieve(statusUrl)
             // if got response, then it's a true
             .map(response -> true )
-
             // log result
             .doOnNext(b -> LOG.info("healthcheck.success", instance.getUrl().toString()))
-            .doOnError(t -> LOG.error("healthcheck.failed", instance.getUrl().toString(), t))
-
+            .doOnError(t -> LOG.error("healthcheck.failed", instance.getUrl().toString(), t.getMessage()))
             // change exception to "false"
             .onErrorResumeNext(Flowable.just(false))
-
             // set the status of the instance
             .doOnNext(instance::setUp)
-
             // return as completable, close client and ignore any errors
             .ignoreElements() // returns completable
             .doOnComplete(client::close)
@@ -127,5 +129,9 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .map(PathRespectingPipeInstance::getUrl)
             .map(URL::toString)
             .collect(Collectors.joining(","));
+    }
+
+    private String generateStatusUrlFromBaseURI(final URI baseURI) {
+        return UriBuilder.of(baseURI).path("/pipe/_status").build().toString();
     }
 }
