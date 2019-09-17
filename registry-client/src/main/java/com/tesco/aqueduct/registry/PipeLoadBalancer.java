@@ -6,6 +6,7 @@ import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.HttpClientConfiguration;
 import io.micronaut.http.client.LoadBalancer;
 import io.micronaut.http.client.RxHttpClient;
+import io.micronaut.http.client.exceptions.HttpClientException;
 import io.micronaut.http.uri.UriBuilder;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -110,26 +111,17 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
         return client.retrieve(statusUrl)
             // if got response, then it's a true
             .map(response -> true )
-            // unless we got an exception, in which case change to "false"
+            // log result
+            .doOnNext(b -> LOG.info("healthcheck.success", instance.getUrl().toString()))
+            .doOnError(t -> LOG.error("healthcheck.failed", instance.getUrl().toString(), t.getMessage()))
+            // change exception to "false"
             .onErrorResumeNext(Flowable.just(false))
-
-            // act on result
-            .doOnNext(b -> instanceIsUp(instance, b))
-            .doOnError(t -> errorCheckingState(instance, t))
-
+            // set the status of the instance
+            .doOnNext(instance::setUp)
             // return as completable, close client and ignore any errors
             .ignoreElements() // returns completable
             .doOnComplete(client::close)
             .onErrorComplete();
-    }
-
-    private void instanceIsUp(final PathRespectingPipeInstance instance, final boolean isUp) {
-        LOG.info("healthcheck.success", instance.getUrl().toString());
-        instance.setUp(isUp);
-    }
-
-    private void errorCheckingState(final PathRespectingPipeInstance instance, final Throwable t) {
-        LOG.error("healthcheck.failed", instance.getUrl().toString(), t);
     }
 
     private String servicesString() {
