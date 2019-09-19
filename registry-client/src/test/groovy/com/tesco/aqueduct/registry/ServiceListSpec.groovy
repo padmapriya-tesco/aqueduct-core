@@ -14,7 +14,7 @@ class ServiceListSpec extends Specification {
 
     def "services that are updated are returned in the getServices"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config)
+        ServiceList serviceList = new ServiceList(config, URL_1)
         def list = [URL_1, URL_2, URL_3]
 
         when: "service list is updated"
@@ -26,7 +26,7 @@ class ServiceListSpec extends Specification {
 
     def "when services are updated, obsolete services are removed"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config)
+        ServiceList serviceList = new ServiceList(config, URL_1)
 
         and: "the service list has been updated before"
         serviceList.update([URL_1, URL_2])
@@ -41,7 +41,7 @@ class ServiceListSpec extends Specification {
 
     def "when services are updated, previous services keep their status"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config)
+        ServiceList serviceList = new ServiceList(config, URL_1)
 
         and: "the service list has been updated before"
         serviceList.update([URL_1, URL_2])
@@ -60,6 +60,45 @@ class ServiceListSpec extends Specification {
         and: "service statuses have not been altered"
         serviceList.getServices()[0].isUp()
         !serviceList.getServices()[1].isUp()
+    }
+
+    def "service list always contains at least the cloud url"() {
+        given: "a service list"
+        ServiceList serviceList = new ServiceList(config, URL_1)
+
+        when: "the service list has not been updated yet"
+
+        then: "the service list has the cloud_url"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_1]
+
+        when: "the service list is updated with a null list"
+        serviceList.update(null)
+
+        then: "the service list has the cloud url"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_1]
+
+        when: "the service list is updated with an empty list"
+        serviceList.update([])
+
+        then: "the service list has the cloud url"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_1]
+    }
+
+    def "service list does not contain cloud url if updated with a list without it"() {
+        given: "a service list"
+        ServiceList serviceList = new ServiceList(config, URL_1)
+
+        when: "the service list is updated with a list without the cloud url"
+        serviceList.update([URL_2, URL_3])
+
+        then: "the service list does not have the cloud url"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_2, URL_3]
+
+        when: "the service list is updated with an empty list"
+        serviceList.update([])
+
+        then: "the service list has the cloud url"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_1]
     }
 
     //TODO: once we have persistence etc., add a test to assert that at any state something is returned when getServices is called
