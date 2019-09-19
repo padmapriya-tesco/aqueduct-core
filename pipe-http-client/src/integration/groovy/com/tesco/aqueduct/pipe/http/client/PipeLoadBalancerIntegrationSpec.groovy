@@ -114,7 +114,10 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         firstMessages.messages*.key == ["x0"]
         serverA.verify()
 
-        when: "client reads again"
+        when: "the error has been recorded"
+        loadBalancer.recordError()
+
+        and: "client reads again"
         def secondMessages = client.read([], 1)
 
         then: "second server is called"

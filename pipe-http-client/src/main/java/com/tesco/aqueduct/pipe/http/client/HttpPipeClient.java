@@ -20,26 +20,16 @@ import java.util.Optional;
 public class HttpPipeClient implements MessageReader {
 
     private final InternalHttpPipeClient client;
-    private final PipeLoadBalancer pipeLoadBalancer;
     private final CacheManager cacheManager;
 
     @Inject
-    public HttpPipeClient(final InternalHttpPipeClient client, final PipeLoadBalancer pipeLoadBalancer, final CacheManager cacheManager) {
+    public HttpPipeClient(final InternalHttpPipeClient client, final CacheManager cacheManager) {
         this.client = client;
-        this.pipeLoadBalancer = pipeLoadBalancer;
         this.cacheManager = cacheManager;
     }
 
     @Override
     public MessageResults read(@Nullable final List<String> types, final long offset) {
-        try {
-            return httpRead(types, offset);
-        } catch (Exception e) {
-            throw e;
-        }
-    }
-
-    private MessageResults httpRead(@Nullable final List<String> types, final long offset) {
         final HttpResponse<List<Message>> response = client.httpRead(types, offset);
 
         final long retryAfter = Optional
