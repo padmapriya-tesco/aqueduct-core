@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry
 
+import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.HttpClientConfiguration
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -26,5 +27,19 @@ class PathRespectingPipeInstanceSpec extends Specification {
         "http://foo.bar/bar/" | "/bar/pipe/0"
         "http://foo.bar/"     | "/pipe/0"
         "http://foo.bar"      | "/pipe/0"
+    }
+
+    def "RxClient errors are not rethrown"() {
+        given: "client throwing errors"
+        def serviceInstance = new PathRespectingPipeInstance(new DefaultHttpClientConfiguration(), new URL("http://not.a.url"), true)
+
+        when: "we check the state"
+        serviceInstance.checkState().blockingAwait()
+
+        then:
+        noExceptionThrown()
+
+        and:
+        !serviceInstance.isUp()
     }
 }

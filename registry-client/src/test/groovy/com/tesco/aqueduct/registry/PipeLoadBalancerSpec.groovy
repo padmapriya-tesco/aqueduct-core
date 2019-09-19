@@ -145,20 +145,6 @@ class PipeLoadBalancerSpec extends Specification {
         servers.each { it.close() }
     }
 
-    def "RxClient errors are not rethrown"() {
-        given: "client throwing errors"
-        def serviceInstance = new PathRespectingPipeInstance(new DefaultHttpClientConfiguration(), new URL("http://not.a.url"), true)
-
-        when: "we check the state"
-        serviceInstance.checkState()
-
-        then:
-        noExceptionThrown()
-
-        and:
-        !serviceInstance.isUp()
-    }
-
     ErsatzServer serverWithPipeStatus(int status) {
         ErsatzServer server = new ErsatzServer()
         server.expectations {
