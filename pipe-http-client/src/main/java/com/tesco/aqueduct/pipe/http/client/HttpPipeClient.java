@@ -35,7 +35,6 @@ public class HttpPipeClient implements MessageReader {
         try {
             return httpRead(types, offset);
         } catch (Exception e) {
-            pipeLoadBalancer.recordError();
             throw e;
         }
     }
