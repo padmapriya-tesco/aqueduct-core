@@ -21,14 +21,14 @@
 
     <select id="parentSelector">
         <option value="requestedVsActual">Requested vs actual</option>
-        <option value="following">Following</option>
+        <option value="following" selected>Following</option>
         <option value="requestedToFollow">Requested to follow</option>
     </select>
 
     <select id="nameSelector">
         <option value="none">None</option>
         <option value="id">Id</option>
-        <option value="localUrl" selected>Url</option>
+        <option value="localUrl">Url</option>
         <option value="offset">Offset</option>
         <option value="lastSeen">Last seen</option>
         <option value="status">Status</option>
@@ -36,7 +36,7 @@
         <!-- Pipe -->
         <option value="pipe.offset">Pipe Offset</option>
         <option value="pipe.ip">Pipe Ip</option>
-        <option value="pipe.host">Pipe Host</option>
+        <option value="pipe.host" selected>Pipe Host</option>
 
         <!-- Provider -->
         <option value="provider.mode">Provider Mode</option>
@@ -126,10 +126,12 @@
 
         $("#styleSelector")
             .append(
-                Object.keys(styles).map((key) => 
+                Object.keys(styles).map((key) =>
                     `<option value="${key}">${key}</option>`
                 ).join("")
             )
+
+        $("option[value='Packed LR']")[0].setAttribute("selected", "");
 
         // dagreD3 setup
         let render = new dagreD3.render();
