@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry;
 
+import io.micronaut.context.annotation.Property;
 import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.discovery.ServiceInstance;
 import io.micronaut.http.client.DefaultHttpClient;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -31,17 +33,19 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PipeLoadBalancer.class));
     private final HttpClientConfiguration configuration;
 
-    private List<PathRespectingPipeInstance> services;
+    private ServiceList services;
 
     @Inject
-    PipeLoadBalancer(final HttpClientConfiguration configuration){
+    PipeLoadBalancer(final HttpClientConfiguration configuration,
+                    @Property(name = "pipe.http.client.url") final String cloudPipeUrl)
+                    throws MalformedURLException {
         this.configuration = configuration;
-        services = Collections.emptyList();
+        services = new ServiceList(configuration, cloudPipeUrl);
     }
 
     @Override
     public Publisher<ServiceInstance> select(@Nullable final Object discriminator) {
-        return services.stream()
+        return services.getServices().stream()
             .filter(PathRespectingPipeInstance::isUp)
             .findFirst()
             .map(ServiceInstance.class::cast)
@@ -52,54 +56,33 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
     @Override
     public void update(final List<URL> newUrls) {
         LOG.info("update services urls", servicesString());
-        services = newUrls.stream()
-            .map(this::getServiceInstance)
-            .collect(Collectors.toList());
-    }
-
-    private PathRespectingPipeInstance getServiceInstance(final URL url) {
-        return findPreviousInstance(url)
-            .orElseGet(() -> new PathRespectingPipeInstance(configuration, url, true));
+        services.update(newUrls);
     }
 
     @Override
     public List<URL> getFollowing() {
-        return services.stream()
+        return services.getServices().stream()
             .filter(PathRespectingPipeInstance::isUp)
             .map(PathRespectingPipeInstance::getUrl)
             .collect(Collectors.toList());
     }
 
     public void recordError() {
-        services.stream()
+        services.getServices().stream()
             .filter(PathRespectingPipeInstance::isUp)
             .findFirst()
             .ifPresent(instance -> instance.setUp(false));
     }
 
-    private Optional<PathRespectingPipeInstance> findPreviousInstance(final URL url) {
-        try {
-            // We have to use URIs for this comparison as URLs are converted to IPs under the hood, which causes issues
-            // for local testing
-            final URI uri = url.toURI();
-            return services.stream()
-                .filter(oldInstance -> uri.equals(oldInstance.getURI()))
-                .findFirst();
-        } catch (URISyntaxException exception) {
-            LOG.error("pipe load balancer", "invalid URI", exception);
-            return Optional.empty();
-        }
-    }
-
     public void checkState() {
         LOG.info("healthcheck urls", servicesString());
-        fromIterable(services)
+        fromIterable(services.getServices())
             .flatMapCompletable(PathRespectingPipeInstance::checkState)
             .blockingAwait();
     }
 
     private String servicesString() {
-        return services.stream()
+        return services.getServices().stream()
             .map(PathRespectingPipeInstance::getUrl)
             .map(URL::toString)
             .collect(Collectors.joining(","));

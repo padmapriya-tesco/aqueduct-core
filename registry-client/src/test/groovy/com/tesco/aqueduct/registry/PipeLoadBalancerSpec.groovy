@@ -20,22 +20,24 @@ class PipeLoadBalancerSpec extends Specification {
     PipeLoadBalancer loadBalancer
 
     def setup() {
-        loadBalancer = new PipeLoadBalancer(new DefaultHttpClientConfiguration())
+        loadBalancer = new PipeLoadBalancer(new DefaultHttpClientConfiguration(), URL_1.toString())
     }
 
-    def "Don't return a service until the registry has been updated"() {
+    def "Return cloud_url service until the registry has been updated"() {
         when: "that there is no service available"
-        fromPublisher(loadBalancer.select()).blockingGet()
-
-        then:
-        thrown Exception
-
-        when: "the registry is updated and I select the service instance"
-        loadBalancer.update([URL_1])
         def serviceInstance = fromPublisher(loadBalancer.select()).blockingGet()
 
         then:
         serviceInstance.URI == URL_1.toURI()
+
+        when: "the service list is updated with a new url"
+        loadBalancer.update([URL_2])
+
+        and: "I select the service instance"
+        serviceInstance = fromPublisher(loadBalancer.select()).blockingGet()
+
+        then:
+        serviceInstance.URI == URL_2.toURI()
     }
 
     def "After updating the registry the first url in the hitlist is selected"() {
