@@ -46,6 +46,11 @@ public class SelfRegistrationTask {
         try {
             final Node node = selfSummary.get();
             final List<URL> upstreamEndpoints = client.register(node);
+
+            if(upstreamEndpoints == null) {
+                throw new IllegalStateException("null response from register");
+            }
+
             hitList.update(upstreamEndpoints);
             hasRegistered = true;
         } catch (Exception e) {
@@ -55,7 +60,7 @@ public class SelfRegistrationTask {
                 defaultToFollowCloudPipe();
             }
         }
-     }
+    }
 
     private void defaultToFollowCloudPipe() {
         try {
@@ -65,5 +70,5 @@ public class SelfRegistrationTask {
         } catch (MalformedURLException e) {
             LOG.error("registration scheduled task", "Invalid Cloud Pipe URL.", e);
         }
-     }
+    }
 }
