@@ -67,7 +67,7 @@ public class PathRespectingPipeInstance implements ServiceInstance {
         }
     }
 
-    public Completable checkState() {
+    Completable checkState() {
         final RxHttpClient client = new DefaultHttpClient(url, configuration);
         return checkState(client);
     }

@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry
 
+import io.micronaut.http.client.HttpClientConfiguration
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -11,7 +12,7 @@ class PathRespectingPipeInstanceSpec extends Specification {
         given: "A url with a base path"
         def url = URL(baseUrl)
         def uri = new URI("/pipe/0")
-        def serviceInstance = new PathRespectingPipeInstance(url, true)
+        def serviceInstance = new PathRespectingPipeInstance(Mock(HttpClientConfiguration), url, true)
 
         when: "resolving a relative uri"
         def response = serviceInstance.resolve(uri)
