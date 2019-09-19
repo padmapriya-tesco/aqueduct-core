@@ -24,5 +24,43 @@ class ServiceListSpec extends Specification {
         serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == list
     }
 
+    def "when services are updated, obsolete services are removed"() {
+        given: "a service list"
+        ServiceList serviceList = new ServiceList(config)
+
+        and: "the service list has been updated before"
+        serviceList.update([URL_1, URL_2])
+
+        when: "service list is updated with a new list"
+        def list = [URL_2, URL_3]
+        serviceList.update(list)
+
+        then: "list returned matches updated list"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == list
+    }
+
+    def "when services are updated, previous services keep their status"() {
+        given: "a service list"
+        ServiceList serviceList = new ServiceList(config)
+
+        and: "the service list has been updated before"
+        serviceList.update([URL_1, URL_2])
+
+        and: "the service statuses have been set"
+        serviceList.getServices()[0].setUp(true)
+        serviceList.getServices()[1].setUp(false)
+
+        when: "service list is updated with a new list"
+        def list = [URL_1, URL_2, URL_3]
+        serviceList.update(list)
+
+        then: "list returned matches updated list"
+        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == list
+
+        and: "service statuses have not been altered"
+        serviceList.getServices()[0].isUp()
+        !serviceList.getServices()[1].isUp()
+    }
+
     //TODO: once we have persistence etc., add a test to assert that at any state something is returned when getServices is called
 }
