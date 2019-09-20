@@ -24,21 +24,20 @@ public class SelfRegistrationTask {
     private final RegistryClient client;
     private final RegistryHitList hitList;
     private final Supplier<Node> selfSummary;
-    private final String cloudPipeUrl;
-
-    private boolean hasRegistered;
+    private final ServiceList services;
 
     @Inject
     public SelfRegistrationTask(
         final RegistryClient client,
         final RegistryHitList hitList,
         @Named("selfSummarySupplier") final Supplier<Node> selfSummary,
-        @Property(name = "pipe.http.client.url") final String cloudPipeUrl
+        @Property(name = "pipe.http.client.url") final String cloudPipeUrl,
+        final ServiceList services
     ) {
         this.client = client;
         this.hitList = hitList;
         this.selfSummary = selfSummary;
-        this.cloudPipeUrl = cloudPipeUrl;
+        this.services = services;
     }
 
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
@@ -46,29 +45,13 @@ public class SelfRegistrationTask {
         try {
             final Node node = selfSummary.get();
             final List<URL> upstreamEndpoints = client.register(node);
-
-            if(upstreamEndpoints == null) {
-                throw new IllegalStateException("null response from register");
+            if (upstreamEndpoints == null) {
+                LOG.error("SelfRegistrationTask.register", "Register error", "Null response received");
+                return;
             }
-
-            hitList.update(upstreamEndpoints);
-            hasRegistered = true;
+            services.update(upstreamEndpoints);
         } catch (Exception e) {
-            LOG.error("registration scheduled task", "Register error", e);
-
-            if (!hasRegistered) {
-                defaultToFollowCloudPipe();
-            }
-        }
-    }
-
-    private void defaultToFollowCloudPipe() {
-        try {
-            LOG.info("registration scheduled task", "Defaulting to follow the Cloud Pipe server.");
-            hitList.update(Collections.singletonList(new URL(cloudPipeUrl)));
-
-        } catch (MalformedURLException e) {
-            LOG.error("registration scheduled task", "Invalid Cloud Pipe URL.", e);
+            LOG.error("SelfRegistrationTask.register", "Register error", e);
         }
     }
 }
