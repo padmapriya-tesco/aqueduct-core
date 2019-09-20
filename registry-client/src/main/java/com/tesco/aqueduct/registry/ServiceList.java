@@ -81,10 +81,6 @@ public class ServiceList {
             .collect(Collectors.joining(","));
     }
 
-    public List<PathRespectingPipeInstance> getServices() {
-        return services;
-    }
-
     public void checkState() {
         LOG.info("ServiceList.checkState", "Urls:" + servicesString());
         fromIterable(services)
