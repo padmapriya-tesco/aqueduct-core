@@ -46,7 +46,6 @@ class AuthenticatePipeReadFilterSpec extends Specification {
             .build()
             .start()
 
-        context.getBean(PipeLoadBalancer).update([new URL(server.getHttpUrl())])
         client = context.getBean(InternalHttpPipeClient)
 
         when:

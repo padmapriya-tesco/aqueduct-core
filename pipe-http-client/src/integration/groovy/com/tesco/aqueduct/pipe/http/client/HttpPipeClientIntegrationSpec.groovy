@@ -1,25 +1,18 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
-import com.tesco.aqueduct.registry.PipeLoadBalancer
 import com.tesco.aqueduct.registry.SelfRegistrationTask
 import io.micronaut.context.ApplicationContext
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
-import spock.lang.Unroll
-
-import java.time.ZonedDateTime
 
 class HttpPipeClientIntegrationSpec extends Specification {
 
     @Shared @AutoCleanup ErsatzServer server
     @Shared @AutoCleanup("stop") ApplicationContext context
 
-    PipeLoadBalancer loadBalancer
-    InternalHttpPipeClient internalClient
     HttpPipeClient client
 
     def setupSpec() {
@@ -40,9 +33,6 @@ class HttpPipeClientIntegrationSpec extends Specification {
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
             .start()
-
-        loadBalancer = context.getBean(PipeLoadBalancer)
-        loadBalancer.update([new URL(server.getHttpUrl())])
 
         client = context.getBean(HttpPipeClient)
     }

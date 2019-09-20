@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
-public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
+public class PipeLoadBalancer implements LoadBalancer {
     private final ServiceList services;
 
     PipeLoadBalancer(final ServiceList services) {
@@ -30,12 +30,6 @@ public class PipeLoadBalancer implements LoadBalancer, RegistryHitList {
             .orElse(Flowable.error(new RuntimeException("No accessible service to call.")));
     }
 
-    @Override
-    public void update(final List<URL> newUrls) {
-        services.update(newUrls);
-    }
-
-    @Override
     public List<URL> getFollowing() {
         return services.stream()
             .filter(PipeServiceInstance::isUp)
