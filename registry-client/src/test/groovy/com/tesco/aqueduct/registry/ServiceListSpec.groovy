@@ -58,7 +58,7 @@ class ServiceListSpec extends Specification {
         serviceList.stream().map({ p -> p.getUrl()}).collect() == list
 
         and: "service statuses have not been altered"
-        serviceList.stream().map({p -> p.isUp()}).collect() == [true, false]
+        serviceList.stream().map({p -> p.isUp()}).collect() == [true, false, true]
     }
 
     def "service list always contains at least the cloud url"() {
@@ -91,13 +91,13 @@ class ServiceListSpec extends Specification {
         serviceList.update([URL_2, URL_3])
 
         then: "the service list does not have the cloud url"
-        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_2, URL_3]
+        serviceList.stream().map({ p -> p.getUrl()}).collect() == [URL_2, URL_3]
 
         when: "the service list is updated with an empty list"
         serviceList.update([])
 
         then: "the service list has the cloud url"
-        serviceList.getServices().stream().map({ p -> p.getUrl()}).collect() == [URL_1]
+        serviceList.stream().map({ p -> p.getUrl()}).collect() == [URL_1]
     }
 
     //TODO: once we have persistence etc., add a test to assert that at any state something is returned when getServices is called
