@@ -1,0 +1,93 @@
+package com.tesco.aqueduct.registry
+
+import com.stehno.ersatz.ErsatzServer
+import io.micronaut.http.client.DefaultHttpClientConfiguration
+import io.micronaut.http.uri.UriBuilder
+import spock.lang.Specification
+
+import static io.reactivex.Single.fromPublisher
+
+@Newify(URL)
+class ServiceListIntegrationSpec extends Specification {
+    final static URL URL_1 = URL("http://a1")
+    final static URL URL_2 = URL("http://a2")
+    final static URL URL_3 = URL("http://a3")
+
+    ServiceList serviceList
+
+    def setup() {
+        serviceList = new ServiceList(new DefaultHttpClientConfiguration(), URL_1.toString())
+    }
+
+    def "check state respects the base path of all the servers in the list when performing the status check"() {
+        given: "a list of paths exist which contains urls with and without a base path"
+        def paths = ["/messaging/v1", "", "/"]
+
+        and: "servers that respond a 200 status code for each URL exist"
+        def servers = paths.collect { serverWithPipeStatus(it, 200) }
+
+        and: "list is updated with the list of urls from the mock servers"
+        serviceList.update(paths.withIndex().collect { element, index -> URL(servers[index].httpUrl + element) })
+
+        when: "checking the status of the urls in the load balancer"
+        serviceList.checkState()
+
+        then: "the mock servers are called, showing that the check status method respects the base path of the endpoints"
+        servers.each { it.verify() }
+
+        cleanup: "the mock servers are cleaned up"
+        servers.each { it.close() }
+    }
+
+    def "check state checks the status of all servers on the list"() {
+        given: "a list of server urls"
+        List<ErsatzServer> servers = [serverWithPipeStatus(200), serverWithPipeStatus(200)]
+        servers.each { it.start() }
+
+        serviceList.update(servers.collect{ URL(it.httpUrl) })
+
+        when: "check state is called"
+        serviceList.checkState()
+
+        then:"status endpoints are called on each server"
+        servers.each { it.verify() }
+
+        cleanup:
+        servers.each { it.close() }
+    }
+
+    ErsatzServer serverWithPipeStatus(int status) {
+        ErsatzServer server = new ErsatzServer()
+        server.expectations {
+            get("/pipe/_status") {
+                called(1)
+
+                responder {
+                    contentType('application/json')
+                    body("""[]""")
+                    code(status)
+                }
+            }
+        }
+
+        return server
+    }
+
+    ErsatzServer serverWithPipeStatus(String path, int status) {
+        ErsatzServer server = new ErsatzServer()
+        server.expectations {
+            String urlAsString = UriBuilder.of(URI.create(path)).path("/pipe/_status").build().toString();
+            get(urlAsString) {
+                called(1)
+
+                responder {
+                    contentType('application/json')
+                    body("""[]""")
+                    code(status)
+                }
+            }
+        }
+
+        return server
+    }
+}

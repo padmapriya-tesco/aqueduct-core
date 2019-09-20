@@ -15,15 +15,15 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 
-public class PathRespectingPipeInstance implements ServiceInstance {
+public class PipeServiceInstance implements ServiceInstance {
 
     private final HttpClientConfiguration configuration;
     private final URL url;
     private boolean up;
-    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PathRespectingPipeInstance.class));
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PipeServiceInstance.class));
 
     @Inject
-    public PathRespectingPipeInstance(final HttpClientConfiguration configuration, final URL url, final boolean up) {
+    public PipeServiceInstance(final HttpClientConfiguration configuration, final URL url, final boolean up) {
         this.configuration = configuration;
         this.url = url;
         this.up = up;

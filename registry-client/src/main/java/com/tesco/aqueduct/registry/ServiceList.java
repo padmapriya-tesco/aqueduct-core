@@ -2,10 +2,10 @@ package com.tesco.aqueduct.registry;
 
 import io.micronaut.context.annotation.Property;
 import io.micronaut.http.client.HttpClientConfiguration;
-import io.micronaut.http.client.exceptions.HttpClientException;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,11 +18,12 @@ import java.util.stream.Stream;
 
 import static io.reactivex.Flowable.fromIterable;
 
+@Singleton
 public class ServiceList {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(ServiceList.class));
     private final HttpClientConfiguration configuration;
-    private List<PathRespectingPipeInstance> services;
-    private final PathRespectingPipeInstance cloudInstance;
+    private List<PipeServiceInstance> services;
+    private final PipeServiceInstance cloudInstance;
 
     @Inject
     public ServiceList(
@@ -34,7 +35,7 @@ public class ServiceList {
 
     public ServiceList(final HttpClientConfiguration configuration, final URL cloudPipeUrl) {
         this.configuration = configuration;
-        this.cloudInstance = new PathRespectingPipeInstance(configuration, cloudPipeUrl, true);
+        this.cloudInstance = new PipeServiceInstance(configuration, cloudPipeUrl, true);
         defaultToCloud();
     }
 
@@ -55,12 +56,12 @@ public class ServiceList {
         this.services.add(this.cloudInstance);
     }
 
-    private PathRespectingPipeInstance getServiceInstance(final URL url) {
+    private PipeServiceInstance getServiceInstance(final URL url) {
         return findPreviousInstance(url)
-            .orElseGet(() -> new PathRespectingPipeInstance(configuration, url, true));
+            .orElseGet(() -> new PipeServiceInstance(configuration, url, true));
     }
 
-    private Optional<PathRespectingPipeInstance> findPreviousInstance(final URL url) {
+    private Optional<PipeServiceInstance> findPreviousInstance(final URL url) {
         try {
             // We have to use URIs for this comparison as URLs are converted to IPs under the hood, which causes issues
             // for local testing
@@ -76,7 +77,7 @@ public class ServiceList {
 
     private String servicesString() {
         return services.stream()
-            .map(PathRespectingPipeInstance::getUrl)
+            .map(PipeServiceInstance::getUrl)
             .map(URL::toString)
             .collect(Collectors.joining(","));
     }
@@ -84,11 +85,11 @@ public class ServiceList {
     public void checkState() {
         LOG.info("ServiceList.checkState", "Urls:" + servicesString());
         fromIterable(services)
-            .flatMapCompletable(PathRespectingPipeInstance::checkState)
+            .flatMapCompletable(PipeServiceInstance::checkState)
             .blockingAwait();
     }
 
-    public Stream<PathRespectingPipeInstance> stream() {
+    public Stream<PipeServiceInstance> stream() {
         return services.stream();
     }
 }

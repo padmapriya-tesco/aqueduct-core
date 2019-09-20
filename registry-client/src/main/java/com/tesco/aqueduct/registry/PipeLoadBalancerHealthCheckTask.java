@@ -6,6 +6,7 @@ import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.xml.ws.Service;
 
 @Context
 @Requires(property = "pipe.http.client.healthcheck.interval")
@@ -14,12 +15,12 @@ public class PipeLoadBalancerHealthCheckTask {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PipeLoadBalancerHealthCheckTask.class));
 
     @Inject
-    PipeLoadBalancer loadBalancer;
+    ServiceList services;
 
     @Scheduled(fixedDelay = "${pipe.http.client.healthcheck.interval}")
     public void checkState() {
         try {
-            loadBalancer.checkState();
+            services.checkState();
         } catch (Throwable t) {
             LOG.error("healthcheck","unexpected error",t);
         }
