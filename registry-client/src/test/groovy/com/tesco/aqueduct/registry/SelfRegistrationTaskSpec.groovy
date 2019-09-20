@@ -8,7 +8,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class SelfRegistrationTaskSpec extends Specification {
-    private static final String CLOUD_PIPE = "http://cloud.pipe"
     private static final URL MY_HOST = new URL("http://localhost")
 
     private static final Node MY_NODE = Node.builder()
@@ -21,14 +20,13 @@ class SelfRegistrationTaskSpec extends Specification {
         .build()
 
     def upstreamClient = Mock(RegistryClient)
-    def registryHitList = Mock(RegistryHitList)
     def services = Mock(ServiceList)
 
     def 'check registry client polls upstream service'() {
         def startedLatch = new CountDownLatch(1)
 
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, registryHitList, { MY_NODE }, CLOUD_PIPE, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
 
         when: "register() is called"
         registryClient.register()
@@ -43,7 +41,7 @@ class SelfRegistrationTaskSpec extends Specification {
 
     def 'check registryHitList defaults to cloud pipe if register call fails'() {
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, registryHitList, { MY_NODE }, CLOUD_PIPE, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
 
         and: "when called, upstreamClient will throw an exception"
         upstreamClient.register(_ as Node) >> { throw new RuntimeException() }
@@ -57,7 +55,7 @@ class SelfRegistrationTaskSpec extends Specification {
 
     def 'check register doesnt default to cloud pipe if previously it succeeded'() {
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, registryHitList, { MY_NODE }, CLOUD_PIPE, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
         upstreamClient.register(_ as Node) >> ["http://1.2.3.4", "http://5.6.7.8"] >> { throw new RuntimeException() }
 
         when: "register() is called successfully"
@@ -72,7 +70,7 @@ class SelfRegistrationTaskSpec extends Specification {
 
     def 'null response to register call doesnt result in null hit list update update'() {
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, registryHitList, { MY_NODE }, CLOUD_PIPE, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
 
         and: "upstream client will return null"
         upstreamClient.register(_ as Node) >> { null }
