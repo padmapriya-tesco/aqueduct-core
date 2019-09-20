@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static io.reactivex.Flowable.fromIterable;
+
 public class ServiceList {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(ServiceList.class));
     private final HttpClientConfiguration configuration;
@@ -22,8 +24,10 @@ public class ServiceList {
     private final PathRespectingPipeInstance cloudInstance;
 
     @Inject
-    public ServiceList(final HttpClientConfiguration configuration,
-                       @Property(name = "pipe.http.client.url") final String cloudPipeUrl) throws MalformedURLException {
+    public ServiceList(
+        final HttpClientConfiguration configuration,
+        @Property(name = "pipe.http.client.url") final String cloudPipeUrl)
+        throws MalformedURLException {
         this(configuration, new URL(cloudPipeUrl));
     }
 
@@ -80,4 +84,10 @@ public class ServiceList {
         return services;
     }
 
+    public void checkState() {
+        LOG.info("ServiceList.checkState", "Urls:" + servicesString());
+        fromIterable(services)
+            .flatMapCompletable(PathRespectingPipeInstance::checkState)
+            .blockingAwait();
+    }
 }

@@ -41,6 +41,7 @@ class AuthenticatePipeReadFilterSpec extends Specification {
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.latest-offset.attempts": 1,
                 "pipe.http.latest-offset.delay": "1s",
+                "pipe.http.client.url": server.getHttpUrl()
             )
             .build()
             .start()
