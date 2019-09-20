@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.reactivex.Flowable.fromIterable;
 
@@ -89,5 +90,9 @@ public class ServiceList {
         fromIterable(services)
             .flatMapCompletable(PathRespectingPipeInstance::checkState)
             .blockingAwait();
+    }
+
+    public Stream<PathRespectingPipeInstance> stream() {
+        return services.stream();
     }
 }
