@@ -10,13 +10,12 @@ import static io.reactivex.Single.fromPublisher
 @Newify(URL)
 class ServiceListIntegrationSpec extends Specification {
     final static URL URL_1 = URL("http://a1")
-    final static URL URL_2 = URL("http://a2")
-    final static URL URL_3 = URL("http://a3")
 
     ServiceList serviceList
 
     def setup() {
-        serviceList = new ServiceList(new DefaultHttpClientConfiguration(), URL_1.toString())
+        def config = new DefaultHttpClientConfiguration()
+        serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1))
     }
 
     def "check state respects the base path of all the servers in the list when performing the status check"() {

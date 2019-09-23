@@ -26,16 +26,9 @@ public class ServiceList {
     private final PipeServiceInstance cloudInstance;
 
     @Inject
-    public ServiceList(
-        final HttpClientConfiguration configuration,
-        @Property(name = "pipe.http.client.url") final String cloudPipeUrl)
-        throws MalformedURLException {
-        this(configuration, new URL(cloudPipeUrl));
-    }
-
-    public ServiceList(final HttpClientConfiguration configuration, final URL cloudPipeUrl) {
+    public ServiceList(final HttpClientConfiguration configuration, final PipeServiceInstance pipeServiceInstance) {
         this.configuration = configuration;
-        this.cloudInstance = new PipeServiceInstance(configuration, cloudPipeUrl);
+        this.cloudInstance = pipeServiceInstance;
         defaultToCloud();
     }
 

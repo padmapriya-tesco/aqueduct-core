@@ -1,10 +1,12 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.registry.PipeServiceInstance
 import com.tesco.aqueduct.registry.SelfRegistrationTask
 import com.tesco.aqueduct.registry.PipeLoadBalancer
 import com.tesco.aqueduct.registry.ServiceList
 import io.micronaut.context.ApplicationContext
+import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.client.exceptions.HttpClientException
 import spock.lang.AutoCleanup
 import spock.lang.Specification
@@ -39,6 +41,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
+            .registerSingleton(new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://does.not.exist")))
             .start()
 
         client = context.getBean(HttpPipeClient)

@@ -9,12 +9,13 @@ class ServiceListSpec extends Specification {
     final static URL URL_1 = URL("http://a1")
     final static URL URL_2 = URL("http://a2")
     final static URL URL_3 = URL("http://a3")
+    final PipeServiceInstance serviceInstance = new PipeServiceInstance(config, URL_1)
 
     def config = new DefaultHttpClientConfiguration()
 
     def "services that are updated are returned in the getServices"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, URL_1)
+        ServiceList serviceList = new ServiceList(config, serviceInstance)
         def list = [URL_1, URL_2, URL_3]
 
         when: "service list is updated"
@@ -26,7 +27,7 @@ class ServiceListSpec extends Specification {
 
     def "when services are updated, obsolete services are removed"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, URL_1)
+        ServiceList serviceList = new ServiceList(config, serviceInstance)
 
         and: "the service list has been updated before"
         serviceList.update([URL_1, URL_2])
@@ -41,7 +42,7 @@ class ServiceListSpec extends Specification {
 
     def "when services are updated, previous services keep their status"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, URL_1)
+        ServiceList serviceList = new ServiceList(config, serviceInstance)
 
         and: "the service list has been updated before"
         serviceList.update([URL_1, URL_2])
@@ -63,7 +64,7 @@ class ServiceListSpec extends Specification {
 
     def "service list always contains at least the cloud url"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, URL_1)
+        ServiceList serviceList = new ServiceList(config, serviceInstance)
 
         when: "the service list has not been updated yet"
 
@@ -85,7 +86,7 @@ class ServiceListSpec extends Specification {
 
     def "service list does not contain cloud url if updated with a list without it"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, URL_1)
+        ServiceList serviceList = new ServiceList(config, serviceInstance)
 
         when: "the service list is updated with a list without the cloud url"
         serviceList.update([URL_2, URL_3])
