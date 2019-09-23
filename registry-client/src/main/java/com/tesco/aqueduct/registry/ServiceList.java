@@ -40,7 +40,7 @@ public class ServiceList {
     }
 
     public void update(final List<URL> urls) {
-        if (urls == null || urls.size() == 0) {
+        if (urls == null || urls.isEmpty()) {
             defaultToCloud();
             return;
         }
