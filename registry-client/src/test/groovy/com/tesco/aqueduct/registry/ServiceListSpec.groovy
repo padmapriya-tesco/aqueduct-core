@@ -111,14 +111,39 @@ class ServiceListSpec extends Specification {
     def "service list reads persisted list on startup"() {
         given: "a persisted list"
         def existingPropertiesFile = folder.newFile()
-        existingPropertiesFile.write("""[$URL_1,$URL_2,$URL_3]""")
+        existingPropertiesFile.write("""services=$URL_2,$URL_3""")
 
         when: "a new service list is created"
         def config = new DefaultHttpClientConfiguration()
         ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
 
         then: "the services returned are the persisted list"
-        serviceList.stream().map({m -> m.getUrl()}).collect() == [URL_1, URL_2, URL_3]
+        serviceList.stream().map({m -> m.getUrl()}).collect() == [URL_2, URL_3]
+    }
+
+    def "service list is just cloud when properties file is empty"() {
+        given: "an empty properties file"
+        def existingPropertiesFile = folder.newFile()
+
+        when: "a new service list is created"
+        def config = new DefaultHttpClientConfiguration()
+        ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+
+        then: "the services returned is just the cloud URL"
+        serviceList.stream().map({m -> m.getUrl()}).collect() == [URL_1]
+    }
+
+    def "service list is just cloud when properties file doesn't exist"() {
+        given: "a deleted properties file"
+        def existingPropertiesFile = folder.newFile()
+        existingPropertiesFile.delete()
+
+        when: "a new service list is created"
+        def config = new DefaultHttpClientConfiguration()
+        ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+
+        then: "the services returned is just the cloud URL"
+        serviceList.stream().map({m -> m.getUrl()}).collect() == [URL_1]
     }
 
     def "service list persists URL list when updated list is different to previous list"() {
