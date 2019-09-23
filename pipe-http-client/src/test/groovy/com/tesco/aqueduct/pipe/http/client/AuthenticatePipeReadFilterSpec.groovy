@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.registry.PipeLoadBalancer
 import io.micronaut.context.ApplicationContext
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -41,11 +40,11 @@ class AuthenticatePipeReadFilterSpec extends Specification {
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.latest-offset.attempts": 1,
                 "pipe.http.latest-offset.delay": "1s",
+                "pipe.http.client.url": server.getHttpUrl()
             )
             .build()
             .start()
 
-        context.getBean(PipeLoadBalancer).update([new URL(server.getHttpUrl())])
         client = context.getBean(InternalHttpPipeClient)
 
         when:

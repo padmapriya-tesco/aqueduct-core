@@ -14,12 +14,12 @@ public class PipeLoadBalancerHealthCheckTask {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PipeLoadBalancerHealthCheckTask.class));
 
     @Inject
-    PipeLoadBalancer loadBalancer;
+    ServiceList services;
 
     @Scheduled(fixedDelay = "${pipe.http.client.healthcheck.interval}")
     public void checkState() {
         try {
-            loadBalancer.checkState();
+            services.checkState();
         } catch (Throwable t) {
             LOG.error("healthcheck","unexpected error",t);
         }

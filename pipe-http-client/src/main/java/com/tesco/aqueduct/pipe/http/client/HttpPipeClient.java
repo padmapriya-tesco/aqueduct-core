@@ -4,10 +4,7 @@ import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.MessageResults;
 import com.tesco.aqueduct.pipe.api.PipeStateResponse;
-import com.tesco.aqueduct.registry.PipeLoadBalancer;
-import io.micronaut.cache.Cache;
 import io.micronaut.cache.CacheManager;
-import io.micronaut.cache.annotation.CacheInvalidate;
 import io.micronaut.http.HttpResponse;
 
 import javax.annotation.Nullable;
@@ -20,27 +17,16 @@ import java.util.Optional;
 public class HttpPipeClient implements MessageReader {
 
     private final InternalHttpPipeClient client;
-    private final PipeLoadBalancer pipeLoadBalancer;
     private final CacheManager cacheManager;
 
     @Inject
-    public HttpPipeClient(final InternalHttpPipeClient client, final PipeLoadBalancer pipeLoadBalancer, final CacheManager cacheManager) {
+    public HttpPipeClient(final InternalHttpPipeClient client, final CacheManager cacheManager) {
         this.client = client;
-        this.pipeLoadBalancer = pipeLoadBalancer;
         this.cacheManager = cacheManager;
     }
 
     @Override
     public MessageResults read(@Nullable final List<String> types, final long offset) {
-        try {
-            return httpRead(types, offset);
-        } catch (Exception e) {
-            pipeLoadBalancer.recordError();
-            throw e;
-        }
-    }
-
-    private MessageResults httpRead(@Nullable final List<String> types, final long offset) {
         final HttpResponse<List<Message>> response = client.httpRead(types, offset);
 
         final long retryAfter = Optional

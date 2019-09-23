@@ -7,7 +7,7 @@ import spock.lang.Specification
 
 import java.time.ZonedDateTime
 
-class AuthenticatePipeReadFilterSpec extends Specification {
+class AuthenticateNodeRegistryFilterSpec extends Specification {
 
     private static final URL MY_HOST = new URL("http://localhost")
     String host1 = "http://host1"

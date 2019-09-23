@@ -12,7 +12,7 @@ class HttpPipeClientSpec extends Specification {
 
     InternalHttpPipeClient internalClient = Mock()
     CacheManager cacheManager = Mock()
-    HttpPipeClient client = new HttpPipeClient(internalClient, Mock(PipeLoadBalancer), cacheManager)
+    HttpPipeClient client = new HttpPipeClient(internalClient, cacheManager)
 
     def "a read from the implemented interface method returns a result with the retry after and messages"() {
         given: "call returns a http response with retry after header"

@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.http.client
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.registry.SelfRegistrationTask
 import com.tesco.aqueduct.registry.PipeLoadBalancer
+import com.tesco.aqueduct.registry.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.exceptions.HttpClientException
 import spock.lang.AutoCleanup
@@ -21,6 +22,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
 
     HttpPipeClient client
     PipeLoadBalancer loadBalancer
+    ServiceList serviceList
 
     def setup() {
         serverA = new ErsatzServer()
@@ -41,6 +43,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
 
         client = context.getBean(HttpPipeClient)
         loadBalancer = context.getBean(PipeLoadBalancer)
+        serviceList = context.getBean(ServiceList)
     }
 
     def "client successfully calls first option, then falls back to second on failure"() {
@@ -50,7 +53,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         ErsatzServer serverB = new ErsatzServer()
 
         serverB.start()
-        loadBalancer.update([URL(serverA.httpUrl), URL(serverB.httpUrl)])
+        serviceList.update([URL(serverA.httpUrl), URL(serverB.httpUrl)])
 
         serverA.expectations {
             def offset = 0
@@ -114,7 +117,11 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         firstMessages.messages*.key == ["x0"]
         serverA.verify()
 
-        when: "client reads again"
+        when: "the error has been recorded"
+        serviceList.stream().findFirst().ifPresent({ c -> c.isUp(false) })
+        serviceList.stream().findFirst().ifPresent({ c -> c.isUp(false) })
+
+        and: "client reads again"
         def secondMessages = client.read([], 1)
 
         then: "second server is called"
@@ -150,7 +157,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
 
         and: "loadbalancer is updated with the server url including the base path"
         def serverUrl = serverA.getHttpUrl() + basePath
-        loadBalancer.update([ URL(serverUrl) ])
+        serviceList.update([ URL(serverUrl) ])
 
         when: "the client calls the server"
         client.read([], 0)
@@ -177,10 +184,10 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             }
         }
 
-        loadBalancer.update([URL(server.httpUrl)])
+        serviceList.update([URL(server.httpUrl)])
 
         when: "we marked server as unhealthy"
-        loadBalancer.recordError()
+        serviceList.stream().findFirst().ifPresent({ c -> c.isUp(false) })
 
         then: "There should be no UP servers"
         loadBalancer.getFollowing().isEmpty()
