@@ -1,6 +1,8 @@
 package com.tesco.aqueduct.registry
 
 import io.micronaut.http.client.DefaultHttpClientConfiguration
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 @Newify(URL)
@@ -10,6 +12,9 @@ class ServiceListSpec extends Specification {
     final static URL URL_2 = URL("http://a2")
     final static URL URL_3 = URL("http://a3")
     final PipeServiceInstance serviceInstance = new PipeServiceInstance(config, URL_1)
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder()
 
     def config = new DefaultHttpClientConfiguration()
 
@@ -102,4 +107,21 @@ class ServiceListSpec extends Specification {
     }
 
     //TODO: once we have persistence etc., add a test to assert that at any state something is returned when getServices is called
+
+    def "service list reads persisted list on startup"() {
+        given: "a persisted list"
+        def existingPropertiesFile = folder.newFile()
+        existingPropertiesFile.write("""[$URL_1,$URL_2,$URL_3]""")
+
+        when: "a new service list is created"
+        def config = new DefaultHttpClientConfiguration()
+        ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+
+        then: "the services returned are the persisted list"
+        serviceList.stream().map({m -> m.getUrl()}).collect() == [URL_1, URL_2, URL_3]
+    }
+
+    def "service list persists URL list when updated list is different to previous list"() {
+
+    }
 }
