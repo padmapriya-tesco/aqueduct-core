@@ -3,9 +3,7 @@ package com.tesco.aqueduct.pipe.http.client
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
-import com.tesco.aqueduct.registry.PipeLoadBalancer
 import com.tesco.aqueduct.registry.SelfRegistrationTask
-import com.tesco.aqueduct.registry.ServiceList
 import io.micronaut.context.ApplicationContext
 import spock.lang.AutoCleanup
 import spock.lang.Shared

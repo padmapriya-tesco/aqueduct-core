@@ -2,13 +2,10 @@ package com.tesco.aqueduct.registry
 
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
-import io.micronaut.http.client.RxHttpClient
 import io.micronaut.http.uri.UriBuilder
-import io.reactivex.Flowable
 import spock.lang.Specification
 
 import static io.reactivex.Single.fromPublisher
-
 
 @Newify(URL)
 class PipeLoadBalancerSpec extends Specification {
