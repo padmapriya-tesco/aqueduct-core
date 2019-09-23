@@ -19,21 +19,20 @@ public class PipeServiceInstance implements ServiceInstance {
 
     private final HttpClientConfiguration configuration;
     private final URL url;
-    private boolean up;
+    private boolean up = true;
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PipeServiceInstance.class));
 
     @Inject
-    public PipeServiceInstance(final HttpClientConfiguration configuration, final URL url, final boolean up) {
+    public PipeServiceInstance(final HttpClientConfiguration configuration, final URL url) {
         this.configuration = configuration;
         this.url = url;
-        this.up = up;
     }
 
     public boolean isUp() {
         return up;
     }
 
-    public void setUp(final boolean isServiceUp) {
+    public void isUp(final boolean isServiceUp) {
         up = isServiceUp;
     }
 
@@ -83,7 +82,7 @@ public class PipeServiceInstance implements ServiceInstance {
             // change exception to "false"
             .onErrorResumeNext(Flowable.just(false))
             // set the status of the instance
-            .doOnNext(this::setUp)
+            .doOnNext(this::isUp)
             // return as completable, close client and ignore any errors
             .ignoreElements() // returns completable
             .doOnComplete(client::close)

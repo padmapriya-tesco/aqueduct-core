@@ -13,7 +13,7 @@ class PipeServiceInstanceSpec extends Specification {
         given: "A url with a base path"
         def url = URL(baseUrl)
         def uri = new URI("/pipe/0")
-        def serviceInstance = new PipeServiceInstance(Mock(HttpClientConfiguration), url, true)
+        def serviceInstance = new PipeServiceInstance(Mock(HttpClientConfiguration), url)
 
         when: "resolving a relative uri"
         def response = serviceInstance.resolve(uri)
@@ -31,7 +31,7 @@ class PipeServiceInstanceSpec extends Specification {
 
     def "RxClient errors are not rethrown"() {
         given: "client throwing errors"
-        def serviceInstance = new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://not.a.url"), true)
+        def serviceInstance = new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://not.a.url"))
 
         when: "we check the state"
         serviceInstance.checkState().blockingAwait()

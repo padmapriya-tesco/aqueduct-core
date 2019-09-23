@@ -4,10 +4,7 @@ import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.MessageResults;
 import com.tesco.aqueduct.pipe.api.PipeStateResponse;
-import com.tesco.aqueduct.registry.PipeLoadBalancer;
-import io.micronaut.cache.Cache;
 import io.micronaut.cache.CacheManager;
-import io.micronaut.cache.annotation.CacheInvalidate;
 import io.micronaut.http.HttpResponse;
 
 import javax.annotation.Nullable;

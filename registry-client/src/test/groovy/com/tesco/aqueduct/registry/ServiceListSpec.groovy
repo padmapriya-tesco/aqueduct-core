@@ -47,8 +47,8 @@ class ServiceListSpec extends Specification {
         serviceList.update([URL_1, URL_2])
 
         and: "the service statuses have been set"
-        serviceList.services[0].setUp(true)
-        serviceList.services[1].setUp(false)
+        serviceList.services[0].isUp(true)
+        serviceList.services[1].isUp(false)
 
         when: "service list is updated with a new list"
         def list = [URL_1, URL_2, URL_3]

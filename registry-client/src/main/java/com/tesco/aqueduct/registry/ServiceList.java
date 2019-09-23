@@ -35,11 +35,11 @@ public class ServiceList {
 
     public ServiceList(final HttpClientConfiguration configuration, final URL cloudPipeUrl) {
         this.configuration = configuration;
-        this.cloudInstance = new PipeServiceInstance(configuration, cloudPipeUrl, true);
+        this.cloudInstance = new PipeServiceInstance(configuration, cloudPipeUrl);
         defaultToCloud();
     }
 
-    public void update(List<URL> urls) {
+    public void update(final List<URL> urls) {
         if (urls == null || urls.size() == 0) {
             defaultToCloud();
             return;
@@ -58,7 +58,7 @@ public class ServiceList {
 
     private PipeServiceInstance getServiceInstance(final URL url) {
         return findPreviousInstance(url)
-            .orElseGet(() -> new PipeServiceInstance(configuration, url, true));
+            .orElseGet(() -> new PipeServiceInstance(configuration, url));
     }
 
     private Optional<PipeServiceInstance> findPreviousInstance(final URL url) {
