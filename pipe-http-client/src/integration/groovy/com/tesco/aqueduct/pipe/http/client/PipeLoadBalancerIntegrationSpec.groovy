@@ -118,7 +118,8 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         serverA.verify()
 
         when: "the error has been recorded"
-        loadBalancer.recordError()
+        serviceList.stream().findFirst().ifPresent({ c -> c.setUp(false) })
+        serviceList.stream().findFirst().ifPresent({ c -> c.setUp(false) })
 
         and: "client reads again"
         def secondMessages = client.read([], 1)
@@ -186,7 +187,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         serviceList.update([URL(server.httpUrl)])
 
         when: "we marked server as unhealthy"
-        loadBalancer.recordError()
+        serviceList.stream().findFirst().ifPresent({ c -> c.setUp(false) })
 
         then: "There should be no UP servers"
         loadBalancer.getFollowing().isEmpty()

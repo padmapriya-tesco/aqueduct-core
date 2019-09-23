@@ -6,7 +6,6 @@ import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.xml.ws.Service;
 
 @Context
 @Requires(property = "pipe.http.client.healthcheck.interval")

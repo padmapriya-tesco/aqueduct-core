@@ -75,7 +75,7 @@ class PipeLoadBalancerSpec extends Specification {
         serviceList.update(urls)
 
         and: "We record an error"
-        loadBalancer.recordError()
+        serviceList.stream().findFirst().ifPresent({ c -> c.setUp(false) })
 
         when: "we call get"
         def actualUrls = loadBalancer.getFollowing()
@@ -87,7 +87,7 @@ class PipeLoadBalancerSpec extends Specification {
     def "Updating the list of urls does not change UP status"() {
         given: "2 service urls and one marked as down"
         serviceList.update([URL_1, URL_2])
-        loadBalancer.recordError() // will mark URL_1 as down
+        serviceList.stream().findFirst().ifPresent({ c -> c.setUp(false) })
 
         when: "we update list of urls again"
         serviceList.update([URL_1, URL_2, URL_3])
@@ -101,7 +101,7 @@ class PipeLoadBalancerSpec extends Specification {
         serviceList.update([URL_1, URL_2, URL_3])
 
         when: "we got an error from the client"
-        loadBalancer.recordError()
+        serviceList.stream().findFirst().ifPresent({ c -> c.setUp(false) })
 
         and: "we select anothet service"
         def serviceInstance = fromPublisher(loadBalancer.select()).blockingGet()

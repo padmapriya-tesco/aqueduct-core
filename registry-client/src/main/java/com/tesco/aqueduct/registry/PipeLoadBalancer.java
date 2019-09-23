@@ -36,15 +36,4 @@ public class PipeLoadBalancer implements LoadBalancer {
             .map(PipeServiceInstance::getUrl)
             .collect(Collectors.toList());
     }
-
-    public void recordError() {
-        services.stream()
-            .filter(PipeServiceInstance::isUp)
-            .findFirst()
-            .ifPresent(instance -> instance.setUp(false));
-    }
-
-    public void checkState() {
-        services.checkState();
-    }
 }
