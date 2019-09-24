@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.registry.PipeServiceInstance
 import com.tesco.aqueduct.registry.SelfRegistrationTask
+import com.tesco.aqueduct.registry.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import spock.lang.AutoCleanup
@@ -36,7 +37,11 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
-            .registerSingleton(new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())))
+            .registerSingleton(new ServiceList(
+                    new DefaultHttpClientConfiguration(),
+                    new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
+                    new File("/tmp/provider")
+            ))
             .start()
     }
 

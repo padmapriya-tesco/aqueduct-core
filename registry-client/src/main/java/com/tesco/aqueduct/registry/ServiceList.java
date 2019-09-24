@@ -25,14 +25,6 @@ public class ServiceList {
     private final PipeServiceInstance cloudInstance;
     private final File file;
 
-    @Inject
-    public ServiceList(final HttpClientConfiguration configuration, final PipeServiceInstance pipeServiceInstance) {
-        this.configuration = configuration;
-        this.cloudInstance = pipeServiceInstance;
-        defaultToCloud();
-        this.file = new File("");
-    }
-
     public ServiceList(final HttpClientConfiguration configuration, final PipeServiceInstance pipeServiceInstance, File file) throws IOException {
         this.configuration = configuration;
         this.cloudInstance = pipeServiceInstance;
@@ -50,7 +42,7 @@ public class ServiceList {
         try (FileInputStream stream = new FileInputStream(file)) {
             properties.load(stream);
         }
-        update(readUrls(properties));
+        updateServices(readUrls(properties));
     }
 
     private List<URL> readUrls(Properties properties) {
@@ -75,12 +67,19 @@ public class ServiceList {
             defaultToCloud();
             return;
         }
-        services = urls.stream()
-            .map(this::getServiceInstance)
-            .collect(Collectors.toList());
-        LOG.info("update services urls", servicesString());
-
+        updateServices(urls);
         persistUrls(urls);
+    }
+
+    private void updateServices(final List<URL> urls) {
+        if (urls == null || urls.isEmpty()) {
+            defaultToCloud();
+            return;
+        }
+        services = urls.stream()
+                .map(this::getServiceInstance)
+                .collect(Collectors.toList());
+        LOG.info("update services urls", servicesString());
     }
 
     private void persistUrls(List<URL> urls) {

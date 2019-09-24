@@ -16,11 +16,17 @@ class ServiceListSpec extends Specification {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder()
 
-    def config = new DefaultHttpClientConfiguration()
+    def config
+    def existingPropertiesFile
+
+    def setup() {
+        config = new DefaultHttpClientConfiguration()
+        existingPropertiesFile = folder.newFile()
+    }
 
     def "services that are updated are returned in the getServices"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, serviceInstance)
+        ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
         def list = [URL_1, URL_2, URL_3]
 
         when: "service list is updated"
@@ -32,7 +38,7 @@ class ServiceListSpec extends Specification {
 
     def "when services are updated, obsolete services are removed"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, serviceInstance)
+        ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
 
         and: "the service list has been updated before"
         serviceList.update([URL_1, URL_2])
@@ -47,7 +53,7 @@ class ServiceListSpec extends Specification {
 
     def "when services are updated, previous services keep their status"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, serviceInstance)
+        ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
 
         and: "the service list has been updated before"
         serviceList.update([URL_1, URL_2])
@@ -69,7 +75,7 @@ class ServiceListSpec extends Specification {
 
     def "service list always contains at least the cloud url"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, serviceInstance)
+        ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
 
         when: "the service list has not been updated yet"
 
@@ -91,7 +97,7 @@ class ServiceListSpec extends Specification {
 
     def "service list does not contain cloud url if updated with a list without it"() {
         given: "a service list"
-        ServiceList serviceList = new ServiceList(config, serviceInstance)
+        ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
 
         when: "the service list is updated with a list without the cloud url"
         serviceList.update([URL_2, URL_3])
@@ -156,7 +162,7 @@ class ServiceListSpec extends Specification {
         serviceList.update([URL_2, URL_3])
 
         then: "the file contains the URL's"
-        existingPropertiesFile.getText() == """services=$URL_2,$URL_3"""
+        existingPropertiesFile.getText().contains("services=http\\://a2,http\\://a3")
     }
 
     def "write and read"() {

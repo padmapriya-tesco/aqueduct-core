@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.registry.PipeServiceInstance
+import com.tesco.aqueduct.registry.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import spock.lang.AutoCleanup
@@ -46,8 +47,11 @@ class AuthenticatePipeReadFilterSpec extends Specification {
                 "pipe.http.client.url": server.getHttpUrl()
             )
             .build()
-            .registerSingleton(new PipeServiceInstance(config, new URL(server.getHttpUrl())))
-            //.build()
+            .registerSingleton(new ServiceList(
+                    new DefaultHttpClientConfiguration(),
+                    new PipeServiceInstance(config, new URL(server.getHttpUrl())),
+                    new File("/tmp/provider")
+            ))
             .start()
 
         client = context.getBean(InternalHttpPipeClient)
