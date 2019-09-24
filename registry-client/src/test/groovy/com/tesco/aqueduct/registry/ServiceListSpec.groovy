@@ -112,8 +112,6 @@ class ServiceListSpec extends Specification {
         serviceList.stream().map({ p -> p.getUrl()}).collect() == [URL_1]
     }
 
-    //TODO: once we have persistence etc., add a test to assert that at any state something is returned when getServices is called
-
     def "service list reads persisted list on startup"() {
         given: "a persisted list"
         def existingPropertiesFile = folder.newFile()
@@ -165,17 +163,19 @@ class ServiceListSpec extends Specification {
         existingPropertiesFile.getText().contains("services=http\\://a2,http\\://a3")
     }
 
-    def "write and read"() {
+    def "services persisted by one service list can be read by another"() {
         given: "service list"
         def existingPropertiesFile = folder.newFile()
         def config = new DefaultHttpClientConfiguration()
         ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
 
-        when: "service list is updated"
+        when: "service list is updated and persists"
         serviceList.update([URL_2, URL_3])
 
-        then: "a second service list has persisted config"
+        and: "a second service list is created"
         ServiceList serviceList2 = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+
+        then: "the second service list can read the persisted values"
         serviceList2.stream().map({m -> m.getUrl()}).collect() == [URL_2, URL_3]
     }
 }
