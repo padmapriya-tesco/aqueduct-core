@@ -3,6 +3,8 @@ package com.tesco.aqueduct.registry
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.uri.UriBuilder
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 import static io.reactivex.Single.fromPublisher
@@ -10,13 +12,16 @@ import static io.reactivex.Single.fromPublisher
 @Newify(URL)
 class ServiceListIntegrationSpec extends Specification {
     final static URL URL_1 = URL("http://a1")
-    final static URL URL_2 = URL("http://a2")
-    final static URL URL_3 = URL("http://a3")
 
     ServiceList serviceList
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder()
+
     def setup() {
-        serviceList = new ServiceList(new DefaultHttpClientConfiguration(), URL_1.toString())
+        def config = new DefaultHttpClientConfiguration()
+        File existingPropertiesFile = folder.newFile()
+        serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
     }
 
     def "check state respects the base path of all the servers in the list when performing the status check"() {

@@ -3,6 +3,8 @@ package com.tesco.aqueduct.registry
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.http.uri.UriBuilder
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 import static io.reactivex.Single.fromPublisher
@@ -17,8 +19,12 @@ class PipeLoadBalancerSpec extends Specification {
     ServiceList serviceList
     PipeLoadBalancer loadBalancer
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder()
+
     def setup() {
-        serviceList = new ServiceList(new DefaultHttpClientConfiguration(), URL_1.toString())
+        def config = new DefaultHttpClientConfiguration()
+        serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), folder.newFile())
         loadBalancer = new PipeLoadBalancer(serviceList)
     }
 

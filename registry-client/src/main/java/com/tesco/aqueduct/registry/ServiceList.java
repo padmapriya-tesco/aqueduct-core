@@ -1,18 +1,17 @@
 package com.tesco.aqueduct.registry;
 
-import io.micronaut.context.annotation.Property;
 import io.micronaut.http.client.HttpClientConfiguration;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,19 +23,47 @@ public class ServiceList {
     private final HttpClientConfiguration configuration;
     private List<PipeServiceInstance> services;
     private final PipeServiceInstance cloudInstance;
+    private final File file;
 
-    @Inject
     public ServiceList(
         final HttpClientConfiguration configuration,
-        @Property(name = "pipe.http.client.url") final String cloudPipeUrl)
-        throws MalformedURLException {
-        this(configuration, new URL(cloudPipeUrl));
+        final PipeServiceInstance pipeServiceInstance,
+        File file
+    ) throws IOException {
+        this.configuration = configuration;
+        this.cloudInstance = pipeServiceInstance;
+        services = new ArrayList<>();
+        this.file = file;
+        readUrls(file);
     }
 
-    public ServiceList(final HttpClientConfiguration configuration, final URL cloudPipeUrl) {
-        this.configuration = configuration;
-        this.cloudInstance = new PipeServiceInstance(configuration, cloudPipeUrl);
-        defaultToCloud();
+    private void readUrls(File file) throws IOException {
+        if (!file.exists()) {
+            defaultToCloud();
+            return;
+        }
+        Properties properties = new Properties();
+        try (FileInputStream stream = new FileInputStream(file)) {
+            properties.load(stream);
+        }
+        updateServices(readUrls(properties));
+    }
+
+    private List<URL> readUrls(Properties properties) {
+        String urls = properties.getProperty("services", "");
+        return Arrays.stream(urls.split(","))
+            .map(this::toUrl)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    private URL toUrl(String m) {
+        try {
+            return new URL(m);
+        } catch (MalformedURLException e) {
+            LOG.error("toUrl", "malformed url " + m, e.getMessage());
+        }
+        return null;
     }
 
     public void update(final List<URL> urls) {
@@ -44,10 +71,36 @@ public class ServiceList {
             defaultToCloud();
             return;
         }
-        LOG.info("update services urls", servicesString());
+        updateServices(urls);
+        persistUrls(urls);
+    }
+
+    private void updateServices(final List<URL> urls) {
+        if (urls == null || urls.isEmpty()) {
+            defaultToCloud();
+            return;
+        }
         services = urls.stream()
             .map(this::getServiceInstance)
             .collect(Collectors.toList());
+        LOG.info("update services urls", servicesString());
+    }
+
+    private void persistUrls(List<URL> urls) {
+        Properties properties = new Properties();
+        String urlStrings = urls.stream().map(Object::toString).collect(Collectors.joining(","));
+        properties.setProperty("services", urlStrings);
+
+        try (OutputStream outputStream = new FileOutputStream(file)) {
+            file.createNewFile();
+
+            try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
+                properties.store(outputStreamWriter, null);
+            }
+        } catch (IOException exception) {
+            LOG.error("persist", "Unable to persist service urls to properties file", exception);
+            throw new UncheckedIOException(exception);
+        }
     }
 
     private void defaultToCloud() {
