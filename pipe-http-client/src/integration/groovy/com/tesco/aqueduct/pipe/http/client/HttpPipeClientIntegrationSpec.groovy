@@ -38,7 +38,7 @@ class HttpPipeClientIntegrationSpec extends Specification {
             .registerSingleton(new ServiceList(
                     new DefaultHttpClientConfiguration(),
                     new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
-                    new File("/tmp/provider")
+                    File.createTempFile("provider", "properties")
             ))
             .start()
 

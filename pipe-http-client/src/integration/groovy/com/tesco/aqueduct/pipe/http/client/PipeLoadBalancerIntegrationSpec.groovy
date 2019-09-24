@@ -44,7 +44,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                 .registerSingleton(new ServiceList(
                         new DefaultHttpClientConfiguration(),
                         new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://does.not.exist")),
-                        new File("/tmp/provider")
+                        File.createTempFile("provider", "properties")
                 ))
             .start()
 

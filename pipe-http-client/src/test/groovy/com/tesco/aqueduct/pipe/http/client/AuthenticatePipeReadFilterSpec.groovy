@@ -50,7 +50,7 @@ class AuthenticatePipeReadFilterSpec extends Specification {
             .registerSingleton(new ServiceList(
                     new DefaultHttpClientConfiguration(),
                     new PipeServiceInstance(config, new URL(server.getHttpUrl())),
-                    new File("/tmp/provider")
+                    File.createTempFile("provider", "properties")
             ))
             .start()
 
