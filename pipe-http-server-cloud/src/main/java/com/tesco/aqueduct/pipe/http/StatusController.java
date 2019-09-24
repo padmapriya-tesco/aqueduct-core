@@ -12,7 +12,7 @@ import lombok.Data;
 @Measure
 public class StatusController {
 
-    @Get("/pipe/_status")
+    @Get("/_status")
     Status status() {
         return new Status("ok", Version.getImplementationVersion());
     }
