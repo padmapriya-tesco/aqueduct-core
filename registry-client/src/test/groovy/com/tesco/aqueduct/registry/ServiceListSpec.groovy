@@ -146,6 +146,33 @@ class ServiceListSpec extends Specification {
         serviceList.stream().map({m -> m.getUrl()}).collect() == [URL_1]
     }
 
+    def "service list persists when list is updated"() {
+        given: "a service list with a file"
+        def existingPropertiesFile = folder.newFile()
+        def config = new DefaultHttpClientConfiguration()
+        ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+
+        when: "service list is updated"
+        serviceList.update([URL_2, URL_3])
+
+        then: "the file contains the URL's"
+        existingPropertiesFile.getText() == """services=$URL_2,$URL_3"""
+    }
+
+    def "write and read"() {
+        given: "service list"
+        def existingPropertiesFile = folder.newFile()
+        def config = new DefaultHttpClientConfiguration()
+        ServiceList serviceList = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+
+        when: "service list is updated"
+        serviceList.update([URL_2, URL_3])
+
+        then: "a second service list has persisted config"
+        ServiceList serviceList2 = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
+        serviceList2.stream().map({m -> m.getUrl()}).collect() == [URL_2, URL_3]
+    }
+
     def "service list persists URL list when updated list is different to previous list"() {
 
     }

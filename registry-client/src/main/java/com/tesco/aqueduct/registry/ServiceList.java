@@ -5,13 +5,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,19 +23,21 @@ public class ServiceList {
     private final HttpClientConfiguration configuration;
     private List<PipeServiceInstance> services;
     private final PipeServiceInstance cloudInstance;
+    private final File file;
 
     @Inject
     public ServiceList(final HttpClientConfiguration configuration, final PipeServiceInstance pipeServiceInstance) {
         this.configuration = configuration;
         this.cloudInstance = pipeServiceInstance;
         defaultToCloud();
+        this.file = new File("");
     }
 
     public ServiceList(final HttpClientConfiguration configuration, final PipeServiceInstance pipeServiceInstance, File file) throws IOException {
         this.configuration = configuration;
         this.cloudInstance = pipeServiceInstance;
-
         services = new ArrayList<>();
+        this.file = file;
         readUrls(file);
     }
 
@@ -78,6 +79,25 @@ public class ServiceList {
             .map(this::getServiceInstance)
             .collect(Collectors.toList());
         LOG.info("update services urls", servicesString());
+
+        persistUrls(urls);
+    }
+
+    private void persistUrls(List<URL> urls) {
+        Properties properties = new Properties();
+        String urlStrings = urls.stream().map(Object::toString).collect(Collectors.joining(","));
+        properties.setProperty("services", urlStrings);
+
+        try (OutputStream outputStream = new FileOutputStream(file)) {
+            file.createNewFile();
+
+            try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
+                properties.store(outputStreamWriter, null);
+            }
+        } catch (IOException exception) {
+            LOG.error("persist", "Unable to persist service urls to properties file", exception);
+            throw new UncheckedIOException(exception);
+        }
     }
 
     private void defaultToCloud() {
