@@ -38,9 +38,9 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
             .registerSingleton(new ServiceList(
-                    new DefaultHttpClientConfiguration(),
-                    new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
-                    File.createTempFile("provider", "properties")
+                new DefaultHttpClientConfiguration(),
+                new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
+                File.createTempFile("provider", "properties")
             ))
             .start()
     }

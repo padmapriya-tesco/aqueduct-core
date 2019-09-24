@@ -48,10 +48,10 @@ class AuthenticatePipeReadFilterSpec extends Specification {
             )
             .build()
             .registerSingleton(new ServiceList(
-                    new DefaultHttpClientConfiguration(),
-                    new PipeServiceInstance(config, new URL(server.getHttpUrl())),
-                    File.createTempFile("provider", "properties")
-            ))
+                new DefaultHttpClientConfiguration(),
+                new PipeServiceInstance(config, new URL(server.getHttpUrl())),
+                File.createTempFile("provider", "properties")
+        ))
             .start()
 
         client = context.getBean(InternalHttpPipeClient)

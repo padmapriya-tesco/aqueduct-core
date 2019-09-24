@@ -25,7 +25,11 @@ public class ServiceList {
     private final PipeServiceInstance cloudInstance;
     private final File file;
 
-    public ServiceList(final HttpClientConfiguration configuration, final PipeServiceInstance pipeServiceInstance, File file) throws IOException {
+    public ServiceList(
+        final HttpClientConfiguration configuration,
+        final PipeServiceInstance pipeServiceInstance,
+        File file
+    ) throws IOException {
         this.configuration = configuration;
         this.cloudInstance = pipeServiceInstance;
         services = new ArrayList<>();
@@ -77,8 +81,8 @@ public class ServiceList {
             return;
         }
         services = urls.stream()
-                .map(this::getServiceInstance)
-                .collect(Collectors.toList());
+            .map(this::getServiceInstance)
+            .collect(Collectors.toList());
         LOG.info("update services urls", servicesString());
     }
 

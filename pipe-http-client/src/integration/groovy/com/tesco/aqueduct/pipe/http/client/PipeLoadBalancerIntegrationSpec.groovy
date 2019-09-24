@@ -41,11 +41,11 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
-                .registerSingleton(new ServiceList(
-                        new DefaultHttpClientConfiguration(),
-                        new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://does.not.exist")),
-                        File.createTempFile("provider", "properties")
-                ))
+            .registerSingleton(new ServiceList(
+                new DefaultHttpClientConfiguration(),
+                new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://does.not.exist")),
+                File.createTempFile("provider", "properties")
+            ))
             .start()
 
         client = context.getBean(HttpPipeClient)
