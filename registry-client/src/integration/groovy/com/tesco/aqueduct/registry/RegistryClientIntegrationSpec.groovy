@@ -3,6 +3,7 @@ package com.tesco.aqueduct.registry
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
+import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.inject.qualifiers.Qualifiers
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -40,6 +41,11 @@ class RegistryClientIntegrationSpec extends Specification {
             .build()
             .registerSingleton(Supplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
             .registerSingleton(Supplier.class, providerMetricsSupplier, Qualifiers.byName("providerMetricsSupplier"))
+            .registerSingleton(new ServiceList(
+                new DefaultHttpClientConfiguration(),
+                new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
+                File.createTempFile("provider", "properties")
+            ))
             .start()
 
         and: "a fake response from the server"
