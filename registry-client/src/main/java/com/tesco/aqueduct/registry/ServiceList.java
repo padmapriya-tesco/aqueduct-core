@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 
 import static io.reactivex.Flowable.fromIterable;
 
-@Singleton
 public class ServiceList {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(ServiceList.class));
     private final HttpClientConfiguration configuration;
