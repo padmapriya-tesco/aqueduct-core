@@ -178,8 +178,4 @@ class ServiceListSpec extends Specification {
         ServiceList serviceList2 = new ServiceList(config, new PipeServiceInstance(config, URL_1), existingPropertiesFile)
         serviceList2.stream().map({m -> m.getUrl()}).collect() == [URL_2, URL_3]
     }
-
-    def "service list persists URL list when updated list is different to previous list"() {
-
-    }
 }
