@@ -59,6 +59,12 @@ class RegistryClientIntegrationSpec extends Specification {
                     body(""" [ "$host1", "$host2" ]""")
                 }
             }
+            get("/pipe/_status") {
+                called(1)
+                responder {
+                    contentType("application/json")
+                }
+            }
         }
         and: "A Micronaut-generated Client"
         def client = context.getBean(RegistryClient)
