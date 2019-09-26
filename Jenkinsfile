@@ -94,6 +94,7 @@ ansiColor('xterm') {
                     sh "docker push ${integrationImage}"
 
                     if (params.INITIAL_BUILD) {
+                        sh "docker tag ${integrationImage} ${latestImage}"
                         sh "docker push ${latestImage}"
                     }
                 }
