@@ -272,7 +272,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         "a,b,c" | '"102"'
     }
 
-    def "Returns latest offset without types"() {
+    def "Latest offset endpoint requires types"() {
         given:
         storage.write([
                 Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
@@ -284,7 +284,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/offset/latest")
 
         then:
-        def response = """{"message":"Required argument [List type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
+        def response = """{"message":"Required QueryValue [List type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
         request
             .then()
             .statusCode(400)
