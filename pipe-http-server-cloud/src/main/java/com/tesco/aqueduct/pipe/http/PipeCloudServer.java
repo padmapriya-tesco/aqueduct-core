@@ -4,7 +4,6 @@ import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.registry.NodeRegistryController;
 import io.micronaut.runtime.Micronaut;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
                 version = "1.0",
                 description = "Aqueduct Cloud API",
                 license = @License(name = "MIT", url = "https://opensource.org/licenses/MIT")
-                //contact = @Contact(url = "http://tesco.com", name = "Fred", email = "Fred@gigagantic-server.com")
         )
 )
 public class PipeCloudServer {
