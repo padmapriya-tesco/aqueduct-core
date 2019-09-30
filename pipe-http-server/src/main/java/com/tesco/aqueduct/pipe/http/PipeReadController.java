@@ -11,11 +11,13 @@ import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
 import lombok.val;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.*;
@@ -42,27 +44,27 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
-    @Get("/pipe/offset/latest{?type}")
-    public long latestOffset(final List<String> type) {
+    @Get("/pipe/offset/latest")
+    public long latestOffset(@QueryValue final List<String> type) {
         final List<String> types = flattenRequestParams(type);
         return messageReader.getLatestOffsetMatching(types);
     }
 
     @Get("/pipe/state{?type}")
-    public PipeStateResponse state(final List<String> type) {
+    public PipeStateResponse state(@Nullable final List<String> type) {
         final List<String> types = flattenRequestParams(type);
         return pipeStateProvider.getState(types, messageReader);
     }
 
     @Get("/pipe/{offset}{?type}")
-    public HttpResponse<List<Message>> readMessages(final long offset, final HttpRequest<?> request) {
+    public HttpResponse<List<Message>> readMessages(final long offset, final HttpRequest<?> request, @Nullable final List<String> type) {
         if(offset < 0) {
             return HttpResponse.badRequest();
         }
 
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
-        final List<String> types = flattenRequestParams(request.getParameters().getAll("type"));
+        final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
         final val messageResults = messageReader.read(types, offset);

@@ -101,6 +101,9 @@ subprojects {
                 compileOnly 'io.micronaut:micronaut-inject-java'
                 annotationProcessor 'io.micronaut:micronaut-inject-java'
 
+                annotationProcessor "io.micronaut.configuration:micronaut-openapi"
+                compileOnly "io.swagger.core.v3:swagger-annotations"
+
                 compile 'io.micronaut:micronaut-security'
                 compile "io.micronaut:micronaut-management"
                 compile 'io.micronaut.configuration:micronaut-micrometer-core'

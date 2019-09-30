@@ -6,6 +6,11 @@ micronaut:
     jdbc.enabled: false
   security:
     enabled: {PIPE_READ_SECURITY_ENABLED}
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
 
 endpoints:
   all:
