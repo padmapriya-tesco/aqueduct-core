@@ -43,8 +43,8 @@ public class SelfRegistrationTask {
                 return;
             }
             services.update(upstreamEndpoints);
-        } catch (HttpClientResponseException htcre) {
-            LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", htcre.getMessage());
+        } catch (HttpClientResponseException hcre) {
+            LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", hcre.getMessage());
         } catch (Exception e) {
             LOG.error("SelfRegistrationTask.register", "Register error", e);
         }
