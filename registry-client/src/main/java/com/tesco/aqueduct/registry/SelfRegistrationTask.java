@@ -3,6 +3,7 @@ package com.tesco.aqueduct.registry;
 import com.tesco.aqueduct.registry.model.Node;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,8 @@ public class SelfRegistrationTask {
                 return;
             }
             services.update(upstreamEndpoints);
+        } catch (HttpClientResponseException htcre) {
+            LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", htcre.getMessage());
         } catch (Exception e) {
             LOG.error("SelfRegistrationTask.register", "Register error", e);
         }
