@@ -35,7 +35,7 @@ public class PostgreSQLTillStorage implements TillStorage {
              Connection connection = getConnection();
              insert(connection, hostId, bootstrapType);
              } catch (SQLException | IOException exception) {
-             LOG.error("Postgresql node registry", "register node", exception);
+             LOG.error("Postgresql till storage", "hostId", exception);
          }
     }
 
