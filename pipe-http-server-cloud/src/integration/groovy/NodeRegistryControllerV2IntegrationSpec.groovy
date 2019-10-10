@@ -3,6 +3,9 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.NodeRegistry
 import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
+import com.tesco.aqueduct.registry.PostgreSQLTillStorage
+import com.tesco.aqueduct.registry.TillStorage
+import com.tesco.aqueduct.registry.model.BootstrapType
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -40,6 +43,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     Sql sql
     DataSource dataSource
     NodeRegistry registry
+    PostgreSQLTillStorage mockTillStorage = Mock()
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -86,6 +90,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .build()
             .registerSingleton(NodeRegistry, new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1)))
             .registerSingleton(MessageReader, Mock(MessageReader))
+            .registerSingleton(TillStorage, mockTillStorage)
             .start()
 
         server = context.getBean(EmbeddedServer)
@@ -317,6 +322,26 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         request.body().prettyPrint().contains("http://1.1.1.1:1234")
 
         request.then().statusCode(200)
+    }
+
+    def "when bootstrap is called, updateTill is called on the tillStorage"() {
+        given: "A registry running"
+        server.start()
+
+        when: "bootstrap is called"
+        given()
+            .contentType("application/json")
+        .when()
+            .body("""{
+                "tillHosts": ["02065"], 
+                "bootstrapType": "PROVIDER"
+            }""")
+            .post("/v2/registry/bootstrap")
+        .then()
+            .statusCode(200)
+
+        then: "updateTill is called"
+        1 * mockTillStorage.updateTill("02065", BootstrapType.PROVIDER)
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

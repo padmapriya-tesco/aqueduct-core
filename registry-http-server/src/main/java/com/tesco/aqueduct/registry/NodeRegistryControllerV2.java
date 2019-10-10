@@ -28,6 +28,9 @@ public class NodeRegistryControllerV2 {
     @Inject
     private NodeRegistry registry;
 
+    @Inject
+    private TillStorage tillStorage;
+
     // This is temporary, it might be better for us to make pipe depend on registry and have it register itself in it.
     @Inject
     private MessageReader pipe;
@@ -58,8 +61,12 @@ public class NodeRegistryControllerV2 {
         }
     }
 
+    @Secured(SecurityRule.IS_ANONYMOUS)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
+        bootstrapRequest.getTillHosts()
+            .forEach(tillHost -> tillStorage.updateTill(tillHost, bootstrapRequest.getBootstrapType()));
+
         return HttpResponse.status(HttpStatus.OK);
     }
 }
