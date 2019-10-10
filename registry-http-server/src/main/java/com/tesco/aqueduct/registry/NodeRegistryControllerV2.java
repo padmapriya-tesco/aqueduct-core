@@ -2,6 +2,7 @@ package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.registry.model.BootstrapRequest;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.StateSummary;
 import io.micronaut.http.HttpResponse;
@@ -31,10 +32,6 @@ public class NodeRegistryControllerV2 {
     @Inject
     private MessageReader pipe;
 
-    public NodeRegistryControllerV2(final NodeRegistry registry) {
-        this.registry = registry;
-    }
-
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Get
     public StateSummary getSummary(@Nullable final List<String> groups) {
@@ -59,5 +56,10 @@ public class NodeRegistryControllerV2 {
         } else {
             return HttpResponse.status(HttpStatus.NOT_FOUND);
         }
+    }
+
+    @Post("/bootstrap")
+    public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
+        return HttpResponse.status(HttpStatus.OK);
     }
 }

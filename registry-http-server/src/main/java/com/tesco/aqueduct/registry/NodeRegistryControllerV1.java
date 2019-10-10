@@ -31,10 +31,6 @@ public class NodeRegistryControllerV1 {
     @Inject
     private MessageReader pipe;
 
-    public NodeRegistryControllerV1(final NodeRegistry registry) {
-        this.registry = registry;
-    }
-
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Get
     public StateSummary getSummary(@Nullable final List<String> groups) {
