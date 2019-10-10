@@ -43,7 +43,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     Sql sql
     DataSource dataSource
     NodeRegistry registry
-    PostgreSQLTillStorage mockTillStorage = Mock()
+    TillStorage mockTillStorage = Mock()
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
