@@ -1,9 +1,7 @@
 package com.tesco.aqueduct.registry;
 
-import com.tesco.aqueduct.registry.model.BootstrapType;
-
-import java.time.LocalDateTime;
+import com.tesco.aqueduct.registry.model.Till;
 
 public interface TillStorage {
-    void updateTill(String hostId, BootstrapType bootstrapType, LocalDateTime requestedDate);
+    void updateTill(Till till);
 }

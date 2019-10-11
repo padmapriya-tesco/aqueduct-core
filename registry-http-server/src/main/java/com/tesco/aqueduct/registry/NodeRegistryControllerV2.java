@@ -2,9 +2,7 @@ package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.model.BootstrapRequest;
-import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.StateSummary;
+import com.tesco.aqueduct.registry.model.*;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.*;
@@ -67,7 +65,17 @@ public class NodeRegistryControllerV2 {
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
         bootstrapRequest.getTillHosts()
-            .forEach(tillHost -> tillStorage.updateTill(tillHost, bootstrapRequest.getBootstrapType(), LocalDateTime.now()));
+            .forEach(tillHost ->
+                tillStorage.updateTill(
+                    new Till(
+                        tillHost,
+                        new Bootstrap(
+                            bootstrapRequest.getBootstrapType(),
+                            LocalDateTime.now()
+                        )
+                    )
+                )
+            );
 
         return HttpResponse.status(HttpStatus.OK);
     }

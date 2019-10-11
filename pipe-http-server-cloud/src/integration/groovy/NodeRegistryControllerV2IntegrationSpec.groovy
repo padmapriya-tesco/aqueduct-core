@@ -3,9 +3,9 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.NodeRegistry
 import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.PostgreSQLTillStorage
 import com.tesco.aqueduct.registry.TillStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
+import com.tesco.aqueduct.registry.model.Till
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -21,7 +21,6 @@ import spock.lang.Unroll
 import javax.sql.DataSource
 import java.sql.DriverManager
 import java.time.Duration
-import java.time.LocalDateTime
 
 import static io.restassured.RestAssured.given
 import static io.restassured.RestAssured.when
@@ -326,9 +325,16 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
+    @Unroll
     def "when bootstrap is called, updateTill is called on the tillStorage"() {
         given: "A registry running"
         server.start()
+
+        List<Till> called = new ArrayList<>()
+
+        mockTillStorage.updateTill(_) >> { Till t ->
+            called.add(t)
+        }
 
         when: "bootstrap is called"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
@@ -346,15 +352,47 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(statusCode)
 
         then: "updateTill is called"
-        updateCallFreq * mockTillStorage.updateTill("0000", bootstrapType, _ as LocalDateTime)
-        updateCallFreq * mockTillStorage.updateTill("1111", bootstrapType, _ as LocalDateTime)
-        updateCallFreq * mockTillStorage.updateTill("2222", bootstrapType, _ as LocalDateTime)
+        called.get(0).getBootstrap().getType() == bootstrapType
+        called.get(0).getBootstrap().requestedDate != null
+        called.get(0).getHostId() == "0000"
+
+        called.get(1).getBootstrap().getType() == bootstrapType
+        called.get(1).getBootstrap().requestedDate != null
+        called.get(1).getHostId() == "1111"
+
+        called.get(2).getBootstrap().getType() == bootstrapType
+        called.get(2).getBootstrap().requestedDate != null
+        called.get(2).getHostId() == "2222"
+
 
         where:
-        bootstrapString     | updateCallFreq | statusCode | bootstrapType
-        "PROVIDER"          | 1              | 200        | BootstrapType.PROVIDER
-        "PIPE_AND_PROVIDER" | 1              | 200        | BootstrapType.PIPE_AND_PROVIDER
-        "INVALID"           | 0              | 400        | null
+        bootstrapString     | statusCode | bootstrapType
+        "PROVIDER"          | 200        | BootstrapType.PROVIDER
+        "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER
+    }
+
+    def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
+        given: "A registry running"
+        server.start()
+
+        when: "bootstrap is called"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+
+        given()
+                .contentType("application/json")
+                .when()
+                .header("Authorization", "Basic $encodedCredentials")
+                .body("""{
+                "tillHosts": ["0000", "1111", "2222"], 
+                "bootstrapType": "INVALID"
+            }""")
+                .post("/v2/registry/bootstrap")
+                .then()
+                .statusCode(400)
+
+        then: "updateTill is called"
+        0 * mockTillStorage.updateTill(_)
+
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

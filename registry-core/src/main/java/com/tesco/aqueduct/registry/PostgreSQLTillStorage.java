@@ -1,11 +1,13 @@
 package com.tesco.aqueduct.registry;
 
-import com.tesco.aqueduct.registry.model.BootstrapType;
+import com.tesco.aqueduct.registry.model.Till;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.*;
-import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.ZoneOffset;
 
 
@@ -32,9 +34,9 @@ public class PostgreSQLTillStorage implements TillStorage {
     }
 
     @Override
-    public void updateTill(final String hostId, final BootstrapType bootstrapType, final LocalDateTime requestedDate) {
+    public void updateTill(Till till) {
          try (Connection connection = getConnection()) {
-             insert(connection, hostId, bootstrapType, requestedDate);
+             insert(connection, till);
          } catch (SQLException exception) {
              LOG.error("Postgresql till storage", "hostId", exception);
          }
@@ -52,17 +54,15 @@ public class PostgreSQLTillStorage implements TillStorage {
 
     private void insert(
         final Connection connection,
-        final String hostId,
-        final BootstrapType bootstrapType,
-        final LocalDateTime requestedDate
+        final Till till
     ) throws SQLException {
         long start = System.currentTimeMillis();
-        Timestamp timestamp = Timestamp.valueOf(requestedDate.atOffset(ZoneOffset.UTC).toLocalDateTime());
+        Timestamp timestamp = Timestamp.valueOf(till.getBootstrap().getRequestedDate().atOffset(ZoneOffset.UTC).toLocalDateTime());
 
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_TILL)) {
-            statement.setString(1, hostId);
+            statement.setString(1, till.getHostId());
             statement.setTimestamp(2, timestamp);
-            statement.setString(3, bootstrapType.toString());
+            statement.setString(3, till.getBootstrap().getType().toString());
             statement.execute();
         } finally {
             long end = System.currentTimeMillis();

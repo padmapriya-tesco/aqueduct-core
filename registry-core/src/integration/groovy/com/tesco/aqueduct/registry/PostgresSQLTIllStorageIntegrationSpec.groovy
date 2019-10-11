@@ -2,7 +2,9 @@ package com.tesco.aqueduct.registry
 
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.tesco.aqueduct.registry.model.Bootstrap
 import com.tesco.aqueduct.registry.model.BootstrapType
+import com.tesco.aqueduct.registry.model.Till
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -53,7 +55,7 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
 
         when: "bootstrap is requested"
         LocalDateTime now = LocalDateTime.now()
-        tillStorage.updateTill("host-id", BootstrapType.PROVIDER, now)
+        tillStorage.updateTill(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")
@@ -70,11 +72,11 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
 
         when: "bootstrap is requested for the first time"
         LocalDateTime firstTime = LocalDateTime.now()
-        tillStorage.updateTill("host-id", BootstrapType.PROVIDER, firstTime)
+        tillStorage.updateTill(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, firstTime)))
 
         and: "bootstrap is requested for the second time with different params"
         LocalDateTime secondTime = LocalDateTime.now()
-        tillStorage.updateTill("host-id", BootstrapType.PIPE_AND_PROVIDER, secondTime)
+        tillStorage.updateTill(new Till("host-id", new Bootstrap(BootstrapType.PIPE_AND_PROVIDER, secondTime)))
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")
