@@ -64,18 +64,16 @@ public class NodeRegistryControllerV2 {
     @Secured(BOOTSTRAP_TILL)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
-        bootstrapRequest.getTillHosts()
-            .forEach(tillHost ->
-                tillStorage.updateTill(
-                    new Till(
-                        tillHost,
-                        new Bootstrap(
-                            bootstrapRequest.getBootstrapType(),
-                            LocalDateTime.now()
-                        )
+        bootstrapRequest.getTillHosts().forEach(tillHost ->
+            tillStorage.updateTill(
+                new Till(
+                    tillHost,
+                    new Bootstrap(
+                        bootstrapRequest.getBootstrapType(),
+                        LocalDateTime.now()
                     )
                 )
-            );
+        ));
 
         return HttpResponse.status(HttpStatus.OK);
     }
