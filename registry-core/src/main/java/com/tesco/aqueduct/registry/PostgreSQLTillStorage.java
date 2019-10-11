@@ -10,11 +10,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZoneOffset;
 
-
 public class PostgreSQLTillStorage implements TillStorage {
 
     private final DataSource dataSource;
-
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLTillStorage.class));
     private static final String QUERY_INSERT_TILL =
         "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
