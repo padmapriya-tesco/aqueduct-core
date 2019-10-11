@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @Controller("/v2/registry")
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
+    private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
 
@@ -61,11 +63,11 @@ public class NodeRegistryControllerV2 {
         }
     }
 
-    @Secured(SecurityRule.IS_ANONYMOUS)
+    @Secured(BOOTSTRAP_TILL)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
         bootstrapRequest.getTillHosts()
-            .forEach(tillHost -> tillStorage.updateTill(tillHost, bootstrapRequest.getBootstrapType()));
+            .forEach(tillHost -> tillStorage.updateTill(tillHost, bootstrapRequest.getBootstrapType(), LocalDateTime.now()));
 
         return HttpResponse.status(HttpStatus.OK);
     }

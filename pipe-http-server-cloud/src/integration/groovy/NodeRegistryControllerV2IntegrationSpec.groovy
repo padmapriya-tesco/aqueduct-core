@@ -21,6 +21,7 @@ import spock.lang.Unroll
 import javax.sql.DataSource
 import java.sql.DriverManager
 import java.time.Duration
+import java.time.LocalDateTime
 
 import static io.restassured.RestAssured.given
 import static io.restassured.RestAssured.when
@@ -82,6 +83,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                           password: $PASSWORD
                           roles:
                             - REGISTRY_DELETE
+                            - BOOTSTRAP_TILL
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
                     """
@@ -329,11 +331,14 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         server.start()
 
         when: "bootstrap is called"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+
         given()
             .contentType("application/json")
         .when()
+            .header("Authorization", "Basic $encodedCredentials")
             .body("""{
-                "tillHosts": ["02065"], 
+                "tillHosts": ["0000", "1111", "2222"], 
                 "bootstrapType": "$bootstrapString"
             }""")
             .post("/v2/registry/bootstrap")
@@ -341,7 +346,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(statusCode)
 
         then: "updateTill is called"
-        updateCallFreq * mockTillStorage.updateTill("02065", bootstrapType)
+        updateCallFreq * mockTillStorage.updateTill("0000", bootstrapType, _ as LocalDateTime)
+        updateCallFreq * mockTillStorage.updateTill("1111", bootstrapType, _ as LocalDateTime)
+        updateCallFreq * mockTillStorage.updateTill("2222", bootstrapType, _ as LocalDateTime)
 
         where:
         bootstrapString     | updateCallFreq | statusCode | bootstrapType

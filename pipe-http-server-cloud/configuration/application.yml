@@ -48,3 +48,4 @@ authentication:
       password: "{SUPPORT_PASSWORD}"
       roles:
         - REGISTRY_DELETE
+        - BOOTSTRAP_TILL

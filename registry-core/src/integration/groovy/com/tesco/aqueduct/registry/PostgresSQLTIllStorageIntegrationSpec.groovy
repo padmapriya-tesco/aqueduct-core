@@ -11,6 +11,9 @@ import spock.lang.Specification
 
 import javax.sql.DataSource
 import java.sql.DriverManager
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 class PostgresSQLTIllStorageIntegrationSpec extends Specification {
 
@@ -36,9 +39,9 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
             
             CREATE TABLE tills(
                 host_id VARCHAR PRIMARY KEY NOT NULL,
-                bootstrap_requested DATE NOT NULL,
+                bootstrap_requested timestamp NOT NULL,
                 bootstrap_type VARCHAR NOT NULL,
-                bootstrap_received DATE
+                bootstrap_received timestamp
             );
         """)
 
@@ -49,13 +52,16 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
         given: "a postgres till storage"
 
         when: "bootstrap type is requested"
-        tillStorage.updateTill("host-id", BootstrapType.PROVIDER)
+        LocalDateTime now = LocalDateTime.now()
+        tillStorage.updateTill("host-id", BootstrapType.PROVIDER, now)
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")
-        def dataSet = sql.dataSet("tills")
+        Timestamp timestamp = Timestamp.valueOf(now.atOffset(ZoneOffset.UTC).toLocalDateTime())
 
         rows.get(0).getProperty("host_id") == "host-id"
+        rows.get(0).getProperty("bootstrap_requested") == timestamp
         rows.get(0).getProperty("bootstrap_type") == "PROVIDER"
+        rows.get(0).getProperty("bootstrap_received") == null
     }
 }
