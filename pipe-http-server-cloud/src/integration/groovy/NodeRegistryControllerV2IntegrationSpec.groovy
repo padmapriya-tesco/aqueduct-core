@@ -364,7 +364,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         called.get(2).getBootstrap().requestedDate != null
         called.get(2).getHostId() == "2222"
 
-
         where:
         bootstrapString     | statusCode | bootstrapType
         "PROVIDER"          | 200        | BootstrapType.PROVIDER
@@ -392,7 +391,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         then: "updateTill is called"
         0 * mockTillStorage.updateTill(_)
-
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {
