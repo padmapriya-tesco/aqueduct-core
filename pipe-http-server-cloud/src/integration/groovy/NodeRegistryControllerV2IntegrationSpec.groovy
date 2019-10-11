@@ -379,16 +379,16 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
         given()
-                .contentType("application/json")
-                .when()
-                .header("Authorization", "Basic $encodedCredentials")
-                .body("""{
+            .contentType("application/json")
+        .when()
+            .header("Authorization", "Basic $encodedCredentials")
+            .body("""{
                 "tillHosts": ["0000", "1111", "2222"], 
                 "bootstrapType": "INVALID"
-            }""")
-                .post("/v2/registry/bootstrap")
-                .then()
-                .statusCode(400)
+             }""")
+            .post("/v2/registry/bootstrap")
+        .then()
+            .statusCode(400)
 
         then: "updateTill is called"
         0 * mockTillStorage.updateTill(_)
