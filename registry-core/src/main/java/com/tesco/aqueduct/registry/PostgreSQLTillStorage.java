@@ -15,12 +15,12 @@ public class PostgreSQLTillStorage implements TillStorage {
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLTillStorage.class));
     private static final String QUERY_INSERT_TILL =
-            "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
-                "VALUES (" +
-                "?, " +
-                "?, " +
-                "? " +
-                ");";
+        "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
+            "VALUES (" +
+            "?, " +
+            "?, " +
+            "? " +
+            ");";
 
     public PostgreSQLTillStorage(final DataSource dataSource) {
         this.dataSource = dataSource;
