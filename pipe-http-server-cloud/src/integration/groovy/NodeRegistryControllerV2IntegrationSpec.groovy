@@ -334,14 +334,20 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .when()
             .body("""{
                 "tillHosts": ["02065"], 
-                "bootstrapType": "PROVIDER"
+                "bootstrapType": "$bootstrapString"
             }""")
             .post("/v2/registry/bootstrap")
         .then()
-            .statusCode(200)
+            .statusCode(statusCode)
 
         then: "updateTill is called"
-        1 * mockTillStorage.updateTill("02065", BootstrapType.PROVIDER)
+        updateCallFreq * mockTillStorage.updateTill("02065", bootstrapType)
+
+        where:
+        bootstrapString     | updateCallFreq | statusCode | bootstrapType
+        "PROVIDER"          | 1              | 200        | BootstrapType.PROVIDER
+        "PIPE_AND_PROVIDER" | 1              | 200        | BootstrapType.PIPE_AND_PROVIDER
+        "INVALID"           | 0              | 400        | null
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

@@ -4,26 +4,23 @@ import com.tesco.aqueduct.registry.model.BootstrapType;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.ZonedDateTime;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 
 public class PostgreSQLTillStorage implements TillStorage {
 
     private final DataSource dataSource;
 
-    private static final TillStorageLogger LOG = new TillStorageLogger(LoggerFactory.getLogger(PostgreSQLTillStorage.class));
-    private static final String QUERY_INSERT_GROUP =
-            "INSERT INTO tills (hostId, bootstrapRequested, bootstrapType)" +
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLTillStorage.class));
+    private static final String QUERY_INSERT_TILL =
+            "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
                     "VALUES (" +
                     "?, " +
                     "?, " +
                     "? " +
-                    ")" +
-                    "ON CONFLICT DO UPDATE ;";
+                    ");";
 
     public PostgreSQLTillStorage(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -31,10 +28,10 @@ public class PostgreSQLTillStorage implements TillStorage {
 
     @Override
     public void updateTill(String hostId, BootstrapType bootstrapType) {
-         try {
-             Connection connection = getConnection();
+         try (Connection connection = getConnection()) {
              insert(connection, hostId, bootstrapType);
-             } catch (SQLException | IOException exception) {
+             System.out.println("foo");
+         } catch (SQLException exception) {
              LOG.error("Postgresql till storage", "hostId", exception);
          }
     }
@@ -49,12 +46,18 @@ public class PostgreSQLTillStorage implements TillStorage {
         }
     }
 
-    private void insert(final Connection connection, final String hostId, final BootstrapType bootstrapType) throws IOException, SQLException {
+    private void insert(final Connection connection, final String hostId, final BootstrapType bootstrapType) throws SQLException {
         long start = System.currentTimeMillis();
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_GROUP)) {
+
+        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now()
+            .atOffset(ZoneOffset.UTC)
+            .toLocalDateTime());
+
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_TILL)) {
             statement.setString(1, hostId);
-            statement.setString(2, ZonedDateTime.now().toString());
+            statement.setTimestamp(2, timestamp);
             statement.setString(3, bootstrapType.toString());
+            statement.execute();
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("hostId insert:time", Long.toString(end - start));
