@@ -21,10 +21,11 @@ public class PostgreSQLTillStorage implements TillStorage {
             "?, " +
             "? " +
             ")" +
-            "ON CONFLICT (host_id) DO UPDATE SET " +
+        "ON CONFLICT (host_id) DO UPDATE SET " +
             "host_id = EXCLUDED.host_id, " +
             "bootstrap_requested = EXCLUDED.bootstrap_requested, " +
-            "bootstrap_type = EXCLUDED.bootstrap_type;";
+            "bootstrap_type = EXCLUDED.bootstrap_type, " +
+            "bootstrap_received = null;";
 
     public PostgreSQLTillStorage(final DataSource dataSource) {
         this.dataSource = dataSource;
