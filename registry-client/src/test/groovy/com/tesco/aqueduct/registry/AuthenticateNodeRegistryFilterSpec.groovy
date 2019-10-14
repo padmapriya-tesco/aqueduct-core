@@ -21,7 +21,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                 basic 'admin', 'my-password'
             }
             expectations {
-                post("/registry") {
+                post("/v2/registry") {
                     called(1)
 
                     responder {
@@ -39,7 +39,8 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                 "authentication.read-pipe.username": "admin",
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.register.retry.interval": "1s",
-                "pipe.http.client.url": server.getHttpUrl()
+                "pipe.http.client.url": server.getHttpUrl(),
+                "pipe.http.client.v2.url": server.getHttpUrl() + "/v2"
             )
             .build()
             .start()
@@ -66,7 +67,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
         given: "Server expecting auth"
         def server = new ErsatzServer({
             expectations {
-                post("/registry") {
+                post("/v2/registry") {
                     called(1)
 
                     responder {
@@ -84,7 +85,8 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                 "authentication.read-pipe.username": "admin",
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.register.retry.interval": "1s",
-                "pipe.http.client.url": server.getHttpUrl()
+                "pipe.http.client.url": server.getHttpUrl(),
+                "pipe.http.client.v2.url": server.getHttpUrl() + "/v2"
             )
             .build()
             .start()
@@ -117,7 +119,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
 
         def server = new ErsatzServer({
             expectations {
-                post("/registry") {
+                post("/v2/registry") {
                     header("Accept-Encoding", "gzip, deflate")
                     header("Authorization", "Basic $encodedCredentials")
                     called(1)
@@ -134,6 +136,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
             .build()
             .properties(
                 "pipe.http.client.url": server.getHttpUrl(),
+                "pipe.http.client.v2.url": server.getHttpUrl() + "/v2",
                 "pipe.http.register.retry.interval": "1s",
                 "authentication.read-pipe.username": username,
                 "authentication.read-pipe.password": password
@@ -162,7 +165,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
 
     def 'the base path of the client is respected when authenticating using a http client filter'() {
         given: "a base path exists"
-        def basePath = "/messaging/v1"
+        def basePath = "/messaging"
 
         and: "authentication credentials are provided"
         def username = "username"
@@ -173,7 +176,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
 
         def server = new ErsatzServer({
             expectations {
-                post("/messaging/v1/registry") {
+                post("/messaging/v2/registry") {
                     header("Accept-Encoding", "gzip, deflate")
                     header("Authorization", "Basic $encodedCredentials")
                     called(1)
@@ -190,6 +193,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
             .build()
             .properties(
                 "pipe.http.client.url": server.getHttpUrl() + basePath,
+                "pipe.http.client.v2.url": server.getHttpUrl() + basePath + "/v2",
                 "pipe.http.register.retry.interval": "1s",
                 "authentication.read-pipe.username": username,
                 "authentication.read-pipe.password": password
