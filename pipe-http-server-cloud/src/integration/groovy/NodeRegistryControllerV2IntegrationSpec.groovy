@@ -332,7 +332,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "following": ["${following.join('", "')}"]
             }""")
         .when()
-            .post("/v1/registry")
+            .post("/v2/registry")
         .then()
             .statusCode(200)
     }
