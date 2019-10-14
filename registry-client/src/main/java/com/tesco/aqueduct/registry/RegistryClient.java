@@ -11,7 +11,7 @@ import io.micronaut.retry.annotation.Retryable;
 import java.net.URL;
 import java.util.List;
 
-@Client("${pipe.http.client.url}")
+@Client("${pipe.http.client.v1.url}")
 @Requires(property = "pipe.http.register.retry.interval")
 public interface RegistryClient {
     @Retryable(delay = "${pipe.http.register.retry.interval}")

@@ -34,6 +34,7 @@ class RegistryClientIntegrationSpec extends Specification {
             .build()
             .properties(
                 "pipe.http.client.url": server.getHttpUrl(),
+                "pipe.http.client.v1.url": server.getHttpUrl() + "/v1",
                 "pipe.http.client.healthcheck.interval": "1m",
                 "pipe.http.register.retry.interval": "1s",
                 "pipe.http.registration.interval": "1m"
@@ -50,7 +51,7 @@ class RegistryClientIntegrationSpec extends Specification {
 
         and: "a fake response from the server"
         server.expectations {
-            post("/registry") {
+            post("/v1/registry") {
                 header("Accept-Encoding", "gzip, deflate")
                 called(1)
 

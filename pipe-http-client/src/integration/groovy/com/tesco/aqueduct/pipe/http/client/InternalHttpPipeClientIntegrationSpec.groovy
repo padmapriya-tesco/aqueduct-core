@@ -32,6 +32,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
                 "pipe.http.latest-offset.attempts": 1,
                 "pipe.http.latest-offset.delay": "1s",
                 "pipe.http.client.url": server.getHttpUrl(),
+                "pipe.http.client.v1.url": server.getHttpUrl() + "/v1",
                 "micronaut.caches.health-check.maximum-size": 20,
                 "micronaut.caches.health-check.expire-after-write": "5s"
             )
