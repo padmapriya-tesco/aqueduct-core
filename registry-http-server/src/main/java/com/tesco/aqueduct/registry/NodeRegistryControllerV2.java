@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URL;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,17 +63,7 @@ public class NodeRegistryControllerV2 {
     @Secured(BOOTSTRAP_TILL)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
-        bootstrapRequest.getTillHosts().forEach(tillHost ->
-            tillStorage.updateTill(
-                new Till(
-                    tillHost,
-                    new Bootstrap(
-                        bootstrapRequest.getBootstrapType(),
-                        LocalDateTime.now()
-                    )
-                )
-        ));
-
+        bootstrapRequest.save(tillStorage);
         return HttpResponse.status(HttpStatus.OK);
     }
 }
