@@ -40,7 +40,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.register.retry.interval": "1s",
                 "pipe.http.client.url": server.getHttpUrl(),
-                "pipe.http.client.v2.url": server.getHttpUrl() + "/v2"
+                "registry.http.client.url": server.getHttpUrl() + "/v2"
             )
             .build()
             .start()
@@ -86,7 +86,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                 "authentication.read-pipe.password": "my-password",
                 "pipe.http.register.retry.interval": "1s",
                 "pipe.http.client.url": server.getHttpUrl(),
-                "pipe.http.client.v2.url": server.getHttpUrl() + "/v2"
+                "registry.http.client.url": server.getHttpUrl() + "/v2"
             )
             .build()
             .start()
@@ -136,7 +136,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
             .build()
             .properties(
                 "pipe.http.client.url": server.getHttpUrl(),
-                "pipe.http.client.v2.url": server.getHttpUrl() + "/v2",
+                "registry.http.client.url": server.getHttpUrl() + "/v2",
                 "pipe.http.register.retry.interval": "1s",
                 "authentication.read-pipe.username": username,
                 "authentication.read-pipe.password": password
@@ -193,7 +193,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
             .build()
             .properties(
                 "pipe.http.client.url": server.getHttpUrl() + basePath,
-                "pipe.http.client.v2.url": server.getHttpUrl() + basePath + "/v2",
+                "registry.http.client.url": server.getHttpUrl() + basePath + "/v2",
                 "pipe.http.register.retry.interval": "1s",
                 "authentication.read-pipe.username": username,
                 "authentication.read-pipe.password": password
