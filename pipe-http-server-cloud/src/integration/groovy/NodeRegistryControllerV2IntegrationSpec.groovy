@@ -389,7 +389,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .then()
             .statusCode(400)
 
-        then: "updateTill is called"
+        then: "updateTill is not called"
         0 * mockTillStorage.updateTill(_)
     }
 

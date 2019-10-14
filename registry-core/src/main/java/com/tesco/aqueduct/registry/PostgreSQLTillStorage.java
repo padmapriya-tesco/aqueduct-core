@@ -36,7 +36,8 @@ public class PostgreSQLTillStorage implements TillStorage {
          try (Connection connection = getConnection()) {
              insert(connection, till);
          } catch (SQLException exception) {
-             LOG.error("Postgresql till storage", "hostId", exception);
+             LOG.error("updateTill", "insert a till", exception);
+             throw new RuntimeException(exception);
          }
     }
 
