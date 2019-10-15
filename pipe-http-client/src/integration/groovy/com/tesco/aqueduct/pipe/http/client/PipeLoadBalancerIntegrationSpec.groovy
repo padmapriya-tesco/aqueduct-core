@@ -37,6 +37,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             .properties(
                 [
                     "pipe.http.client.url": "http://does.not.exist",
+                    "registry.http.client.url": "http://does.not.exist",
                 ] + properties
             )
             .build()
