@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
-import com.tesco.aqueduct.registry.NodeRegistryController;
 import com.tesco.aqueduct.registry.NodeRegistryControllerV1;
 import com.tesco.aqueduct.registry.NodeRegistryControllerV2;
 import io.micronaut.runtime.Micronaut;
@@ -29,7 +28,6 @@ public class PipeCloudServer {
         Micronaut.run(new Class[]{
             PipeReadController.class,
             PipeErrorHandler.class,
-            NodeRegistryController.class,
             NodeRegistryControllerV1.class,
             NodeRegistryControllerV2.class
         });
