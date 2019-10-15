@@ -1,10 +1,11 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.postgres
 
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.registry.model.Bootstrap
 import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.model.Till
+import com.tesco.aqueduct.registry.model.TillStorage
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup

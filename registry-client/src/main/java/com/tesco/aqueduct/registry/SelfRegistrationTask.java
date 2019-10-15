@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.registry.model.Node;
+import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;

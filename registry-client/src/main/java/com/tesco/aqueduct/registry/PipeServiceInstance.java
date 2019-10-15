@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry;
 
+import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.discovery.ServiceInstance;
 import io.micronaut.http.client.DefaultHttpClient;
 import io.micronaut.http.client.HttpClientConfiguration;

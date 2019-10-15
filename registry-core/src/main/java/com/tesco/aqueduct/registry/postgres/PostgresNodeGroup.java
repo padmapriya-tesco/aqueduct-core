@@ -2,8 +2,7 @@ package com.tesco.aqueduct.registry.postgres;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.registry.RegistryLogger;
-import com.tesco.aqueduct.registry.VersionChangedException;
+import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.NodeGroup;
 import org.slf4j.LoggerFactory;

@@ -1,9 +1,9 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
-import com.tesco.aqueduct.registry.NodeRegistry
-import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.TillStorage
+import com.tesco.aqueduct.registry.model.NodeRegistry
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
+import com.tesco.aqueduct.registry.model.TillStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.model.Till
 import groovy.sql.Sql
