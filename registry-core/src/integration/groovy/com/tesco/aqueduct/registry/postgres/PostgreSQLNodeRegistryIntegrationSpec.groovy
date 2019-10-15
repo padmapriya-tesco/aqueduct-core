@@ -4,7 +4,6 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.registry.model.Node
 import com.tesco.aqueduct.registry.model.NodeRegistry
-import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -30,7 +29,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     Sql sql
     URL cloudURL = new URL("http://cloud.pipe:8080")
     DataSource dataSource
-	NodeRegistry registry
+    NodeRegistry registry
 
     def setup() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
