@@ -351,7 +351,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .then()
             .statusCode(statusCode)
 
-        then: "updateTill is called"
+        then: "till is saved"
         called.get(0).getBootstrap().getType() == bootstrapType
         called.get(0).getBootstrap().requestedDate != null
         called.get(0).getHostId() == "0000"
@@ -389,7 +389,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .then()
             .statusCode(400)
 
-        then: "updateTill is not called"
+        then: "till is not saved"
         0 * mockTillStorage.save(_)
     }
 
