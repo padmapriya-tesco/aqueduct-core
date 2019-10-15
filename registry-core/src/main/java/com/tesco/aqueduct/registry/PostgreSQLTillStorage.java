@@ -32,12 +32,12 @@ public class PostgreSQLTillStorage implements TillStorage {
     }
 
     @Override
-    public void updateTill(Till till) {
+    public void updateTill(Till till) throws SQLException {
          try (Connection connection = getConnection()) {
              insert(connection, till);
          } catch (SQLException exception) {
              LOG.error("updateTill", "insert a till", exception);
-             throw new RuntimeException(exception);
+             throw new SQLException(exception);
          }
     }
 

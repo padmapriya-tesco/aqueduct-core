@@ -12,7 +12,6 @@ import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.net.URL;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,15 +20,15 @@ import java.util.stream.Collectors;
 @Controller("/v1/registry")
 public class NodeRegistryControllerV1 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
+    private final NodeRegistry registry;
+    private final MessageReader pipe;
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV1.class));
 
-    @Inject
-    private NodeRegistry registry;
-
-    // This is temporary, it might be better for us to make pipe depend on registry and have it register itself in it.
-    @Inject
-    private MessageReader pipe;
+    public NodeRegistryControllerV1(final NodeRegistry registry, final MessageReader pipe) {
+        this.registry = registry;
+        this.pipe = pipe;
+    }
 
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Get

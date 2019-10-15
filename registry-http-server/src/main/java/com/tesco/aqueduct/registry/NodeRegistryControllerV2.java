@@ -23,16 +23,15 @@ public class NodeRegistryControllerV2 {
     private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
+    private final NodeRegistry registry;
+    private final TillStorage tillStorage;
+    private final MessageReader pipe;
 
-    @Inject
-    private NodeRegistry registry;
-
-    @Inject
-    private TillStorage tillStorage;
-
-    // This is temporary, it might be better for us to make pipe depend on registry and have it register itself in it.
-    @Inject
-    private MessageReader pipe;
+    public NodeRegistryControllerV2(final NodeRegistry registry, final TillStorage tillStorage, final MessageReader pipe) {
+        this.registry = registry;
+        this.tillStorage = tillStorage;
+        this.pipe = pipe;
+    }
 
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Get

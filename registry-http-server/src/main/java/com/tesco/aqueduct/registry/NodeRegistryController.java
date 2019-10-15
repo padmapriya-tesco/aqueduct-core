@@ -25,15 +25,15 @@ import java.util.stream.Collectors;
 @Controller("/registry")
 public class NodeRegistryController {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
+    private final NodeRegistry registry;
+    private final MessageReader pipe;
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryController.class));
 
-    @Inject
-    private NodeRegistry registry;
-
-    // This is temporary, it might be better for us to make pipe depend on registry and have it register itself in it.
-    @Inject
-    private MessageReader pipe;
+    public NodeRegistryController(final NodeRegistry registry, final MessageReader pipe) {
+        this.registry = registry;
+        this.pipe = pipe;
+    }
 
     @Secured(SecurityRule.IS_ANONYMOUS)
     @Get
