@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.registry.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.tesco.aqueduct.registry.TillStorage;
 import lombok.Data;
 
 import java.sql.SQLException;

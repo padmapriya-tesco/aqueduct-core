@@ -1,6 +1,4 @@
-package com.tesco.aqueduct.registry;
-
-import com.tesco.aqueduct.registry.model.Till;
+package com.tesco.aqueduct.registry.model;
 
 import java.sql.SQLException;
 

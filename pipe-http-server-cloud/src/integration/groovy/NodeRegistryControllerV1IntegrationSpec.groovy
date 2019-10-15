@@ -1,8 +1,8 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
-import com.tesco.aqueduct.registry.NodeRegistry
-import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
+import com.tesco.aqueduct.registry.model.NodeRegistry
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader

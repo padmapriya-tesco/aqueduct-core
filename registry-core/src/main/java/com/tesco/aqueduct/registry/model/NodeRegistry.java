@@ -1,7 +1,4 @@
-package com.tesco.aqueduct.registry;
-
-import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.StateSummary;
+package com.tesco.aqueduct.registry.model;
 
 import java.net.URL;
 import java.util.List;

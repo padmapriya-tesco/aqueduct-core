@@ -1,9 +1,9 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.NodeRegistry;
+import com.tesco.aqueduct.registry.model.NodeRegistry;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
-import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry;
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Value;
 import javax.inject.Named;

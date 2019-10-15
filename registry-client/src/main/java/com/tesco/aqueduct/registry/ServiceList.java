@@ -1,10 +1,9 @@
 package com.tesco.aqueduct.registry;
 
+import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.http.client.HttpClientConfiguration;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;

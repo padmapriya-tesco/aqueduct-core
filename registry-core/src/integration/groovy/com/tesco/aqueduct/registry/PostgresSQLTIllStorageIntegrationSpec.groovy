@@ -5,6 +5,8 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.registry.model.Bootstrap
 import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.model.Till
+import com.tesco.aqueduct.registry.model.TillStorage
+import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -25,7 +27,7 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
     @AutoCleanup
     Sql sql
     DataSource dataSource
-    TillStorage tillStorage
+	TillStorage tillStorage
 
     def setup() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)

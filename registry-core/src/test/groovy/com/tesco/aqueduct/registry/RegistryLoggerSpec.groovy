@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry
 
 import com.tesco.aqueduct.registry.model.Node
+import com.tesco.aqueduct.registry.utils.RegistryLogger
 import org.slf4j.Logger
 import spock.lang.Specification
 
@@ -15,7 +16,7 @@ class RegistryLoggerSpec extends Specification {
         given:
         Logger logger = Mock()
         logger.isDebugEnabled() >> true
-        RegistryLogger LOG = new RegistryLogger(logger)
+		RegistryLogger LOG = new RegistryLogger(logger)
 
         when:
         LOG.debug("testWhere", "testWhat")
