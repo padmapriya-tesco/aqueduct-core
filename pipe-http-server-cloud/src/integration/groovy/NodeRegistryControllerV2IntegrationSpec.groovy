@@ -326,7 +326,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     @Unroll
-    def "when bootstrap is called, updateTill is called on the tillStorage"() {
+    def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
         given: "A registry running"
         server.start()
 
