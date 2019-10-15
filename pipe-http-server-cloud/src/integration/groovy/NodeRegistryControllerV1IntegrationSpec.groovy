@@ -91,6 +91,8 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         server = context.getBean(EmbeddedServer)
 
         RestAssured.port = server.port
+
+        server.start()
     }
 
     void cleanupSpec() {
@@ -98,9 +100,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
     }
 
     def 'expect unauthorized when not providing username and password to registry'(){
-        given:
-        server.start()
-
         expect:
         given()
             .contentType("application/json")
@@ -118,9 +117,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
     }
 
     def "Can post to registry"() {
-        setup: "A started server"
-        server.start()
-
         expect: "We can post info to the registry"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
@@ -142,9 +138,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
     }
 
     def "Can get registry summary"() {
-        setup: "A started server"
-        server.start()
-
         expect: "We can get info from registry"
         given()
             .when()
@@ -160,7 +153,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
 
     def "Registered nodes are returned"() {
         given: "We register a node"
-        server.start()
         registerNode(6735, "http://1.1.1.1:1234", 123, "status", ["http://x"])
 
         when: "we get summary"
@@ -182,7 +174,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
     @Unroll
     def "Summary can filter by stores - #comment"() {
         given: "We register nodes from different groups"
-        server.start()
         registerNode("a", "http://a")
         registerNode("b", "http://b")
         registerNode("c", "http://c")
@@ -211,7 +202,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
 
     def "deleting a single node from the registry"() {
         given: "We register two nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
@@ -236,7 +226,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
 
     def "deleting a node from the registry and rebalancing a group"() {
         given: "We register multiple nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:0001", 123, "status")
         registerNode(1234, "http://1.1.1.1:0002", 123, "status")
         registerNode(1234, "http://1.1.1.1:0003", 123, "status")
@@ -273,7 +262,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
 
     def "authenticated user without deletion role cannot delete from the database"() {
         given: "We register two nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
@@ -298,7 +286,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
 
     def "anonymous user without deletion role cannot delete from the database"() {
         given: "We register two nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
