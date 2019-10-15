@@ -4,6 +4,8 @@ import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.NodeRegistry;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry;
+import com.tesco.aqueduct.registry.PostgreSQLTillStorage;
+import com.tesco.aqueduct.registry.TillStorage;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Value;
 import javax.inject.Named;
@@ -35,6 +37,12 @@ public class Bindings {
         @Value("${registry.mark-offline-after:1m}") final Duration markAsOffline
     ) {
         return new PostgreSQLNodeRegistry(dataSource, selfUrl, markAsOffline);
+    }
+
+    @Singleton
+    @Measure
+    TillStorage bindTillStorage(@Named("postgres") final DataSource dataSource) {
+        return new PostgreSQLTillStorage(dataSource);
     }
 
     @Singleton
