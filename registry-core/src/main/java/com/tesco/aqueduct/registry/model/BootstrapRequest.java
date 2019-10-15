@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.tesco.aqueduct.registry.TillStorage;
 import lombok.Data;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,11 +14,11 @@ public class BootstrapRequest {
     private final List<String> tillHosts;
     private final BootstrapType bootstrapType;
 
-    public void save(TillStorage tillStorage) {
-        tillHosts.forEach(tillHost ->
+    public void save(TillStorage tillStorage) throws SQLException {
+        for (String tillHost : tillHosts) {
             tillStorage.updateTill(
                 new Till(tillHost, new Bootstrap(bootstrapType, LocalDateTime.now()))
-            )
-        );
+            );
+        }
     }
 }

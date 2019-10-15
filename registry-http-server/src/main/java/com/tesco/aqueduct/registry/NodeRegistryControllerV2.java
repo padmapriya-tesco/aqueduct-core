@@ -11,8 +11,8 @@ import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,7 +61,7 @@ public class NodeRegistryControllerV2 {
 
     @Secured(BOOTSTRAP_TILL)
     @Post("/bootstrap")
-    public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) {
+    public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
         bootstrapRequest.save(tillStorage);
         return HttpResponse.status(HttpStatus.OK);
     }
