@@ -3,6 +3,9 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.NodeRegistry
 import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
+import com.tesco.aqueduct.registry.TillStorage
+import com.tesco.aqueduct.registry.model.BootstrapType
+import com.tesco.aqueduct.registry.model.Till
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -40,6 +43,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     Sql sql
     DataSource dataSource
     NodeRegistry registry
+    TillStorage mockTillStorage = Mock()
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -78,6 +82,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                           password: $PASSWORD
                           roles:
                             - REGISTRY_DELETE
+                            - BOOTSTRAP_TILL
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
                     """
@@ -86,6 +91,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .build()
             .registerSingleton(NodeRegistry, new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1)))
             .registerSingleton(MessageReader, Mock(MessageReader))
+            .registerSingleton(TillStorage, mockTillStorage)
             .start()
 
         server = context.getBean(EmbeddedServer)
@@ -317,6 +323,74 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         request.body().prettyPrint().contains("http://1.1.1.1:1234")
 
         request.then().statusCode(200)
+    }
+
+    @Unroll
+    def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
+        given: "A registry running"
+        server.start()
+
+        List<Till> called = new ArrayList<>()
+
+        mockTillStorage.save(_) >> { Till t ->
+            called.add(t)
+        }
+
+        when: "bootstrap is called"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+
+        given()
+            .contentType("application/json")
+        .when()
+            .header("Authorization", "Basic $encodedCredentials")
+            .body("""{
+                "tillHosts": ["0000", "1111", "2222"], 
+                "bootstrapType": "$bootstrapString"
+            }""")
+            .post("/v2/registry/bootstrap")
+        .then()
+            .statusCode(statusCode)
+
+        then: "till is saved"
+        called.get(0).getBootstrap().getType() == bootstrapType
+        called.get(0).getBootstrap().requestedDate != null
+        called.get(0).getHostId() == "0000"
+
+        called.get(1).getBootstrap().getType() == bootstrapType
+        called.get(1).getBootstrap().requestedDate != null
+        called.get(1).getHostId() == "1111"
+
+        called.get(2).getBootstrap().getType() == bootstrapType
+        called.get(2).getBootstrap().requestedDate != null
+        called.get(2).getHostId() == "2222"
+
+        where:
+        bootstrapString     | statusCode | bootstrapType
+        "PROVIDER"          | 200        | BootstrapType.PROVIDER
+        "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER
+    }
+
+    def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
+        given: "A registry running"
+        server.start()
+
+        when: "bootstrap is called"
+        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+
+        given()
+            .contentType("application/json")
+        .when()
+            .header("Authorization", "Basic $encodedCredentials")
+            .body("""{
+                "tillHosts": ["0000", "1111", "2222"], 
+                "bootstrapType": "INVALID"
+             }""")
+            .post("/v2/registry/bootstrap")
+        .then()
+            .statusCode(400)
+
+        then: "till is not saved"
+        0 * mockTillStorage.save(_)
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {
