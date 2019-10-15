@@ -1,7 +1,9 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.http;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.registry.NodeRegistry;
+import com.tesco.aqueduct.registry.RegistryLogger;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.StateSummary;
 import io.micronaut.http.HttpResponse;
@@ -18,11 +20,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Measure
-@Controller("/v1/registry")
-public class NodeRegistryControllerV1 {
+@Controller("/v2/registry")
+public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
 
-    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV1.class));
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
 
     @Inject
     private NodeRegistry registry;
@@ -31,7 +33,7 @@ public class NodeRegistryControllerV1 {
     @Inject
     private MessageReader pipe;
 
-    public NodeRegistryControllerV1(final NodeRegistry registry) {
+    public NodeRegistryControllerV2(final NodeRegistry registry) {
         this.registry = registry;
     }
 
