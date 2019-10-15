@@ -55,7 +55,7 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
 
         when: "bootstrap is requested"
         LocalDateTime now = LocalDateTime.now()
-        tillStorage.updateTill(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
+        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")
@@ -72,11 +72,11 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
 
         when: "bootstrap is requested for the first time"
         LocalDateTime firstTime = LocalDateTime.now()
-        tillStorage.updateTill(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, firstTime)))
+        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, firstTime)))
 
         and: "bootstrap is requested for the second time with different params"
         LocalDateTime secondTime = LocalDateTime.now()
-        tillStorage.updateTill(new Till("host-id", new Bootstrap(BootstrapType.PIPE_AND_PROVIDER, secondTime)))
+        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PIPE_AND_PROVIDER, secondTime)))
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")

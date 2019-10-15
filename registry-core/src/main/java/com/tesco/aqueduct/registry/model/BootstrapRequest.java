@@ -16,7 +16,7 @@ public class BootstrapRequest {
 
     public void save(TillStorage tillStorage) throws SQLException {
         for (String tillHost : tillHosts) {
-            tillStorage.updateTill(
+            tillStorage.save(
                 new Till(tillHost, new Bootstrap(bootstrapType, LocalDateTime.now()))
             );
         }

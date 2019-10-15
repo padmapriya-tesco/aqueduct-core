@@ -332,7 +332,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         List<Till> called = new ArrayList<>()
 
-        mockTillStorage.updateTill(_) >> { Till t ->
+        mockTillStorage.save(_) >> { Till t ->
             called.add(t)
         }
 
@@ -390,7 +390,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(400)
 
         then: "updateTill is not called"
-        0 * mockTillStorage.updateTill(_)
+        0 * mockTillStorage.save(_)
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

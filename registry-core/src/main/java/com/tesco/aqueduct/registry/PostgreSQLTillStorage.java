@@ -14,7 +14,7 @@ public class PostgreSQLTillStorage implements TillStorage {
 
     private final DataSource dataSource;
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLTillStorage.class));
-    private static final String QUERY_INSERT_TILL =
+    private static final String QUERY_INSERT_OR_UPDATE_TILL =
         "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
             "VALUES (" +
             "?, " +
@@ -32,12 +32,12 @@ public class PostgreSQLTillStorage implements TillStorage {
     }
 
     @Override
-    public void updateTill(Till till) throws SQLException {
+    public void save(Till till) throws SQLException {
          try (Connection connection = getConnection()) {
-             insert(connection, till);
+             insertOrUpdate(connection, till);
          } catch (SQLException exception) {
              LOG.error("updateTill", "insert a till", exception);
-             throw new SQLException(exception);
+             throw exception;
          }
     }
 
@@ -51,21 +51,21 @@ public class PostgreSQLTillStorage implements TillStorage {
         }
     }
 
-    private void insert(
+    private void insertOrUpdate(
         final Connection connection,
         final Till till
     ) throws SQLException {
         long start = System.currentTimeMillis();
         Timestamp timestamp = Timestamp.valueOf(till.getBootstrap().getRequestedDate().atOffset(ZoneOffset.UTC).toLocalDateTime());
 
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_TILL)) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_OR_UPDATE_TILL)) {
             statement.setString(1, till.getHostId());
             statement.setTimestamp(2, timestamp);
             statement.setString(3, till.getBootstrap().getType().toString());
             statement.execute();
         } finally {
             long end = System.currentTimeMillis();
-            LOG.info("hostId insert:time", Long.toString(end - start));
+            LOG.info("insert:time", Long.toString(end - start));
         }
     }
 

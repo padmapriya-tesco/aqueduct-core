@@ -5,5 +5,5 @@ import com.tesco.aqueduct.registry.model.Till;
 import java.sql.SQLException;
 
 public interface TillStorage {
-    void updateTill(Till till) throws SQLException;
+    void save(Till till) throws SQLException;
 }
