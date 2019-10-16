@@ -158,7 +158,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(200)
             .body(
                 "bootstrapType", equalTo("NONE"),
-                "requestedToFollow", contains("http://cloud.pipe")
+                "requestedToFollow", contains(cloudPipeUrl)
             )
     }
 
