@@ -26,7 +26,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
 
                     responder {
                         contentType('application/json')
-                        body(""" [ "$host1", "$host2" ]""")
+                        body("""{"requestedToFollow" : [ "$host1", "$host2" ], "bootstrapType" : "NONE"}""")
                     }
                 }
             }
@@ -72,7 +72,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
 
                     responder {
                         contentType('application/json')
-                        body(""" [ "$host1", "$host2" ]""")
+                        body("""{"requestedToFollow" : [ "$host1", "$host2" ], "bootstrapType" : "NONE"}""")
                     }
                 }
             }
@@ -125,7 +125,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                     called(1)
                     responder {
                         contentType("application/json")
-                        body(""" [ "$host1", "$host2" ]""")
+                        body("""{"requestedToFollow" : [ "$host1", "$host2" ], "bootstrapType" : "NONE"}""")
                     }
                 }
             }
@@ -154,10 +154,10 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
             .build()
 
         def client = context.getBean(RegistryClient)
-        def urls = client.register(myNode)
+        def response = client.register(myNode)
 
         then: "a list of expected urls are returned"
-        urls == [new URL(host1), new URL(host2)]
+        response.requestedToFollow == [new URL(host1), new URL(host2)]
 
         and: "an exception is not raised"
         noExceptionThrown()
@@ -182,7 +182,7 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
                     called(1)
                     responder {
                         contentType("application/json")
-                        body(""" [ "$host1", "$host2" ]""")
+                        body("""{"requestedToFollow" : [ "$host1", "$host2" ], "bootstrapType" : "NONE"}""")
                     }
                 }
             }
@@ -211,10 +211,10 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
             .build()
 
         def client = context.getBean(RegistryClient)
-        def urls = client.register(myNode)
+        def response = client.register(myNode)
 
         then: "a list of expected urls are returned"
-        urls == [new URL(host1), new URL(host2)]
+        response.requestedToFollow == [new URL(host1), new URL(host2)]
 
         and: "an exception is not raised"
         noExceptionThrown()

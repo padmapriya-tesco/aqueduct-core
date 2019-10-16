@@ -1,6 +1,8 @@
 package com.tesco.aqueduct.registry
 
+import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.model.Node
+import com.tesco.aqueduct.registry.model.RegistryResponse
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
@@ -35,7 +37,7 @@ class SelfRegistrationTaskSpec extends Specification {
         then: "the client will eventually have a list of endpoints returned from the Registry Service"
         notThrown(Exception)
         ran
-        1 * upstreamClient.register(_ as Node) >> ["http://1.2.3.4", "http://5.6.7.8"]
+        1 * upstreamClient.register(_ as Node) >> new RegistryResponse(["http://1.2.3.4", "http://5.6.7.8"], BootstrapType.NONE)
         1 * services.update(_ as List) >> { startedLatch.countDown() }
     }
 
@@ -56,7 +58,7 @@ class SelfRegistrationTaskSpec extends Specification {
     def 'check register doesnt default to cloud pipe if previously it succeeded'() {
         given: "a registry client"
         def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
-        upstreamClient.register(_ as Node) >> ["http://1.2.3.4", "http://5.6.7.8"] >> { throw new RuntimeException() }
+        upstreamClient.register(_ as Node) >> new RegistryResponse(["http://1.2.3.4", "http://5.6.7.8"], BootstrapType.NONE) >> { throw new RuntimeException() }
 
         when: "register() is called successfully"
         registryClient.register()
