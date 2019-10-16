@@ -103,10 +103,7 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
         returnedBootstrap == bootstrapType
 
         where:
-        bootstrapType                   | _
-        BootstrapType.PROVIDER          | _
-        BootstrapType.PIPE_AND_PROVIDER | _
-        BootstrapType.NONE              | _
+        bootstrapType << [BootstrapType.PROVIDER, BootstrapType.PIPE_AND_PROVIDER, BootstrapType.NONE]
     }
 
     def "bootstrap request is only sent once"() {
