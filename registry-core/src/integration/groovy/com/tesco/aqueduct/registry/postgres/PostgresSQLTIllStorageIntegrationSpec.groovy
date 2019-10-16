@@ -11,6 +11,7 @@ import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import javax.sql.DataSource
 import java.sql.DriverManager
@@ -87,5 +88,50 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
         rows.get(0).getProperty("bootstrap_requested") == timestamp
         rows.get(0).getProperty("bootstrap_type") == "PIPE_AND_PROVIDER"
         rows.get(0).getProperty("bootstrap_received") == null
+    }
+
+    @Unroll
+    def "when I read with host-id it should return the BootstrapType"() {
+        given: "data is stored within a postgres till storage"
+        LocalDateTime now = LocalDateTime.now()
+        tillStorage.save(new Till("host-id", new Bootstrap(bootstrapType, now)))
+
+        when: "read is called with the host-id"
+        def returnedBootstrap = tillStorage.read("host-id")
+
+        then: "the BootstrapType is returned"
+        returnedBootstrap == bootstrapType
+
+        where:
+        bootstrapType                   | _
+        BootstrapType.PROVIDER          | _
+        BootstrapType.PIPE_AND_PROVIDER | _
+        BootstrapType.NONE              | _
+    }
+
+    def "bootstrap request is only sent once"() {
+        given: "data is stored within a postgres till storage"
+        LocalDateTime now = LocalDateTime.now()
+        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
+
+        when: "read is called with the host-id"
+        def firstReturnedBootstrap = tillStorage.read("host-id")
+
+        and: "read is called for a second time"
+        def secondReturnedBootstrap = tillStorage.read("host-id")
+
+        then: "bootstrap is only returned once"
+        firstReturnedBootstrap == BootstrapType.PROVIDER
+        secondReturnedBootstrap == BootstrapType.NONE
+    }
+
+    def "bootstrap request is made when till doesn't exist"() {
+        given: "the till doesn't exist"
+
+        when: "read is called with the host-id"
+        def response = tillStorage.read("host-id")
+
+        then: "bootstrap is only returned once"
+        response == BootstrapType.NONE
     }
 }

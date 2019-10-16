@@ -4,4 +4,5 @@ import java.sql.SQLException;
 
 public interface TillStorage {
     void save(Till till) throws SQLException;
+    BootstrapType read(String hostId) throws SQLException;
 }

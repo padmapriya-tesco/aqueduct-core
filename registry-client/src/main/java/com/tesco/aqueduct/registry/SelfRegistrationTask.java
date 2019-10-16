@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.registry;
 
+import com.tesco.aqueduct.registry.model.BootstrapType;
+import com.tesco.aqueduct.registry.model.Bootstrapable;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.RegistryResponse;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
@@ -21,16 +23,19 @@ public class SelfRegistrationTask {
     private final RegistryClient client;
     private final Supplier<Node> selfSummary;
     private final ServiceList services;
+    private final Bootstrapable bootstrapable;
 
     @Inject
     public SelfRegistrationTask(
-        final RegistryClient client,
-        @Named("selfSummarySupplier") final Supplier<Node> selfSummary,
-        final ServiceList services
+            final RegistryClient client,
+            @Named("selfSummarySupplier") final Supplier<Node> selfSummary,
+            final ServiceList services,
+            final Bootstrapable bootstrapable
     ) {
         this.client = client;
         this.selfSummary = selfSummary;
         this.services = services;
+        this.bootstrapable = bootstrapable;
     }
 
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
@@ -43,6 +48,9 @@ public class SelfRegistrationTask {
                 return;
             }
             services.update(registryResponse.getRequestedToFollow());
+            if (registryResponse.getBootstrapType() == BootstrapType.PROVIDER ) {
+                bootstrapable.bootstrap();
+            }
         } catch (HttpClientResponseException hcre) {
             LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", hcre.getMessage());
         } catch (Exception e) {
