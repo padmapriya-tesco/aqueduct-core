@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -16,8 +16,8 @@ class PipeLoadBalancerSpec extends Specification {
     final static URL URL_2 = URL("http://a2")
     final static URL URL_3 = URL("http://a3")
 
-    ServiceList serviceList
-    PipeLoadBalancer loadBalancer
+	ServiceList serviceList
+	PipeLoadBalancer loadBalancer
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder()

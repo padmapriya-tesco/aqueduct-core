@@ -1,6 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client;
 
-import com.tesco.aqueduct.registry.PipeLoadBalancer;
+import com.tesco.aqueduct.registry.client.PipeLoadBalancer;
 import io.micronaut.context.annotation.Replaces;
 import io.micronaut.discovery.DiscoveryClient;
 import io.micronaut.http.client.LoadBalancer;

@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -7,13 +7,11 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
-import static io.reactivex.Single.fromPublisher
-
 @Newify(URL)
 class ServiceListIntegrationSpec extends Specification {
     final static URL URL_1 = URL("http://a1")
 
-    ServiceList serviceList
+	ServiceList serviceList
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder()

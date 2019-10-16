@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.http.client
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
-import com.tesco.aqueduct.registry.PipeLoadBalancer
 import io.micronaut.cache.CacheManager
 import io.micronaut.cache.SyncCache
 import io.micronaut.http.HttpResponse
