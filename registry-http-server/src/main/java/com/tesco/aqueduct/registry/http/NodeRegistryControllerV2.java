@@ -2,12 +2,8 @@ package com.tesco.aqueduct.registry.http;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.model.NodeRegistry;
+import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
-import com.tesco.aqueduct.registry.model.TillStorage;
-import com.tesco.aqueduct.registry.model.BootstrapRequest;
-import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.StateSummary;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.*;
@@ -46,11 +42,11 @@ public class NodeRegistryControllerV2 {
 
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Post
-    public List<URL> registerNode(@Body final Node node) {
+    public RegistryResponse registerNode(@Body final Node node) {
         final List<URL> requestedToFollow = registry.register(node);
         final String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
         LOG.withNode(node).info("requested to follow", followStr);
-        return requestedToFollow;
+        return new RegistryResponse(requestedToFollow, BootstrapType.NONE);
     }
 
     @Secured(REGISTRY_DELETE)

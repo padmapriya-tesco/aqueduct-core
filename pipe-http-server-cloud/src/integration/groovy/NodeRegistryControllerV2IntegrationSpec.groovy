@@ -2,6 +2,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
+import com.tesco.aqueduct.registry.model.RegistryResponse
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import com.tesco.aqueduct.registry.model.TillStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
@@ -144,7 +145,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .post("/v2/registry")
         .then()
             .statusCode(200)
-            .body("", equalTo([cloudPipeUrl]))
+            .body("", equalTo("""{bootstrapType=NONE, "requestedToFollow"=[http://cloud.pipe]}"""))
     }
 
     def "Can get registry summary"() {
