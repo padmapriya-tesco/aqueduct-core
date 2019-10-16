@@ -28,13 +28,13 @@ public class PostgreSQLTillStorage implements TillStorage {
             "bootstrap_type = EXCLUDED.bootstrap_type, " +
             "bootstrap_received = null;";
     private static final String QUERY_READ_TILL =
-            "SELECT bootstrap_type " +
-            "FROM tills " +
-            "WHERE host_id = ? AND bootstrap_received is null;";
+        "SELECT bootstrap_type " +
+        "FROM tills " +
+        "WHERE host_id = ? AND bootstrap_received IS null;";
     private static final String QUERY_UPDATE_TILL_RECEIVED =
-            "UPDATE tills " +
-            "SET bootstrap_received = ? " +
-            "WHERE host_id = ?;";
+        "UPDATE tills " +
+        "SET bootstrap_received = ? " +
+        "WHERE host_id = ?;";
 
     public PostgreSQLTillStorage(final DataSource dataSource) {
         this.dataSource = dataSource;
@@ -76,9 +76,11 @@ public class PostgreSQLTillStorage implements TillStorage {
     }
 
     private BootstrapType getBootstrapType(ResultSet executeQuery) throws SQLException {
-         executeQuery.next();
-         String bootstrapType = executeQuery.getString("bootstrap_type");
-         return BootstrapType.valueOf(bootstrapType);
+         if(executeQuery.next()) {
+             String bootstrapType = executeQuery.getString("bootstrap_type");
+             return BootstrapType.valueOf(bootstrapType);
+         }
+         return BootstrapType.NONE;
     }
 
     private Connection getConnection() throws SQLException {
