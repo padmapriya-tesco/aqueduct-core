@@ -76,7 +76,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         """)
 
         tillStorage = new PostgreSQLTillStorage(dataSource)
-
         registry = new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1))
     }
 
@@ -157,8 +156,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .post("/v2/registry")
         .then()
             .statusCode(200)
-            .body("bootstrapType", equalTo("NONE"),
-                  "requestedToFollow", contains("http://cloud.pipe")
+            .body(
+                "bootstrapType", equalTo("NONE"),
+                "requestedToFollow", contains("http://cloud.pipe")
             )
     }
 
@@ -404,7 +404,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(400)
 
         then: "till is not saved"
-        0 * tillStorage.save(_)
+        def rows = sql.rows("SELECT * FROM tills;")
+        rows.size() == 0
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

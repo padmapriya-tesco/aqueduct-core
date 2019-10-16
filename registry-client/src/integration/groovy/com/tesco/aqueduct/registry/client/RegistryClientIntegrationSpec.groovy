@@ -91,7 +91,6 @@ class RegistryClientIntegrationSpec extends Specification {
 
         then: "We expect the dummy server to return a list of URLs"
         response.requestedToFollow.size() == 2
-
         response.requestedToFollow == [new URL(host1), new URL(host2)]
 
         cleanup:
