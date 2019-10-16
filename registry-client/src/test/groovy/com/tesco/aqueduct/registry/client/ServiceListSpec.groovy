@@ -26,7 +26,7 @@ class ServiceListSpec extends Specification {
 
     def "services that are updated are returned in the getServices"() {
         given: "a service list"
-		ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
+        ServiceList serviceList = new ServiceList(config, serviceInstance, existingPropertiesFile)
         def list = [URL_1, URL_2, URL_3]
 
         when: "service list is updated"

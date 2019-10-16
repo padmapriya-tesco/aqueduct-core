@@ -11,7 +11,7 @@ import spock.lang.Specification
 class ServiceListIntegrationSpec extends Specification {
     final static URL URL_1 = URL("http://a1")
 
-	ServiceList serviceList
+    ServiceList serviceList
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder()

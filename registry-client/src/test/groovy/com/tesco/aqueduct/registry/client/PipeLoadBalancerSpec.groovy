@@ -16,8 +16,8 @@ class PipeLoadBalancerSpec extends Specification {
     final static URL URL_2 = URL("http://a2")
     final static URL URL_3 = URL("http://a3")
 
-	ServiceList serviceList
-	PipeLoadBalancer loadBalancer
+    ServiceList serviceList
+    PipeLoadBalancer loadBalancer
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder()
