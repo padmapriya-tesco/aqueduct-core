@@ -2,9 +2,9 @@ package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
-import com.tesco.aqueduct.registry.PipeServiceInstance
-import com.tesco.aqueduct.registry.SelfRegistrationTask
-import com.tesco.aqueduct.registry.ServiceList
+import com.tesco.aqueduct.registry.client.PipeServiceInstance
+import com.tesco.aqueduct.registry.client.SelfRegistrationTask
+import com.tesco.aqueduct.registry.client.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import spock.lang.AutoCleanup

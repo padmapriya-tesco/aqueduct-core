@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.client;
 
 import com.tesco.aqueduct.registry.model.BootstrapType;
 import com.tesco.aqueduct.registry.model.Bootstrapable;

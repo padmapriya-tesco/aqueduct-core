@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
