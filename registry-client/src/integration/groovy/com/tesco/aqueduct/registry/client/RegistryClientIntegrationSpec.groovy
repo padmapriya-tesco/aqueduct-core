@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.registry.model.Bootstrapable
 import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -42,6 +43,7 @@ class RegistryClientIntegrationSpec extends Specification {
             .build()
             .registerSingleton(Supplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
             .registerSingleton(Supplier.class, providerMetricsSupplier, Qualifiers.byName("providerMetricsSupplier"))
+            .registerSingleton(Bootstrapable.class, Mock(Bootstrapable))
             .registerSingleton(new ServiceList(
                 new DefaultHttpClientConfiguration(),
                 new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
