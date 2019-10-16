@@ -145,7 +145,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .post("/v2/registry")
         .then()
             .statusCode(200)
-            .body("", equalTo("""{bootstrapType=NONE, "requestedToFollow"=[http://cloud.pipe]}"""))
+            .body("bootstrapType", equalTo("NONE"),
+                  "requestedToFollow", contains("http://cloud.pipe")
+            )
     }
 
     def "Can get registry summary"() {
