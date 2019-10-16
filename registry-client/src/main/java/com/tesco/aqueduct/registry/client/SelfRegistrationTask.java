@@ -12,8 +12,6 @@ import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import java.util.function.Supplier;
 
 @Context
 @Requires(property = "pipe.http.registration.interval")
@@ -21,16 +19,16 @@ public class SelfRegistrationTask {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(SelfRegistrationTask.class));
 
     private final RegistryClient client;
-    private final Supplier<Node> selfSummary;
+    private final SummarySupplier selfSummary;
     private final ServiceList services;
     private final Bootstrapable bootstrapable;
 
     @Inject
     public SelfRegistrationTask(
-            final RegistryClient client,
-            @Named("selfSummarySupplier") final Supplier<Node> selfSummary,
-            final ServiceList services,
-            final Bootstrapable bootstrapable
+        final RegistryClient client,
+        final SummarySupplier selfSummary,
+        final ServiceList services,
+        final Bootstrapable bootstrapable
     ) {
         this.client = client;
         this.selfSummary = selfSummary;
@@ -41,7 +39,7 @@ public class SelfRegistrationTask {
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
     void register() {
         try {
-            final Node node = selfSummary.get();
+            final Node node = selfSummary.getSelfNode();
             final RegistryResponse registryResponse = client.register(node);
             if (registryResponse.getRequestedToFollow() == null) {
                 LOG.error("SelfRegistrationTask.register", "Register error", "Null response received");

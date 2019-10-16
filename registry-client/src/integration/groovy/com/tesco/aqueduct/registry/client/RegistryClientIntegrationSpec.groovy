@@ -20,7 +20,7 @@ class RegistryClientIntegrationSpec extends Specification {
 
     @Shared @AutoCleanup ErsatzServer server
 
-    Supplier<Node> selfSummarySupplier = Mock()
+    SummarySupplier selfSummarySupplier = Mock()
     Supplier<Map<String, Object>> providerMetricsSupplier = Mock()
     def setupSpec() {
         server = new ErsatzServer()
