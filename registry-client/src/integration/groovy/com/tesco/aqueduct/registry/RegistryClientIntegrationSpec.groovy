@@ -57,7 +57,7 @@ class RegistryClientIntegrationSpec extends Specification {
 
                 responder {
                     contentType("application/json")
-                    body(""" [ "$host1", "$host2" ]""")
+                    body("""{"requestedToFollow" : [ "$host1", "$host2" ], "bootstrapType" : "NONE"}""")
                 }
             }
             get("/pipe/_status") {
@@ -88,9 +88,9 @@ class RegistryClientIntegrationSpec extends Specification {
         def response = client.register(myNode)
 
         then: "We expect the dummy server to return a list of URLs"
-        response.size() == 2
+        response.requestedToFollow.size() == 2
 
-        response == [new URL(host1), new URL(host2)]
+        response.requestedToFollow == [new URL(host1), new URL(host2)]
 
         cleanup:
         server.stop()

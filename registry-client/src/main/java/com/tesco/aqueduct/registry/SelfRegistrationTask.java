@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.registry.model.Node;
+import com.tesco.aqueduct.registry.model.RegistryResponse;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Requires;
@@ -10,8 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.net.URL;
-import java.util.List;
 import java.util.function.Supplier;
 
 @Context
@@ -38,12 +37,12 @@ public class SelfRegistrationTask {
     void register() {
         try {
             final Node node = selfSummary.get();
-            final List<URL> upstreamEndpoints = client.register(node);
-            if (upstreamEndpoints == null) {
+            final RegistryResponse registryResponse = client.register(node);
+            if (registryResponse.getRequestedToFollow() == null) {
                 LOG.error("SelfRegistrationTask.register", "Register error", "Null response received");
                 return;
             }
-            services.update(upstreamEndpoints);
+            services.update(registryResponse.getRequestedToFollow());
         } catch (HttpClientResponseException hcre) {
             LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", hcre.getMessage());
         } catch (Exception e) {

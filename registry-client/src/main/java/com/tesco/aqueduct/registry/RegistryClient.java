@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry;
 
 import com.tesco.aqueduct.registry.model.Node;
+import com.tesco.aqueduct.registry.model.RegistryResponse;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Header;
@@ -8,14 +9,11 @@ import io.micronaut.http.annotation.Post;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.retry.annotation.Retryable;
 
-import java.net.URL;
-import java.util.List;
-
 @Client("${registry.http.client.url}")
 @Requires(property = "pipe.http.register.retry.interval")
 public interface RegistryClient {
     @Retryable(delay = "${pipe.http.register.retry.interval}")
     @Post(uri = "/registry")
     @Header(name="Accept-Encoding", value="gzip, deflate")
-    List<URL> register(@Body Node node);
+    RegistryResponse register(@Body Node node);
 }
