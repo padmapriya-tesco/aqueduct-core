@@ -444,6 +444,5 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
 
         secondSize == 0
-
     }
 }

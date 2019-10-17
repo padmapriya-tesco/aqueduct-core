@@ -1,5 +1,5 @@
 package com.tesco.aqueduct.registry.model;
 
 public interface Startable {
-    void start() throws Exception;
+    void start();
 }
