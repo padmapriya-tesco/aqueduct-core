@@ -1,7 +1,11 @@
 package com.tesco.aqueduct.registry.client
 
+import com.tesco.aqueduct.registry.model.BootstrapType
+import com.tesco.aqueduct.registry.model.Bootstrapable
 import com.tesco.aqueduct.registry.model.Node
+import com.tesco.aqueduct.registry.model.RegistryResponse
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.time.ZonedDateTime
 import java.util.concurrent.CountDownLatch
@@ -21,12 +25,13 @@ class SelfRegistrationTaskSpec extends Specification {
 
     def upstreamClient = Mock(RegistryClient)
     def services = Mock(ServiceList)
+    def bootstrapable = Mock(Bootstrapable)
 
     def 'check registry client polls upstream service'() {
         def startedLatch = new CountDownLatch(1)
 
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services, bootstrapable)
 
         when: "register() is called"
         registryClient.register()
@@ -35,13 +40,13 @@ class SelfRegistrationTaskSpec extends Specification {
         then: "the client will eventually have a list of endpoints returned from the Registry Service"
         notThrown(Exception)
         ran
-        1 * upstreamClient.register(_ as Node) >> ["http://1.2.3.4", "http://5.6.7.8"]
+        1 * upstreamClient.register(_ as Node) >> new RegistryResponse(["http://1.2.3.4", "http://5.6.7.8"], BootstrapType.NONE)
         1 * services.update(_ as List) >> { startedLatch.countDown() }
     }
 
     def 'check registryHitList defaults to cloud pipe if register call fails'() {
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services, bootstrapable)
 
         and: "when called, upstreamClient will throw an exception"
         upstreamClient.register(_ as Node) >> { throw new RuntimeException() }
@@ -55,8 +60,8 @@ class SelfRegistrationTaskSpec extends Specification {
 
     def 'check register doesnt default to cloud pipe if previously it succeeded'() {
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
-        upstreamClient.register(_ as Node) >> ["http://1.2.3.4", "http://5.6.7.8"] >> { throw new RuntimeException() }
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services, bootstrapable)
+        upstreamClient.register(_ as Node) >> new RegistryResponse(["http://1.2.3.4", "http://5.6.7.8"], BootstrapType.NONE) >> { throw new RuntimeException() }
 
         when: "register() is called successfully"
         registryClient.register()
@@ -70,7 +75,7 @@ class SelfRegistrationTaskSpec extends Specification {
 
     def 'null response to register call doesnt result in null hit list update update'() {
         given: "a registry client"
-        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services)
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services, bootstrapable)
 
         and: "upstream client will return null"
         upstreamClient.register(_ as Node) >> { null }
@@ -80,5 +85,30 @@ class SelfRegistrationTaskSpec extends Specification {
 
         then: "Services are NOT updated"
         0 * services.update(_)
+    }
+
+    @Unroll
+    def 'bootstrap is only called when BootstrapType is PROVIDER'() {
+        def startedLatch = new CountDownLatch(1)
+
+        given: "a registry client"
+        def registryClient = new SelfRegistrationTask(upstreamClient, { MY_NODE }, services, bootstrapable)
+
+        when: "register() is called"
+        registryClient.register()
+        def ran = startedLatch.await(2, TimeUnit.SECONDS)
+
+        then: "the client will eventually have a list of endpoints returned from the Registry Service"
+        notThrown(Exception)
+        ran
+        1 * upstreamClient.register(_ as Node) >> new RegistryResponse(["http://1.2.3.4", "http://5.6.7.8"], bootstrapType)
+        1 * services.update(_ as List) >> { startedLatch.countDown() }
+        numBootstrapCalls * bootstrapable.bootstrap()
+
+        where:
+        bootstrapType                   | numBootstrapCalls
+        BootstrapType.PROVIDER          | 1
+        BootstrapType.PIPE_AND_PROVIDER | 0
+        BootstrapType.NONE              | 0
     }
 }

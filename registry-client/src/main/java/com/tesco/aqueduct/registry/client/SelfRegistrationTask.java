@@ -1,6 +1,9 @@
 package com.tesco.aqueduct.registry.client;
 
+import com.tesco.aqueduct.registry.model.BootstrapType;
+import com.tesco.aqueduct.registry.model.Bootstrapable;
 import com.tesco.aqueduct.registry.model.Node;
+import com.tesco.aqueduct.registry.model.RegistryResponse;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Requires;
@@ -9,8 +12,6 @@ import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.net.URL;
-import java.util.List;
 
 @Context
 @Requires(property = "pipe.http.registration.interval")
@@ -20,28 +21,34 @@ public class SelfRegistrationTask {
     private final RegistryClient client;
     private final SummarySupplier selfSummary;
     private final ServiceList services;
+    private final Bootstrapable bootstrapable;
 
     @Inject
     public SelfRegistrationTask(
         final RegistryClient client,
         final SummarySupplier selfSummary,
-        final ServiceList services
+        final ServiceList services,
+        final Bootstrapable bootstrapable
     ) {
         this.client = client;
         this.selfSummary = selfSummary;
         this.services = services;
+        this.bootstrapable = bootstrapable;
     }
 
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
     void register() {
         try {
             final Node node = selfSummary.getSelfNode();
-            final List<URL> upstreamEndpoints = client.register(node);
-            if (upstreamEndpoints == null) {
+            final RegistryResponse registryResponse = client.register(node);
+            if (registryResponse.getRequestedToFollow() == null) {
                 LOG.error("SelfRegistrationTask.register", "Register error", "Null response received");
                 return;
             }
-            services.update(upstreamEndpoints);
+            services.update(registryResponse.getRequestedToFollow());
+            if (registryResponse.getBootstrapType() == BootstrapType.PROVIDER ) {
+                bootstrapable.bootstrap();
+            }
         } catch (HttpClientResponseException hcre) {
             LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", hcre.getMessage());
         } catch (Exception e) {
