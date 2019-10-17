@@ -58,7 +58,7 @@ ansiColor('xterm') {
                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: 'Dependency Check Report'])
                     }
                 },
-                unitAndIntegrationTests: {
+                unitTests: {
                     stage('Unit Test') {
                         try {
                             sh "./gradlew test"
@@ -67,7 +67,8 @@ ansiColor('xterm') {
                             throw err
                         }
                     }
-
+                },
+                integrationTests: {
                     stage('Integration Test') {
                         try {
                             sh "./gradlew integration"
