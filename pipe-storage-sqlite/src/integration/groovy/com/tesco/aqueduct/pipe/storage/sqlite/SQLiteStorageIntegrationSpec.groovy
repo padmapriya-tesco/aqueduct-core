@@ -410,4 +410,39 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
     }
+
+    def 'messages are deleted when deleteAllMessages is called'() {
+        given: 'multiple messages to be stored'
+        def messages = [message(1), message(2)]
+
+        and: 'a data store controller exists'
+        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        and: 'a database table exists to be written to'
+        def sql = Sql.newInstance(connectionUrl)
+
+        and: 'these messages are written'
+        sqliteStorage.write(messages)
+
+        and: 'all messages are written to the data store'
+        def firstSize = 0
+        sql.query("SELECT COUNT(*) FROM EVENT", {
+            it.next()
+            firstSize = it.getInt(1)
+        })
+
+        firstSize == 2
+
+        when:
+        sqliteStorage.deleteAllMessages()
+
+        then:
+        def secondSize = 0
+        sql.query("SELECT COUNT(*) FROM EVENT", {
+            it.next()
+            secondSize = it.getInt(1)
+        })
+
+        secondSize == 0
+    }
 }

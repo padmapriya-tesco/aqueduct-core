@@ -149,6 +149,16 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
+    @Override
+    public void deleteAllMessages() {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(EventQueries.DELETE_EVENTS_AND_VACUUM)) {
+            statement.execute();
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     public void compactUpTo(final ZonedDateTime zonedDateTime) {
         // We may want a interface - Compactable - for this method signature
         try (Connection connection = dataSource.getConnection();

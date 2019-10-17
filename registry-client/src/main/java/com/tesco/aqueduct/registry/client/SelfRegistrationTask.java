@@ -12,6 +12,7 @@ import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 @Context
 @Requires(property = "pipe.http.registration.interval")
@@ -21,19 +22,22 @@ public class SelfRegistrationTask {
     private final RegistryClient client;
     private final SummarySupplier selfSummary;
     private final ServiceList services;
-    private final Bootstrapable bootstrapable;
+    private final Bootstrapable provider;
+    private final Bootstrapable pipe;
 
     @Inject
     public SelfRegistrationTask(
         final RegistryClient client,
         final SummarySupplier selfSummary,
         final ServiceList services,
-        final Bootstrapable bootstrapable
+        @Named("provider") final Bootstrapable provider,
+        @Named("pipe") final Bootstrapable pipe
     ) {
         this.client = client;
         this.selfSummary = selfSummary;
         this.services = services;
-        this.bootstrapable = bootstrapable;
+        this.provider = provider;
+        this.pipe = pipe;
     }
 
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
@@ -47,7 +51,13 @@ public class SelfRegistrationTask {
             }
             services.update(registryResponse.getRequestedToFollow());
             if (registryResponse.getBootstrapType() == BootstrapType.PROVIDER ) {
-                bootstrapable.bootstrap();
+                provider.reset();
+                provider.start();
+            } else if(registryResponse.getBootstrapType() == BootstrapType.PIPE_AND_PROVIDER) {
+                provider.reset();
+                pipe.reset();
+                pipe.start();
+                provider.start();
             }
         } catch (HttpClientResponseException hcre) {
             LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", hcre.getMessage());

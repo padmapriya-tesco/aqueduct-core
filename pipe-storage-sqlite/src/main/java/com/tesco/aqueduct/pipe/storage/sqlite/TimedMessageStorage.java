@@ -42,4 +42,9 @@ public class TimedMessageStorage implements MessageStorage {
     public void write(final Message message) {
         writeMessagesTimer.record(() -> storage.write(message));
     }
+
+    @Override
+    public void deleteAllMessages() {
+        storage.deleteAllMessages();
+    }
 }
