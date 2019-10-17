@@ -141,6 +141,11 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
         }
     }
 
+    @Override
+    public void deleteAllMessages() {
+        LOG.info("Bootstrap", "Not a supported operation for In Memory Storage");
+    }
+
     public void clear() {
         final val lock = rwl.writeLock();
 

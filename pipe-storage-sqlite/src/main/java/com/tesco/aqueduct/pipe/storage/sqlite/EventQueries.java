@@ -4,7 +4,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class EventQueries {
-
     static final String CREATE_EVENT_TABLE =
         "CREATE TABLE IF NOT EXISTS EVENT( " +
         " msg_offset bigint PRIMARY KEY NOT NULL," +
@@ -45,6 +44,10 @@ final class EventQueries {
 
         return queryBuilder.toString();
     }
+
+    static final String DELETE_EVENTS_AND_VACUUM =
+            "DELETE FROM EVENT; " +
+            "VACUUM;";
 
     static void appendFilterByTypes(final StringBuilder queryBuilder, int typesCount) {
         if (typesCount != 0) {

@@ -1,5 +1,5 @@
 package com.tesco.aqueduct.registry.model;
 
-public interface Bootstrapable {
-    void bootstrap() throws Exception;
+public interface Bootstrapable extends Resetable, Startable{
+
 }

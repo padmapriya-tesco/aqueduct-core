@@ -43,7 +43,8 @@ class RegistryClientIntegrationSpec extends Specification {
             .build()
             .registerSingleton(Supplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
             .registerSingleton(Supplier.class, providerMetricsSupplier, Qualifiers.byName("providerMetricsSupplier"))
-            .registerSingleton(Bootstrapable.class, Mock(Bootstrapable))
+            .registerSingleton(Bootstrapable.class, Mock(Bootstrapable), Qualifiers.byName("provider"))
+            .registerSingleton(Bootstrapable.class, Mock(Bootstrapable), Qualifiers.byName("pipe"))
             .registerSingleton(new ServiceList(
                 new DefaultHttpClientConfiguration(),
                 new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
