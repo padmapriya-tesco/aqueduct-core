@@ -1,5 +1,5 @@
 package com.tesco.aqueduct.registry.model;
 
 public interface Resetable {
-    void reset();
+    void reset() throws Exception;
 }
