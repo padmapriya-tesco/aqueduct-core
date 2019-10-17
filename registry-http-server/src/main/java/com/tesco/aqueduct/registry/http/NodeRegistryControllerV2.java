@@ -1,9 +1,9 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.http;
 
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.StateSummary;
+import com.tesco.aqueduct.registry.model.*;
+import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.*;
@@ -13,20 +13,24 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Measure
-@Controller("/v1/registry")
-public class NodeRegistryControllerV1 {
+@Controller("/v2/registry")
+public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
+    private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
+
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
     private final NodeRegistry registry;
+    private final TillStorage tillStorage;
     private final MessageReader pipe;
 
-    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV1.class));
-
-    public NodeRegistryControllerV1(final NodeRegistry registry, final MessageReader pipe) {
+    public NodeRegistryControllerV2(final NodeRegistry registry, final TillStorage tillStorage, final MessageReader pipe) {
         this.registry = registry;
+        this.tillStorage = tillStorage;
         this.pipe = pipe;
     }
 
@@ -38,11 +42,12 @@ public class NodeRegistryControllerV1 {
 
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Post
-    public List<URL> registerNode(@Body final Node node) {
+    public RegistryResponse registerNode(@Body final Node node) throws SQLException {
         final List<URL> requestedToFollow = registry.register(node);
         final String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
+        final BootstrapType bootstrapType = tillStorage.requiresBootstrap(node.getId());
         LOG.withNode(node).info("requested to follow", followStr);
-        return requestedToFollow;
+        return new RegistryResponse(requestedToFollow, bootstrapType);
     }
 
     @Secured(REGISTRY_DELETE)
@@ -54,5 +59,12 @@ public class NodeRegistryControllerV1 {
         } else {
             return HttpResponse.status(HttpStatus.NOT_FOUND);
         }
+    }
+
+    @Secured(BOOTSTRAP_TILL)
+    @Post("/bootstrap")
+    public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
+        bootstrapRequest.save(tillStorage);
+        return HttpResponse.status(HttpStatus.OK);
     }
 }

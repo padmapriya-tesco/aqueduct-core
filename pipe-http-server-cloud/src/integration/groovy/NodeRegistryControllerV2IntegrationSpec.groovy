@@ -1,11 +1,11 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
-import com.tesco.aqueduct.registry.NodeRegistry
-import com.tesco.aqueduct.registry.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.TillStorage
+import com.tesco.aqueduct.registry.model.NodeRegistry
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
+import com.tesco.aqueduct.registry.model.TillStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
-import com.tesco.aqueduct.registry.model.Till
+import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -43,7 +43,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     Sql sql
     DataSource dataSource
     NodeRegistry registry
-    TillStorage mockTillStorage = Mock()
+    TillStorage tillStorage
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -64,6 +64,18 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             );
         """)
 
+        sql.execute("""
+            DROP TABLE IF EXISTS tills;
+            
+            CREATE TABLE tills(
+            host_id VARCHAR PRIMARY KEY NOT NULL,
+            bootstrap_requested timestamp NOT NULL,
+            bootstrap_type VARCHAR NOT NULL,
+            bootstrap_received timestamp
+            );
+        """)
+
+        tillStorage = new PostgreSQLTillStorage(dataSource)
         registry = new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1))
     }
 
@@ -89,9 +101,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 )
             )
             .build()
-            .registerSingleton(NodeRegistry, new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1)))
+            .registerSingleton(NodeRegistry, registry)
             .registerSingleton(MessageReader, Mock(MessageReader))
-            .registerSingleton(TillStorage, mockTillStorage)
+            .registerSingleton(TillStorage, tillStorage)
             .start()
 
         server = context.getBean(EmbeddedServer)
@@ -144,7 +156,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .post("/v2/registry")
         .then()
             .statusCode(200)
-            .body("", equalTo([cloudPipeUrl]))
+            .body(
+                "bootstrapType", equalTo("NONE"),
+                "requestedToFollow", contains(cloudPipeUrl)
+            )
     }
 
     def "Can get registry summary"() {
@@ -330,12 +345,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         given: "A registry running"
         server.start()
 
-        List<Till> called = new ArrayList<>()
-
-        mockTillStorage.save(_) >> { Till t ->
-            called.add(t)
-        }
-
         when: "bootstrap is called"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
@@ -352,22 +361,27 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(statusCode)
 
         then: "till is saved"
-        called.get(0).getBootstrap().getType() == bootstrapType
-        called.get(0).getBootstrap().requestedDate != null
-        called.get(0).getHostId() == "0000"
+        def rows = sql.rows("SELECT * FROM tills;")
 
-        called.get(1).getBootstrap().getType() == bootstrapType
-        called.get(1).getBootstrap().requestedDate != null
-        called.get(1).getHostId() == "1111"
+        rows.get(0).getProperty("host_id") == "0000"
+        rows.get(0).getProperty("bootstrap_requested") != null
+        rows.get(0).getProperty("bootstrap_type") == bootstrapType
+        rows.get(0).getProperty("bootstrap_received") == null
 
-        called.get(2).getBootstrap().getType() == bootstrapType
-        called.get(2).getBootstrap().requestedDate != null
-        called.get(2).getHostId() == "2222"
+        rows.get(1).getProperty("host_id") == "1111"
+        rows.get(1).getProperty("bootstrap_requested") != null
+        rows.get(1).getProperty("bootstrap_type") == bootstrapType
+        rows.get(1).getProperty("bootstrap_received") == null
+
+        rows.get(2).getProperty("host_id") == "2222"
+        rows.get(2).getProperty("bootstrap_requested") != null
+        rows.get(2).getProperty("bootstrap_type") == bootstrapType
+        rows.get(2).getProperty("bootstrap_received") == null
 
         where:
         bootstrapString     | statusCode | bootstrapType
-        "PROVIDER"          | 200        | BootstrapType.PROVIDER
-        "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER
+        "PROVIDER"          | 200        | BootstrapType.PROVIDER.toString()
+        "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER.toString()
     }
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
@@ -390,7 +404,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(400)
 
         then: "till is not saved"
-        0 * mockTillStorage.save(_)
+        def rows = sql.rows("SELECT * FROM tills;")
+        rows.size() == 0
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {

@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.client;
 
 import io.micronaut.core.async.publisher.Publishers;
 import io.micronaut.discovery.ServiceInstance;

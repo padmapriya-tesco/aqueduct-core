@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry;
+package com.tesco.aqueduct.registry.client;
 
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;

@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -6,8 +6,6 @@ import io.micronaut.http.uri.UriBuilder
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
-
-import static io.reactivex.Single.fromPublisher
 
 @Newify(URL)
 class ServiceListIntegrationSpec extends Specification {

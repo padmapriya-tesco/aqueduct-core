@@ -1,6 +1,7 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.registry.model.Bootstrapable
 import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
@@ -20,7 +21,7 @@ class RegistryClientIntegrationSpec extends Specification {
 
     @Shared @AutoCleanup ErsatzServer server
 
-    Supplier<Node> selfSummarySupplier = Mock()
+    SummarySupplier selfSummarySupplier = Mock()
     Supplier<Map<String, Object>> providerMetricsSupplier = Mock()
     def setupSpec() {
         server = new ErsatzServer()
@@ -42,6 +43,7 @@ class RegistryClientIntegrationSpec extends Specification {
             .build()
             .registerSingleton(Supplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
             .registerSingleton(Supplier.class, providerMetricsSupplier, Qualifiers.byName("providerMetricsSupplier"))
+            .registerSingleton(Bootstrapable.class, Mock(Bootstrapable))
             .registerSingleton(new ServiceList(
                 new DefaultHttpClientConfiguration(),
                 new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
@@ -57,7 +59,7 @@ class RegistryClientIntegrationSpec extends Specification {
 
                 responder {
                     contentType("application/json")
-                    body(""" [ "$host1", "$host2" ]""")
+                    body("""{"requestedToFollow" : [ "$host1", "$host2" ], "bootstrapType" : "NONE"}""")
                 }
             }
             get("/pipe/_status") {
@@ -88,9 +90,8 @@ class RegistryClientIntegrationSpec extends Specification {
         def response = client.register(myNode)
 
         then: "We expect the dummy server to return a list of URLs"
-        response.size() == 2
-
-        response == [new URL(host1), new URL(host2)]
+        response.requestedToFollow.size() == 2
+        response.requestedToFollow == [new URL(host1), new URL(host2)]
 
         cleanup:
         server.stop()

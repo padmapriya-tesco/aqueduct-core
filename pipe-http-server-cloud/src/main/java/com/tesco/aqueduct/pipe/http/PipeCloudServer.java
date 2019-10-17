@@ -1,8 +1,8 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
-import com.tesco.aqueduct.registry.NodeRegistryControllerV1;
-import com.tesco.aqueduct.registry.NodeRegistryControllerV2;
+import com.tesco.aqueduct.registry.http.NodeRegistryControllerV1;
+import com.tesco.aqueduct.registry.http.NodeRegistryControllerV2;
 import io.micronaut.runtime.Micronaut;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;

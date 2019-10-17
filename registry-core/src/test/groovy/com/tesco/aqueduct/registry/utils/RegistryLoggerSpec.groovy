@@ -1,15 +1,12 @@
-package com.tesco.aqueduct.registry
+package com.tesco.aqueduct.registry.utils
 
 import com.tesco.aqueduct.registry.model.Node
 import org.slf4j.Logger
 import spock.lang.Specification
 
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 class RegistryLoggerSpec extends Specification {
-
-    static ZonedDateTime time = ZonedDateTime.now(ZoneOffset.UTC)
 
     def "Logger logs as expected with message"() {
         given:
