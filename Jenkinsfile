@@ -10,7 +10,6 @@ properties([
 ansiColor('xterm') {
 
     node('jenkins-deployer') {
-
         def scmVars = []
         String acrLoginToken = ""
         String registry = "${env.CONTAINER_REGISTRY}.azurecr.io"
@@ -62,7 +61,7 @@ ansiColor('xterm') {
                     stage('Unit Test') {
                         try {
                             sh "./gradlew test"
-                        } catch(err) {
+                        } catch (err) {
                             junit '**/build/test-results/test/*.xml'
                             throw err
                         }
@@ -72,18 +71,20 @@ ansiColor('xterm') {
                     stage('Integration Test') {
                         try {
                             sh "./gradlew integration"
-                        } catch(err) {
+                        } catch (err) {
                             junit '**/build/test-results/test/*.xml'
                             throw err
                         }
                     }
                 }
             )
+        }
 
-            stage('Publish Test Report') {
-                junit '**/build/test-results/test/*.xml'
-            }
+        stage('Publish Test Report') {
+            junit '**/build/test-results/test/*.xml'
+        }
 
+        stage('test coverage and docker build') {
             parallel(
                 publishTestCoverage: {
                     stage('Publish Coverage Report') {
@@ -111,14 +112,9 @@ ansiColor('xterm') {
                     }
                 }
             )
-
-
-
-
-
-            stage ('Isolated System test') {
-                isolatedSystemTest(MP_AQUEDUCT_PIPE_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
-            }
+        }
+        stage ('Isolated System test') {
+            isolatedSystemTest(MP_AQUEDUCT_PIPE_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
         }
 
         if (scmVars.GIT_BRANCH == "master") {
