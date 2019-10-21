@@ -90,8 +90,6 @@ public class ServiceList {
         properties.setProperty("services", urlStrings);
 
         try (OutputStream outputStream = new FileOutputStream(file)) {
-            file.createNewFile();
-
             try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
                 properties.store(outputStreamWriter, null);
             }
