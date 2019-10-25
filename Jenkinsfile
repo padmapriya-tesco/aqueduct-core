@@ -134,6 +134,16 @@ ansiColor('xterm') {
                 versionTest("https://api-ppe.tesco.com/messaging/v1/pipe/_status", version)
             }
 
+            stage ('Publish Sonar') {
+                def sonarServerUrl = "https://sonarqube.ourtesco.com"
+                def project = "aqueduct_core"
+
+                def projectKey = getKubeSecret("sonar.credentials", "sonar_project_key_$project", "applications")
+                def loginToken = getKubeSecret("sonar.credentials", "sonar_login_$project", "applications")
+
+                sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$sonarServerUrl -Dsonar.login=$loginToken -Dsonar.projectVersion=$version"
+            }
+
             container('docker') {
                 sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
 
