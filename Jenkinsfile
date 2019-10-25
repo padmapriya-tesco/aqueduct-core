@@ -113,6 +113,15 @@ ansiColor('xterm') {
                 }
             )
         }
+        stage ('Publish Sonar') {
+            def sonarServerUrl = "https://sonarqube.ourtesco.com"
+            def project = "aqueduct_core"
+
+            def projectKey = getKubeSecret("sonar.credentials", "sonar_project_key_$project", "applications")
+            def loginToken = getKubeSecret("sonar.credentials", "sonar_login_$project", "applications")
+
+            sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$deployServerUrl -Dsonar.login=$loginToken"
+        }
         stage ('Isolated System test') {
             isolatedSystemTest(MP_AQUEDUCT_PIPE_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
         }
