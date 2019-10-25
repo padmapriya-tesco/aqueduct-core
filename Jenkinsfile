@@ -120,7 +120,7 @@ ansiColor('xterm') {
             def projectKey = getKubeSecret("sonar.credentials", "sonar_project_key_$project", "applications")
             def loginToken = getKubeSecret("sonar.credentials", "sonar_login_$project", "applications")
 
-            sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$deployServerUrl -Dsonar.login=$loginToken"
+            sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$sonarServerUrl -Dsonar.login=$loginToken"
         }
         stage ('Isolated System test') {
             isolatedSystemTest(MP_AQUEDUCT_PIPE_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
