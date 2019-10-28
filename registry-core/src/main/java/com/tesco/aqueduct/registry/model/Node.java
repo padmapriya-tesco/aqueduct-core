@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
@@ -81,5 +82,10 @@ public class Node {
         } else {
             return String.format("%s|%s", group, localUrl.toString());
         }
+    }
+
+    @JsonIgnore
+    public String getHost() {
+        return localUrl.getHost();
     }
 }
