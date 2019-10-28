@@ -1,7 +1,6 @@
-package com.tesco.aqueduct.registry.model
+package com.tesco.aqueduct.registry.postgres
 
-import com.tesco.aqueduct.registry.postgres.PostgresNodeGroup
-import com.tesco.aqueduct.registry.postgres.VersionChangedException
+import com.tesco.aqueduct.registry.model.Node
 import spock.lang.Specification
 
 import java.sql.Connection
