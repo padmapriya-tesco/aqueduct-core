@@ -25,12 +25,13 @@ class TimedStorageIntegrationSpec extends Specification {
     }
 
     def message(long offset) {
+        def now = currentUTCTime()
         def messageForSizing = new Message(
             "some-key",
             "some-type",
             "text/plain",
             offset,
-            currentUTCTime(),
+            now,
             "some-data"
         )
 
@@ -39,7 +40,7 @@ class TimedStorageIntegrationSpec extends Specification {
             "some-type",
             "text/plain",
             offset,
-            currentUTCTime(),
+            now,
             "some-data",
             JsonHelper.toJson(messageForSizing).length()
         )
