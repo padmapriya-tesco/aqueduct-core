@@ -5,7 +5,7 @@ micronaut:
     processor.enabled: true
     jdbc.enabled: false
   security:
-    enabled: {PIPE_READ_SECURITY_ENABLED}
+    enabled: true
   router:
     static-resources:
       swagger:
