@@ -24,7 +24,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final URL cloudUrl;
     private final Duration offlineDelta;
     private final DataSource dataSource;
-    private static final int OPTIMISTIC_LOCKING_COOLDOWN_MS = 500;
+    private static final long OPTIMISTIC_LOCKING_COOLDOWN_MS = 500L;
     private static final int OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND = 500;
     private static final Random random = new Random();
 
