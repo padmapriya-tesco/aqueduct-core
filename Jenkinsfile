@@ -135,13 +135,15 @@ ansiColor('xterm') {
             }
 
             stage ('Publish Sonar') {
-                def sonarServerUrl = "https://sonarqube.ourtesco.com"
-                def project = "aqueduct_core"
+                try {
+                    def sonarServerUrl = "https://sonarqube.ourtesco.com"
+                    def project = "aqueduct_core"
 
-                def projectKey = getKubeSecret("sonar.credentials", "sonar_project_key_$project", "applications")
-                def loginToken = getKubeSecret("sonar.credentials", "sonar_login_$project", "applications")
+                    def projectKey = getKubeSecret("sonar.credentials", "sonar_project_key_$project", "applications")
+                    def loginToken = getKubeSecret("sonar.credentials", "sonar_login_$project", "applications")
 
-                sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$sonarServerUrl -Dsonar.login=$loginToken -Dsonar.projectVersion=$version"
+                    sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$sonarServerUrl -Dsonar.login=$loginToken -Dsonar.projectVersion=$version"
+                } catch (err) { }
             }
 
             container('docker') {
