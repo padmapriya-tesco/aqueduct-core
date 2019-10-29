@@ -25,17 +25,17 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final URL cloudUrl;
     private final Duration offlineDelta;
     private final DataSource dataSource;
-    private final PostgresNodeGroupStorage nodeGroupFactory;
+    private final PostgresNodeGroupStorage nodeGroupStorage;
 
     public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta) {
         this(dataSource, cloudUrl, offlineDelta, new PostgresNodeGroupStorage());
     }
 
-    public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta, PostgresNodeGroupStorage nodeGroupFactory) {
+    PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta, PostgresNodeGroupStorage nodeGroupStorage) {
         this.cloudUrl = cloudUrl;
         this.offlineDelta = offlineDelta;
         this.dataSource = dataSource;
-        this.nodeGroupFactory = nodeGroupFactory;
+        this.nodeGroupStorage = nodeGroupStorage;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         int count = 0;
         while (count < 10) {
             try (Connection connection = getConnection()) {
-                final PostgresNodeGroup group = nodeGroupFactory.getNodeGroup(connection, nodeToRegister.getGroup());
+                final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
                 Node node = group.getById(nodeToRegister.getId());
                 if (node != null) {
                     node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
@@ -96,7 +96,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
         try (Connection connection = getConnection()) {
-            groups = nodeGroupFactory.getNodeGroups(connection, groupIds);
+            groups = nodeGroupStorage.getNodeGroups(connection, groupIds);
         } catch (SQLException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);
@@ -118,7 +118,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public boolean deleteNode(final String groupId, final String nodeId) {
         while (true) {
             try (Connection connection = getConnection()) {
-                final PostgresNodeGroup nodeGroup = nodeGroupFactory.getNodeGroup(connection, groupId);
+                final PostgresNodeGroup nodeGroup = nodeGroupStorage.getNodeGroup(connection, groupId);
 
                 if(nodeGroup.isEmpty()) {
                     return false;
