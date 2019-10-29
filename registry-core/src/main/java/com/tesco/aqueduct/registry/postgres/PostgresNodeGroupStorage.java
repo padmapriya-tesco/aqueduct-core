@@ -11,11 +11,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PostgresNodeGroupFactory {
+public class PostgresNodeGroupStorage {
     private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? ;";
     private static final String QUERY_GET_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
 
-    PostgresNodeGroupFactory() { }
+    PostgresNodeGroupStorage() { }
 
     PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
@@ -35,6 +35,10 @@ public class PostgresNodeGroupFactory {
     }
 
     List<PostgresNodeGroup> getNodeGroups(final Connection connection, final List<String> groupIds) throws SQLException {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return getAllNodeGroups(connection);
+        }
+
         final List<PostgresNodeGroup> list = new ArrayList<>();
         for (final String group : groupIds) {
             list.add(getNodeGroup(connection, group));
@@ -42,7 +46,7 @@ public class PostgresNodeGroupFactory {
         return list;
     }
 
-    List<PostgresNodeGroup> getNodeGroups(final Connection connection) throws SQLException {
+    private List<PostgresNodeGroup> getAllNodeGroups(final Connection connection) throws SQLException {
         List<PostgresNodeGroup> groups;
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
             groups = new ArrayList<>();

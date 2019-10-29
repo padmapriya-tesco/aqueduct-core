@@ -13,7 +13,7 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 			def mockNodeGroup = Mock(PostgresNodeGroup)
 			1* mockNodeGroup.getById(_) >> null
 			1* mockNodeGroup.add(_, _) >> Node.builder().requestedToFollow([cloudUrl]).build()
-			def mockNodeGroupFactory = Mock(PostgresNodeGroupFactory)
+			def mockNodeGroupFactory = Mock(PostgresNodeGroupStorage)
 			1* mockNodeGroupFactory.getNodeGroup(_, _) >> mockNodeGroup
 		and: "a node registry"
 			def dataSourceMock = Mock(DataSource)

@@ -25,13 +25,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private final URL cloudUrl;
     private final Duration offlineDelta;
     private final DataSource dataSource;
-    private final PostgresNodeGroupFactory nodeGroupFactory;
+    private final PostgresNodeGroupStorage nodeGroupFactory;
 
     public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta) {
-        this(dataSource, cloudUrl, offlineDelta, new PostgresNodeGroupFactory());
+        this(dataSource, cloudUrl, offlineDelta, new PostgresNodeGroupStorage());
     }
 
-    public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta, PostgresNodeGroupFactory nodeGroupFactory) {
+    public PostgreSQLNodeRegistry(final DataSource dataSource, final URL cloudUrl, final Duration offlineDelta, PostgresNodeGroupStorage nodeGroupFactory) {
         this.cloudUrl = cloudUrl;
         this.offlineDelta = offlineDelta;
         this.dataSource = dataSource;
@@ -96,11 +96,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
         try (Connection connection = getConnection()) {
-            if (groupIds == null || groupIds.isEmpty()) {
-                groups = nodeGroupFactory.getNodeGroups(connection);
-            } else {
-                groups = nodeGroupFactory.getNodeGroups(connection, groupIds);
-            }
+            groups = nodeGroupFactory.getNodeGroups(connection, groupIds);
         } catch (SQLException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);

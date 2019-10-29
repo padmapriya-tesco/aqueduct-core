@@ -3,7 +3,7 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.postgres.PostgresNodeGroupFactory
+import com.tesco.aqueduct.registry.postgres.PostgresNodeGroupStorage
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -46,7 +46,6 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
         dataSource = Mock()
-        def nodeGroupFactory = new PostgresNodeGroupFactory()
 
         dataSource.connection >> {
             DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
@@ -62,7 +61,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
             );
         """)
 
-        registry = new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1), nodeGroupFactory)
+        registry = new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1))
     }
 
     void setup() {
