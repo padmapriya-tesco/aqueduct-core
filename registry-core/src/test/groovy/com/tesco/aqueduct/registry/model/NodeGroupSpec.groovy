@@ -36,7 +36,7 @@ class NodeGroupSpec extends Specification {
         def group = new NodeGroup([node, anotherNode])
 
         when: "Removing the node from the group using the id"
-        def result = group.removeById("test_node_id")
+        def result = group.removeByHost("test_node_id")
 
         then: "the result is true (the node was found and deleted)"
         result

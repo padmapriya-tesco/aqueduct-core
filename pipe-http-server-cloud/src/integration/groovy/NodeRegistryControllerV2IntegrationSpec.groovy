@@ -242,7 +242,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
             .when()
-            .delete("/v2/registry/1234/1234|http://1.1.1.1:1234")
+            .delete("/v2/registry/1234/1.1.1.1")
             .then()
             .statusCode(200)
 
@@ -270,7 +270,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
             .when()
-            .delete("/v2/registry/1234/1234|http://1.1.1.1:0001")
+            .delete("/v2/registry/1234/1.1.1.1")
             .then()
             .statusCode(200)
 
@@ -304,7 +304,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 .header("Authorization", "Basic $encodedCredentials")
                 .contentType("application/json")
                 .when()
-                .delete("/v2/registry/1234/1234|http://1.1.1.1:1234")
+                .delete("/v2/registry/1234/1.1.1.1")
                 .then()
                 .statusCode(403)
 
@@ -327,7 +327,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         given()
                 .contentType("application/json")
                 .when()
-                .delete("/v2/registry/1234/1234|http://1.1.1.1:1234")
+                .delete("/v2/registry/1234/1.1.1.1")
                 .then()
                 .statusCode(401)
 
