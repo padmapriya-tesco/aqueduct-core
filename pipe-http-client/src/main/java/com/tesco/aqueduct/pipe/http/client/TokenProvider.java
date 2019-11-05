@@ -1,5 +1,5 @@
 package com.tesco.aqueduct.pipe.http.client;
 
-public interface IndentityClient {
+public interface TokenProvider {
     String getToken();
 }

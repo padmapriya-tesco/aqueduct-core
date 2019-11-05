@@ -15,7 +15,7 @@ class AuthenticatePipeReadFilterSpec extends Specification {
     @Shared @AutoCleanup("stop") ApplicationContext context
 
     InternalHttpPipeClient client
-    IndentityClient indentityClient = Mock(IndentityClient) {
+    TokenProvider indentityClient = Mock(TokenProvider) {
         getToken() >> "someToken"
     }
 
@@ -100,7 +100,7 @@ class AuthenticatePipeReadFilterSpec extends Specification {
                         "registry.http.client.url": "cloudIP"
                 )
                 .build()
-                .registerSingleton(IndentityClient, Mock(IndentityClient))
+                .registerSingleton(TokenProvider, Mock(TokenProvider))
                 .registerSingleton(new ServiceList(
                         new DefaultHttpClientConfiguration(),
                         new PipeServiceInstance(config, new URL(server.getHttpUrl())),

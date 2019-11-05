@@ -24,12 +24,12 @@ public class AuthenticatePipeReadFilter implements HttpClientFilter {
         @Property(name = "authentication.read-pipe.username") final String username,
         @Property(name = "authentication.read-pipe.password") final String password,
         @Property(name = "pipe.http.client.url") final String pipeCloudUri,
-        IndentityClient indentityClient
+        TokenProvider tokenProvider
     ) {
         this.username = username;
         this.password = password;
         this.pipeCloudUri = pipeCloudUri;
-        this.identityToken = indentityClient.getToken();
+        this.identityToken = tokenProvider.getToken();
     }
 
     @Override
