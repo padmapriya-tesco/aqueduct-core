@@ -419,7 +419,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registerNode("x", "http://second")
 
         when: "delete a node"
-        registry.deleteNode("x", "x|http://first")
+        registry.deleteNode("x", "first")
 
         then: "It's state is updated"
         List<Node> nodesState = registry.getSummary(0, "initialising", ["x"]).followers

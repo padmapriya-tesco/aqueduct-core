@@ -51,9 +51,9 @@ public class NodeRegistryControllerV2 {
     }
 
     @Secured(REGISTRY_DELETE)
-    @Delete("/{group}/{id}")
-    public HttpResponse deleteNode(final String group, final String id) {
-        final boolean deleted = registry.deleteNode(group, id);
+    @Delete("/{group}/{host}")
+    public HttpResponse deleteNode(final String group, final String host) {
+        final boolean deleted = registry.deleteNode(group, host);
         if (deleted) {
             return HttpResponse.status(HttpStatus.OK);
         } else {

@@ -14,8 +14,8 @@ import org.reactivestreams.Publisher;
 @Requires(property = "authentication.read-pipe.password")
 public class AuthenticatePipeReadFilter implements HttpClientFilter {
 
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     public AuthenticatePipeReadFilter(
         @Property(name = "authentication.read-pipe.username") final String username,
