@@ -12,21 +12,31 @@ import org.reactivestreams.Publisher;
 @Filter(serviceId = "pipe")
 @Requires(property = "authentication.read-pipe.username")
 @Requires(property = "authentication.read-pipe.password")
+@Requires(property = "pipe.http.client.url")
 public class AuthenticatePipeReadFilter implements HttpClientFilter {
 
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
+    private final String pipeCloudUri;
+    private final String identityToken;
 
     public AuthenticatePipeReadFilter(
         @Property(name = "authentication.read-pipe.username") final String username,
-        @Property(name = "authentication.read-pipe.password") final String password
+        @Property(name = "authentication.read-pipe.password") final String password,
+        @Property(name = "pipe.http.client.url") final String pipeCloudUri,
+        IndentityClient indentityClient
     ) {
         this.username = username;
         this.password = password;
+        this.pipeCloudUri = pipeCloudUri;
+        this.identityToken = indentityClient.getToken();
     }
 
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
+        if (request.getUri().toString().contains(pipeCloudUri)) {
+            return chain.proceed(request.bearerAuth(identityToken));
+        }
         return chain.proceed(request.basicAuth(username, password));
     }
 }
