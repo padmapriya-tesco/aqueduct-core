@@ -101,8 +101,9 @@ public class ServiceList {
 
     private void defaultToCloud() {
         LOG.info("ServiceList.defaultToCloud", "Defaulting to follow the Cloud Pipe server.");
-        this.services = new ArrayList<>();
-        this.services.add(this.cloudInstance);
+        List<PipeServiceInstance> justCloud = new ArrayList<>();
+        justCloud.add(this.cloudInstance);
+        this.services = justCloud;
     }
 
     private PipeServiceInstance getServiceInstance(final URL url) {

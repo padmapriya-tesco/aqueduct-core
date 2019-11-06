@@ -26,8 +26,8 @@ public class NodeGroup {
         return nodes.isEmpty();
     }
 
-    public boolean removeById(final String nodeId) {
-        return nodes.removeIf(node -> node.getId().equals(nodeId));
+    public boolean removeByHost(final String host) {
+        return nodes.removeIf(node -> node.getHost().equals(host));
     }
 
     public Node add(final Node node, final URL cloudUrl) {

@@ -19,9 +19,6 @@ import java.util.List;
 public class PostgresNodeGroup extends NodeGroup {
     private static final int UNPERSISTED_GROUP_VERSION = Integer.MIN_VALUE;
 
-    private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? ;";
-    private static final String QUERY_GET_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
-
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgresNodeGroup.class));
 
     private static final String QUERY_INSERT_GROUP =
@@ -43,48 +40,7 @@ public class PostgresNodeGroup extends NodeGroup {
                     ";";
     private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
 
-    public static PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
-            statement.setString(1, groupId);
-
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return createNodeGroup(rs);
-                } else {
-                    return new PostgresNodeGroup(groupId);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
-    public static List<PostgresNodeGroup> getNodeGroups(final Connection connection, final List<String> groupIds) throws SQLException {
-        final List<PostgresNodeGroup> list = new ArrayList<>();
-        for (final String group : groupIds) {
-            list.add(getNodeGroup(connection, group));
-        }
-        return list;
-    }
-
-    public static List<PostgresNodeGroup> getNodeGroups(final Connection connection) throws SQLException {
-        List<PostgresNodeGroup> groups;
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
-            groups = new ArrayList<>();
-            try (ResultSet rs = statement.executeQuery()) {
-                while (rs.next()) {
-                    groups.add(createNodeGroup(rs));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
-            }
-        }
-        return groups;
-    }
-
-    private static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
+    public static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
         final String entry = rs.getString("entry");
         final int version = rs.getInt("version");
         final String groupId = rs.getString("group_id");
@@ -100,7 +56,7 @@ public class PostgresNodeGroup extends NodeGroup {
     private final String groupId;
     private final int version;
 
-    private PostgresNodeGroup(final String groupId) {
+    public PostgresNodeGroup(final String groupId) {
         super();
         this.groupId = groupId;
         this.version = UNPERSISTED_GROUP_VERSION;

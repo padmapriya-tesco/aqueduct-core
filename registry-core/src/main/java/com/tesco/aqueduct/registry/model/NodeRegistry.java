@@ -18,5 +18,5 @@ public interface NodeRegistry {
      */
     StateSummary getSummary(long offset, String status, List<String> groups);
 
-    boolean deleteNode(String group, String id);
+    boolean deleteNode(String group, String host);
 }

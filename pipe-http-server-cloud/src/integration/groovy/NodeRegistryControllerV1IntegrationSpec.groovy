@@ -3,6 +3,7 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
+import com.tesco.aqueduct.registry.postgres.PostgresNodeGroupStorage
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -84,7 +85,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
                 )
             )
             .build()
-            .registerSingleton(NodeRegistry, new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1)))
+            .registerSingleton(NodeRegistry, registry)
             .registerSingleton(MessageReader, Mock(MessageReader))
             .start()
 
@@ -211,7 +212,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
             .when()
-            .delete("/v1/registry/1234/1234|http://1.1.1.1:1234")
+            .delete("/v1/registry/1234/1.1.1.1")
             .then()
             .statusCode(200)
 
@@ -227,10 +228,10 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
     def "deleting a node from the registry and rebalancing a group"() {
         given: "We register multiple nodes"
         registerNode(1234, "http://1.1.1.1:0001", 123, "status")
-        registerNode(1234, "http://1.1.1.1:0002", 123, "status")
-        registerNode(1234, "http://1.1.1.1:0003", 123, "status")
-        registerNode(1234, "http://1.1.1.1:0004", 123, "status")
-        registerNode(1234, "http://1.1.1.1:0005", 123, "status")
+        registerNode(1234, "http://1.1.1.2:0002", 123, "status")
+        registerNode(1234, "http://1.1.1.3:0003", 123, "status")
+        registerNode(1234, "http://1.1.1.4:0004", 123, "status")
+        registerNode(1234, "http://1.1.1.5:0005", 123, "status")
 
         when: "first node is deleted"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
@@ -238,7 +239,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
             .when()
-            .delete("/v1/registry/1234/1234|http://1.1.1.1:0001")
+            .delete("/v1/registry/1234/1.1.1.1")
             .then()
             .statusCode(200)
 
@@ -246,15 +247,15 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         def request = when().get("/v1/registry")
 
         request.then().body(
-            "followers[0].localUrl", equalTo("http://1.1.1.1:0002"),
-            "followers[1].localUrl", equalTo("http://1.1.1.1:0003"),
-            "followers[2].localUrl", equalTo("http://1.1.1.1:0004"),
-            "followers[3].localUrl", equalTo("http://1.1.1.1:0005"),
+            "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
+            "followers[1].localUrl", equalTo("http://1.1.1.3:0003"),
+            "followers[2].localUrl", equalTo("http://1.1.1.4:0004"),
+            "followers[3].localUrl", equalTo("http://1.1.1.5:0005"),
             //following lists
             "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
-            "followers[1].requestedToFollow", equalTo(["http://1.1.1.1:0002","http://cloud.pipe"]),
-            "followers[2].requestedToFollow", equalTo(["http://1.1.1.1:0002","http://cloud.pipe"]),
-            "followers[3].requestedToFollow", equalTo(["http://1.1.1.1:0003","http://1.1.1.1:0002","http://cloud.pipe"])
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.2:0002","http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.2:0002","http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.3:0003","http://1.1.1.2:0002","http://cloud.pipe"])
         )
 
         request.then().statusCode(200)
@@ -271,7 +272,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
                 .header("Authorization", "Basic $encodedCredentials")
                 .contentType("application/json")
                 .when()
-                .delete("/v1/registry/1234/1234|http://1.1.1.1:1234")
+                .delete("/v1/registry/1234/1.1.1.1")
                 .then()
                 .statusCode(403)
 
@@ -293,7 +294,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         given()
                 .contentType("application/json")
                 .when()
-                .delete("/v1/registry/1234/1234|http://1.1.1.1:1234")
+                .delete("/v1/registry/1234/1.1.1.1")
                 .then()
                 .statusCode(401)
 
