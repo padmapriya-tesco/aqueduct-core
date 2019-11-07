@@ -19,12 +19,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
     static final int CACHE_EXPIRY_SECONDS = 1
     static final String VALIDATE_TOKEN_BASE_PATH = '/v4/access-token/auth/validate'
-    static InMemoryStorage storage = new InMemoryStorage(10, 600)
     static final String USERNAME = "username"
     static final String PASSWORD = "password"
-    static final String RUNSCOPE_USERNAME = "runscope-username"
-    static final String RUNSCOPE_PASSWORD = "runscope-password"
     static final String encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+    static InMemoryStorage storage = new InMemoryStorage(10, 600)
 
     @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup ApplicationContext context
@@ -38,7 +36,9 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             decoder('application/json', Decoders.utf8String)
             reportToConsole()
         })
+
         identityMock.start()
+
         def clientId = UUID.randomUUID().toString()
         def secret = UUID.randomUUID().toString()
         def userUID = UUID.randomUUID()
@@ -63,8 +63,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                       users:
                         $USERNAME:
                           password: $PASSWORD
-                        $RUNSCOPE_USERNAME:
-                          password: $RUNSCOPE_PASSWORD
                     """
                     )
             )
@@ -139,11 +137,11 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     }
 
     def 'Returns unauthorised when using incorrect basic auth credentials'() {
-        given: 'Identity denies a validateToken request'
+        when: 'Identity denies a validateToken request'
         denySingleIdentityTokenValidationRequest()
 
-        expect: 'A secured .URL is accessed with the basic auth'
-        def incorrectEncodedCredentials = "SOMEUSER:SOMEPASSWORD".bytes.encodeBase64().toString()
+        then: 'A secured .URL is accessed with the basic auth'
+        def incorrectEncodedCredentials = "incorrectUser:incorrectPassword".bytes.encodeBase64().toString()
 
         RestAssured.given()
                 .header("Authorization", "Basic $incorrectEncodedCredentials")
@@ -171,43 +169,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
         acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken)
         makeValidRequest(identityToken)
-
-        then: 'Identity is called again'
-        identityMock.verify()
-    }
-
-    def "Token validation requests are cached per token"() {
-        given: 'A valid identity token'
-        def tokenA = UUID.randomUUID().toString()
-        def tokenB = UUID.randomUUID().toString()
-        def tokenC = UUID.randomUUID().toString()
-
-        acceptSingleIdentityTokenValidationRequestPerToken(clientIdAndSecret, tokenA, tokenB, tokenC)
-
-        when: 'A secured URL is multiple times with different tokens and the endpoint can be accessed by all requests'
-        List<HttpResponse<String>> responses = []
-        responses << makeValidRequest(tokenA)
-        responses << makeValidRequest(tokenA)
-
-        responses << makeValidRequest(tokenB)
-        responses << makeValidRequest(tokenB)
-        responses << makeValidRequest(tokenB)
-
-        responses << makeValidRequest(tokenC)
-        responses << makeValidRequest(tokenC)
-
-        then: 'Identity is only called once per token'
-        identityMock.verify()
-
-        when: 'Identity is called after the expiry period and the endpoint is still accessible'
-        identityMock.clearExpectations()
-        sleep CACHE_EXPIRY_SECONDS * 1000
-
-        acceptSingleIdentityTokenValidationRequestPerToken(clientIdAndSecret, tokenA, tokenB, tokenC)
-        responses.clear()
-        responses << makeValidRequest(tokenA)
-        responses << makeValidRequest(tokenB)
-        responses << makeValidRequest(tokenC)
 
         then: 'Identity is called again'
         identityMock.verify()
