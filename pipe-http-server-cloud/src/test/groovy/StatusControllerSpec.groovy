@@ -1,5 +1,3 @@
-package com.tesco.aqueduct.pipe.http
-
 import com.tesco.aqueduct.pipe.http.StatusController
 import com.tesco.aqueduct.pipe.http.Version
 import io.micronaut.context.ApplicationContext

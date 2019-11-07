@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.http;
+package com.tesco.aqueduct.pipe.identity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

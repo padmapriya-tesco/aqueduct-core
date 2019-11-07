@@ -1,5 +1,4 @@
-package com.tesco.aqueduct.pipe.http
-
+import com.tesco.aqueduct.pipe.identity.ValidateTokenResponse
 import spock.lang.Specification
 import spock.lang.Unroll
 

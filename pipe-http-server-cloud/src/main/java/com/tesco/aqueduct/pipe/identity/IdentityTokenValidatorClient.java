@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.http;
+package com.tesco.aqueduct.pipe.identity;
 
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Header;

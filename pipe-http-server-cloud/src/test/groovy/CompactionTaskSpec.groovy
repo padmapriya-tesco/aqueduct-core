@@ -1,5 +1,3 @@
-package com.tesco.aqueduct.pipe.http
-
 import com.tesco.aqueduct.pipe.http.CompactionTask
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage
 import io.micrometer.core.instrument.MeterRegistry
