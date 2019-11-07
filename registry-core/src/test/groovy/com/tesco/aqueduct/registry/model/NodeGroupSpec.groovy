@@ -23,20 +23,20 @@ class NodeGroupSpec extends Specification {
         result
     }
 
-    def "A node can be removed from a node group given an id"() {
-        given: "A node with an id"
+    def "A node can be removed from a node group given an host"() {
+        given: "A node with a host"
         def node = Mock Node
-        node.id >> "test_node_id"
+        node.host >> "test_node_host"
 
-        and: "A node with a different id"
+        and: "A node with a different host"
         def anotherNode = Mock Node
-        anotherNode.id >> "another_node_id"
+        anotherNode.host >> "another_node_host"
 
         and: "a Group with these nodes"
         def group = new NodeGroup([node, anotherNode])
 
-        when: "Removing the node from the group using the id"
-        def result = group.removeById("test_node_id")
+        when: "Removing the node from the group using the host"
+        def result = group.removeByHost("test_node_host")
 
         then: "the result is true (the node was found and deleted)"
         result

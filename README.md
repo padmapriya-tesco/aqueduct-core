@@ -3,8 +3,6 @@
 
 Delivers data to specific network locations in an efficient, secure and near real-time manner.
 
-Note this is currently a work in progress product, and we wouldn't recommend using it in production yet. We intend to open source other related components and documentation in the near future.
-
 ## Objectives
 
 1. Reduce network traffic usage by delivering data to location groups only once in most cases
@@ -31,7 +29,6 @@ Note this is currently a work in progress product, and we wouldn't recommend usi
  
  ## Tests
  _./gradlew test integration_
- 
  
 ## Known Issues
 
