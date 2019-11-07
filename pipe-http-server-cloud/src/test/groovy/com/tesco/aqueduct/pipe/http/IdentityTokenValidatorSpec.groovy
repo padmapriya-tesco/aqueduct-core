@@ -6,7 +6,6 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import static com.tesco.aqueduct.pipe.http.ValidateTokenResponseSpec.*
-import static com.tesco.aqueduct.pipe.http.ValidateTokenResponseSpec.USER_ID
 
 class IdentityTokenValidatorSpec extends Specification {
 
@@ -17,8 +16,9 @@ class IdentityTokenValidatorSpec extends Specification {
     def "Validate #description"() {
         given:
         def tokenValidator = new IdentityTokenValidator()
-        def identityTokenValidatorClient = Mock IdentityTokenValidatorClient
-        identityTokenValidatorClient.validateToken(_ as String, _ as ValidateTokenRequest) >> Flowable.just(identityResponse)
+        def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
+            validateToken(_ as String, _ as ValidateTokenRequest) >> Flowable.just(identityResponse)
+        }
 
         tokenValidator.identityTokenValidatorClient = identityTokenValidatorClient
 

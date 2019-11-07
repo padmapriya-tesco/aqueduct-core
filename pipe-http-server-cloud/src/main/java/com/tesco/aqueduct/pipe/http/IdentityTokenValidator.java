@@ -29,9 +29,9 @@ public class IdentityTokenValidator implements TokenValidator {
             .map(ValidateTokenResponse::asAuthentication);
     }
 
-    //highest precedence causes this validator to be used before others, reducing number of artificial errors in the logs
+    //lowest precedence chosen so it is used after others
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
+        return Ordered.LOWEST_PRECEDENCE;
     }
 }
