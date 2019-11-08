@@ -12,6 +12,7 @@ runscope_pipe_read_username=$(printf "%q" ${RUNSCOPE_PIPE_READ_USERNAME:-$9})
 runscope_pipe_read_password=$(printf "%q" ${RUNSCOPE_PIPE_READ_PASSWORD:-${10}})
 support_username=$(printf "%q" ${SUPPORT_USERNAME:-${11}})
 support_password=$(printf "%q" ${SUPPORT_PASSWORD:-${12}})
+client_id=$(printf "%q" ${CLIENT_ID:-${13}})
 
 sed -i "s/{POSTGRE_SERVER}/$server/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{POSTGRE_DATABASE}/$database/" /etc/aqueduct/pipe/application.yml
@@ -24,6 +25,7 @@ sed -i "s/{RUNSCOPE_PIPE_READ_USERNAME}/$runscope_pipe_read_username/" /etc/aque
 sed -i "s/{RUNSCOPE_PIPE_READ_PASSWORD}/$runscope_pipe_read_password/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{SUPPORT_USERNAME}/$support_username/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{SUPPORT_PASSWORD}/$support_password/" /etc/aqueduct/pipe/application.yml
+sed -i "s/{CLIENT_ID}/$client_id/" /etc/aqueduct/pipe/application.yml
 
 exec java \
     -Dmicronaut.config.files=/etc/aqueduct/pipe/application.yml \
