@@ -92,12 +92,12 @@ class AuthenticatePipeReadFilterSpec extends Specification {
         context = ApplicationContext
                 .build()
                 .properties(
-                        "authentication.read-pipe.username": "admin",
-                        "authentication.read-pipe.password": "my-password",
-                        "pipe.http.latest-offset.attempts": 1,
-                        "pipe.http.latest-offset.delay": "1s",
-                        "pipe.http.client.url": "cloudIP",
-                        "registry.http.client.url": "cloudIP"
+                    "authentication.read-pipe.username": "admin",
+                    "authentication.read-pipe.password": "my-password",
+                    "pipe.http.latest-offset.attempts": 1,
+                    "pipe.http.latest-offset.delay": "1s",
+                    "pipe.http.client.url": "cloudIP",
+                    "registry.http.client.url": "cloudIP"
                 )
                 .build()
                 .registerSingleton(TokenProvider, Mock(TokenProvider))
