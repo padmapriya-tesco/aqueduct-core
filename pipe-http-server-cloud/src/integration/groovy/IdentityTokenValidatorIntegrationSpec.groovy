@@ -47,21 +47,21 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             .build()
             .mainClass(EmbeddedServer)
             .properties(
-                    parseYamlConfig(
-                        """
-                    micronaut.security.enabled: true
-                    micronaut.security.token.jwt.enabled: true
-                    micronaut.security.token.jwt.bearer.enabled: true
-                    micronaut.caches.identity-cache.expire-after-write: ${CACHE_EXPIRY_SECONDS}s
-                    identity.url: ${identityMock.getHttpUrl()}
-                    identity.validate.token.path: $validateTokenPath
-                    authentication.identity.clientId: $clientUserUID
-                    authentication:
-                      users:
-                        $USERNAME:
-                          password: $PASSWORD
+                parseYamlConfig(
                     """
-                    )
+                micronaut.security.enabled: true
+                micronaut.security.token.jwt.enabled: true
+                micronaut.security.token.jwt.bearer.enabled: true
+                micronaut.caches.identity-cache.expire-after-write: ${CACHE_EXPIRY_SECONDS}s
+                identity.url: ${identityMock.getHttpUrl()}
+                identity.validate.token.path: $validateTokenPath
+                authentication.identity.clientId: $clientUserUID
+                authentication:
+                  users:
+                    $USERNAME:
+                      password: $PASSWORD
+                """
+                )
             )
             .build()
 
@@ -103,18 +103,18 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     def 'Http status OK when using valid basic auth credentials'() {
         expect: 'A secured URL is accessed with the basic auth'
         RestAssured.given()
-                .header("Authorization", "Basic $encodedCredentials")
-                .get("/pipe/0")
-                .then()
-                .statusCode(HttpStatus.OK.code)
+            .header("Authorization", "Basic $encodedCredentials")
+            .get("/pipe/0")
+            .then()
+            .statusCode(HttpStatus.OK.code)
     }
 
     def "Client receives unauthorised if no identity token provided."() {
         expect: 'Accessing a secured URL without authenticating'
         RestAssured.given()
-                .get("/pipe/0")
-                .then()
-                .statusCode(HttpStatus.UNAUTHORIZED.code)
+            .get("/pipe/0")
+            .then()
+            .statusCode(HttpStatus.UNAUTHORIZED.code)
     }
 
     def 'Returns unauthorised when using an invalid identity token'() {
@@ -124,10 +124,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         when: 'A secured URL is accessed with the identity token as Bearer'
         def identityToken = UUID.randomUUID().toString()
         RestAssured.given()
-                .header("Authorization", "Bearer $identityToken")
-                .get("/pipe/0")
-                .then()
-                .statusCode(HttpStatus.UNAUTHORIZED.code)
+            .header("Authorization", "Bearer $identityToken")
+            .get("/pipe/0")
+            .then()
+            .statusCode(HttpStatus.UNAUTHORIZED.code)
 
         then: 'identity was called'
         identityMock.verify()
@@ -141,10 +141,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         def incorrectEncodedCredentials = "incorrectUser:incorrectPassword".bytes.encodeBase64().toString()
 
         RestAssured.given()
-                .header("Authorization", "Basic $incorrectEncodedCredentials")
-                .get("/pipe/0")
-                .then()
-                .statusCode(HttpStatus.UNAUTHORIZED.code)
+            .header("Authorization", "Basic $incorrectEncodedCredentials")
+            .get("/pipe/0")
+            .then()
+            .statusCode(HttpStatus.UNAUTHORIZED.code)
     }
 
     def "Token validation requests are cached for the duration specified in the config"() {
@@ -179,10 +179,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
         when: 'A secured URL is accessed with the identity token as Bearer'
         RestAssured.given()
-                .header("Authorization", "Bearer $identityToken")
-                .get("/pipe/0")
-                .then()
-                .statusCode(statusCode)
+            .header("Authorization", "Bearer $identityToken")
+            .get("/pipe/0")
+            .then()
+            .statusCode(statusCode)
 
         then: 'identity was called'
         identityMock.verify()
@@ -260,10 +260,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
     def makeValidRequest(String identityToken) {
         RestAssured.given()
-                .header("Authorization", "Bearer $identityToken")
-                .get("/pipe/0")
-                .then()
-                .statusCode(HttpStatus.OK.code)
+            .header("Authorization", "Bearer $identityToken")
+            .get("/pipe/0")
+            .then()
+            .statusCode(HttpStatus.OK.code)
     }
 
     def acceptSingleIdentityTokenValidationRequestPerToken(String clientIdAndSecret, String... identityTokens) {
