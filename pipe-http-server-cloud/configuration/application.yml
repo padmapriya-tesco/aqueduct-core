@@ -49,3 +49,5 @@ authentication:
       roles:
         - REGISTRY_DELETE
         - BOOTSTRAP_TILL
+  identity:
+    clientId: "{TILL_CLIENT_UID}"

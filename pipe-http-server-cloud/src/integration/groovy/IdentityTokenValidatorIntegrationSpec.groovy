@@ -6,7 +6,6 @@ import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.micronaut.runtime.server.EmbeddedServer
@@ -14,6 +13,7 @@ import io.restassured.RestAssured
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class IdentityTokenValidatorIntegrationSpec extends Specification {
 
@@ -24,12 +24,16 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     static final String encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
     static InMemoryStorage storage = new InMemoryStorage(10, 600)
 
+    static final String clientId = UUID.randomUUID().toString()
+    static final String secret = UUID.randomUUID().toString()
+    static final String userUID = UUID.randomUUID()
+
+    static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
+    static final String clientUserUID = "trn:tesco:uid:uuid:${userUID}"
+    static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
+
     @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup ApplicationContext context
-
-    @Shared String validateTokenPath
-    @Shared String clientIdAndSecret
-    @Shared String clientUserUID
 
     def setupSpec() {
         identityMock = new ErsatzServer({
@@ -38,14 +42,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         })
 
         identityMock.start()
-
-        def clientId = UUID.randomUUID().toString()
-        def secret = UUID.randomUUID().toString()
-        def userUID = UUID.randomUUID()
-
-        clientIdAndSecret = "trn:tesco:cid:$clientId:$secret"
-        clientUserUID = "trn:tesco:uid:uuid:$userUID"
-        validateTokenPath = "$VALIDATE_TOKEN_BASE_PATH?client_id=$clientIdAndSecret"
 
         context = ApplicationContext
             .build()
@@ -59,6 +55,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                     micronaut.caches.identity-cache.expire-after-write: ${CACHE_EXPIRY_SECONDS}s
                     identity.url: ${identityMock.getHttpUrl()}
                     identity.validate.token.path: $validateTokenPath
+                    authentication.identity.clientId: $clientUserUID
                     authentication:
                       users:
                         $USERNAME:
@@ -90,7 +87,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     def 'Http status OK when using a valid identity token'() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUID)
 
         when: 'A secured URL is accessed with the identity token as Bearer'
         RestAssured.given()
@@ -153,7 +150,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     def "Token validation requests are cached for the duration specified in the config"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUID)
 
         when: 'A secured URL is multiple times with the identity token as Bearer'
         makeValidRequest(identityToken)
@@ -167,14 +164,36 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         identityMock.clearExpectations()
         sleep CACHE_EXPIRY_SECONDS * 1000
 
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUID)
         makeValidRequest(identityToken)
 
         then: 'Identity is called again'
         identityMock.verify()
     }
 
-    def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken) {
+    @Unroll
+    def "A #valid identity token is used to call pipe"() {
+        given: 'A valid identity token'
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUID)
+
+        when: 'A secured URL is accessed with the identity token as Bearer'
+        RestAssured.given()
+                .header("Authorization", "Bearer $identityToken")
+                .get("/pipe/0")
+                .then()
+                .statusCode(statusCode)
+
+        then: 'identity was called'
+        identityMock.verify()
+
+        where:
+        valid             | clientUID      | statusCode
+        "whitelisted"     | clientUserUID  | HttpStatus.OK.code
+        "non whitelisted" | "incorrectUID" | HttpStatus.UNAUTHORIZED.code
+    }
+
+    def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
         def json = JsonOutput.toJson([access_token: identityToken])
 
         identityMock.expectations {

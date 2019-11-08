@@ -11,11 +11,12 @@ class IdentityTokenValidatorSpec extends Specification {
 
     private static final ValidateTokenResponse VALID_RESPONSE = new ValidateTokenResponse(ValidateTokenResponseSpec.USER_ID, ValidateTokenResponseSpec.VALID, ValidateTokenResponseSpec.VALID_CLAIMS)
     private static final ValidateTokenResponse INVALID_RESPONSE = new ValidateTokenResponse(ValidateTokenResponseSpec.USER_ID, ValidateTokenResponseSpec.INVALID, [])
+    private static final String clientUid = ValidateTokenResponseSpec.USER_ID
 
     @Unroll
     def "Validate #description"() {
         given:
-        def tokenValidator = new IdentityTokenValidator()
+        def tokenValidator = new IdentityTokenValidator(clientUid)
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
             validateToken(_ as String, _ as ValidateTokenRequest) >> Flowable.just(identityResponse)
         }
