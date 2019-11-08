@@ -23,7 +23,7 @@ public class IdentityTokenValidator implements TokenValidator {
     @Inject
     private IdentityTokenValidatorClient identityTokenValidatorClient;
 
-    public IdentityTokenValidator(@Property(name = "authentication.identity.clientId")String clientUid) {
+    public IdentityTokenValidator(@Property(name = "authentication.identity.clientId") String clientUid) {
         IdentityTokenValidator.clientUid = clientUid;
     }
 
