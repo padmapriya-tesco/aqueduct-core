@@ -18,7 +18,7 @@ public class AuthenticatePipeReadFilter implements HttpClientFilter {
     private final String username;
     private final String password;
     private final String pipeCloudUri;
-    private final String identityToken;
+    private final TokenProvider tokenProvider;
 
     public AuthenticatePipeReadFilter(
         @Property(name = "authentication.read-pipe.username") final String username,
@@ -29,13 +29,13 @@ public class AuthenticatePipeReadFilter implements HttpClientFilter {
         this.username = username;
         this.password = password;
         this.pipeCloudUri = pipeCloudUri;
-        this.identityToken = tokenProvider.getToken();
+        this.tokenProvider = tokenProvider;
     }
 
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
         if (request.getUri().toString().contains(pipeCloudUri)) {
-            return chain.proceed(request.bearerAuth(identityToken));
+            return chain.proceed(request.bearerAuth(tokenProvider.getToken()));
         }
         return chain.proceed(request.basicAuth(username, password));
     }
