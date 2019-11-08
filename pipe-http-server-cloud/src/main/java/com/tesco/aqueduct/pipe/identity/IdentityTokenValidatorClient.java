@@ -11,7 +11,7 @@ public interface IdentityTokenValidatorClient {
 
     @Post("${identity.validate.token.path}")
     Flowable<ValidateTokenResponse> validateToken(
-            @Header("TraceId") String traceId,
-            @Body ValidateTokenRequest identityRequest
+        @Header("TraceId") String traceId,
+        @Body ValidateTokenRequest identityRequest
     );
 }
