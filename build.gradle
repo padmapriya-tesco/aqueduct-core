@@ -111,7 +111,6 @@ subprojects {
                 compile 'io.micronaut:micronaut-security'
                 compile 'io.micronaut:micronaut-security-jwt'
                 compile 'io.micronaut:micronaut-validation'
-
                 compile "io.micronaut:micronaut-management"
                 compile 'io.micronaut.configuration:micronaut-micrometer-core'
 
