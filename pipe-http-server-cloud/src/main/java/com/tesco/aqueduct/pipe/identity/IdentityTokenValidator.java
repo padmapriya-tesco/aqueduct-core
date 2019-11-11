@@ -14,7 +14,7 @@ import javax.inject.Singleton;
 import java.util.UUID;
 
 @Singleton
-@Requires(property = "identity.url")
+@Requires(property = "authentication.identity.url")
 @Requires(property = "authentication.identity.clientId")
 public class IdentityTokenValidator implements TokenValidator {
 

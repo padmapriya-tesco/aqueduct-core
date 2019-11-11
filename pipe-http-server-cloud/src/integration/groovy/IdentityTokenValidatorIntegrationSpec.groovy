@@ -53,13 +53,14 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                 micronaut.security.token.jwt.enabled: true
                 micronaut.security.token.jwt.bearer.enabled: true
                 micronaut.caches.identity-cache.expire-after-write: ${CACHE_EXPIRY_SECONDS}s
-                identity.url: ${identityMock.getHttpUrl()}
-                identity.validate.token.path: $validateTokenPath
-                authentication.identity.clientId: $clientUserUID
                 authentication:
                   users:
                     $USERNAME:
                       password: $PASSWORD
+                  identity:
+                    clientId: $clientUserUID
+                    url: ${identityMock.getHttpUrl()}
+                    validate.token.path: $validateTokenPath
                 """
                 )
             )
