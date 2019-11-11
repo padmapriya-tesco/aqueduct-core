@@ -6,6 +6,9 @@ micronaut:
     jdbc.enabled: false
   security:
     enabled: true
+  caches:
+    identity-cache:
+      expire-after-write: 10m
   router:
     static-resources:
       swagger:
@@ -49,3 +52,5 @@ authentication:
       roles:
         - REGISTRY_DELETE
         - BOOTSTRAP_TILL
+  identity:
+    clientId: "{TILL_CLIENT_UID}"

@@ -16,7 +16,9 @@ dependencies {
 
     addMicronautDependencies()
 
+    compile 'io.micronaut:micronaut-http-client'
     testCompile 'com.opentable.components:otj-pg-embedded:0.13.0'
+    testCompile project(":pipe-storage-memory")
 }
 
 jar {

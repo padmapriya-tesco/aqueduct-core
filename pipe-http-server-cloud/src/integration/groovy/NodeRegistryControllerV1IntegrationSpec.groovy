@@ -3,7 +3,6 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.postgres.PostgresNodeGroupStorage
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
