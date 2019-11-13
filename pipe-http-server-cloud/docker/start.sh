@@ -28,8 +28,8 @@ sed -i "s/{RUNSCOPE_PIPE_READ_PASSWORD}/$runscope_pipe_read_password/" /etc/aque
 sed -i "s/{SUPPORT_USERNAME}/$support_username/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{SUPPORT_PASSWORD}/$support_password/" /etc/aqueduct/pipe/application.yml
 sed -i "s/{TILL_CLIENT_UID}/$till_client_uid/" /etc/aqueduct/pipe/application.yml
-sed -i "s|{IDENTITY_URL}|$identity_url|" /etc/magicpipe_publisher/application.yml
-sed -i "s|{IDENTITY_VALIDATE_TOKEN_PATH}|$identity_validate_token_path|" /etc/magicpipe_publisher/application.yml
+sed -i "s|{IDENTITY_URL}|$identity_url|" /etc/aqueduct/pipe/application.yml
+sed -i "s|{IDENTITY_VALIDATE_TOKEN_PATH}|$identity_validate_token_path|" /etc/aqueduct/pipe/application.yml
 
 exec java \
     -Dmicronaut.config.files=/etc/aqueduct/pipe/application.yml \
