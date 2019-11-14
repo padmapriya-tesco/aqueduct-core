@@ -15,8 +15,11 @@ class AuthenticatePipeReadFilterSpec extends Specification {
     @Shared @AutoCleanup("stop") ApplicationContext context
 
     InternalHttpPipeClient client
-    TokenProvider tokenProvider = Mock(TokenProvider) {
-        getToken() >> "someToken"
+    def identityToken= Mock(IdentityToken) {
+        getAccessToken() >> "someToken"
+    }
+    def tokenProvider = Mock(TokenProvider) {
+        retrieveIdentityToken() >> identityToken
     }
 
     def "identity token is used when settings are provided calling the cloud"() {

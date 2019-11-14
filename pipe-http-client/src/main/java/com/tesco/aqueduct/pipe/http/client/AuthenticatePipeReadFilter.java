@@ -35,7 +35,7 @@ public class AuthenticatePipeReadFilter implements HttpClientFilter {
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
         if (request.getUri().toString().contains(pipeCloudUri)) {
-            return chain.proceed(request.bearerAuth(tokenProvider.getToken()));
+            return chain.proceed(request.bearerAuth(tokenProvider.retrieveIdentityToken().getAccessToken()));
         }
         return chain.proceed(request.basicAuth(username, password));
     }
