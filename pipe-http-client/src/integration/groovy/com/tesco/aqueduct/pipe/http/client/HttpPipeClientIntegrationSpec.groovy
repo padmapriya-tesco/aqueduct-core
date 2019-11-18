@@ -1,7 +1,9 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.api.IdentityToken
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
+import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.SelfRegistrationTask
 import com.tesco.aqueduct.registry.client.ServiceList
@@ -24,6 +26,12 @@ class HttpPipeClientIntegrationSpec extends Specification {
     }
 
     def setup() {
+        def identityToken= Mock(IdentityToken) {
+            getAccessToken() >> "someToken"
+        }
+        def tokenProvider = Mock(TokenProvider) {
+            retrieveIdentityToken() >> identityToken
+        }
         context = ApplicationContext
             .build()
             .properties(
@@ -36,6 +44,7 @@ class HttpPipeClientIntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
+            .registerSingleton(tokenProvider)
             .registerSingleton(new ServiceList(
                 new DefaultHttpClientConfiguration(),
                 new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
