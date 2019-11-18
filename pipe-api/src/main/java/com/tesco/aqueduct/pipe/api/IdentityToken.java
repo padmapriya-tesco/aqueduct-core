@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.http.client;
+package com.tesco.aqueduct.pipe.api;
 
 public interface IdentityToken {
     String getAccessToken();

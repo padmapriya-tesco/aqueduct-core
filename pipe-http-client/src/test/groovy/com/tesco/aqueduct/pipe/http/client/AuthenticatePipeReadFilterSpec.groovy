@@ -1,6 +1,8 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.api.IdentityToken
+import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.ServiceList
 import io.micronaut.context.ApplicationContext
