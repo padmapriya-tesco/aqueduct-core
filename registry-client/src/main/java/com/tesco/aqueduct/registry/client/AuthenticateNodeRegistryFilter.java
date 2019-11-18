@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.registry.client;
 
-import io.micronaut.context.annotation.Property;
-import io.micronaut.context.annotation.Requires;
+import com.tesco.aqueduct.pipe.api.TokenProvider;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.annotation.Filter;
@@ -10,23 +9,18 @@ import io.micronaut.http.filter.HttpClientFilter;
 import org.reactivestreams.Publisher;
 
 @Filter("/**/registry")
-@Requires(property = "authentication.read-pipe.username")
-@Requires(property = "authentication.read-pipe.password")
 public class AuthenticateNodeRegistryFilter implements HttpClientFilter {
 
-    private final String username;
-    private final String password;
+    private final TokenProvider tokenProvider;
 
     public AuthenticateNodeRegistryFilter(
-        @Property(name = "authentication.read-pipe.username") final String username,
-        @Property(name = "authentication.read-pipe.password") final String password
+        TokenProvider tokenProvider
     ) {
-        this.username = username;
-        this.password = password;
+        this.tokenProvider = tokenProvider;
     }
 
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
-        return chain.proceed(request.basicAuth(username, password));
+        return chain.proceed(request.bearerAuth(tokenProvider.retrieveIdentityToken().getAccessToken()));
     }
 }

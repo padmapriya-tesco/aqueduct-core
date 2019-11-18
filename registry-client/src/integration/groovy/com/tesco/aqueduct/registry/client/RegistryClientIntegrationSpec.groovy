@@ -1,6 +1,8 @@
 package com.tesco.aqueduct.registry.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.api.IdentityToken
+import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.model.Bootstrapable
 import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
@@ -18,6 +20,10 @@ class RegistryClientIntegrationSpec extends Specification {
     private static final URL MY_HOST = new URL("http://localhost")
     String host1 = "http://host1"
     String host2 = "http://host2"
+
+    def tokenProvider = Mock(TokenProvider) {
+        retrieveIdentityToken() >> Mock(IdentityToken)
+    }
 
     @Shared @AutoCleanup ErsatzServer server
 
@@ -41,6 +47,7 @@ class RegistryClientIntegrationSpec extends Specification {
                 "pipe.http.registration.interval": "1m"
             )
             .build()
+            .registerSingleton(tokenProvider)
             .registerSingleton(Supplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
             .registerSingleton(Supplier.class, providerMetricsSupplier, Qualifiers.byName("providerMetricsSupplier"))
             .registerSingleton(Bootstrapable.class, Mock(Bootstrapable), Qualifiers.byName("provider"))

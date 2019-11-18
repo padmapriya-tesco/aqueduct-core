@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client;
 
+import com.tesco.aqueduct.pipe.api.TokenProvider;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpResponse;
