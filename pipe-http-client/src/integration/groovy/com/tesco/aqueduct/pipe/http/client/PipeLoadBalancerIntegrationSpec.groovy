@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.IdentityToken
 import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.SelfRegistrationTask
@@ -34,12 +33,6 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
     }
 
     void setupContext(Map properties=[:]) {
-        def identityToken= Mock(IdentityToken) {
-            getAccessToken() >> "someToken"
-        }
-        def tokenProvider = Mock(TokenProvider) {
-            retrieveIdentityToken() >> identityToken
-        }
         context = ApplicationContext
             .build()
             .properties(
@@ -50,7 +43,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
-            .registerSingleton(tokenProvider)
+            .registerSingleton(Mock(TokenProvider))
             .registerSingleton(new ServiceList(
                 new DefaultHttpClientConfiguration(),
                 new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL("http://does.not.exist")),

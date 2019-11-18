@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.IdentityToken
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.TokenProvider
@@ -25,13 +24,6 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
     InternalHttpPipeClient client
 
     def setupSpec() {
-        def identityToken= Mock(IdentityToken) {
-            getAccessToken() >> "someToken"
-        }
-        def tokenProvider = Mock(TokenProvider) {
-            retrieveIdentityToken() >> identityToken
-        }
-
         server = new ErsatzServer()
         server.start()
 
@@ -46,12 +38,12 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
                 "micronaut.caches.health-check.expire-after-write": "5s"
             )
             .build()
-            .registerSingleton(tokenProvider)
             .registerSingleton(SelfRegistrationTask, Mock(SelfRegistrationTask))
+            .registerSingleton(Mock(TokenProvider))
             .registerSingleton(new ServiceList(
-                new DefaultHttpClientConfiguration(),
-                new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
-                File.createTempFile("provider", "properties")
+            new DefaultHttpClientConfiguration(),
+            new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
+            File.createTempFile("provider", "properties")
             ))
             .start()
     }

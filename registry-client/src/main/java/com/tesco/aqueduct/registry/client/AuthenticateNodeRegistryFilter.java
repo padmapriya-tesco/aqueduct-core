@@ -14,7 +14,7 @@ public class AuthenticateNodeRegistryFilter implements HttpClientFilter {
     private final TokenProvider tokenProvider;
 
     public AuthenticateNodeRegistryFilter(
-            TokenProvider tokenProvider
+        TokenProvider tokenProvider
     ) {
         this.tokenProvider = tokenProvider;
     }

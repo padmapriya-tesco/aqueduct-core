@@ -44,9 +44,9 @@ class AuthenticateNodeRegistryFilterSpec extends Specification {
         def context = ApplicationContext
             .build()
             .properties(
-                    "pipe.http.register.retry.interval": "1s",
-                    "pipe.http.client.url": server.getHttpUrl(),
-                    "registry.http.client.url": server.getHttpUrl() + "/v2"
+                "pipe.http.register.retry.interval": "1s",
+                "pipe.http.client.url": server.getHttpUrl(),
+                "registry.http.client.url": server.getHttpUrl() + "/v2"
             )
             .build()
             .registerSingleton(tokenProvider)
