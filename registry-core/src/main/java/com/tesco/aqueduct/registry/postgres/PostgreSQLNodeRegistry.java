@@ -61,7 +61,8 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                     LOG.info("Postgresql version changed exception", Integer.toString(++count));
                     Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN_MS + random.nextInt(OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND));
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    LOG.info("register", "Interrupted waiting for Version store");
+                    Thread.currentThread().interrupt();
                 }
             }
         }
