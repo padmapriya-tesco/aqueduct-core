@@ -23,6 +23,15 @@ ansiColor('xterm') {
                                                  tag: env.TAG, project: env.PROJECT, location: env.location])
         }
 
+        stage("Smoke Test") {
+            def basicAuth = (env.PIPE_READ_USERNAME+ ":" + env.PIPE_READ_PASSWORD).bytes.encodeBase64().toString()
+            def statusCode = sh(script: "curl -s -o /dev/null -w '%{http_code}' -H \"Authorization: Basic $basicAuth\" https://api-ppe.tesco.com/messaging/v1/pipe/0")
+
+            if (status != 200) {
+                error("Returned status code = $status when calling $url")
+            }
+        }
+
         stage("Gradle Build") {
             if(scmVars.GIT_BRANCH == "master") {
                 sh "./gradlew createRelease -Prelease.disableChecks"
