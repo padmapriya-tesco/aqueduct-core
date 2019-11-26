@@ -24,12 +24,11 @@ ansiColor('xterm') {
         }
 
         stage("Smoke Test") {
-            def basicAuth = (env.PIPE_READ_USERNAME+ ":" + env.PIPE_READ_PASSWORD).bytes.encodeBase64().toString()
-            def statusCode = sh(script: "curl -s -o /dev/null -w '%{http_code}' -H \"Authorization: Basic $basicAuth\" https://api-ppe.tesco.com/messaging/v1/pipe/0")
+                def ppeGetPipeUrl = "https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c"
 
-            if (status != 200) {
-                error("Returned status code = $status when calling $url")
-            }
+                String runscopeResponse = sh(script: "curl $ppeGetPipeUrl -v", returnStdout: true)
+
+                echo runscopeResponse
         }
 
         stage("Gradle Build") {
