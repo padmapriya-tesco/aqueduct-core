@@ -23,29 +23,6 @@ ansiColor('xterm') {
                                                  tag: env.TAG, project: env.PROJECT, location: env.location])
         }
 
-        stage("PPE Runscope Tests") {
-            parallel(
-                get_pipe: {
-                    checkRunscopeTests("https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c")
-                },
-                publisher: {
-                    checkRunscopeTests("https://api.runscope.com/radar/b6c232b5-61e3-46e4-bc05-cce4fca3c776/trigger?runscope_environment=33bc19df-7cd7-4f74-b9f2-c77daa59b1cb")
-                },
-                registry_v1: {
-                    checkRunscopeTests("https://api.runscope.com/radar/b77c33ce-85e8-47c4-ac8c-2b39da1c67cc/trigger?runscope_environment=12c8e270-71fc-480c-9642-d6d693306ae8")
-                },
-                registry_v2: {
-                    checkRunscopeTests("https://api.runscope.com/radar/0d1686a7-d1ca-481b-8cc0-88b4fcd61340/trigger?runscope_environment=1ad753b5-67d6-454a-af00-21ffbf54bd0d")
-                },
-                ui: {
-                    checkRunscopeTests("https://api.runscope.com/radar/257b9c81-701c-474a-8b7f-bce6b29b1512/trigger?runscope_environment=b6d95692-9fef-4dfd-9588-416366787ad7")
-                },
-                auth_check: {
-                    checkRunscopeTests("https://api.runscope.com/radar/24bcd68f-9d3c-412d-bb13-89ec5f1f7dd6/trigger?runscope_environment=0a0e122f-8600-4145-8481-16ebc349654f")
-                }
-            )
-        }
-
         stage("Gradle Build") {
             if(scmVars.GIT_BRANCH == "master") {
                 sh "./gradlew createRelease -Prelease.disableChecks"
@@ -145,17 +122,13 @@ ansiColor('xterm') {
             container('docker') {
                 sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
 
-                stage('Push Aqueduct Pipe To PPE') {
+                stage('Deploy To PPE') {
                     sh "docker tag ${integrationImage} ${ppeImage}"
                     sh "docker push ${ppeImage}"
                 }
             }
 
             def version = readFile(file:"VERSION.txt")
-
-            stage('Version Test') {
-                versionTest("https://api-ppe.tesco.com/messaging/v1/pipe/_status", version)
-            }
 
             stage ('Publish Sonar') {
                 try {
@@ -167,6 +140,33 @@ ansiColor('xterm') {
 
                     sh "./gradlew test integration sonarqube -Dsonar.projectKey=$projectKey -Dsonar.host.url=$sonarServerUrl -Dsonar.login=$loginToken -Dsonar.projectVersion=$version"
                 } catch (err) { }
+            }
+
+            stage('PPE Version Test') {
+                versionTest("https://api-ppe.tesco.com/messaging/v1/pipe/_status", version)
+            }
+
+            stage("PPE Runscope Tests") {
+                parallel(
+                    get_pipe: {
+                        checkRunscopeTests("https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c")
+                    },
+                    publisher: {
+                        checkRunscopeTests("https://api.runscope.com/radar/b6c232b5-61e3-46e4-bc05-cce4fca3c776/trigger?runscope_environment=33bc19df-7cd7-4f74-b9f2-c77daa59b1cb")
+                    },
+                    registry_v1: {
+                        checkRunscopeTests("https://api.runscope.com/radar/b77c33ce-85e8-47c4-ac8c-2b39da1c67cc/trigger?runscope_environment=12c8e270-71fc-480c-9642-d6d693306ae8")
+                    },
+                    registry_v2: {
+                        checkRunscopeTests("https://api.runscope.com/radar/0d1686a7-d1ca-481b-8cc0-88b4fcd61340/trigger?runscope_environment=1ad753b5-67d6-454a-af00-21ffbf54bd0d")
+                    },
+                    ui: {
+                        checkRunscopeTests("https://api.runscope.com/radar/257b9c81-701c-474a-8b7f-bce6b29b1512/trigger?runscope_environment=b6d95692-9fef-4dfd-9588-416366787ad7")
+                    },
+                    auth_check: {
+                        checkRunscopeTests("https://api.runscope.com/radar/24bcd68f-9d3c-412d-bb13-89ec5f1f7dd6/trigger?runscope_environment=0a0e122f-8600-4145-8481-16ebc349654f")
+                    }
+                )
             }
 
             container('docker') {
@@ -190,7 +190,7 @@ ansiColor('xterm') {
                 }
             }
 
-            stage('Push Aqueduct Pipe to Live') {
+            stage('Deploy to Live') {
                 container('docker') {
                     sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
                     sh "docker tag ${ppeImage} ${liveImage}"
@@ -198,7 +198,7 @@ ansiColor('xterm') {
                 }
             }
 
-            stage('Version Test Live') {
+            stage('Live Version Test') {
                 versionTest("https://api.tesco.com/messaging/v1/pipe/_status", version)
             }
 
