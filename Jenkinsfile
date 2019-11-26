@@ -29,7 +29,7 @@ ansiColor('xterm') {
                 String runscopeResponse = sh(script: "curl $ppeGetPipeUrl -v", returnStdout: true)
                 echo runscopeResponse
 
-                String resultsUrl = new JsonSlurper().parse(runscopeResponse.bytes).data.runs.api_test_run_url
+                String resultsUrl = JsonSlurper().parse(runscopeResponse.bytes).data.runs.api_test_run_url
                 echo resultsUrl
         }
 
