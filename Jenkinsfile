@@ -24,7 +24,7 @@ ansiColor('xterm') {
         }
 
         stage("Smoke Test") {
-            checkRunscopeTests()
+            checkRunscopeTests("https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c")
         }
 
         stage("Gradle Build") {
