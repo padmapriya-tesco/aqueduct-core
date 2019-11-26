@@ -169,7 +169,7 @@ ansiColor('xterm') {
                             checkRunscopeTests("https://api.runscope.com/radar/24bcd68f-9d3c-412d-bb13-89ec5f1f7dd6/trigger?runscope_environment=0a0e122f-8600-4145-8481-16ebc349654f")
                         }
                     )
-                } catch {
+                } catch (e) {
                     container('docker') {
                         echo "ERROR! ROLLING BACK!"
                         sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
@@ -179,7 +179,7 @@ ansiColor('xterm') {
                             sh "docker push ${rollbackImage}"
                         }
                     }
-                    throw
+                    throw e
                 }
             }
 
