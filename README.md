@@ -5,9 +5,9 @@ Delivers data to specific network locations in an efficient, secure and near rea
 
 ## Objectives
 
-1. Reduce network traffic usage by delivering data to location groups only once in most cases
+1. Reduce network traffic usage, by delivering data to a location only once
 2. Optimise the time taken to deliver data to a location
-3. Throttle traffic not to impact the network
+3. Throttle traffic not to impact the overall and local network
 4. Only data required by the location is routed to it
 
 ## Development Environment
