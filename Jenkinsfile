@@ -24,7 +24,7 @@ ansiColor('xterm') {
         }
 
         stage("Smoke Test") {
-            checkRunscopetests()
+            checkRunscopeTests()
         }
 
         stage("Gradle Build") {
