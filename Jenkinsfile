@@ -169,15 +169,6 @@ ansiColor('xterm') {
                 )
             }
 
-            container('docker') {
-                sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
-
-                stage('Tag Latest Image') {
-                    sh "docker tag ${ppeImage} ${latestImage}"
-                    sh "docker push ${latestImage}"
-                }
-            }
-
             stage("Release") {
                 sshagent(credentials: ['public_github_key']) {
                     sh "#!/bin/sh -e\n./gradlew release -Prelease.disableChecks -Prelease.pushTagsOnly"
@@ -200,6 +191,15 @@ ansiColor('xterm') {
 
             stage('Live Version Test') {
                 versionTest("https://api.tesco.com/messaging/v1/pipe/_status", version)
+            }
+
+            container('docker') {
+                sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
+
+                stage('Tag Latest Image') {
+                    sh "docker tag ${liveImage} ${latestImage}"
+                    sh "docker push ${latestImage}"
+                }
             }
 
         } else {
