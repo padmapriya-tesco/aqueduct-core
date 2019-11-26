@@ -24,13 +24,7 @@ ansiColor('xterm') {
         }
 
         stage("Smoke Test") {
-                def ppeGetPipeUrl = "https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c"
-
-                String runscopeResponse = sh(script: "curl $ppeGetPipeUrl -v", returnStdout: true)
-                echo runscopeResponse
-
-                String resultsUrl = JsonSlurper().parse(runscopeResponse.bytes).data.runs.api_test_run_url
-                echo resultsUrl
+            checkRunscopetests()
         }
 
         stage("Gradle Build") {
