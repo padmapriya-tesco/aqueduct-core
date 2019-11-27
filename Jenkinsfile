@@ -175,6 +175,7 @@ ansiColor('xterm') {
                         sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
 
                         stage('Tag Rollback Image') {
+                            sh "docker pull"
                             sh "docker tag ${latestImage} ${ppeRollbackImage}"
                             sh "docker push ${ppeRollbackImage}"
                         }
