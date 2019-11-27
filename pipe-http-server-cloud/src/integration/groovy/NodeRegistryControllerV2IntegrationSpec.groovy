@@ -109,6 +109,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         server = context.getBean(EmbeddedServer)
 
         RestAssured.port = server.port
+        server.start()
+        sleep 50
     }
 
     void cleanupSpec() {
@@ -116,9 +118,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def 'expect unauthorized when not providing username and password to registry'(){
-        given:
-        server.start()
-
         expect:
         given()
             .contentType("application/json")
@@ -136,9 +135,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "Can post to registry"() {
-        setup: "A started server"
-        server.start()
-
         expect: "We can post info to the registry"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
@@ -163,9 +159,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "Can get registry summary"() {
-        setup: "A started server"
-        server.start()
-
         expect: "We can get info from registry"
         given()
             .when()
@@ -181,7 +174,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "Registered nodes are returned"() {
         given: "We register a node"
-        server.start()
         registerNode(6735, "http://1.1.1.1:1234", 123, "status", ["http://x"])
 
         when: "we get summary"
@@ -203,7 +195,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     @Unroll
     def "Summary can filter by stores - #comment"() {
         given: "We register nodes from different groups"
-        server.start()
         registerNode("a", "http://a")
         registerNode("b", "http://b")
         registerNode("c", "http://c")
@@ -232,7 +223,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "deleting a single node from the registry"() {
         given: "We register two nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
@@ -257,7 +247,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "deleting a node from the registry and rebalancing a group"() {
         given: "We register multiple nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:0001", 123, "status")
         registerNode(1234, "http://1.1.1.2:0002", 123, "status")
         registerNode(1234, "http://1.1.1.3:0003", 123, "status")
@@ -294,7 +283,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "authenticated user without deletion role cannot delete from the database"() {
         given: "We register two nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
@@ -319,7 +307,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "anonymous user without deletion role cannot delete from the database"() {
         given: "We register two nodes"
-        server.start()
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
@@ -342,9 +329,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     @Unroll
     def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
-        given: "A registry running"
-        server.start()
-
         when: "bootstrap is called"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
@@ -385,9 +369,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
-        given: "A registry running"
-        server.start()
-
         when: "bootstrap is called"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
