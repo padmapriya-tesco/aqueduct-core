@@ -110,7 +110,7 @@ ansiColor('xterm') {
 
         stage ('Publish Sonar') {
             //try {
-                sonarReport("aqueduct_core")
+                sonarReport("aqueduct_core", scmVars.GIT_BRANCH)
             //} catch (err) { }
         }
 
