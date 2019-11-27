@@ -109,9 +109,13 @@ ansiColor('xterm') {
         def version = readFile(file:"VERSION.txt")
 
         stage ('Publish Sonar') {
-            //try {
+            try {
                 sonarReport("aqueduct_core", scmVars.GIT_BRANCH)
-            //} catch (err) { }
+                error("Test error")
+            } catch (err) {
+                echo "or publishing Sonar. Continuing."
+                echo $err
+            }
         }
 
         if (scmVars.GIT_BRANCH == "master") {
