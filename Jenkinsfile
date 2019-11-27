@@ -106,8 +106,14 @@ ansiColor('xterm') {
             isolatedSystemTest(MP_AQUEDUCT_PIPE_IMAGE_VERSION: "integration-${scmVars.GIT_COMMIT.toString()}")
         }
 
-        if (scmVars.GIT_BRANCH == "master") {
+        def version = readFile(file:"VERSION.txt")
+        stage ('Publish Sonar') {
+            try {
+                sonarReport("aqueduct_core")
+            } catch (err) { }
+        }
 
+        if (scmVars.GIT_BRANCH == "master") {
             container('docker') {
                 sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
 
@@ -115,14 +121,6 @@ ansiColor('xterm') {
                     sh "docker tag ${integrationImage} ${ppeImage}"
                     sh "docker push ${ppeImage}"
                 }
-            }
-
-            def version = readFile(file:"VERSION.txt")
-
-            stage ('Publish Sonar') {
-                try {
-                    sonarReport("aqueduct_core")
-                } catch (err) { }
             }
 
             stage('PPE Version Test') {
