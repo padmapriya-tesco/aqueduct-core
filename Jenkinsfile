@@ -107,6 +107,7 @@ ansiColor('xterm') {
         }
 
         def version = readFile(file:"VERSION.txt")
+        
         stage ('Publish Sonar') {
             try {
                 sonarReport("aqueduct_core")
