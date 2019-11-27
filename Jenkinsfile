@@ -111,7 +111,6 @@ ansiColor('xterm') {
         stage ('Publish Sonar') {
             try {
                 sonarReport("aqueduct_core", scmVars.GIT_BRANCH)
-                error("Test error")
             } catch (err) {
                 echo "Error publishing Sonar. Continuing."
                 echo "$err"
