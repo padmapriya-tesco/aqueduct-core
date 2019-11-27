@@ -93,7 +93,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         RestAssured.port = server.port
 
         server.start()
-        sleep 50
+        sleep 500
     }
 
     void cleanupSpec() {
