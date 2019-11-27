@@ -118,8 +118,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def 'expect unauthorized when not providing username and password to registry'(){
-        given: "a started server"
-
         expect:
         given()
             .contentType("application/json")
@@ -137,8 +135,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "Can post to registry"() {
-        given: "A started server"
-
         expect: "We can post info to the registry"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
@@ -163,8 +159,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "Can get registry summary"() {
-        given: "A started server"
-
         expect: "We can get info from registry"
         given()
             .when()
@@ -335,8 +329,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     @Unroll
     def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
-        given: "A registry running"
-
         when: "bootstrap is called"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
@@ -377,8 +369,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
-        given: "A registry running"
-
         when: "bootstrap is called"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
 
