@@ -40,10 +40,10 @@ ansiColor('xterm') {
                 ui: {
                     checkRunscopeTests("https://api.runscope.com/radar/498ba60e-9546-44af-8fb3-6d77a40cc195/trigger?runscope_environment=f0e4400a-66b6-46a9-9737-f1dc2feb2bab")
                 }
-//                 ,
-//                 auth_check: {
-//                     checkRunscopeTests("https://api.runscope.com/radar/1a7bd2da-e85d-4887-ad50-070253dd8159/trigger?runscope_environment=88ed6aee-b93b-45bd-92a7-a07ac47c854c")
-//                 }
+                ,
+                auth_check: {
+                    checkRunscopeTests("https://api.runscope.com/radar/1a7bd2da-e85d-4887-ad50-070253dd8159/trigger?runscope_environment=88ed6aee-b93b-45bd-92a7-a07ac47c854c")
+                }
             )
         }
 
