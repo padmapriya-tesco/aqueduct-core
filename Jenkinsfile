@@ -178,6 +178,30 @@ ansiColor('xterm') {
                 versionTest("https://api.tesco.com/messaging/v1/pipe/_status", version)
             }
 
+
+            stage("Live Runscope Tests") {
+                parallel(
+                    get_pipe: {
+                        checkRunscopeTests("https://api.runscope.com/radar/3382d06f-8d8b-4bdf-aeaa-a8ea28d5ee03/trigger?runscope_environment=067344b4-1a23-4302-8ffb-1d52aebb9f5c")
+                    },
+                    publisher: {
+                        checkRunscopeTests("https://api.runscope.com/radar/d51b4186-a47d-4331-87c9-810ad7e0bc4a/trigger?runscope_environment=90bdcabb-c5ff-4af4-8b9e-3016280f7eff")
+                    },
+                    registry_v1: {
+                        checkRunscopeTests("https://api.runscope.com/radar/6f8cba04-d5f8-4873-8ae0-49728a91bcff/trigger?runscope_environment=91af842c-76fe-4bac-b40e-dcd8d06dcd67")
+                    },
+                    registry_v2: {
+                        checkRunscopeTests("https://api.runscope.com/radar/0fd90e73-dc5f-48df-ab01-49ebf4c801f4/trigger?runscope_environment=27189652-3112-42e6-b5a9-f3c060585756")
+                    },
+                    ui: {
+                        checkRunscopeTests("https://api.runscope.com/radar/498ba60e-9546-44af-8fb3-6d77a40cc195/trigger?runscope_environment=f0e4400a-66b6-46a9-9737-f1dc2feb2bab")
+                    },
+                    auth_check: {
+                        checkRunscopeTests("https://api.runscope.com/radar/1a7bd2da-e85d-4887-ad50-070253dd8159/trigger?runscope_environment=88ed6aee-b93b-45bd-92a7-a07ac47c854c")
+                    }
+                )
+            }
+
             container('docker') {
                 sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
 
