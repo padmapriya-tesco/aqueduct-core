@@ -1,0 +1,4 @@
+authentication:
+  users:
+    test:
+      password: "${PIPE_READ_PASSWORD}"

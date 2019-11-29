@@ -1,0 +1,11 @@
+authentication:
+  users:
+    pipe-provider-live:
+      password: "${PIPE_READ_PASSWORD}"
+    pipe-runscope-live:
+      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+    live-support:
+      password: "${SUPPORT_PASSWORD}"
+      roles:
+        - REGISTRY_DELETE
+        - BOOTSTRAP_TILL

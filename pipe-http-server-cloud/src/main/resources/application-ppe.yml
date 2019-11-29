@@ -1,0 +1,11 @@
+authentication:
+  users:
+    pipe-provider-ppe:
+      password: "${PIPE_READ_PASSWORD}"
+    pipe-runscope-ppe:
+      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+    ppe-support:
+      password: "${SUPPORT_PASSWORD}"
+      roles:
+        - REGISTRY_DELETE
+        - BOOTSTRAP_TILL

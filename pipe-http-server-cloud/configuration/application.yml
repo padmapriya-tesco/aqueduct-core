@@ -44,17 +44,6 @@ datasources:
     password: "${POSTGRE_PASSWORD}"
     driverClassName: org.postgresql.Driver
 
-authentication:
-  users:
-    {PIPE_READ_USERNAME}:
-      password: "${PIPE_READ_PASSWORD}"
-    {RUNSCOPE_PIPE_READ_USERNAME}:
-      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
-    {SUPPORT_USERNAME}:
-      password: "${SUPPORT_PASSWORD}"
-      roles:
-        - REGISTRY_DELETE
-        - BOOTSTRAP_TILL
   identity:
     clientId: "${TILL_CLIENT_UID}"
     url: "${IDENTITY_URL}"
