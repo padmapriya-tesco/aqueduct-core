@@ -2,3 +2,10 @@ authentication:
   users:
     test:
       password: "${PIPE_READ_PASSWORD}"
+    pipe-runscope-test:
+      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+    test-support:
+      password: "${SUPPORT_PASSWORD}"
+      roles:
+        - REGISTRY_DELETE
+        - BOOTSTRAP_TILL
