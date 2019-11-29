@@ -12,7 +12,6 @@ import java.util.List;
 @Singleton
 @Requires(property = "authentication.users")
 public class PipeReadAuthenticationProvider implements AuthenticationProvider {
-
     private final List<User> users;
 
     @Inject
@@ -29,7 +28,7 @@ public class PipeReadAuthenticationProvider implements AuthenticationProvider {
         );
     }
 
-    AuthenticationResponse authenticate(final Object username, final Object password) {
+    private AuthenticationResponse authenticate(final Object username, final Object password) {
         return users.stream()
             .filter(user -> user.isAuthenticated(username, password))
             .findAny()

@@ -1,0 +1,19 @@
+authentication:
+  users:
+    test:
+      password: "${PIPE_READ_PASSWORD}"
+    pipe-runscope-test:
+      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+    test-support:
+      password: "${SUPPORT_PASSWORD}"
+      roles:
+        - REGISTRY_DELETE
+        - BOOTSTRAP_TILL
+  identity:
+    clientId: "${TILL_CLIENT_UID}"
+    url: "${IDENTITY_URL}"
+    validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
+
+pipe:
+  server:
+    url: "${PIPE_URL}"

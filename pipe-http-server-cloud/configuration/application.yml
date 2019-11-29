@@ -24,10 +24,6 @@ endpoints:
     path: /endpoints
     sensitive: false
 
-pipe:
-  server:
-    url: "${PIPE_URL}"
-
 persistence:
   compact:
     threshold: 3d
@@ -45,17 +41,3 @@ datasources:
     driverClassName: org.postgresql.Driver
 
 authentication:
-  users:
-    {PIPE_READ_USERNAME}:
-      password: "${PIPE_READ_PASSWORD}"
-    {RUNSCOPE_PIPE_READ_USERNAME}:
-      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
-    {SUPPORT_USERNAME}:
-      password: "${SUPPORT_PASSWORD}"
-      roles:
-        - REGISTRY_DELETE
-        - BOOTSTRAP_TILL
-  identity:
-    clientId: "${TILL_CLIENT_UID}"
-    url: "${IDENTITY_URL}"
-    validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"

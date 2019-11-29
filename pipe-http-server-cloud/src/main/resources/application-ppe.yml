@@ -1,0 +1,19 @@
+authentication:
+  users:
+    pipe-provider-ppe:
+      password: "${PIPE_READ_PASSWORD}"
+    pipe-runscope-ppe:
+      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+    ppe-support:
+      password: "${SUPPORT_PASSWORD}"
+      roles:
+        - REGISTRY_DELETE
+        - BOOTSTRAP_TILL
+  identity:
+    clientId: "${TILL_CLIENT_UID}"
+    url: "${IDENTITY_URL}"
+    validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
+
+pipe:
+  server:
+    url: "https://api-ppe.tesco.com/messaging/v1"
