@@ -9,3 +9,7 @@ authentication:
       roles:
         - REGISTRY_DELETE
         - BOOTSTRAP_TILL
+
+pipe:
+  server:
+    url: "https://api.tesco.com/messaging/v1"

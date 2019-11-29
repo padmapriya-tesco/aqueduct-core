@@ -24,10 +24,6 @@ endpoints:
     path: /endpoints
     sensitive: false
 
-pipe:
-  server:
-    url: "${PIPE_URL}"
-
 persistence:
   compact:
     threshold: 3d
