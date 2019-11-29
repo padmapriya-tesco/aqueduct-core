@@ -44,6 +44,7 @@ datasources:
     password: "${POSTGRE_PASSWORD}"
     driverClassName: org.postgresql.Driver
 
+authentication:
   identity:
     clientId: "${TILL_CLIENT_UID}"
     url: "${IDENTITY_URL}"
