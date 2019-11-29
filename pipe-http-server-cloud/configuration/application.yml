@@ -41,7 +41,3 @@ datasources:
     driverClassName: org.postgresql.Driver
 
 authentication:
-  identity:
-    clientId: "${TILL_CLIENT_UID}"
-    url: "${IDENTITY_URL}"
-    validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
