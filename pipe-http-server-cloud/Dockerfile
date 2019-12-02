@@ -8,7 +8,6 @@ RUN mkdir -p /etc/aqueduct/pipe
 # Copy config and binaries
 COPY build/libs/pipe-http-server-cloud*-all.jar /opt/aqueduct/pipe/
 COPY configuration/* /etc/aqueduct/pipe/
-COPY docker/* /opt/aqueduct/pipe/
 
 # Creating Aqueduct Pipe user
 RUN useradd --create-home -s /bin/bash aqueductpipe
