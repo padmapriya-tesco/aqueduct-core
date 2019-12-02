@@ -24,11 +24,13 @@ import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.*
 
 class NodeRegistryControllerV1IntegrationSpec extends Specification {
-    static final String cloudPipeUrl = "http://cloud.pipe"
-    static final String USERNAME = "username"
-    static final String PASSWORD = "password"
-    static final String USERNAME_TWO = "username-two"
-    static final String PASSWORD_TWO = "password-two"
+    private static final String CLOUD_PIPE_URL = "http://cloud.pipe"
+    private static final String USERNAME = "username"
+    private static final String PASSWORD = "password"
+    private static final String USERNAME_TWO = "username-two"
+    private static final String PASSWORD_TWO = "password-two"
+    private static final int SERVER_TIMEOUT_MS = 5000
+    private static final int SERVER_SLEEP_TIME_MS = 500
 
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
@@ -60,7 +62,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
             );
         """)
 
-        registry = new PostgreSQLNodeRegistry(dataSource, new URL(cloudPipeUrl), Duration.ofDays(1))
+        registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
     }
 
     void setup() {
@@ -93,7 +95,13 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         RestAssured.port = server.port
 
         server.start()
-        sleep 500
+        def time = 0
+        while (!server.isRunning() && time < SERVER_TIMEOUT_MS) {
+            println("Server not yet running...")
+            sleep SERVER_SLEEP_TIME_MS
+            time += SERVER_SLEEP_TIME_MS
+        }
+        println("Test setup complete")
     }
 
     void cleanupSpec() {
@@ -109,7 +117,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
                 "status": "initialising",
-                "following": ["$cloudPipeUrl"]
+                "following": ["$CLOUD_PIPE_URL"]
             }""")
         .when()
             .post("/v1/registry")
@@ -129,13 +137,13 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
                 "status": "initialising",
-                "following": ["$cloudPipeUrl"]
+                "following": ["$CLOUD_PIPE_URL"]
             }""")
         .when()
             .post("/v1/registry")
         .then()
             .statusCode(200)
-            .body("", equalTo([cloudPipeUrl]))
+            .body("", equalTo([CLOUD_PIPE_URL]))
     }
 
     def "Can get registry summary"() {
@@ -307,7 +315,7 @@ class NodeRegistryControllerV1IntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
-    private static void registerNode(group, url, offset=0, status="initialising", following=[cloudPipeUrl]) {
+    private static void registerNode(group, url, offset=0, status="initialising", following=[CLOUD_PIPE_URL]) {
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
         given()
             .contentType("application/json")
