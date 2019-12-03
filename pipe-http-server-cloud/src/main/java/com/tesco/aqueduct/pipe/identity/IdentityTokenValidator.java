@@ -9,6 +9,7 @@ import io.micronaut.core.order.Ordered;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.token.validator.TokenValidator;
+import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,14 @@ public class IdentityTokenValidator implements TokenValidator {
     @SingleResult
     @Cacheable("identity-cache")
     public Publisher<Authentication> validateToken(String token) {
+
+        if(token == null) {
+            LOG.error("token validator", "null token", "");
+            return Flowable.empty();
+        }
+
+        LOG.info("token validator", "attempting to validate token of length: "+ token.length());
+
         try {
             return identityTokenValidatorClient
                 .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
@@ -43,7 +52,7 @@ public class IdentityTokenValidator implements TokenValidator {
                 .filter(IdentityTokenValidator::isClientUIDAuthorised);
         } catch (HttpClientResponseException e) {
             LOG.error("token validator", "validate token", e.getStatus().toString() + " " + e.getResponse().reason());
-            throw e;
+            return Flowable.empty();
         }
     }
 
