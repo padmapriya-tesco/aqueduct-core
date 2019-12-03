@@ -90,6 +90,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 parseYamlConfig(
                     """
                     micronaut.security.enabled: true
+                    micronaut.server.port: -1
                     authentication:
                       users:
                         $USERNAME:
