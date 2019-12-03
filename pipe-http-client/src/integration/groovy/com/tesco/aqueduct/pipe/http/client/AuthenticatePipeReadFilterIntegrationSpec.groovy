@@ -11,7 +11,7 @@ import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
-class AuthenticatePipeReadFilterSpec extends Specification {
+class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
 
     @Shared @AutoCleanup ErsatzServer server
     @Shared @AutoCleanup("stop") ApplicationContext context

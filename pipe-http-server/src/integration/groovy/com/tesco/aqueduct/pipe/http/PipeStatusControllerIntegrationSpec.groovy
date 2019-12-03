@@ -1,5 +1,5 @@
-import com.tesco.aqueduct.pipe.http.StatusController
-import com.tesco.aqueduct.pipe.http.Version
+package com.tesco.aqueduct.pipe.http
+
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.HttpStatus
 import io.micronaut.runtime.server.EmbeddedServer
@@ -11,7 +11,7 @@ import spock.lang.Specification
 import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.equalTo
 
-class StatusControllerSpec extends Specification {
+class PipeStatusControllerIntegrationSpec extends Specification {
 
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
@@ -19,7 +19,7 @@ class StatusControllerSpec extends Specification {
     void setupSpec() {
         context = ApplicationContext
             .build()
-            .mainClass(StatusController)
+            .mainClass(PipeStatusController)
             .build()
 
         context.start()

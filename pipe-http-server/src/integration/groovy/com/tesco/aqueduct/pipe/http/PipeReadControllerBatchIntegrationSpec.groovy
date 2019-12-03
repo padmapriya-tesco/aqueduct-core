@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets
 import static org.hamcrest.Matchers.equalTo
 
 @Newify(Message)
-class PipeReadControllerBatchSpec extends Specification {
+class PipeReadControllerBatchIntegrationSpec extends Specification {
     static final String DATA_BLOB = "aaaaaaaaaaaaabbbbbbbbbbbbcccccccccccccdddddddeeeeeeeee"
     static String type = "type1"
     static int RETRY_AFTER_SECONDS = 600
