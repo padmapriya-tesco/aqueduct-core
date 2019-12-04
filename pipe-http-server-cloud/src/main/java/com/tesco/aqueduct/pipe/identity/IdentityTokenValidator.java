@@ -46,7 +46,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         if(token.length() < 600) {
             //this is a token we expect to fail the request
-            LOG.error("token validator", "token of unexpected length", token);
+            LOG.error("token validator", "token of unexpected length: " + token, "");
         }
 
         try {
