@@ -12,6 +12,5 @@ include ':pipe-api',
         ':pipe-storage-sqlite',
         ':registry-core',
         ':registry-http-server',
-        ':registry-client',
-        ':registry-ui'
+        ':registry-client'
 
