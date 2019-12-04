@@ -12,7 +12,6 @@ dependencies {
     compile project (":pipe-storage-postgresql")
     compile project (":registry-core")
     compile project (":registry-http-server")
-    compile project (":registry-ui")
 
     addMicronautDependencies()
 
