@@ -145,9 +145,6 @@ ansiColor('xterm') {
                     registry_v2: {
                         checkRunscopeTests("https://api.runscope.com/radar/0d1686a7-d1ca-481b-8cc0-88b4fcd61340/trigger?runscope_environment=1ad753b5-67d6-454a-af00-21ffbf54bd0d")
                     },
-                    ui: {
-                        checkRunscopeTests("https://api.runscope.com/radar/257b9c81-701c-474a-8b7f-bce6b29b1512/trigger?runscope_environment=b6d95692-9fef-4dfd-9588-416366787ad7")
-                    },
                     auth_check: {
                         checkRunscopeTests("https://api.runscope.com/radar/24bcd68f-9d3c-412d-bb13-89ec5f1f7dd6/trigger?runscope_environment=0a0e122f-8600-4145-8481-16ebc349654f")
                     }
@@ -192,9 +189,6 @@ ansiColor('xterm') {
                     },
                     registry_v2: {
                         checkRunscopeTests("https://api.runscope.com/radar/0fd90e73-dc5f-48df-ab01-49ebf4c801f4/trigger?runscope_environment=27189652-3112-42e6-b5a9-f3c060585756")
-                    },
-                    ui: {
-                        checkRunscopeTests("https://api.runscope.com/radar/498ba60e-9546-44af-8fb3-6d77a40cc195/trigger?runscope_environment=f0e4400a-66b6-46a9-9737-f1dc2feb2bab")
                     },
                     auth_check: {
                         checkRunscopeTests("https://api.runscope.com/radar/1a7bd2da-e85d-4887-ad50-070253dd8159/trigger?runscope_environment=88ed6aee-b93b-45bd-92a7-a07ac47c854c")
