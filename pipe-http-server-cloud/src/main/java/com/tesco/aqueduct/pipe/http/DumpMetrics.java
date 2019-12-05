@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.http;
 
 import io.micronaut.configuration.metrics.management.endpoint.MetricsEndpoint;
+import io.micronaut.core.bind.exceptions.UnsatisfiedArgumentException;
 import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,8 @@ import java.util.SortedSet;
 
 @Singleton
 public class DumpMetrics {
-    private static final Logger log = LoggerFactory.getLogger("metrics");
+    private static final Logger LOG
+            = LoggerFactory.getLogger("metrics");
 
     private MetricsEndpoint metrics;
 
@@ -37,14 +39,19 @@ public class DumpMetrics {
     }
 
     private void dumpTag(final String metricName, @NotNull final MetricsEndpoint.AvailableTag tag) {
-        tag.getValues().stream()
-            .map(v -> tag.getTag() + ":" + v)
-            .forEach(tagValue ->
-                dumpMetric(
-                    metricName + ":" + tagValue,
-                    metrics.getMetricDetails(metricName, Collections.singletonList(tagValue))
-                )
-            );
+        try {
+            tag.getValues().stream()
+                .map(v -> tag.getTag() + ":" + v)
+                .forEach(tagValue ->
+                    dumpMetric(
+                        metricName + ":" + tagValue,
+                        metrics.getMetricDetails(metricName, Collections.singletonList(tagValue))
+                    )
+                );
+        } catch (UnsatisfiedArgumentException e) {
+            LOG.error("Dump Metrics, metric throwing exception is: " + metricName);
+            throw e;
+        }
     }
 
     private void dumpMetric(final String metricName, final MetricsEndpoint.MetricDetails details) {
@@ -53,7 +60,7 @@ public class DumpMetrics {
             MDC.put("value", String.format("%.2f", sample.getValue()));
         });
 
-        log.info(metricName);
+        LOG.info(metricName);
 
         MDC.clear();
     }
