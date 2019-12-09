@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.registry.postgres;
 
-import com.tesco.aqueduct.registry.postgres.PostgresNodeGroup;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,7 +14,7 @@ public class PostgresNodeGroupStorage {
 
     PostgresNodeGroupStorage() { }
 
-    PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException {
+    PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException, IOException {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
             statement.setString(1, groupId);
 
@@ -27,14 +24,11 @@ public class PostgresNodeGroupStorage {
                 } else {
                     return new PostgresNodeGroup(groupId);
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
             }
         }
     }
 
-    List<PostgresNodeGroup> getNodeGroups(final Connection connection, final List<String> groupIds) throws SQLException {
+    List<PostgresNodeGroup> getNodeGroups(final Connection connection, final List<String> groupIds) throws SQLException, IOException {
         if (groupIds == null || groupIds.isEmpty()) {
             return getAllNodeGroups(connection);
         }
@@ -46,7 +40,7 @@ public class PostgresNodeGroupStorage {
         return list;
     }
 
-    private List<PostgresNodeGroup> getAllNodeGroups(final Connection connection) throws SQLException {
+    private List<PostgresNodeGroup> getAllNodeGroups(final Connection connection) throws SQLException, IOException {
         List<PostgresNodeGroup> groups;
         try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_ALL_GROUPS)) {
             groups = new ArrayList<>();
@@ -54,9 +48,6 @@ public class PostgresNodeGroupStorage {
                 while (rs.next()) {
                     groups.add(PostgresNodeGroup.createNodeGroup(rs));
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new UncheckedIOException(e);
             }
         }
         return groups;
