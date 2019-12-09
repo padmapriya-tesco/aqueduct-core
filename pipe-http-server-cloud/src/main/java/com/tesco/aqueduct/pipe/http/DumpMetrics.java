@@ -42,7 +42,7 @@ public class DumpMetrics {
     private void dumpTag(final String metricName, @NotNull final MetricsEndpoint.AvailableTag tag) {
         try {
             tag.getValues().stream()
-                .map(v -> tag.getTag() + ":" + v)
+                .map(v -> tag.getTag() + ":" + v.replace(':','-'))
                 .forEach(tagValue ->
                     dumpMetric(
                         metricName + ":" + tagValue,
