@@ -42,7 +42,7 @@ public class DumpMetrics {
     private void dumpTag(final String metricName, @NotNull final MetricsEndpoint.AvailableTag tag) {
         try {
             tag.getValues().stream()
-                .map(v -> tag.getTag() + ":" + v)
+                .map(v -> tag.getTag() + ":" + v.replace(':','-'))
                 .forEach(tagValue ->
                     dumpMetric(
                         metricName + ":" + tagValue,
@@ -50,7 +50,7 @@ public class DumpMetrics {
                     )
                 );
         } catch (UnsatisfiedArgumentException e) {
-            LOG.error("Dump Metrics, metric throwing exception is: " + metricName + " and tag " + tag.getTag() + " with tag values " + Arrays.toString(tag.getValues().toArray()));
+            LOG.error("Dump Metrics, metric throwing exception is: " + metricName + " and tag " + tag.getTag());
             throw e;
         }
     }
