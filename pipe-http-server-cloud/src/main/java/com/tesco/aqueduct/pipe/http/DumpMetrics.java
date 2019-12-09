@@ -50,7 +50,7 @@ public class DumpMetrics {
                     )
                 );
         } catch (UnsatisfiedArgumentException e) {
-            LOG.error("Dump Metrics, metric throwing exception is: " + metricName + " and tag " + tag.getTag() + " with tag values " + Arrays.toString(tag.getValues().toArray()));
+            LOG.error("Dump Metrics, metric throwing exception is: " + metricName + " and tag " + tag.getTag());
             throw e;
         }
     }
