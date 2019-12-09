@@ -42,7 +42,7 @@ public class DumpMetrics {
     private void dumpTag(final String metricName, @NotNull final MetricsEndpoint.AvailableTag tag) {
         try {
             tag.getValues().stream()
-                .map(v -> tag.getTag() + ":" + v.replace(':','-'))
+                .map(v -> tag.getTag() + ":" + removeColonFromValue(v))
                 .forEach(tagValue ->
                     dumpMetric(
                         metricName + ":" + tagValue,
@@ -64,5 +64,13 @@ public class DumpMetrics {
         LOG.info(metricName);
 
         MDC.clear();
+    }
+
+    private String removeColonFromValue(String value) {
+        if(value == null) {
+            return value;
+        }
+
+        return value.replace(':','-');
     }
 }
