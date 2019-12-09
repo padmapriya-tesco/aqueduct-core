@@ -29,20 +29,21 @@ public class DumpMetrics {
     @Scheduled(fixedDelay = "1m")
     public void dumpMetrics() {
         final SortedSet<String> names = metrics.listNames().getNames();
-        names.stream().forEach(this::dumpMetric);
+        names.forEach(this::dumpMetric);
     }
 
     private void dumpMetric(final String metricName) {
         final MetricsEndpoint.MetricDetails details = metrics.getMetricDetails(metricName, null);
         dumpMetric(metricName, details);
-        details.getAvailableTags().stream()
+        details.getAvailableTags()
             .forEach(tag -> dumpTag(metricName, tag));
     }
 
     private void dumpTag(final String metricName, @NotNull final MetricsEndpoint.AvailableTag tag) {
         try {
             tag.getValues().stream()
-                .map(v -> tag.getTag() + ":" + removeColonFromValue(v))
+                .filter(v -> !v.contains("client_id="))
+                .map(v -> tag.getTag() + ":" + v)
                 .forEach(tagValue ->
                     dumpMetric(
                         metricName + ":" + tagValue,
@@ -56,7 +57,7 @@ public class DumpMetrics {
     }
 
     private void dumpMetric(final String metricName, final MetricsEndpoint.MetricDetails details) {
-        details.getMeasurements().stream().forEach(sample -> {
+        details.getMeasurements().forEach(sample -> {
             MDC.put("statistic", sample.getStatistic().name());
             MDC.put("value", String.format("%.2f", sample.getValue()));
         });
@@ -64,13 +65,5 @@ public class DumpMetrics {
         LOG.info(metricName);
 
         MDC.clear();
-    }
-
-    private String removeColonFromValue(String value) {
-        if(value == null) {
-            return value;
-        }
-
-        return value.replace(':','-');
     }
 }
