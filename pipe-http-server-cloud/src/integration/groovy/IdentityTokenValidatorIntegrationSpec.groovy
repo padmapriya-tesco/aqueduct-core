@@ -58,9 +58,13 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                     $USERNAME:
                       password: $PASSWORD
                   identity:
-                    clientId: $clientUserUID
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
+                    users:
+                        till:
+                            clientId: $clientUserUID
+                            roles:
+                                - REGISTRY_WRITE
                 """
                 )
             )

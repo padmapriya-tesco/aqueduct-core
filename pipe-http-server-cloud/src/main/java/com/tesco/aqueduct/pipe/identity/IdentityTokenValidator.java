@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @Singleton
 @Requires(property = "authentication.identity.url")
-@Requires(property = "authentication.identity.clientId")
+@Requires(property = "authentication.identity.users.till.clientId")
 public class IdentityTokenValidator implements TokenValidator {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(IdentityTokenValidator.class));
@@ -28,7 +28,7 @@ public class IdentityTokenValidator implements TokenValidator {
     @Inject
     private IdentityTokenValidatorClient identityTokenValidatorClient;
 
-    public IdentityTokenValidator(@Property(name = "authentication.identity.clientId") String clientUid) {
+    public IdentityTokenValidator(@Property(name = "authentication.identity.users.till.clientId") String clientUid) {
         IdentityTokenValidator.clientUid = clientUid;
     }
 
