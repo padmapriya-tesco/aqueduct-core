@@ -98,6 +98,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                           roles:
                             - REGISTRY_DELETE
                             - BOOTSTRAP_TILL
+                            - REGISTRY_WRITE
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
                     """
