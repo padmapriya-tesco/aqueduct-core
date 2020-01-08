@@ -63,7 +63,7 @@ public class ValidateTokenResponse {
         return status.equals("VALID") && confidenceLevel == SERVICE_CONFIDENCE_LEVEL;
     }
 
-    Authentication asAuthentication(){
+    DefaultAuthentication asAuthentication(){
         return new DefaultAuthentication(this.userId, Collections.emptyMap());
     }
 }

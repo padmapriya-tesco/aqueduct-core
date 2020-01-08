@@ -60,6 +60,8 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                   users:
                     $USERNAME:
                       password: $PASSWORD
+                      roles:
+                        - PIPE_READ
                   identity:
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
@@ -112,21 +114,21 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         identityMock.verify()
     }
 
-//    def 'Http status unauthorised when using a valid identity token without correct role'() {
-//        given: 'A valid identity token'
-//        def identityToken = UUID.randomUUID().toString()
-//        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDB)
-//
-//        when: 'A secured URL is accessed with the identity token as Bearer'
-//        RestAssured.given()
-//                .header("Authorization", "Bearer $identityToken")
-//                .get("/pipe/0")
-//                .then()
-//                .statusCode(HttpStatus.UNAUTHORIZED.code)
-//
-//        then: 'identity was called'
-//        identityMock.verify()
-//    }
+    def 'Http status unauthorised when using a valid identity token without correct role'() {
+        given: 'A valid identity token'
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDB)
+
+        when: 'A secured URL is accessed with the identity token as Bearer'
+        RestAssured.given()
+                .header("Authorization", "Bearer $identityToken")
+                .get("/pipe/0")
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.code)
+
+        then: 'identity was called'
+        identityMock.verify()
+    }
 
     def 'Http status OK when using valid basic auth credentials'() {
         expect: 'A secured URL is accessed with the basic auth'
