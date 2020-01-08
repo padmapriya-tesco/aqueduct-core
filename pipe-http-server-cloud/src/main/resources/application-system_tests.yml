@@ -16,7 +16,7 @@ authentication:
       till:
         clientId: "${TILL_CLIENT_UID}"
         roles:
-          - REGISTRY_WRITE
+          - PIPE_READ
 
 pipe:
   server:
