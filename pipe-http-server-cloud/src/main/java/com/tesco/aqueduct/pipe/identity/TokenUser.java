@@ -13,7 +13,7 @@ import java.util.List;
 @EachProperty("authentication.identity.users")
 @ToString
 @EqualsAndHashCode
-class TokenUser {
+public class TokenUser {
     final String name;
     String clientId;
     List<String> roles;
