@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.identity;
 
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.cache.annotation.Cacheable;
-import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.core.async.annotation.SingleResult;
 import io.micronaut.core.order.Ordered;
@@ -15,21 +14,23 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.List;
 import java.util.UUID;
 
 @Singleton
 @Requires(property = "authentication.identity.url")
-@Requires(property = "authentication.identity.users.till.clientId")
+@Requires(property = "authentication.identity.users")
 public class IdentityTokenValidator implements TokenValidator {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(IdentityTokenValidator.class));
-    private static String clientUid;
+    private final List<TokenUser> users;
 
     @Inject
     private IdentityTokenValidatorClient identityTokenValidatorClient;
 
-    public IdentityTokenValidator(@Property(name = "authentication.identity.users.till.clientId") String clientUid) {
-        IdentityTokenValidator.clientUid = clientUid;
+    @Inject
+    public IdentityTokenValidator(final List<TokenUser> users) {
+        this.users = users;
     }
 
     @Override
@@ -49,15 +50,23 @@ public class IdentityTokenValidator implements TokenValidator {
                 .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
                 .filter(ValidateTokenResponse::isTokenValid)
                 .map(ValidateTokenResponse::asAuthentication)
-                .filter(IdentityTokenValidator::isClientUIDAuthorised);
+                .filter(this::isClientUIDAuthorised);
         } catch (HttpClientResponseException e) {
             LOG.error("token validator", "validate token", e.getStatus().toString() + " " + e.getResponse().reason());
             return Flowable.empty();
         }
     }
 
-    private static Boolean isClientUIDAuthorised(Authentication authentication) {
-        return authentication.getName().equals(clientUid);
+    private Boolean isClientUIDAuthorised(Authentication authentication) {
+        String clientId = authentication.getName();
+
+        for(TokenUser u : users) {
+            if(u.clientId.equals(clientId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     //lowest precedence chosen so it is used after others

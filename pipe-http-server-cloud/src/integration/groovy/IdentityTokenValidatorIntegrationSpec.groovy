@@ -1,5 +1,5 @@
-import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
+import com.stehno.ersatz.Decoders
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.http.PipeStateProvider
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
@@ -61,10 +61,9 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
                     users:
-                        till:
-                            clientId: $clientUserUID
-                            roles:
-                                - REGISTRY_WRITE
+                      $clientUserUID: 
+                        roles:
+                          - REGISTRY_WRITE
                 """
                 )
             )
