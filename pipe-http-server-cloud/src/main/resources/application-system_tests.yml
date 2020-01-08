@@ -2,8 +2,12 @@ authentication:
   users:
     test:
       password: "${PIPE_READ_PASSWORD}"
+      roles:
+        - PIPE_READ
     pipe-runscope-test:
       password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+      roles:
+        - PIPE_READ
     test-support:
       password: "${SUPPORT_PASSWORD}"
       roles:
