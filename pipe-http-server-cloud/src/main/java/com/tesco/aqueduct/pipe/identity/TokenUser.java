@@ -14,11 +14,12 @@ import java.util.List;
 @ToString
 @EqualsAndHashCode
 class TokenUser {
-    final String clientId;
+    final String name;
+    String clientId;
     List<String> roles;
 
-    TokenUser(@Parameter final String clientId) {
-        this.clientId = clientId;
+    TokenUser(@Parameter final String name) {
+        this.name = name;
     }
 
     AuthenticationResponse toAuthenticationResponse() {

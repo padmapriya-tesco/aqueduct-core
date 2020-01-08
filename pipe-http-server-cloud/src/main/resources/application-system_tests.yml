@@ -13,7 +13,8 @@ authentication:
     url: "${IDENTITY_URL}"
     validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
     users:
-      ${TILL_CLIENT_UID}:
+      till:
+        clientId: "{$TILL_CLIENT_UID}"
         roles:
           - REGISTRY_WRITE
 
