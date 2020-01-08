@@ -54,7 +54,7 @@ public class IdentityTokenValidator implements TokenValidator {
             return identityTokenValidatorClient
                 .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
                 .filter(ValidateTokenResponse::isTokenValid)
-                .map(ValidateTokenResponse::asAuthentication)
+                .map(ValidateTokenResponse::getUserID)
                 .filter(this::isClientUIDAuthorised)
                 .map(this::toUserDetailsAdapter);
         } catch (HttpClientResponseException e) {
@@ -63,20 +63,20 @@ public class IdentityTokenValidator implements TokenValidator {
         }
     }
 
-    private AuthenticationUserDetailsAdapter toUserDetailsAdapter(DefaultAuthentication authentication) {
+    private AuthenticationUserDetailsAdapter toUserDetailsAdapter(String clientId) {
         List<String> roles = users.stream()
-            .filter(u -> u.clientId.equals(authentication.getName()))
+            .filter(u -> u.clientId.equals(clientId))
             .map(u -> u.roles == null ? Collections.<String>emptyList() : u.roles)
             .findFirst()
             .orElse(Collections.emptyList());
 
-        UserDetails userDetails = new UserDetails(authentication.getName(), roles);
+        UserDetails userDetails = new UserDetails(clientId, roles);
 
         return new AuthenticationUserDetailsAdapter(userDetails, "roles");
     }
 
-    private Boolean isClientUIDAuthorised(Authentication authentication) {
-        return users.stream().anyMatch(u -> u.clientId.equals(authentication.getName()));
+    private Boolean isClientUIDAuthorised(String clientId) {
+        return users.stream().anyMatch(u -> u.clientId.equals(clientId));
     }
 
     //lowest precedence chosen so it is used after others
