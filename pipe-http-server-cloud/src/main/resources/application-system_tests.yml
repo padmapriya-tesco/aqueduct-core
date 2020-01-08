@@ -13,8 +13,9 @@ authentication:
     url: "${IDENTITY_URL}"
     validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
     users:
-      till:
-        clientId: "${TILL_CLIENT_UID}"
+      ${TILL_CLIENT_UID}:
+        roles:
+          - REGISTRY_WRITE
 
 pipe:
   server:

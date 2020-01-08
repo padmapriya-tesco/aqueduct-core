@@ -58,15 +58,7 @@ public class IdentityTokenValidator implements TokenValidator {
     }
 
     private Boolean isClientUIDAuthorised(Authentication authentication) {
-        String clientId = authentication.getName();
-
-        for(TokenUser u : users) {
-            if(u.clientId.equals(clientId)) {
-                return true;
-            }
-        }
-
-        return false;
+        return users.stream().anyMatch(u -> u.clientId.equals(authentication.getName()));
     }
 
     //lowest precedence chosen so it is used after others
