@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
     private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
+    private static final String REGISTRY_WRITE = "REGISTRY_WRITE";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
     private final NodeRegistry registry;
@@ -40,7 +41,7 @@ public class NodeRegistryControllerV2 {
         return registry.getSummary(pipe.getLatestOffsetMatching(null), "ok", groups);
     }
 
-    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Secured(REGISTRY_WRITE)
     @Post
     public RegistryResponse registerNode(@Body final Node node) throws SQLException {
         final List<URL> requestedToFollow = registry.register(node);
