@@ -41,12 +41,8 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
                           users:
                             $USERNAME:
                               password: $PASSWORD
-                              roles:
-                                - PIPE_READ
                             $RUNSCOPE_USERNAME:
                               password: $RUNSCOPE_PASSWORD
-                              roles:
-                                - PIPE_READ
                         """
                     )
                 )

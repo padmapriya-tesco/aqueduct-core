@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Secured("PIPE_READ")
+@Secured(SecurityRule.IS_AUTHENTICATED)
 @Measure
 @Controller
 public class PipeReadController {

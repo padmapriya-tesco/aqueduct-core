@@ -3,9 +3,6 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.model.TillStorage
-import com.tesco.aqueduct.registry.model.BootstrapType
-import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -26,7 +23,7 @@ import static io.restassured.RestAssured.given
 import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.*
 
-class NodeRegistryControllerV2IntegrationSpec extends Specification {
+class NodeRegistryControllerV1IntegrationSpec extends Specification {
     private static final String CLOUD_PIPE_URL = "http://cloud.pipe"
     private static final String USERNAME = "username"
     private static final String PASSWORD = "password"
@@ -45,7 +42,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     Sql sql
     DataSource dataSource
     NodeRegistry registry
-    TillStorage tillStorage
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -66,18 +62,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             );
         """)
 
-        sql.execute("""
-            DROP TABLE IF EXISTS tills;
-            
-            CREATE TABLE tills(
-            host_id VARCHAR PRIMARY KEY NOT NULL,
-            bootstrap_requested timestamp NOT NULL,
-            bootstrap_type VARCHAR NOT NULL,
-            bootstrap_received timestamp
-            );
-        """)
-
-        tillStorage = new PostgreSQLTillStorage(dataSource)
         registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
     }
 
@@ -97,7 +81,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                           password: $PASSWORD
                           roles:
                             - REGISTRY_DELETE
-                            - BOOTSTRAP_TILL
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
                     """
@@ -106,12 +89,12 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .build()
             .registerSingleton(NodeRegistry, registry)
             .registerSingleton(MessageReader, Mock(MessageReader))
-            .registerSingleton(TillStorage, tillStorage)
             .start()
 
         server = context.getBean(EmbeddedServer)
 
         RestAssured.port = server.port
+
         server.start()
         def time = 0
         while (!server.isRunning() && time < SERVER_TIMEOUT_MS) {
@@ -138,7 +121,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
         .when()
-            .post("/v2/registry")
+            .post("/v1/registry")
         .then()
             .statusCode(HttpStatus.UNAUTHORIZED.code)
     }
@@ -158,20 +141,17 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
         .when()
-            .post("/v2/registry")
+            .post("/v1/registry")
         .then()
             .statusCode(200)
-            .body(
-                "bootstrapType", equalTo("NONE"),
-                "requestedToFollow", contains(CLOUD_PIPE_URL)
-            )
+            .body("", equalTo([CLOUD_PIPE_URL]))
     }
 
     def "Can get registry summary"() {
         expect: "We can get info from registry"
         given()
             .when()
-            .get("/v2/registry")
+            .get("/v1/registry")
             .then()
             .statusCode(200)
             .body(
@@ -186,7 +166,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(6735, "http://1.1.1.1:1234", 123, "status", ["http://x"])
 
         when: "we get summary"
-        def request = when().get("/v2/registry")
+        def request = when().get("/v1/registry")
 
         then:
         request.then()
@@ -211,7 +191,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         when: "we get summary"
         def request = given()
             .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
-            .when().get("/v2/registry$query")
+            .when().get("/v1/registry$query")
 
         then:
         request.then()
@@ -241,12 +221,12 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
             .when()
-            .delete("/v2/registry/1234/1.1.1.1")
+            .delete("/v1/registry/1234/1.1.1.1")
             .then()
             .statusCode(200)
 
         then: "node has been deleted, and other groups are unaffected"
-        def request = when().get("/v2/registry")
+        def request = when().get("/v1/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         !request.body().prettyPrint().contains("http://1.1.1.1:1234")
@@ -268,12 +248,12 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .header("Authorization", "Basic $encodedCredentials")
             .contentType("application/json")
             .when()
-            .delete("/v2/registry/1234/1.1.1.1")
+            .delete("/v1/registry/1234/1.1.1.1")
             .then()
             .statusCode(200)
 
         then: "registry has been rebalanced"
-        def request = when().get("/v2/registry")
+        def request = when().get("/v1/registry")
 
         request.then().body(
             "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
@@ -301,12 +281,12 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 .header("Authorization", "Basic $encodedCredentials")
                 .contentType("application/json")
                 .when()
-                .delete("/v2/registry/1234/1.1.1.1")
+                .delete("/v1/registry/1234/1.1.1.1")
                 .then()
                 .statusCode(403)
 
         then: "registry is unaffected by request"
-        def request = when().get("/v2/registry")
+        def request = when().get("/v1/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         request.body().prettyPrint().contains("http://1.1.1.1:1234")
@@ -323,79 +303,17 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         given()
                 .contentType("application/json")
                 .when()
-                .delete("/v2/registry/1234/1.1.1.1")
+                .delete("/v1/registry/1234/1.1.1.1")
                 .then()
                 .statusCode(401)
 
         then: "registry is unaffected by request"
-        def request = when().get("/v2/registry")
+        def request = when().get("/v1/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         request.body().prettyPrint().contains("http://1.1.1.1:1234")
 
         request.then().statusCode(200)
-    }
-
-    @Unroll
-    def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
-        when: "bootstrap is called"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-
-        given()
-            .contentType("application/json")
-        .when()
-            .header("Authorization", "Basic $encodedCredentials")
-            .body("""{
-                "tillHosts": ["0000", "1111", "2222"], 
-                "bootstrapType": "$bootstrapString"
-            }""")
-            .post("/v2/registry/bootstrap")
-        .then()
-            .statusCode(statusCode)
-
-        then: "till is saved"
-        def rows = sql.rows("SELECT * FROM tills;")
-
-        rows.get(0).getProperty("host_id") == "0000"
-        rows.get(0).getProperty("bootstrap_requested") != null
-        rows.get(0).getProperty("bootstrap_type") == bootstrapType
-        rows.get(0).getProperty("bootstrap_received") == null
-
-        rows.get(1).getProperty("host_id") == "1111"
-        rows.get(1).getProperty("bootstrap_requested") != null
-        rows.get(1).getProperty("bootstrap_type") == bootstrapType
-        rows.get(1).getProperty("bootstrap_received") == null
-
-        rows.get(2).getProperty("host_id") == "2222"
-        rows.get(2).getProperty("bootstrap_requested") != null
-        rows.get(2).getProperty("bootstrap_type") == bootstrapType
-        rows.get(2).getProperty("bootstrap_received") == null
-
-        where:
-        bootstrapString     | statusCode | bootstrapType
-        "PROVIDER"          | 200        | BootstrapType.PROVIDER.toString()
-        "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER.toString()
-    }
-
-    def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
-        when: "bootstrap is called"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-
-        given()
-            .contentType("application/json")
-        .when()
-            .header("Authorization", "Basic $encodedCredentials")
-            .body("""{
-                "tillHosts": ["0000", "1111", "2222"], 
-                "bootstrapType": "INVALID"
-             }""")
-            .post("/v2/registry/bootstrap")
-        .then()
-            .statusCode(400)
-
-        then: "till is not saved"
-        def rows = sql.rows("SELECT * FROM tills;")
-        rows.size() == 0
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[CLOUD_PIPE_URL]) {
@@ -411,7 +329,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "following": ["${following.join('", "')}"]
             }""")
         .when()
-            .post("/v2/registry")
+            .post("/v1/registry")
         .then()
             .statusCode(200)
     }
