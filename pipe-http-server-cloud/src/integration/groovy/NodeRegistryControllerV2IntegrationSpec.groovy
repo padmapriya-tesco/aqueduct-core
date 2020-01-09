@@ -399,6 +399,22 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         rows.size() == 0
     }
 
+    def "registry endpoint called by the UI accepts tokens despite them not being required"() {
+        expect: "We can get info from registry with an identity token"
+        def identityToken = UUID.randomUUID().toString()
+        given()
+        .when()
+            .header("Authorization", "Bearer $identityToken")
+            .get("/v2/registry")
+        .then()
+            .statusCode(200)
+            .body(
+                "root.offset", notNullValue(),
+                "root.localUrl", notNullValue(),
+                "root.status", equalTo("ok")
+            )
+    }
+
     private static void registerNode(group, url, offset=0, status="initialising", following=[CLOUD_PIPE_URL]) {
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
         given()
