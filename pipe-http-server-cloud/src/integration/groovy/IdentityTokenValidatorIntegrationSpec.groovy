@@ -1,5 +1,5 @@
-import com.stehno.ersatz.ErsatzServer
 import com.stehno.ersatz.Decoders
+import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.http.PipeStateProvider
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
@@ -121,10 +121,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
         when: 'A secured URL is accessed with the identity token as Bearer'
         RestAssured.given()
-                .header("Authorization", "Bearer $identityToken")
-                .get("/pipe/0")
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.code)
+            .header("Authorization", "Bearer $identityToken")
+            .get("/pipe/0")
+            .then()
+            .statusCode(HttpStatus.FORBIDDEN.code)
 
         then: 'identity was called'
         identityMock.verify()

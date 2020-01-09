@@ -8,7 +8,6 @@ import io.micronaut.core.order.Ordered;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.authentication.AuthenticationUserDetailsAdapter;
-import io.micronaut.security.authentication.DefaultAuthentication;
 import io.micronaut.security.authentication.UserDetails;
 import io.micronaut.security.token.validator.TokenValidator;
 import io.reactivex.Flowable;
@@ -20,7 +19,6 @@ import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Singleton
 @Requires(property = "authentication.identity.url")
@@ -54,7 +52,7 @@ public class IdentityTokenValidator implements TokenValidator {
             return identityTokenValidatorClient
                 .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
                 .filter(ValidateTokenResponse::isTokenValid)
-                .map(ValidateTokenResponse::getUserID)
+                .map(ValidateTokenResponse::getClientUserID)
                 .filter(this::isClientUIDAuthorised)
                 .map(this::toUserDetailsAdapter);
         } catch (HttpClientResponseException e) {
@@ -63,20 +61,21 @@ public class IdentityTokenValidator implements TokenValidator {
         }
     }
 
+    private Boolean isClientUIDAuthorised(String clientId) {
+        return users.stream().anyMatch(u -> u.clientId.equals(clientId));
+    }
+
     private AuthenticationUserDetailsAdapter toUserDetailsAdapter(String clientId) {
         List<String> roles = users.stream()
             .filter(u -> u.clientId.equals(clientId))
-            .map(u -> u.roles == null ? Collections.<String>emptyList() : u.roles)
+            .filter(u -> u.roles != null)
+            .map(u -> u.roles)
             .findFirst()
             .orElse(Collections.emptyList());
 
         UserDetails userDetails = new UserDetails(clientId, roles);
 
         return new AuthenticationUserDetailsAdapter(userDetails, "roles");
-    }
-
-    private Boolean isClientUIDAuthorised(String clientId) {
-        return users.stream().anyMatch(u -> u.clientId.equals(clientId));
     }
 
     //lowest precedence chosen so it is used after others
