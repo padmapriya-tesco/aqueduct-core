@@ -26,13 +26,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
     static final String clientId = UUID.randomUUID().toString()
     static final String secret = UUID.randomUUID().toString()
+    static final String userUID = UUID.randomUUID()
+
     static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
-
-    static final String userUIDA = UUID.randomUUID()
-    static final String clientUserUIDA = "trn:tesco:uid:uuid:${userUIDA}"
-    static final String userUIDB = UUID.randomUUID()
-    static final String clientUserUIDB = "trn:tesco:uid:uuid:${userUIDB}"
-
+    static final String clientUserUID = "trn:tesco:uid:uuid:${userUID}"
     static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
 
     @Shared @AutoCleanup ErsatzServer identityMock
@@ -60,20 +57,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                   users:
                     $USERNAME:
                       password: $PASSWORD
-                      roles:
-                        - PIPE_READ
                   identity:
+                    clientId: $clientUserUID
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
-                    users:
-                      userA:
-                        clientId: $clientUserUIDA
-                        roles:
-                          - PIPE_READ
-                      userB:
-                        clientId: $clientUserUIDB
-                        roles:
-                          - NOT_A_REAL_ROLE
                 """
                 )
             )
@@ -98,10 +85,10 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         RestAssured.port = RestAssured.DEFAULT_PORT
     }
 
-    def 'Http status OK when using a valid identity token with the correct role'() {
+    def 'Http status OK when using a valid identity token'() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUID)
 
         when: 'A secured URL is accessed with the identity token as Bearer'
         RestAssured.given()
@@ -109,22 +96,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             .get("/pipe/0")
             .then()
             .statusCode(HttpStatus.OK.code)
-
-        then: 'identity was called'
-        identityMock.verify()
-    }
-
-    def 'Http status unauthorised when using a valid identity token without correct role'() {
-        given: 'A valid identity token'
-        def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDB)
-
-        when: 'A secured URL is accessed with the identity token as Bearer'
-        RestAssured.given()
-            .header("Authorization", "Bearer $identityToken")
-            .get("/pipe/0")
-            .then()
-            .statusCode(HttpStatus.FORBIDDEN.code)
 
         then: 'identity was called'
         identityMock.verify()
@@ -180,7 +151,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     def "Token validation requests are cached for the duration specified in the config"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUID)
 
         when: 'A secured URL is multiple times with the identity token as Bearer'
         makeValidRequest(identityToken)
@@ -194,7 +165,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         identityMock.clearExpectations()
         sleep CACHE_EXPIRY_SECONDS * 1000
 
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUID)
         makeValidRequest(identityToken)
 
         then: 'Identity is called again'
@@ -219,7 +190,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
         where:
         valid             | clientUID      | statusCode
-        "whitelisted"     | clientUserUIDA | HttpStatus.OK.code
+        "whitelisted"     | clientUserUID  | HttpStatus.OK.code
         "non whitelisted" | "incorrectUID" | HttpStatus.UNAUTHORIZED.code
     }
 

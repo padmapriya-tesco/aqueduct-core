@@ -1,6 +1,5 @@
 import com.tesco.aqueduct.pipe.identity.IdentityTokenValidator
 import com.tesco.aqueduct.pipe.identity.IdentityTokenValidatorClient
-import com.tesco.aqueduct.pipe.identity.TokenUser
 import com.tesco.aqueduct.pipe.identity.ValidateTokenRequest
 import com.tesco.aqueduct.pipe.identity.ValidateTokenResponse
 import io.micronaut.security.authentication.Authentication
@@ -17,9 +16,7 @@ class IdentityTokenValidatorSpec extends Specification {
     @Unroll
     def "Validate #description"() {
         given:
-        TokenUser tokenUser = new TokenUser("name")
-        tokenUser.clientId = clientUid
-        def tokenValidator = new IdentityTokenValidator([tokenUser])
+        def tokenValidator = new IdentityTokenValidator(clientUid)
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
             validateToken(_ as String, _ as ValidateTokenRequest) >> Flowable.just(identityResponse)
         }
