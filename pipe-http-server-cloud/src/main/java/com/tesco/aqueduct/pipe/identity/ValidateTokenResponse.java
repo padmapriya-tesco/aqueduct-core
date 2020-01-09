@@ -2,11 +2,8 @@ package com.tesco.aqueduct.pipe.identity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.micronaut.security.authentication.Authentication;
-import io.micronaut.security.authentication.DefaultAuthentication;
 
 import java.util.Collection;
-import java.util.Collections;
 
 public class ValidateTokenResponse {
     private static final int SERVICE_CONFIDENCE_LEVEL = 12;
@@ -63,7 +60,7 @@ public class ValidateTokenResponse {
         return status.equals("VALID") && confidenceLevel == SERVICE_CONFIDENCE_LEVEL;
     }
 
-    Authentication asAuthentication(){
-        return new DefaultAuthentication(this.userId, Collections.emptyMap());
+    String getClientUserID() {
+        return this.userId;
     }
 }

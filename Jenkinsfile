@@ -139,9 +139,6 @@ ansiColor('xterm') {
                     publisher: {
                         checkRunscopeTests("https://api.runscope.com/radar/b6c232b5-61e3-46e4-bc05-cce4fca3c776/trigger?runscope_environment=33bc19df-7cd7-4f74-b9f2-c77daa59b1cb")
                     },
-                    registry_v1: {
-                        checkRunscopeTests("https://api.runscope.com/radar/b77c33ce-85e8-47c4-ac8c-2b39da1c67cc/trigger?runscope_environment=12c8e270-71fc-480c-9642-d6d693306ae8")
-                    },
                     registry_v2: {
                         checkRunscopeTests("https://api.runscope.com/radar/0d1686a7-d1ca-481b-8cc0-88b4fcd61340/trigger?runscope_environment=1ad753b5-67d6-454a-af00-21ffbf54bd0d")
                     },
@@ -183,9 +180,6 @@ ansiColor('xterm') {
                     },
                     publisher: {
                         checkRunscopeTests("https://api.runscope.com/radar/d51b4186-a47d-4331-87c9-810ad7e0bc4a/trigger?runscope_environment=90bdcabb-c5ff-4af4-8b9e-3016280f7eff")
-                    },
-                    registry_v1: {
-                        checkRunscopeTests("https://api.runscope.com/radar/6f8cba04-d5f8-4873-8ae0-49728a91bcff/trigger?runscope_environment=91af842c-76fe-4bac-b40e-dcd8d06dcd67")
                     },
                     registry_v2: {
                         checkRunscopeTests("https://api.runscope.com/radar/0fd90e73-dc5f-48df-ab01-49ebf4c801f4/trigger?runscope_environment=27189652-3112-42e6-b5a9-f3c060585756")
