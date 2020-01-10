@@ -151,11 +151,33 @@ public class SQLiteStorage implements MessageStorage {
 
     @Override
     public void deleteAllMessages() {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(EventQueries.DELETE_EVENTS_AND_VACUUM)) {
-            statement.execute();
+        try (Connection connection = dataSource.getConnection()){
+            deleteAllEvents(connection);
+            vacuumDatabase(connection);
+            checkpointWalFile(connection);
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
+        }
+    }
+
+    private void deleteAllEvents(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(EventQueries.DELETE_ALL_EVENTS)){
+            statement.execute();
+            LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
+        }
+    }
+
+    private void vacuumDatabase(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(EventQueries.VACUUM_DB)){
+            statement.execute();
+            LOG.info("vacuumDatabase", String.format("Vacuum result: %d", statement.getUpdateCount()));
+        }
+    }
+
+    private void checkpointWalFile(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(EventQueries.CHECKPOINT_DB)) {
+            statement.execute();
+            LOG.info("checkPointDatabase", "checkpointed database");
         }
     }
 
