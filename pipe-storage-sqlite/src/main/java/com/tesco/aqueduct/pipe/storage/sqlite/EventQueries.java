@@ -45,9 +45,9 @@ final class EventQueries {
         return queryBuilder.toString();
     }
 
-    static final String DELETE_EVENTS_AND_VACUUM =
-            "DELETE FROM EVENT; " +
-            "VACUUM;";
+    static final String DELETE_ALL_EVENTS = "DELETE FROM EVENT;";
+    static final String VACUUM_DB = "VACUUM;";
+    static final String CHECKPOINT_DB = "PRAGMA wal_checkpoint(TRUNCATE);";
 
     static void appendFilterByTypes(final StringBuilder queryBuilder, int typesCount) {
         if (typesCount != 0) {
