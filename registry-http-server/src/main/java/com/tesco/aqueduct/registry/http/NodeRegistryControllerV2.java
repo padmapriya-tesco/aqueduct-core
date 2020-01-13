@@ -35,7 +35,7 @@ public class NodeRegistryControllerV2 {
         this.pipe = pipe;
     }
 
-    @Secured(SecurityRule.IS_ANONYMOUS)
+    @Secured(SecurityRule.IS_AUTHENTICATED)
     @Get
     public StateSummary getSummary(@Nullable final List<String> groups) {
         return registry.getSummary(pipe.getLatestOffsetMatching(null), "ok", groups);

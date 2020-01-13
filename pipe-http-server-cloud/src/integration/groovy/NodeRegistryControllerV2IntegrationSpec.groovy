@@ -1,11 +1,14 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.stehno.ersatz.Decoders
+import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import com.tesco.aqueduct.registry.model.TillStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage
+import groovy.json.JsonOutput
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -27,16 +30,30 @@ import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.*
 
 class NodeRegistryControllerV2IntegrationSpec extends Specification {
+    private static final String VALIDATE_TOKEN_BASE_PATH = '/v4/access-token/auth/validate'
     private static final String CLOUD_PIPE_URL = "http://cloud.pipe"
     private static final String USERNAME = "username"
     private static final String PASSWORD = "password"
+    private static final String USERNAME_ENCODED_CREDENTIALS = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
     private static final String USERNAME_TWO = "username-two"
     private static final String PASSWORD_TWO = "password-two"
     private static final int SERVER_TIMEOUT_MS = 5000
     private static final int SERVER_SLEEP_TIME_MS = 500
+    private static final String TILL_CLIENT_UID = "random"
 
+    private static final String clientId = UUID.randomUUID().toString()
+    private static final String secret = UUID.randomUUID().toString()
+    private static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
+
+    private static final String userUIDA = UUID.randomUUID()
+    private static final String clientUserUIDA = "trn:tesco:uid:uuid:${userUIDA}"
+    private static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
+
+    @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
+    @Shared @AutoCleanup NodeRegistry registry
+    @Shared @AutoCleanup TillStorage tillStorage
 
     @ClassRule @Shared
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
@@ -44,8 +61,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     @AutoCleanup
     Sql sql
     DataSource dataSource
-    NodeRegistry registry
-    TillStorage tillStorage
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -81,8 +96,16 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
     }
 
-    void setup() {
+    void setupSpec() {
+        identityMock = new ErsatzServer({
+            decoder('application/json', Decoders.utf8String)
+            reportToConsole()
+        })
+
+        identityMock.start()
+
         setupDatabase()
+
         context = ApplicationContext
             .build()
             .properties(
@@ -91,6 +114,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                     """
                     micronaut.security.enabled: true
                     micronaut.server.port: -1
+                    micronaut.caches.identity-cache.expire-after-write: 1m
+                    micronaut.security.token.jwt.enabled: true
+                    micronaut.security.token.jwt.bearer.enabled: true
                     authentication:
                       users:
                         $USERNAME:
@@ -101,6 +127,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                             - REGISTRY_WRITE
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
+                      identity:
+                        url: ${identityMock.getHttpUrl()}
+                        validate.token.path: $validateTokenPath
+                        users:
+                          till:
+                            clientId: "${TILL_CLIENT_UID}"
+                            roles:
+                              - PIPE_READ
+                              - REGISTRY_WRITE
                     """
                 )
             )
@@ -121,6 +156,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             time += SERVER_SLEEP_TIME_MS
         }
         println("Test setup complete")
+    }
+
+    void setup() {
+        identityMock.clearExpectations()
     }
 
     void cleanupSpec() {
@@ -146,10 +185,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "Can post to registry"() {
         expect: "We can post info to the registry"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-
         given()
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")
             .body("""{
                 "group": "6735",
@@ -171,6 +208,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     def "Can get registry summary"() {
         expect: "We can get info from registry"
         given()
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .when()
             .get("/v2/registry")
             .then()
@@ -399,9 +437,12 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         rows.size() == 0
     }
 
-    def "registry endpoint called by the UI accepts tokens despite them not being required"() {
-        expect: "We can get info from registry with an identity token"
+    def "registry endpoint called by the UI accepts identity tokens"() {
+        given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+
+        when: "We can get info from registry with an identity token"
         given()
         .when()
             .header("Authorization", "Bearer $identityToken")
@@ -413,6 +454,53 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "root.localUrl", notNullValue(),
                 "root.status", equalTo("ok")
             )
+
+        then: 'identity was called'
+        identityMock.verify()
+    }
+
+    def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
+        def json = JsonOutput.toJson([access_token: identityToken])
+
+        identityMock.expectations {
+            post(VALIDATE_TOKEN_BASE_PATH) {
+                queries("client_id": [clientIdAndSecret])
+                body(json, "application/json")
+                called(1)
+
+                responder {
+                    header("Content-Type", "application/json;charset=UTF-8")
+                    body("""
+                        {
+                          "UserId": "${clientUserUID}",
+                          "Status": "VALID",
+                          "Claims": [
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/clientid",
+                              "value": "trn:tesco:cid:${UUID.randomUUID()}"
+                            },
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/scope",
+                              "value": "oob"
+                            },
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/userkey",
+                              "value": "trn:tesco:uid:uuid:${UUID.randomUUID()}"
+                            },
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/confidencelevel",
+                              "value": "12"
+                            },
+                            {
+                              "claimType": "http://schemas.microsoft.com/ws/2008/06/identity/claims/expiration",
+                              "value": "1548413702"
+                            }
+                          ]
+                        }
+                    """)
+                }
+            }
+        }
     }
 
     private static void registerNode(group, url, offset=0, status="initialising", following=[CLOUD_PIPE_URL]) {

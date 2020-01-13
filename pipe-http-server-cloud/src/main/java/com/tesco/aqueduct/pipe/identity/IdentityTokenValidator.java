@@ -53,7 +53,6 @@ public class IdentityTokenValidator implements TokenValidator {
                 .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
                 .filter(ValidateTokenResponse::isTokenValid)
                 .map(ValidateTokenResponse::getClientUserID)
-                .filter(this::isClientUIDAuthorised)
                 .map(this::toUserDetailsAdapter);
         } catch (HttpClientResponseException e) {
             LOG.error("token validator", "validate token", e.getStatus().toString() + " " + e.getResponse().reason());
