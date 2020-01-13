@@ -220,7 +220,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         where:
         valid             | clientUID      | statusCode
         "whitelisted"     | clientUserUIDA | HttpStatus.OK.code
-        "non whitelisted" | "incorrectUID" | HttpStatus.UNAUTHORIZED.code
+        "non whitelisted" | "incorrectUID" | HttpStatus.FORBIDDEN.code
     }
 
     def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
