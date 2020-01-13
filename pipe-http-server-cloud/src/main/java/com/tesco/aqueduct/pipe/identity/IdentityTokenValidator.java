@@ -60,10 +60,6 @@ public class IdentityTokenValidator implements TokenValidator {
         }
     }
 
-    private Boolean isClientUIDAuthorised(String clientId) {
-        return users.stream().anyMatch(u -> u.clientId.equals(clientId));
-    }
-
     private AuthenticationUserDetailsAdapter toUserDetailsAdapter(String clientId) {
         List<String> roles = users.stream()
             .filter(u -> u.clientId.equals(clientId))

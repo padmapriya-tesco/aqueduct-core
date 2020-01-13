@@ -325,15 +325,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 .when().get("/v2/registry")
 
         request.then().body(
-                "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
-                "followers[1].localUrl", equalTo("http://1.1.1.3:0003"),
-                "followers[2].localUrl", equalTo("http://1.1.1.4:0004"),
-                "followers[3].localUrl", equalTo("http://1.1.1.5:0005"),
-                //following lists
-                "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
-                "followers[1].requestedToFollow", equalTo(["http://1.1.1.2:0002", "http://cloud.pipe"]),
-                "followers[2].requestedToFollow", equalTo(["http://1.1.1.2:0002", "http://cloud.pipe"]),
-                "followers[3].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://1.1.1.2:0002", "http://cloud.pipe"])
+            "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
+            "followers[1].localUrl", equalTo("http://1.1.1.3:0003"),
+            "followers[2].localUrl", equalTo("http://1.1.1.4:0004"),
+            "followers[3].localUrl", equalTo("http://1.1.1.5:0005"),
+            //following lists
+            "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.2:0002", "http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.2:0002", "http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://1.1.1.2:0002", "http://cloud.pipe"])
         )
 
         request.then().statusCode(200)
