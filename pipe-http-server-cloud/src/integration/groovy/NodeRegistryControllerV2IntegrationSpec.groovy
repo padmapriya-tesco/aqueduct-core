@@ -1,11 +1,14 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.stehno.ersatz.Decoders
+import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import com.tesco.aqueduct.registry.model.TillStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage
+import groovy.json.JsonOutput
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -27,22 +30,34 @@ import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.*
 
 class NodeRegistryControllerV2IntegrationSpec extends Specification {
+    private static final String VALIDATE_TOKEN_BASE_PATH = '/v4/access-token/auth/validate'
     private static final String CLOUD_PIPE_URL = "http://cloud.pipe"
     private static final String USERNAME = "username"
     private static final String PASSWORD = "password"
+    private static final String USERNAME_ENCODED_CREDENTIALS = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
     private static final String USERNAME_TWO = "username-two"
     private static final String PASSWORD_TWO = "password-two"
     private static final int SERVER_TIMEOUT_MS = 5000
     private static final int SERVER_SLEEP_TIME_MS = 500
+    private static final String TILL_CLIENT_UID = "random"
 
+    private static final String clientId = UUID.randomUUID().toString()
+    private static final String secret = UUID.randomUUID().toString()
+    private static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
+
+    private static final String userUIDA = UUID.randomUUID()
+    private static final String clientUserUIDA = "trn:tesco:uid:uuid:${userUIDA}"
+    private static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
+
+    @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
 
     @ClassRule @Shared
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
-    @AutoCleanup
-    Sql sql
+    @AutoCleanup Sql sql
+
     DataSource dataSource
     NodeRegistry registry
     TillStorage tillStorage
@@ -81,16 +96,30 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
     }
 
+    void setupSpec() {
+        identityMock = new ErsatzServer({
+            decoder('application/json', Decoders.utf8String)
+            reportToConsole()
+        })
+
+        identityMock.start()
+    }
+
     void setup() {
+
         setupDatabase()
+
         context = ApplicationContext
-            .build()
-            .properties(
+                .build()
+                .properties(
                 // enabling security to prove that registry is accessible anyway
                 parseYamlConfig(
-                    """
+                        """
                     micronaut.security.enabled: true
                     micronaut.server.port: -1
+                    micronaut.caches.identity-cache.expire-after-write: 1m
+                    micronaut.security.token.jwt.enabled: true
+                    micronaut.security.token.jwt.bearer.enabled: true
                     authentication:
                       users:
                         $USERNAME:
@@ -101,6 +130,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                             - REGISTRY_WRITE
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
+                      identity:
+                        url: ${identityMock.getHttpUrl()}
+                        validate.token.path: $validateTokenPath
+                        users:
+                          till:
+                            clientId: "${TILL_CLIENT_UID}"
+                            roles:
+                              - PIPE_READ
+                              - REGISTRY_WRITE
                     """
                 )
             )
@@ -109,6 +147,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .registerSingleton(MessageReader, Mock(MessageReader))
             .registerSingleton(TillStorage, tillStorage)
             .start()
+
+        identityMock.clearExpectations()
 
         server = context.getBean(EmbeddedServer)
 
@@ -127,7 +167,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         RestAssured.port = RestAssured.DEFAULT_PORT
     }
 
-    def 'expect unauthorized when not providing username and password to registry'(){
+    def 'expect unauthorized when not providing username and password to registry'() {
         expect:
         given()
             .contentType("application/json")
@@ -146,10 +186,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "Can post to registry"() {
         expect: "We can post info to the registry"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-
         given()
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")
             .body("""{
                 "group": "6735",
@@ -171,9 +209,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     def "Can get registry summary"() {
         expect: "We can get info from registry"
         given()
-            .when()
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+        .when()
             .get("/v2/registry")
-            .then()
+        .then()
             .statusCode(200)
             .body(
                 "root.offset", notNullValue(),
@@ -187,7 +226,11 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(6735, "http://1.1.1.1:1234", 123, "status", ["http://x"])
 
         when: "we get summary"
-        def request = when().get("/v2/registry")
+        def request =
+            given()
+                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            when()
+                .get("/v2/registry")
 
         then:
         request.then()
@@ -211,8 +254,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         when: "we get summary"
         def request = given()
-            .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
-            .when().get("/v2/registry$query")
+                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+                .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
+                .when().get("/v2/registry$query")
 
         then:
         request.then()
@@ -237,17 +281,20 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(4321, "http://1.1.1.1:4321", 123, "status", ["http://y"])
 
         when: "node is deleted"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
         given()
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")
-            .when()
+        .when()
             .delete("/v2/registry/1234/1.1.1.1")
-            .then()
+        .then()
             .statusCode(200)
 
         then: "node has been deleted, and other groups are unaffected"
-        def request = when().get("/v2/registry")
+        def request =
+            given()
+                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when()
+                .get("/v2/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         !request.body().prettyPrint().contains("http://1.1.1.1:1234")
@@ -264,17 +311,18 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(1234, "http://1.1.1.5:0005", 123, "status")
 
         when: "first node is deleted"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
         given()
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")
-            .when()
+        .when()
             .delete("/v2/registry/1234/1.1.1.1")
-            .then()
+        .then()
             .statusCode(200)
 
         then: "registry has been rebalanced"
-        def request = when().get("/v2/registry")
+        def request = given()
+                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+                .when().get("/v2/registry")
 
         request.then().body(
             "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
@@ -283,9 +331,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             "followers[3].localUrl", equalTo("http://1.1.1.5:0005"),
             //following lists
             "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
-            "followers[1].requestedToFollow", equalTo(["http://1.1.1.2:0002","http://cloud.pipe"]),
-            "followers[2].requestedToFollow", equalTo(["http://1.1.1.2:0002","http://cloud.pipe"]),
-            "followers[3].requestedToFollow", equalTo(["http://1.1.1.3:0003","http://1.1.1.2:0002","http://cloud.pipe"])
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.2:0002", "http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.2:0002", "http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://1.1.1.2:0002", "http://cloud.pipe"])
         )
 
         request.then().statusCode(200)
@@ -299,15 +347,19 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         when: "node is deleted"
         def encodedCredentials = "${USERNAME_TWO}:${PASSWORD_TWO}".bytes.encodeBase64().toString()
         given()
-                .header("Authorization", "Basic $encodedCredentials")
-                .contentType("application/json")
-                .when()
-                .delete("/v2/registry/1234/1.1.1.1")
-                .then()
-                .statusCode(403)
+            .header("Authorization", "Basic $encodedCredentials")
+            .contentType("application/json")
+        .when()
+            .delete("/v2/registry/1234/1.1.1.1")
+        .then()
+            .statusCode(403)
 
         then: "registry is unaffected by request"
-        def request = when().get("/v2/registry")
+        def request =
+            given()
+                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when()
+                .get("/v2/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         request.body().prettyPrint().contains("http://1.1.1.1:1234")
@@ -322,14 +374,18 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         when: "node is deleted"
         given()
-                .contentType("application/json")
-                .when()
-                .delete("/v2/registry/1234/1.1.1.1")
-                .then()
-                .statusCode(401)
+            .contentType("application/json")
+        .when()
+            .delete("/v2/registry/1234/1.1.1.1")
+        .then()
+            .statusCode(401)
 
         then: "registry is unaffected by request"
-        def request = when().get("/v2/registry")
+        def request =
+            given()
+                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when()
+                .get("/v2/registry")
 
         request.body().prettyPrint().contains("http://1.1.1.1:4321")
         request.body().prettyPrint().contains("http://1.1.1.1:1234")
@@ -340,12 +396,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     @Unroll
     def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
         when: "bootstrap is called"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-
         given()
             .contentType("application/json")
         .when()
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
                 "tillHosts": ["0000", "1111", "2222"], 
                 "bootstrapType": "$bootstrapString"
@@ -380,12 +434,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
         when: "bootstrap is called"
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-
         given()
             .contentType("application/json")
         .when()
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
                 "tillHosts": ["0000", "1111", "2222"], 
                 "bootstrapType": "INVALID"
@@ -399,12 +451,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         rows.size() == 0
     }
 
-    def "registry endpoint called by the UI accepts tokens despite them not being required"() {
-        expect: "We can get info from registry with an identity token"
+    def "registry endpoint called by the UI accepts identity tokens"() {
+        given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+
+        when: "We can get info from registry with an identity token"
         given()
-        .when()
             .header("Authorization", "Bearer $identityToken")
+        .when()
             .get("/v2/registry")
         .then()
             .statusCode(200)
@@ -412,14 +467,60 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "root.offset", notNullValue(),
                 "root.localUrl", notNullValue(),
                 "root.status", equalTo("ok")
-            )
+        )
+
+        then: 'identity was called'
+        identityMock.verify()
     }
 
-    private static void registerNode(group, url, offset=0, status="initialising", following=[CLOUD_PIPE_URL]) {
-        def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
+    def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
+        def json = JsonOutput.toJson([access_token: identityToken])
+
+        identityMock.expectations {
+            post(VALIDATE_TOKEN_BASE_PATH) {
+                queries("client_id": [clientIdAndSecret])
+                body(json, "application/json")
+                called(1)
+
+                responder {
+                    header("Content-Type", "application/json;charset=UTF-8")
+                    body("""
+                        {
+                          "UserId": "${clientUserUID}",
+                          "Status": "VALID",
+                          "Claims": [
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/clientid",
+                              "value": "trn:tesco:cid:${UUID.randomUUID()}"
+                            },
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/scope",
+                              "value": "oob"
+                            },
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/userkey",
+                              "value": "trn:tesco:uid:uuid:${UUID.randomUUID()}"
+                            },
+                            {
+                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/confidencelevel",
+                              "value": "12"
+                            },
+                            {
+                              "claimType": "http://schemas.microsoft.com/ws/2008/06/identity/claims/expiration",
+                              "value": "1548413702"
+                            }
+                          ]
+                        }
+                    """)
+                }
+            }
+        }
+    }
+
+    private static void registerNode(group, url, offset = 0, status = "initialising", following = [CLOUD_PIPE_URL]) {
         given()
             .contentType("application/json")
-            .header("Authorization", "Basic $encodedCredentials")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
                 "group": "$group",
                 "localUrl": "$url",
