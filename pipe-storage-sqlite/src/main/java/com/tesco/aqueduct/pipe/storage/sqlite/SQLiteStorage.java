@@ -46,7 +46,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(final List<String> types, final long offset) {
+    public MessageResults read(final List<String> types, final long offset, final String locationUuid) {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 

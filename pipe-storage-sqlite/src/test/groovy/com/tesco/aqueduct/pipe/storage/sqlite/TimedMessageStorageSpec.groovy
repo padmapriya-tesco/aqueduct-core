@@ -10,6 +10,7 @@ class TimedMessageStorageSpec extends Specification {
     final Message MOCK_MESSAGE = Mock(Message)
     final List<String> MESSAGE_TYPES = []
     final SimpleMeterRegistry METER_REGISTRY = Spy(SimpleMeterRegistry)
+    final String LOCATION_UUID = "locationUuid"
 
     def "read events are timed"() {
         given: "we have an instance of TimedMessageStorage"
@@ -17,10 +18,10 @@ class TimedMessageStorageSpec extends Specification {
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the read method"
-        timedStorage.read(MESSAGE_TYPES, OFFSET)
+        timedStorage.read(MESSAGE_TYPES, OFFSET, LOCATION_UUID)
 
         then: "the read method is called on the underlying storage"
-        1 * mockedStorage.read(MESSAGE_TYPES,OFFSET)
+        1 * mockedStorage.read(MESSAGE_TYPES, OFFSET, LOCATION_UUID)
     }
 
     def "write message events are timed"() {

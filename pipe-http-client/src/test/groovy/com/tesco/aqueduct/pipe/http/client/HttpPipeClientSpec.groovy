@@ -18,10 +18,10 @@ class HttpPipeClientSpec extends Specification {
         HttpResponse<List<Message>> response = Mock()
         response.body() >> [Mock(Message)]
         response.header("Retry-After") >> retry
-        internalClient.httpRead(_ as List, _ as Long) >> response
+        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read and get defined response back"
-        def results = client.read([], 0)
+        def results = client.read([], 0, "locationUuid")
 
         then: "we parse the retry after if its correct or return 0 otherwise"
         results.messages.size() == 1
