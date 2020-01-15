@@ -57,7 +57,12 @@ public class PipeReadController {
     }
 
     @Get("/pipe/{offset}{?type}")
-    public HttpResponse<List<Message>> readMessages(final long offset, final HttpRequest<?> request, @Nullable final List<String> type, final String storeUuid) {
+    public HttpResponse<List<Message>> readMessages(
+        final long offset,
+        final HttpRequest<?> request,
+        @Nullable final List<String> type,
+        @Nullable final String storeUuid
+    ) {
         if(offset < 0) {
             return HttpResponse.badRequest();
         }
