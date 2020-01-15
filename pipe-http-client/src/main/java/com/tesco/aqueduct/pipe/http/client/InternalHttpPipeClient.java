@@ -23,7 +23,7 @@ public interface InternalHttpPipeClient {
     HttpResponse<List<Message>> httpRead(
         @Nullable List<String> type,
         long offset,
-        String storeUuid
+        String locationUuid
     );
 
     @Get("/pipe/offset/latest{?type}")

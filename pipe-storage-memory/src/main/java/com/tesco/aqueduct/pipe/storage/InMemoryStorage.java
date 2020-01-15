@@ -35,7 +35,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
      * Complexity: O(log(n)+limit)
      */
     @Override
-    public MessageResults read(final List<String> types, final long offset, final String storeUuid) {
+    public MessageResults read(final List<String> types, final long offset, final String locationUuid) {
         final val lock = rwl.readLock();
 
         LOG.withTypes(types).debug("in memory storage", "reading with types");

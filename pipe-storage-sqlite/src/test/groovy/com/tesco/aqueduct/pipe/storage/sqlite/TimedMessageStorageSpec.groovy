@@ -10,7 +10,7 @@ class TimedMessageStorageSpec extends Specification {
     final Message MOCK_MESSAGE = Mock(Message)
     final List<String> MESSAGE_TYPES = []
     final SimpleMeterRegistry METER_REGISTRY = Spy(SimpleMeterRegistry)
-    final String STORE_UUID = "storeUuid"
+    final String STORE_UUID = "locationUuid"
 
     def "read events are timed"() {
         given: "we have an instance of TimedMessageStorage"
