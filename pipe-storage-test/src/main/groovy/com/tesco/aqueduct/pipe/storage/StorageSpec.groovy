@@ -31,7 +31,7 @@ abstract class StorageSpec extends Specification {
         insert(message(offset: null))
 
         when:
-        List<Message> messages = storage.read(null, 0).messages
+        List<Message> messages = storage.read(null, 0, "storeUuid").messages
 
         then:
         messages*.offset == [1,2]
@@ -44,7 +44,7 @@ abstract class StorageSpec extends Specification {
         insert(msg2)
 
         when:
-        List<Message> messages = storage.read(null, 0).messages
+        List<Message> messages = storage.read(null, 0, "storeUuid").messages
 
         then:
         messages*.offset == [102,107]
@@ -56,7 +56,7 @@ abstract class StorageSpec extends Specification {
         insert(msg)
 
         when: "When we read"
-        List<Message> messages = storage.read(null, 0).messages
+        List<Message> messages = storage.read(null, 0, "storeUuid").messages
 
         then: "We get exactly the message we send"
         messages == [msg]
@@ -69,7 +69,7 @@ abstract class StorageSpec extends Specification {
         }
 
         when:
-        def messages = storage.read(null, 0).messages.toList()
+        def messages = storage.read(null, 0, "storeUuid").messages.toList()
 
         then:
         messages.size() == limit
@@ -84,7 +84,7 @@ abstract class StorageSpec extends Specification {
         insert(message(type: "type-v3"))
 
         when:
-        List<Message> messages = storage.read(types, 0).messages
+        List<Message> messages = storage.read(types, 0, "storeUuid").messages
 
         then:
         messages.size() == resultsSize
@@ -108,7 +108,7 @@ abstract class StorageSpec extends Specification {
         insert(msg2)
 
         then:
-        storage.read(null, offset).messages == result
+        storage.read(null, offset, "storeUuid").messages == result
 
         where:
         offset          | result       | rule
@@ -126,7 +126,7 @@ abstract class StorageSpec extends Specification {
         insert(message(key:"x"))
 
         then:
-        storage.read(null, 0).messages.size() == 3
+        storage.read(null, 0, "storeUuid").messages.size() == 3
     }
 
     @Unroll

@@ -84,7 +84,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         }
 
         when:
-        def messages = client.httpRead([type], offset).body()
+        def messages = client.httpRead([type], offset, "storeUuid").body()
 
         def expectedMessage = new Message(
             type,

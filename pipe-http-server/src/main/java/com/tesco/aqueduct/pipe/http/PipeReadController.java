@@ -57,7 +57,7 @@ public class PipeReadController {
     }
 
     @Get("/pipe/{offset}{?type}")
-    public HttpResponse<List<Message>> readMessages(final long offset, final HttpRequest<?> request, @Nullable final List<String> type) {
+    public HttpResponse<List<Message>> readMessages(final long offset, final HttpRequest<?> request, @Nullable final List<String> type, final String storeUuid) {
         if(offset < 0) {
             return HttpResponse.badRequest();
         }
@@ -67,7 +67,7 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
-        final val messageResults = messageReader.read(types, offset);
+        final val messageResults = messageReader.read(types, offset, storeUuid);
 
         //val list = takeMessagesToSizeLimit(messageResults.getMessages(), maxPayloadSizeBytes);
         final val list = messageResults.getMessages();

@@ -144,7 +144,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(message)
 
         and: 'we retrieve the message from the database'
-        MessageResults messageResults = sqliteStorage.read(null, offset)
+        MessageResults messageResults = sqliteStorage.read(null, offset, "storeUuid")
         Message retrievedMessage = messageResults.messages.get(0)
 
         then: 'the message retrieved should be what we saved'
@@ -166,7 +166,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         and: 'we retrieve the message from the database'
-        MessageResults messageResults = sqliteStorage.read(['my-new-type'], offset)
+        MessageResults messageResults = sqliteStorage.read(['my-new-type'], offset, "storeUuid")
         Message retrievedMessage = messageResults.messages.get(0)
 
         then: 'the message retrieved should be what we saved'
@@ -186,7 +186,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'all messages with offset are read'
-        MessageResults messageResults = sqliteStorage.read(null, 2)
+        MessageResults messageResults = sqliteStorage.read(null, 2, "storeUuid")
 
         then: 'multiple messages are retrieved'
         messageResults.messages.size() == 3
@@ -203,7 +203,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'all messages with offset are read'
-        MessageResults messageResults = sqliteStorage.read(null, 2)
+        MessageResults messageResults = sqliteStorage.read(null, 2, "storeUuid")
 
         then: 'multiple messages are retrieved'
         messageResults.messages.size() == 3
@@ -261,7 +261,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(msg3)
 
         when: "reading from the database"
-        MessageResults result = sqliteStorage.read(["type-1"], 0)
+        MessageResults result = sqliteStorage.read(["type-1"], 0, "storeUuid")
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -281,7 +281,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'reading the messages of multiple specified types from a given offset'
-        def receivedMessages = sqliteStorage.read(['type-1', 'type-2'], 1)
+        def receivedMessages = sqliteStorage.read(['type-1', 'type-2'], 1, "storeUuid")
 
         then: 'only the messages matching the multiple specified types from the given offset are returned'
         receivedMessages.messages.size() == 2
@@ -322,7 +322,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'all messages with offset are read'
-        MessageResults messageResults = sqliteStorage.read(null, 1)
+        MessageResults messageResults = sqliteStorage.read(null, 1, "storeUuid")
 
         then: 'the retry after is 0'
         messageResults.retryAfterSeconds == 0
@@ -350,7 +350,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = sqliteStorage.read(null, 1)
+        MessageResults messageResults = sqliteStorage.read(null, 1, "storeUuid")
         List<Message> retrievedMessages = messageResults.messages
 
         then: 'duplicate messages are deleted'
@@ -376,7 +376,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = sqliteStorage.read(null, 1)
+        MessageResults messageResults = sqliteStorage.read(null, 1, "storeUuid")
 
         then: 'duplicate messages are not deleted as they are beyond the threshold'
         messageResults.messages.size() == 4
@@ -403,7 +403,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = sqliteStorage.read(null, 1)
+        MessageResults messageResults = sqliteStorage.read(null, 1, "storeUuid")
 
         then: 'duplicate messages are deleted that are within the threshold'
         messageResults.messages.size() == 7

@@ -29,7 +29,7 @@ public class PostgresqlStorage implements MessageReader {
     }
 
     @Override
-    public MessageResults read(final List<String> types, final long startOffset) {
+    public MessageResults read(final List<String> types, final long startOffset, final String storeUuid) {
         long start = System.currentTimeMillis();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {

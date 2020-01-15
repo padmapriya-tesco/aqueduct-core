@@ -99,7 +99,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         connection.prepareStatement(_ as String) >> preparedStatement
 
         when: "requesting messages with tags specifying a type key"
-        postgresStorage.read(["some_type"], 0)
+        postgresStorage.read(["some_type"], 0, "storeUuid")
 
         then: "a query is created that does not contain tags in the where clause"
         1 * preparedStatement.setString(1, "some_type")
@@ -121,7 +121,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read([], 0)
+        MessageResults result = storage.read([], 0, "storeUuid")
 
         then: "messages that are returned are no larger than the maximum batch size when reading with a type"
         result.messages.size() == 2
@@ -142,7 +142,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read(["type-1"], 0)
+        MessageResults result = storage.read(["type-1"], 0, "storeUuid")
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -155,7 +155,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([], 0)
+        MessageResults result = storage.read([], 0, "storeUuid")
 
         then:
         result.retryAfterSeconds == 0
@@ -169,7 +169,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([], 4)
+        MessageResults result = storage.read([], 4, "storeUuid")
 
         then:
         result.retryAfterSeconds > 0
@@ -180,7 +180,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "I have no records in the integrated database"
 
         when:
-        MessageResults result = storage.read([], 0)
+        MessageResults result = storage.read([], 0,"storeUuid")
 
         then:
         result.retryAfterSeconds > 0
@@ -197,7 +197,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults result = storage.read(null, 0)
+        MessageResults result = storage.read(null, 0, "storeUuid")
         List<Message> retrievedMessages = result.messages
 
         then: 'duplicate messages are deleted'
@@ -219,7 +219,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = storage.read(null, 1)
+        MessageResults messageResults = storage.read(null, 1, "storeUuid")
 
         then: 'duplicate messages are not deleted as they are beyond the threshold'
         messageResults.messages.size() == 4
@@ -243,7 +243,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = storage.read(null, 1)
+        MessageResults messageResults = storage.read(null, 1, "storeUuid")
 
         then: 'duplicate messages are deleted that are within the threshold'
         messageResults.messages.size() == 7

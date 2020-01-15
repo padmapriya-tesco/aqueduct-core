@@ -24,8 +24,8 @@ public class TimedMessageStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(final List<String> types, final long offset) {
-        return readTimer.record(() -> storage.read(types, offset));
+    public MessageResults read(final List<String> types, final long offset, final String storeUuid) {
+        return readTimer.record(() -> storage.read(types, offset, storeUuid));
     }
 
     @Override

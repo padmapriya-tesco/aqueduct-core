@@ -26,8 +26,8 @@ public class HttpPipeClient implements MessageReader {
     }
 
     @Override
-    public MessageResults read(@Nullable final List<String> types, final long offset) {
-        final HttpResponse<List<Message>> response = client.httpRead(types, offset);
+    public MessageResults read(@Nullable final List<String> types, final long offset, final String storeUuid) {
+        final HttpResponse<List<Message>> response = client.httpRead(types, offset, storeUuid);
 
         final long retryAfter = Optional
             .ofNullable(response.header("Retry-After"))
