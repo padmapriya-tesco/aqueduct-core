@@ -199,9 +199,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .body(equalTo(response))
 
         where:
-        type    | statusCode  | headerName                    | headerValue           | response
-        'type1' |  200         | 'Global-Latest-Offset'        | '101'                 | '[]'
-        'type2' |  200         | 'Global-Latest-Offset'        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
+        type    | statusCode    | headerName                    | headerValue           | response
+        'type1' |  200          | 'Global-Latest-Offset'        | '101'                 | '[]'
+        'type2' |  200          | 'Global-Latest-Offset'        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
     }
 
     @Unroll

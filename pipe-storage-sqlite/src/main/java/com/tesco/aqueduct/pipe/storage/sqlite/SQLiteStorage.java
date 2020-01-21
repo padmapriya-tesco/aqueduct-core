@@ -32,7 +32,7 @@ public class SQLiteStorage implements MessageStorage {
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
 
         createEventTableIfNotExists();
-        createGlobalLatestOffsetTableIfNotExists();
+        createOffsetTableIfNotExists();
     }
 
     private void createEventTableIfNotExists() {
@@ -46,9 +46,9 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    private void createGlobalLatestOffsetTableIfNotExists() {
+    private void createOffsetTableIfNotExists() {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CREATE_GLOBAL_LATEST_OFFSET_TABLE)) {
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_TABLE)) {
 
             statement.execute();
         } catch (SQLException e) {

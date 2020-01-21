@@ -15,8 +15,9 @@ final class SQLiteQueries {
         " event_size int NOT NULL" +
         ");";
 
-    static final String CREATE_GLOBAL_LATEST_OFFSET_TABLE =
-        "CREATE TABLE IF NOT EXISTS GLOBAL_LATEST_OFFSET( " +
+    static final String OFFSET_TABLE =
+        "CREATE TABLE IF NOT EXISTS OFFSET( " +
+        " name varchar PRIMARY KEY NOT NULL," +
         " offset bigint NOT NULL" +
         ");";
 
