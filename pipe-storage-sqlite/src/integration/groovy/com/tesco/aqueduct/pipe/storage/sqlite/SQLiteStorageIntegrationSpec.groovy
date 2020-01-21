@@ -101,9 +101,9 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         then: 'the events table is created'
         def tableExists = false
-        sql.query("SELECT name FROM sqlite_master WHERE type='table' AND name='GLOBAL_LATEST_OFFSET';", {
+        sql.query("SELECT name FROM sqlite_master WHERE type='table' AND name='OFFSET';", {
             it.next()
-            tableExists = it.getString("name") == 'GLOBAL_LATEST_OFFSET'
+            tableExists = it.getString("name") == 'OFFSET'
         })
 
         tableExists
