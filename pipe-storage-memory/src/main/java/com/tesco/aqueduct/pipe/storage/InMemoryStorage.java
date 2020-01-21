@@ -44,16 +44,17 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
             lock.lock();
 
             final int index = findIndex(offset);
+            final long globalLatestOffset = messages.stream().mapToLong(Message::getOffset).max().orElse(0L);
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(types,index), 0);
+                return new MessageResults(readFrom(types,index), 0, globalLatestOffset);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(types,-index-1), retry);
+                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset);
             }
         } finally {
             lock.unlock();

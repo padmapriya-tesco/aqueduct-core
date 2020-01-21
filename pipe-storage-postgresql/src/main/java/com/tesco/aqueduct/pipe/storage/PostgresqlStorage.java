@@ -34,14 +34,14 @@ public class PostgresqlStorage implements MessageReader {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {
 
-            final long maxOffset = getLatestOffsetMatchingWithConnection(connection, types);
-            final long retry = startOffset >= maxOffset ? retryAfter : 0;
+            final long globalLatestOffset = getLatestOffsetMatchingWithConnection(connection, Collections.emptyList());
+            final long retry = startOffset >= globalLatestOffset ? retryAfter : 0;
 
             LOG.withTypes(types).debug("postgresql storage", "reading with types");
 
             final List<Message> messages = runMessagesQuery(messagesQuery);
 
-            return new MessageResults(messages, retry);
+            return new MessageResults(messages, retry, globalLatestOffset);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);

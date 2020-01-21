@@ -31,12 +31,24 @@ public class SQLiteStorage implements MessageStorage {
         this.retryAfterSeconds = retryAfterSeconds;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
 
-        createEventTableIfExists();
+        createEventTableIfNotExists();
+        createGlobalLatestOffsetTableIfNotExists();
     }
 
-    private void createEventTableIfExists() {
+    private void createEventTableIfNotExists() {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.CREATE_EVENT_TABLE)) {
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CREATE_EVENT_TABLE)) {
+
+            statement.execute();
+        } catch (SQLException e) {
+
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createGlobalLatestOffsetTableIfNotExists() {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CREATE_GLOBAL_LATEST_OFFSET_TABLE)) {
 
             statement.execute();
         } catch (SQLException e) {
@@ -52,7 +64,7 @@ public class SQLiteStorage implements MessageStorage {
 
         try (
             Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(EventQueries.getReadEvent(typesCount, maxBatchSize))
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getReadEvent(typesCount, maxBatchSize))
         ) {
             int parameterIndex = 1;
             statement.setLong(parameterIndex++, offset);
@@ -72,7 +84,7 @@ public class SQLiteStorage implements MessageStorage {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()));
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), 0L); // TODO: need to pass right offset
     }
 
     public int calculateRetryAfter(final int messageCount) {
@@ -105,7 +117,7 @@ public class SQLiteStorage implements MessageStorage {
 
         try (
             Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(EventQueries.getLastOffsetQuery(typesCount))
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getLastOffsetQuery(typesCount))
         ) {
             for (int i = 0; i < typesCount; i++) {
                 statement.setString(i + 1, types.get(i));
@@ -122,7 +134,7 @@ public class SQLiteStorage implements MessageStorage {
     @Override
     public void write(final Iterable<Message> messages) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INSERT_EVENT)) {
             connection.setAutoCommit(false);
 
             for (final Message message : messages) {
@@ -140,7 +152,7 @@ public class SQLiteStorage implements MessageStorage {
     @Override
     public void write(final Message message) {
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(EventQueries.INSERT_EVENT)) {
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INSERT_EVENT)) {
             setStatementParametersForInsertMessageQuery(statement, message);
 
             statement.execute();
@@ -161,21 +173,21 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     private void deleteAllEvents(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(EventQueries.DELETE_ALL_EVENTS)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_ALL_EVENTS)){
             statement.execute();
             LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
         }
     }
 
     private void vacuumDatabase(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(EventQueries.VACUUM_DB)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.VACUUM_DB)){
             statement.execute();
             LOG.info("vacuumDatabase", String.format("Vacuum result: %d", statement.getUpdateCount()));
         }
     }
 
     private void checkpointWalFile(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(EventQueries.CHECKPOINT_DB)) {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CHECKPOINT_DB)) {
             statement.execute();
             LOG.info("checkPointDatabase", "checkpointed database");
         }
@@ -184,7 +196,7 @@ public class SQLiteStorage implements MessageStorage {
     public void compactUpTo(final ZonedDateTime zonedDateTime) {
         // We may want a interface - Compactable - for this method signature
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(EventQueries.COMPACT)) {
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.COMPACT)) {
             Timestamp threshold = Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
             statement.setTimestamp(1, threshold);
             statement.setTimestamp(2, threshold);

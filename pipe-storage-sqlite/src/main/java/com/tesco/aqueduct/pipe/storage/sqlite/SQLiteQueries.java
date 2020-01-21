@@ -3,7 +3,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-final class EventQueries {
+final class SQLiteQueries {
     static final String CREATE_EVENT_TABLE =
         "CREATE TABLE IF NOT EXISTS EVENT( " +
         " msg_offset bigint PRIMARY KEY NOT NULL," +
@@ -13,6 +13,11 @@ final class EventQueries {
         " created_utc timestamp NOT NULL," +
         " data text NULL," +
         " event_size int NOT NULL" +
+        ");";
+
+    static final String CREATE_GLOBAL_LATEST_OFFSET_TABLE =
+        "CREATE TABLE IF NOT EXISTS GLOBAL_LATEST_OFFSET( " +
+        " offset bigint NOT NULL" +
         ");";
 
     static final String INSERT_EVENT =

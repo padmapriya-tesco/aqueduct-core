@@ -75,7 +75,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         return dataSource
     }
 
-    def 'events table gets  created upon start up'() {
+    def 'events table gets created upon start up'() {
         given: 'a connection to the database is established'
         def sql = Sql.newInstance(connectionUrl)
 
@@ -87,6 +87,23 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sql.query("SELECT name FROM sqlite_master WHERE type='table' AND name='EVENT';", {
             it.next()
             tableExists = it.getString("name") == 'EVENT'
+        })
+
+        tableExists
+    }
+
+    def 'global latest offset table gets created upon start up'() {
+        given: 'a connection to the database is established'
+        def sql = Sql.newInstance(connectionUrl)
+
+        when: 'the SQLiteStorage class is instantiated'
+        new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        then: 'the events table is created'
+        def tableExists = false
+        sql.query("SELECT name FROM sqlite_master WHERE type='table' AND name='GLOBAL_LATEST_OFFSET';", {
+            it.next()
+            tableExists = it.getString("name") == 'GLOBAL_LATEST_OFFSET'
         })
 
         tableExists
@@ -309,6 +326,27 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         then: 'the latest offset for the messages with one of the types is returned'
         latestOffset == 3
+    }
+
+    def 'retrieves the global latest offset'() {
+        given: 'multiple messages to be stored'
+        def messages = [
+                message(1, 'type-1'),
+                message(2, 'type-2'),
+                message(3, 'type-3')
+        ]
+
+        and: 'a data store controller exists'
+        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        and: 'these messages are stored'
+        sqliteStorage.write(messages)
+
+        when: 'requesting the global latest offset'
+        def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
+
+        then: 'the latest offset for the messages with one of the types is returned'
+        messageResults.getGlobalLatestOffset() == 3
     }
 
     def 'messages are ready from the database with the correct retry after'() {

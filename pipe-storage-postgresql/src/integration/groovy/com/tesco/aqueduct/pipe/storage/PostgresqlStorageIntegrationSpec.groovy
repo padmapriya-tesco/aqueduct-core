@@ -8,6 +8,7 @@ import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
+import spock.lang.Unroll
 
 import javax.sql.DataSource
 import java.sql.Connection
@@ -250,6 +251,26 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
 
+    }
+
+    @Unroll
+    def 'Global latest offset is returned'() {
+        given: 'an existing data store with two different types of messages'
+        insert(message(1, "type1","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type2","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type3","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read([type], 0, locationUuid)
+
+        then: 'global latest offset is type and locationUuid independent'
+        messageResults.globalLatestOffset == 3
+
+        where:
+        type    | locationUuid
+        "type1" | "locationUuid1"
+        "type2" | "locationUuid2"
+        "type3" | "locationUuid3"
     }
 
     @Override
