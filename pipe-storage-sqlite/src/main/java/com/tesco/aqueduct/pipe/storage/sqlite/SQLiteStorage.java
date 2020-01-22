@@ -36,25 +36,15 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     private void createEventTableIfNotExists() {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CREATE_EVENT_TABLE)) {
-
-            statement.execute();
-        } catch (SQLException e) {
-
-            throw new RuntimeException(e);
-        }
+        execute(
+            SQLiteQueries.CREATE_EVENT_TABLE,
+            (connection, statement) -> statement.execute());
     }
 
     private void createOffsetTableIfNotExists() {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_TABLE)) {
-
-            statement.execute();
-        } catch (SQLException e) {
-
-            throw new RuntimeException(e);
-        }
+        execute(
+            SQLiteQueries.OFFSET_TABLE,
+            (connection, statement) -> statement.execute());
     }
 
     @Override
