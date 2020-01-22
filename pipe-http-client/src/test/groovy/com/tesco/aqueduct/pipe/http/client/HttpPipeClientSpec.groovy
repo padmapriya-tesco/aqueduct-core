@@ -18,6 +18,7 @@ class HttpPipeClientSpec extends Specification {
         HttpResponse<List<Message>> response = Mock()
         response.body() >> [Mock(Message)]
         response.header("Retry-After") >> retry
+        response.header("Global-Latest-Offset") >> 0L
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read and get defined response back"
@@ -34,6 +35,21 @@ class HttpPipeClientSpec extends Specification {
         "5"   | 5
         "-5"  | 0
         "foo" | 0
+    }
+
+    // Ensure backwards compatible, need to update to throw error once all tills have latest software
+    def "if no global offset is available in the header, call getLatestOffsetMatching"() {
+        given: "call returns a http response with retry after header"
+        HttpResponse<List<Message>> response = Mock()
+        response.body() >> [Mock(Message)]
+        response.header("Retry-After") >> 1
+        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
+
+        when: "we call read"
+        client.read([], 0, "locationUuid")
+
+        then: "getLatestOffsetMatching is called"
+        1 * internalClient.getLatestOffsetMatching(_)
     }
 
     def "allows to get latest offset"() {
