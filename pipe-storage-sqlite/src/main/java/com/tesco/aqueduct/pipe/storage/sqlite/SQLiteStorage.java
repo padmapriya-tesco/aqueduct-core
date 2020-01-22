@@ -62,28 +62,26 @@ public class SQLiteStorage implements MessageStorage {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getReadEvent(typesCount, maxBatchSize))
-        ) {
-            int parameterIndex = 1;
-            statement.setLong(parameterIndex++, offset);
+        execute(
+            SQLiteQueries.getReadEvent(typesCount, maxBatchSize),
+            (connection, statement) -> {
+                int parameterIndex = 1;
+                statement.setLong(parameterIndex++, offset);
 
-            for (int i = 0; i < typesCount; i++, parameterIndex++) {
-                statement.setString(parameterIndex, types.get(i));
-            }
+                for (int i = 0; i < typesCount; i++, parameterIndex++) {
+                    statement.setString(parameterIndex, types.get(i));
+                }
 
-            statement.setLong(parameterIndex, limit);
+                statement.setLong(parameterIndex, limit);
 
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    retrievedMessages.add(mapRetrievedMessageFromResultSet(resultSet));
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        retrievedMessages.add(mapRetrievedMessageFromResultSet(resultSet));
+                    }
                 }
             }
+        );
 
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
         return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalOffset());
     }
 
@@ -115,62 +113,81 @@ public class SQLiteStorage implements MessageStorage {
     public long getLatestOffsetMatching(final List<String> types) {
         final int typesCount = types == null ? 0 : types.size();
 
-        try (
-            Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getLastOffsetQuery(typesCount))
-        ) {
-            for (int i = 0; i < typesCount; i++) {
-                statement.setString(i + 1, types.get(i));
-            }
+        return executeGet(
+            SQLiteQueries.getLastOffsetQuery(typesCount),
+            (connection, statement) -> {
+                for (int i = 0; i < typesCount; i++) {
+                    statement.setString(i + 1, types.get(i));
+                }
 
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.getLong("last_offset");
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    return resultSet.getLong("last_offset");
+                }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        );
     }
 
     private long getGlobalOffset() {
-        try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getOffset("global"));
-
-            ResultSet resultSet = statement.executeQuery();
-            return resultSet.getLong("offset");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return executeGet(
+            SQLiteQueries.getOffset("globalLatestOffset"),
+            (connection, statement) -> {
+                ResultSet resultSet = statement.executeQuery();
+                return resultSet.getLong("offset");
+            }
+        );
     }
 
     @Override
     public void write(final Iterable<Message> messages) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INSERT_EVENT)) {
-            connection.setAutoCommit(false);
+        execute(SQLiteQueries.INSERT_EVENT,
+            (connection, statement) -> {
+                connection.setAutoCommit(false);
 
-            for (final Message message : messages) {
-                setStatementParametersForInsertMessageQuery(statement, message);
-                statement.addBatch();
-            }
+                for (final Message message : messages) {
+                    setStatementParametersForInsertMessageQuery(statement, message);
+                    statement.addBatch();
+                }
 
-            statement.executeBatch();
-            connection.commit();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+                statement.executeBatch();
+                connection.commit();
+            });
     }
 
     @Override
     public void write(final Message message) {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INSERT_EVENT)) {
-            setStatementParametersForInsertMessageQuery(statement, message);
+        execute(
+            SQLiteQueries.INSERT_EVENT,
+            (connection, statement) -> {
+                setStatementParametersForInsertMessageQuery(statement, message);
+                statement.execute();
+            }
+        );
+    }
 
-            statement.execute();
+    private void execute(String query, SqlConsumer consumer) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            consumer.accept(connection, statement);
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
         }
+    }
+
+    private <T> T executeGet(String query, SqlFunction<T> function) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            return function.apply(connection, statement);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private interface SqlConsumer {
+        void accept(Connection connection, PreparedStatement statement) throws SQLException;
+    }
+
+    private interface SqlFunction<T> {
+        T apply(Connection connection, PreparedStatement statement) throws SQLException;
     }
 
     @Override

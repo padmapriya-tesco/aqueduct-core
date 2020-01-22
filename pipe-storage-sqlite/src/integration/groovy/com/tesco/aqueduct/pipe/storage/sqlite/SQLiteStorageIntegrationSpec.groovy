@@ -17,6 +17,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
     long batchSize = 1000
     long maxOverheadBatchSize = (Message.MAX_OVERHEAD_SIZE * limit) + batchSize
+    private sqliteStorage
 
     ZonedDateTime currentUTCTime() {
         ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
@@ -60,6 +61,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         sql.execute("DROP TABLE IF EXISTS EVENT;")
         sql.execute("DROP TABLE IF EXISTS OFFSET;")
+
+        sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        sql.execute("INSERT INTO OFFSET (name, offset) VALUES ('globalLatestOffset',  3);")
     }
 
     def successfulDataSource() {
@@ -116,10 +121,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'a message'
         Message message = message(offset)
 
-        when: 'we use the SQLiteStorage to create a connection'
-        SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
-        and: 'store the message to the database'
+        when: 'store the message to the database'
         sqliteStorage.write(message)
 
         then: 'the message is stored with no errors'
@@ -129,9 +131,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'multiple messages are written to the database'() {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2)]
-
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
@@ -155,10 +154,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'a message'
         Message message = message(offset)
 
-        when: 'we use the sqliteStorage to create a connection'
-        SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
-        and: 'store the message to the database'
+        when: 'store the message to the database'
         sqliteStorage.write(message)
 
         and: 'we retrieve the message from the database'
@@ -177,10 +173,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def expectedMessage = message(offset, 'my-new-type')
         Iterable<Message> messages = [expectedMessage, message(offset + 1L, 'my-other-type')]
 
-        when: 'we use the sqliteStorage to create a connection'
-        SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
-        and: 'store multiple messages with different types to the database'
+        when: 'store multiple messages with different types to the database'
         sqliteStorage.write(messages)
 
         and: 'we retrieve the message from the database'
@@ -196,9 +189,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'multiple messages can be read from the database starting from a given offset'() {
         given: 'multipe messages to be stored'
         def messages = [message(1), message(2), message(3), message(4)]
-
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
         and: 'these messages stored'
         sqliteStorage.write(messages)
@@ -231,9 +221,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2), message(3), message(4)]
 
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
         and: 'these messages are stored'
         sqliteStorage.write(messages)
 
@@ -247,9 +234,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'retrieves the latest offset for a given type'() {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2, 'my-new-type'), message(3), message(4)]
-
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
         and: 'these messages are stored'
         sqliteStorage.write(messages)
@@ -270,9 +254,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def msg2 = message(2, "type-1", "x"*messageSize)
         def msg3 = message(3, "type-1", "x"*messageSize)
 
-        and: "a data store controller exists"
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
         and: "they are inserted into the integrated database"
         sqliteStorage.write(msg1)
         sqliteStorage.write(msg2)
@@ -291,9 +272,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
                         message(2, 'type-1'),
                         message(3, 'type-2'),
                         message(4)]
-
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
         and: 'these messages are stored'
         sqliteStorage.write(messages)
@@ -316,9 +294,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
             message(4)
         ]
 
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
         and: 'these messages are stored'
         sqliteStorage.write(messages)
 
@@ -330,16 +305,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
     }
 
     def 'retrieves the global latest offset'() {
-        given: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+        given: 'offset table exists with globalLatestOffset'
+        // setup creates the table and populates globalLatestOffset
 
-        and: 'a database table exists to be written to'
-        def sql = Sql.newInstance(connectionUrl)
-
-        and: 'a global offset is present in the table'
-        sql.execute("INSERT INTO OFFSET (name, offset) VALUES ('global',  3);")
-
-        when: 'requesting the global latest offset'
+        when: 'performing a read into the database'
         def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
 
         then: 'the latest offset for the messages with one of the types is returned'
@@ -378,7 +347,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
                 message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
                 message(3, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z"))
         ]
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
         sqliteStorage.write(messages)
 
         when: 'compaction is run on the whole data store'
@@ -404,7 +372,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
                 message(3, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
                 message(4, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
         ]
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
         sqliteStorage.write(messages)
 
         when: 'compaction is run up to the timestamp of offset 1'
@@ -431,7 +398,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
                 message(7, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
                 message(8, "D", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
         ]
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
         sqliteStorage.write(messages)
 
         when: 'compaction is run up to the timestamp of offset 4'
@@ -450,14 +416,11 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2)]
 
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
-
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
 
         and: 'these messages are written'
-        sqliteStorage.write(messages)
+        this.sqliteStorage.write(messages)
 
         and: 'all messages are written to the data store'
         def firstSize = 0
@@ -469,7 +432,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         firstSize == 2
 
         when:
-        sqliteStorage.deleteAllMessages()
+        this.sqliteStorage.deleteAllMessages()
 
         then:
         def secondSize = 0
