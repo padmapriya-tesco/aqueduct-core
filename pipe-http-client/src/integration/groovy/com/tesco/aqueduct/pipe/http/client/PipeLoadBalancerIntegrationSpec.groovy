@@ -72,6 +72,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
 
                 responder {
                     header("Retry-After", "0")
+                    header("Global-Latest-Offset", "10")
                     contentType('application/json')
                     body("""[
                         {
@@ -102,6 +103,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
 
                 responder {
                     header("Retry-After", "0")
+                    header("Global-Latest-Offset", "10")
                     contentType('application/json')
                     body("""[
                         {
@@ -149,6 +151,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                 called(1)
                 responder {
                     header("Retry-After", "0")
+                    header("Global-Latest-Offset", "10")
                     contentType('application/json')
                     body("""[
                         {

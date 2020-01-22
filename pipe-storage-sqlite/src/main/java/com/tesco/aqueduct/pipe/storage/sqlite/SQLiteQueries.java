@@ -19,11 +19,15 @@ final class SQLiteQueries {
         "CREATE TABLE IF NOT EXISTS OFFSET( " +
         " id INTEGER PRIMARY KEY AUTOINCREMENT," +
         " name varchar UNIQUE NOT NULL," +
-        " offset bigint NOT NULL" +
+        " value bigint NOT NULL" +
         ");";
 
     static final String INSERT_EVENT =
             "INSERT INTO EVENT (msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES (?,?,?,?,?,?,?);";
+
+    static final String UPSERT_OFFSET =
+            "INSERT INTO OFFSET (name, value) VALUES (?,?)" +
+            " ON CONFLICT(name) DO UPDATE SET VALUE = ?;";
 
     static final String COMPACT =
             "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";

@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.pipe.storage.sqlite;
 
-import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.pipe.api.Message;
-import com.tesco.aqueduct.pipe.api.MessageResults;
-import com.tesco.aqueduct.pipe.api.MessageStorage;
+import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.slf4j.LoggerFactory;
 
@@ -152,6 +149,18 @@ public class SQLiteStorage implements MessageStorage {
                 statement.execute();
             }
         );
+    }
+
+    @Override
+    public void write(Offset offset) {
+        execute(
+            SQLiteQueries.UPSERT_OFFSET,
+            (Connection, statement) -> {
+                statement.setString(1, offset.getName());
+                statement.setLong(2, offset.getValue());
+                statement.setLong(3, offset.getValue());
+                statement.execute();
+            });
     }
 
     private void execute(String query, SqlConsumer consumer) {

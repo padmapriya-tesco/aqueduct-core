@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.api.Offset
 import com.tesco.aqueduct.pipe.storage.sqlite.SQLiteStorage
 import spock.lang.Specification
 
@@ -30,7 +31,18 @@ class SQLiteStorageSpec extends Specification {
         )
     }
 
+    def dataSource
+    def sqliteStorage
+
     def setup() {
+        dataSource = Mock(DataSource)
+
+        dataSource.getConnection() >>
+                DriverManager.getConnection(connectionUrl) >>
+                DriverManager.getConnection(connectionUrl) >>
+                {throw new SQLException()}
+
+        sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
     }
 
     def message(long offset) {
@@ -39,9 +51,6 @@ class SQLiteStorageSpec extends Specification {
 
     def 'throws an exception if a problem with the database arises when reading messages'() {
         given: 'a data store controller exists with a broken connection url'
-        def dataSource = Mock(DataSource)
-        dataSource.getConnection() >> DriverManager.getConnection(connectionUrl) >> { throw new SQLException() }
-        def sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'messages are requested to be read from a given offset'
         sqliteStorage.read([], 0)
@@ -52,9 +61,6 @@ class SQLiteStorageSpec extends Specification {
 
     def 'throws an exception if a problem with the database arises when writing messages'() {
         given: 'a data store controller exists with a broken connection url'
-        def dataSource = Mock(DataSource)
-        dataSource.getConnection() >> DriverManager.getConnection(connectionUrl) >> { throw new SQLException() }
-        def sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'the latest offset is requested'
         sqliteStorage.write(message(1))
@@ -65,9 +71,6 @@ class SQLiteStorageSpec extends Specification {
 
     def 'throws an exception if a problem with the database arises when retrieving latest offset'() {
         given: 'a data store controller exists with a broken connection url'
-        def dataSource = Mock(DataSource)
-        dataSource.getConnection() >> DriverManager.getConnection(connectionUrl) >> { throw new SQLException() }
-        def sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'the latest offset is requested'
         sqliteStorage.getLatestOffsetMatching([:])
@@ -76,11 +79,25 @@ class SQLiteStorageSpec extends Specification {
         thrown(RuntimeException)
     }
 
+    def 'throws an exception if a problem with the database arises when writing latest offset'() {
+        given: 'a data store controller exists with a broken connection url'
+
+        when: 'the latest offset is requested'
+        sqliteStorage.write(new Offset("someOffsetName", 100))
+
+        then: 'a runtime exception is thrown'
+        thrown(RuntimeException)
+    }
+
     def 'retry read time limit should be activated only when the amount of received messages is 0'() {
         given: 'a data store controller'
-        def dataSource = Mock(DataSource)
         def retryAfter = 10
-        dataSource.getConnection() >> DriverManager.getConnection(connectionUrl) >> { throw new SQLException() }
+        def dataSource = Mock(DataSource)
+        dataSource.getConnection() >>
+                DriverManager.getConnection(connectionUrl) >>
+                DriverManager.getConnection(connectionUrl) >>
+                { throw new SQLException() }
+
         def sqliteStorage = new SQLiteStorage(dataSource, testLimit, retryAfter, batchSize)
 
         when: 'the retry after is calculated'

@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.pipe.storage;
 
-import com.tesco.aqueduct.pipe.api.Message;
-import com.tesco.aqueduct.pipe.api.MessageReader;
-import com.tesco.aqueduct.pipe.api.MessageResults;
-import com.tesco.aqueduct.pipe.api.MessageWriter;
+import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import lombok.val;
 import org.slf4j.LoggerFactory;
@@ -24,6 +21,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     final private ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 
     final private List<Message> messages = new ArrayList<>();
+    final private Map<String, Long> offsets = new HashMap<>();
     final private int limit;
 
     public InMemoryStorage(final int limit, final long retryAfter) {
@@ -137,7 +135,22 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
             }
 
             messages.add(message);
-        }finally {
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void write(Offset offset) {
+        final val lock = rwl.writeLock();
+
+        LOG.withOffset(offset).info("in memory storage", "writing offset");
+
+        try {
+            lock.lock();
+
+            offsets.put(offset.getName(), offset.getValue());
+        } finally {
             lock.unlock();
         }
     }

@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
+import com.tesco.aqueduct.pipe.api.Offset
 import groovy.sql.Sql
 import org.sqlite.SQLiteDataSource
 import spock.lang.Specification
@@ -64,7 +65,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
-        sql.execute("INSERT INTO OFFSET (name, offset) VALUES ('globalLatestOffset',  3);")
+        sql.execute("INSERT INTO OFFSET (name, value) VALUES ('globalLatestOffset',  3);")
     }
 
     def successfulDataSource() {
@@ -442,5 +443,51 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
 
         secondSize == 0
+    }
+
+    def 'offset is written into the OFFSET table'() {
+        given: "an offset to be written into the database"
+        def name = 'an-offset'
+        Offset offset = new Offset(name, 1113)
+
+        and: 'a database table exists to be written to'
+        def sql = Sql.newInstance(connectionUrl)
+
+        when: "the offset is written"
+        sqliteStorage.write(offset)
+
+        then: "the offset is stored into the database"
+        Offset result
+        sql.query("SELECT name, value FROM OFFSET WHERE name = '$name'", {
+            it.next()
+            result = new Offset(it.getString(1), it.getLong(2))
+        })
+
+        result == offset
+    }
+
+    def 'offset is updated when already present in OFFSET table'() {
+        given: "an offset to be written into the database"
+        def name = 'an-offset'
+        Offset offset = new Offset(name, 1113)
+
+        and: 'a database table exists to be written to'
+        def sql = Sql.newInstance(connectionUrl)
+
+        when: "the offset is written"
+        sqliteStorage.write(offset)
+
+        and: "the offset is updated"
+        Offset updatedOffset = new Offset(name, 1114)
+        sqliteStorage.write(updatedOffset)
+
+        then: "the offset is stored into the database"
+        Offset result
+        sql.query("SELECT name, value FROM OFFSET WHERE name = '$name'", {
+            it.next()
+            result = new Offset(it.getString(1), it.getLong(2))
+        })
+
+        result == updatedOffset
     }
 }

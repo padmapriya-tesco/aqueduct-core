@@ -28,7 +28,7 @@ public class HttpPipeClient implements MessageReader {
     @Override
     public MessageResults read(@Nullable final List<String> types, final long offset, final String locationUuid) {
         final HttpResponse<List<Message>> response = client.httpRead(types, offset, locationUuid);
-        final Long latestGlobalOffset;
+        final long latestGlobalOffset;
 
         // Ensure backwards compatible, need to update to throw error once all tills have latest software
         if (getGlobalOffsetHeader(response) == null) {

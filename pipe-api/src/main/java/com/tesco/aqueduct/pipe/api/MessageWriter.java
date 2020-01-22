@@ -11,5 +11,6 @@ public interface MessageWriter {
     }
 
     void write(Message message);
+    void write(Offset offset);
     void deleteAllMessages();
 }
