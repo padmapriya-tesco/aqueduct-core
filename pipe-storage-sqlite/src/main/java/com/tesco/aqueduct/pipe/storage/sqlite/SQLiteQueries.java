@@ -17,7 +17,8 @@ final class SQLiteQueries {
 
     static final String OFFSET_TABLE =
         "CREATE TABLE IF NOT EXISTS OFFSET( " +
-        " name varchar PRIMARY KEY NOT NULL," +
+        " id INTEGER PRIMARY KEY AUTOINCREMENT," +
+        " name varchar UNIQUE NOT NULL," +
         " offset bigint NOT NULL" +
         ");";
 
@@ -49,6 +50,10 @@ final class SQLiteQueries {
         ;
 
         return queryBuilder.toString();
+    }
+
+    static String getOffset(final String name) {
+        return "SELECT name, offset FROM OFFSET WHERE name = '" + name + "'";
     }
 
     static final String DELETE_ALL_EVENTS = "DELETE FROM EVENT;";

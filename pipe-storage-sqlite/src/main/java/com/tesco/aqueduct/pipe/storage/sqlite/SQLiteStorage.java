@@ -84,7 +84,7 @@ public class SQLiteStorage implements MessageStorage {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), 0L); // TODO: need to pass right offset
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalOffset());
     }
 
     public int calculateRetryAfter(final int messageCount) {
@@ -126,6 +126,18 @@ public class SQLiteStorage implements MessageStorage {
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.getLong("last_offset");
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private long getGlobalOffset() {
+        try {
+            Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getOffset("global"));
+
+            ResultSet resultSet = statement.executeQuery();
+            return resultSet.getLong("offset");
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

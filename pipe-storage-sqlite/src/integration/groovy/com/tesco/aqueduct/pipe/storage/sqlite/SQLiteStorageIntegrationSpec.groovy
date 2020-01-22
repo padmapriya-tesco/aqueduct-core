@@ -59,6 +59,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def sql = Sql.newInstance(connectionUrl)
 
         sql.execute("DROP TABLE IF EXISTS EVENT;")
+        sql.execute("DROP TABLE IF EXISTS OFFSET;")
     }
 
     def successfulDataSource() {
@@ -329,18 +330,14 @@ class SQLiteStorageIntegrationSpec extends Specification {
     }
 
     def 'retrieves the global latest offset'() {
-        given: 'multiple messages to be stored'
-        def messages = [
-                message(1, 'type-1'),
-                message(2, 'type-2'),
-                message(3, 'type-3')
-        ]
-
-        and: 'a data store controller exists'
+        given: 'a data store controller exists'
         def sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
-        and: 'these messages are stored'
-        sqliteStorage.write(messages)
+        and: 'a database table exists to be written to'
+        def sql = Sql.newInstance(connectionUrl)
+
+        and: 'a global offset is present in the table'
+        sql.execute("INSERT INTO OFFSET (name, offset) VALUES ('global',  3);")
 
         when: 'requesting the global latest offset'
         def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
