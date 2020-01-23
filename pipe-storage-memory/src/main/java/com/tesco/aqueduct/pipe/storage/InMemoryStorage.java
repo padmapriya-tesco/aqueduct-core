@@ -149,7 +149,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
         try {
             lock.lock();
 
-            offsets.put(offset.getName(), offset.getValue());
+            offsets.put(offset.getName(), offset.getValue().getAsLong());
         } finally {
             lock.unlock();
         }

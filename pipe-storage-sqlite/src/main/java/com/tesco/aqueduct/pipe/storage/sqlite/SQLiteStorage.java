@@ -157,8 +157,8 @@ public class SQLiteStorage implements MessageStorage {
             SQLiteQueries.UPSERT_OFFSET,
             (Connection, statement) -> {
                 statement.setString(1, offset.getName());
-                statement.setLong(2, offset.getValue());
-                statement.setLong(3, offset.getValue());
+                statement.setLong(2, offset.getValue().getAsLong());
+                statement.setLong(3, offset.getValue().getAsLong());
                 statement.execute();
             });
     }

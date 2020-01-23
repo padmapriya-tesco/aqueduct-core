@@ -108,7 +108,7 @@ public class PipeLogger {
     public PipeLogger withOffset(OffsetEntity offset) {
         final Map<String, String> fields = new HashMap<>();
         fields.put("name", offset.getName());
-        fields.put("value", Long.toString(offset.getValue()));
+        fields.put("value", offset.getValue().toString());
         return new PipeLogger(this, fields);
     }
 }
