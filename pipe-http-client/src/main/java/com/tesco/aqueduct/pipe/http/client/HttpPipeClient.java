@@ -30,7 +30,7 @@ public class HttpPipeClient implements MessageReader {
         final HttpResponse<List<Message>> response = client.httpRead(types, offset, locationUuid);
         final long latestGlobalOffset;
 
-        // Ensure backwards compatible, need to update to throw error once all tills have latest software
+        // TODO - Ensure backwards compatible, need to update to throw error once all tills have latest software
         if (getGlobalOffsetHeader(response) == null) {
             latestGlobalOffset = getLatestOffsetMatching(types);
         } else {
