@@ -34,14 +34,14 @@ public class PostgresqlStorage implements MessageReader {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {
 
-            final long maxOffset = getLatestOffsetMatchingWithConnection(connection, types);
-            final long retry = startOffset >= maxOffset ? retryAfter : 0;
+            final long globalLatestOffset = getLatestOffsetWithConnection(connection);
+            final long retry = startOffset >= globalLatestOffset ? retryAfter : 0;
 
             LOG.withTypes(types).debug("postgresql storage", "reading with types");
 
             final List<Message> messages = runMessagesQuery(messagesQuery);
 
-            return new MessageResults(messages, retry);
+            return new MessageResults(messages, retry, globalLatestOffset);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);
@@ -61,6 +61,11 @@ public class PostgresqlStorage implements MessageReader {
         }
     }
 
+    private long getLatestOffsetWithConnection(Connection connection) throws SQLException {
+        return getLatestOffsetMatchingWithConnection(connection, Collections.emptyList());
+    }
+
+    // TODO - Remove the types parameter once we remove getLatestOffset endpoint from PipeReadController
     private long getLatestOffsetMatchingWithConnection(final Connection connection, final List<String> types)
             throws SQLException {
         long start = System.currentTimeMillis();

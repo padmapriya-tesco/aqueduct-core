@@ -182,6 +182,29 @@ class PipeReadControllerIntegrationSpec extends Specification {
     }
 
     @Unroll
+    void "pipe signals next offset despite messages not routed"() {
+        given:
+        storage.write([
+            Message("type2", "b", "ct", 101, null, null)
+        ])
+
+        when:
+        def request = RestAssured.get("/pipe/0?type=$type")
+
+        then:
+        request
+            .then()
+            .statusCode(statusCode)
+            .header(headerName, headerValue)
+            .body(equalTo(response))
+
+        where:
+        type    | statusCode    | headerName                    | headerValue           | response
+        'type1' |  200          | 'Global-Latest-Offset'        | '101'                 | '[]'
+        'type2' |  200          | 'Global-Latest-Offset'        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
+    }
+
+    @Unroll
     void "responds with messages - #requestPath"() {
         given:
         storage.write(

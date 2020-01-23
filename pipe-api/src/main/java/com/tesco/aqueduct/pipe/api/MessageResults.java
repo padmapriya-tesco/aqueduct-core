@@ -8,4 +8,5 @@ import java.util.List;
 public class MessageResults {
     private final List<Message> messages;
     private final long retryAfterSeconds;
+    private final long globalLatestOffset;
 }

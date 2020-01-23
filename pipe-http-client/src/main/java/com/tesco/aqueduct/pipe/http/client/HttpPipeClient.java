@@ -29,6 +29,7 @@ public class HttpPipeClient implements MessageReader {
     public MessageResults read(@Nullable final List<String> types, final long offset, final String locationUuid) {
         final HttpResponse<List<Message>> response = client.httpRead(types, offset, locationUuid);
 
+        final long latestGlobalOffset = getLatestGlobalOffset(types, response);
         final long retryAfter = Optional
             .ofNullable(response.header("Retry-After"))
             .map(value -> {
@@ -41,7 +42,23 @@ public class HttpPipeClient implements MessageReader {
             .map(value -> Long.max(0, value))
             .orElse(0L);
 
-        return new MessageResults(response.body(), retryAfter);
+        return new MessageResults(response.body(), retryAfter, latestGlobalOffset);
+    }
+
+    private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {
+        long latestGlobalOffset;
+
+        // TODO - Ensure backwards compatible, need to update to throw error once all tills have latest software
+        if (getGlobalOffsetHeader(response) == null) {
+            latestGlobalOffset = getLatestOffsetMatching(types);
+        } else {
+            latestGlobalOffset = Long.valueOf(getGlobalOffsetHeader(response));
+        }
+        return latestGlobalOffset;
+    }
+
+    private String getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
+        return response.header("Global-Latest-Offset");
     }
 
     @Override

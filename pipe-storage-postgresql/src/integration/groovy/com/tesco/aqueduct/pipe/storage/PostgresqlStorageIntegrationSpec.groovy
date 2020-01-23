@@ -8,6 +8,7 @@ import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
+import spock.lang.Unroll
 
 import javax.sql.DataSource
 import java.sql.Connection
@@ -102,7 +103,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         postgresStorage.read(["some_type"], 0, "locationUuid")
 
         then: "a query is created that does not contain tags in the where clause"
-        1 * preparedStatement.setString(1, "some_type")
+        0 * preparedStatement.setString(1, "some_type")
         0 * preparedStatement.setString(_ as Integer, '{}')
     }
 
@@ -250,6 +251,62 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
 
+    }
+
+    @Unroll
+    def 'Global latest offset is returned'() {
+        given: 'an existing data store with two different types of messages'
+        insert(message(1, "type1","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type2","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type3","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read([type], 0, locationUuid)
+
+        then: 'global latest offset is type and locationUuid independent'
+        messageResults.globalLatestOffset == 3
+
+        where:
+        type    | locationUuid
+        "type1" | "locationUuid1"
+        "type2" | "locationUuid2"
+        "type3" | "locationUuid3"
+    }
+
+    @Unroll
+    def 'pipe should always return messages if there any left for a given type'(){
+        given: "there is postgres storage"
+        def limit = 3
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize)
+
+        and: 'an existing data store with two different types of messages'
+        insert(message(1, "type1","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type1","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type1","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type2","D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type2","E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(6, "type2","F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(7, "type1","G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(8, "type1","H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(9, "type1","I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read(["type1"], 0, "some-location")
+
+        then: 'duplicate messages are deleted that are within the threshold'
+        messageResults.messages.size() == 3
+        messageResults.messages*.key == ["A", "B", "C"]
+        messageResults.messages*.offset*.intValue() == [1, 2, 3]
+        messageResults.globalLatestOffset == 9
+
+        when:
+        messageResults = storage.read(["type1"], 4, "some-location")
+
+        then:
+        messageResults.messages.size() == 3
+        messageResults.messages*.key == ["G", "H", "I"]
+        messageResults.messages*.offset*.intValue() == [7, 8, 9]
+        messageResults.globalLatestOffset == 9
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageStorage
+import com.tesco.aqueduct.pipe.api.OffsetEntity
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import spock.lang.Specification
 
@@ -59,4 +60,21 @@ class TimedMessageStorageSpec extends Specification {
         then: "the get latest method is called on the underlying storage"
         1 * mockedStorage.getLatestOffsetMatching(MESSAGE_TYPES)
     }
+
+    def "write offset events are timed"() {
+        given: "we have an instance of TimedMessageStorage"
+        def mockedStorage = Mock(MessageStorage)
+        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+
+        and: "offset to write"
+        def offset = new OffsetEntity("someOffset", 12)
+
+        when: "we write the offset"
+        timedStorage.write(offset)
+
+        then: "the write offset is called on the underlying storage"
+        1 * mockedStorage.write(offset)
+    }
+
+
 }
