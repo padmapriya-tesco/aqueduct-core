@@ -273,6 +273,42 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         "type3" | "locationUuid3"
     }
 
+    @Unroll
+    def 'pipe should always return messages if there any left for a given type'(){
+        given: "there is postgres storage"
+        def limit = 3
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize)
+
+        and: 'an existing data store with two different types of messages'
+        insert(message(1, "type1","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type1","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type1","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type2","D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type2","E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(6, "type2","F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(7, "type1","G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(8, "type1","H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(9, "type1","I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read(["type1"], 0, "some-location")
+
+        then: 'duplicate messages are deleted that are within the threshold'
+        messageResults.messages.size() == 3
+        messageResults.messages*.key == ["A", "B", "C"]
+        messageResults.messages*.offset*.intValue() == [1, 2, 3]
+        messageResults.globalLatestOffset == 9
+
+        when:
+        messageResults = storage.read(["type1"], 4, "some-location")
+
+        then:
+        messageResults.messages.size() == 3
+        messageResults.messages*.key == ["G", "H", "I"]
+        messageResults.messages*.offset*.intValue() == [7, 8, 9]
+        messageResults.globalLatestOffset == 9
+    }
+
     @Override
     void insert(Message msg, int maxMessageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime()) ) {
 
