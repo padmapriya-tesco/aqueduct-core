@@ -67,7 +67,7 @@ class TimedMessageStorageSpec extends Specification {
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
         and: "offset to write"
-        def offset = new OffsetEntity("someOffset", 12)
+        def offset = new OffsetEntity("someOffset", OptionalLong.of(12))
 
         when: "we write the offset"
         timedStorage.write(offset)
