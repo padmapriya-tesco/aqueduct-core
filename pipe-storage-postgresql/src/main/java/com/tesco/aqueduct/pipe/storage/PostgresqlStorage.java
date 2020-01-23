@@ -65,6 +65,7 @@ public class PostgresqlStorage implements MessageReader {
         return getLatestOffsetMatchingWithConnection(connection, Collections.emptyList());
     }
 
+    // TODO - Remove the types parameter once we remove getLatestOffset endpoint from PipeReadController
     private long getLatestOffsetMatchingWithConnection(final Connection connection, final List<String> types)
             throws SQLException {
         long start = System.currentTimeMillis();
