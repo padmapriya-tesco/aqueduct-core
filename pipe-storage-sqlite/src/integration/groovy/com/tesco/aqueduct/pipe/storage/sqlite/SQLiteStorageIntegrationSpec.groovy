@@ -313,7 +313,20 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
 
         then: 'the latest offset for the messages with one of the types is returned'
-        messageResults.getGlobalLatestOffset() == 3
+        messageResults.getGlobalLatestOffset() == OptionalLong.of(3)
+    }
+
+    def 'retrieves the global latest offset when it does not exist'() {
+        given: 'offset table exists with no globalLatestOffset'
+        def sql = Sql.newInstance(connectionUrl)
+        sql.execute("DROP TABLE IF EXISTS OFFSET;")
+        sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        when: 'performing a read into the database'
+        def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
+
+        then: 'the latest offset for the messages with one of the types is returned'
+        messageResults.getGlobalLatestOffset() == OptionalLong.empty()
     }
 
     def 'messages are ready from the database with the correct retry after'() {

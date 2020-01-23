@@ -12,6 +12,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 
 public class SQLiteStorage implements MessageStorage {
 
@@ -114,12 +115,16 @@ public class SQLiteStorage implements MessageStorage {
         );
     }
 
-    private long getGlobalOffset() {
+    private OptionalLong getGlobalOffset() {
         return executeGet(
             SQLiteQueries.getOffset("globalLatestOffset"),
             (connection, statement) -> {
                 ResultSet resultSet = statement.executeQuery();
-                return resultSet.getLong("value");
+                if (resultSet.next()) {
+                    return OptionalLong.of(resultSet.getLong("value"));
+                } else {
+                    return OptionalLong.empty();
+                }
             }
         );
     }
