@@ -57,7 +57,7 @@ final class SQLiteQueries {
     }
 
     static String getOffset(final String name) {
-        return "SELECT name, offset FROM OFFSET WHERE name = '" + name + "'";
+        return "SELECT name, value FROM OFFSET WHERE name = '" + name + "'";
     }
 
     static final String DELETE_ALL_EVENTS = "DELETE FROM EVENT;";
