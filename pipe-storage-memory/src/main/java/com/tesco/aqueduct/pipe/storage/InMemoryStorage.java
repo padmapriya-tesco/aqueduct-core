@@ -141,7 +141,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     }
 
     @Override
-    public void write(Offset offset) {
+    public void write(OffsetEntity offset) {
         final val lock = rwl.writeLock();
 
         LOG.withOffset(offset).info("in memory storage", "writing offset");

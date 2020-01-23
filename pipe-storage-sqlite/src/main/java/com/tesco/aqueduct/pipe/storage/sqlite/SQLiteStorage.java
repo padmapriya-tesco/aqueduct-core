@@ -152,7 +152,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public void write(Offset offset) {
+    public void write(OffsetEntity offset) {
         execute(
             SQLiteQueries.UPSERT_OFFSET,
             (Connection, statement) -> {

@@ -1,8 +1,7 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.Offset
-import com.tesco.aqueduct.pipe.storage.sqlite.SQLiteStorage
+import com.tesco.aqueduct.pipe.api.OffsetEntity
 import spock.lang.Specification
 
 import javax.sql.DataSource
@@ -83,7 +82,7 @@ class SQLiteStorageSpec extends Specification {
         given: 'a data store controller exists with a broken connection url'
 
         when: 'the latest offset is requested'
-        sqliteStorage.write(new Offset("someOffsetName", 100))
+        sqliteStorage.write(new OffsetEntity("someOffsetName", 100))
 
         then: 'a runtime exception is thrown'
         thrown(RuntimeException)

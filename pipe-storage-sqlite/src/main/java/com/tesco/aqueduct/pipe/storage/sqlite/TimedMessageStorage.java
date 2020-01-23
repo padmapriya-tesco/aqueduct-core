@@ -3,7 +3,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite;
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageResults;
 import com.tesco.aqueduct.pipe.api.MessageStorage;
-import com.tesco.aqueduct.pipe.api.Offset;
+import com.tesco.aqueduct.pipe.api.OffsetEntity;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -45,7 +45,7 @@ public class TimedMessageStorage implements MessageStorage {
     }
 
     @Override
-    public void write(Offset offset) {
+    public void write(OffsetEntity offset) {
         writeMessagesTimer.record(() -> storage.write(offset));
     }
 
