@@ -103,7 +103,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         postgresStorage.read(["some_type"], 0, "locationUuid")
 
         then: "a query is created that does not contain tags in the where clause"
-        1 * preparedStatement.setString(1, "some_type")
+        0 * preparedStatement.setString(1, "some_type")
         0 * preparedStatement.setString(_ as Integer, '{}')
     }
 

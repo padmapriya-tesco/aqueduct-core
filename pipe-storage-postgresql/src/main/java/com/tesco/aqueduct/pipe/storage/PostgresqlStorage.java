@@ -34,7 +34,7 @@ public class PostgresqlStorage implements MessageReader {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset)) {
 
-            final long globalLatestOffset = getLatestOffsetMatchingWithConnection(connection, Collections.emptyList());
+            final long globalLatestOffset = getLatestOffsetWithConnection(connection);
             final long retry = startOffset >= globalLatestOffset ? retryAfter : 0;
 
             LOG.withTypes(types).debug("postgresql storage", "reading with types");
@@ -59,6 +59,10 @@ public class PostgresqlStorage implements MessageReader {
             LOG.error("postgresql storage", "get latest offeset matching", exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    private long getLatestOffsetWithConnection(Connection connection) throws SQLException {
+        return getLatestOffsetMatchingWithConnection(connection, Collections.emptyList());
     }
 
     private long getLatestOffsetMatchingWithConnection(final Connection connection, final List<String> types)
