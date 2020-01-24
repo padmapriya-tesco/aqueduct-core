@@ -81,7 +81,11 @@ public class PipeReadController {
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
 
-        return HttpResponse.ok(list).header("Retry-After", String.valueOf(retryTime)).header("Global-Latest-Offset", Long.toString(messageResults.getGlobalLatestOffset()));
+        final long globalLatestOffset = messageResults.getGlobalLatestOffset().getAsLong();
+
+        return HttpResponse.ok(list)
+                .header("Retry-After", String.valueOf(retryTime))
+                .header("Global-Latest-Offset", Long.toString(globalLatestOffset));
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {

@@ -313,7 +313,20 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
 
         then: 'the latest offset for the messages with one of the types is returned'
-        messageResults.getGlobalLatestOffset() == 3
+        messageResults.getGlobalLatestOffset() == OptionalLong.of(3)
+    }
+
+    def 'retrieves the global latest offset as empty when it does not exist'() {
+        given: 'offset table exists with no globalLatestOffset'
+        def sql = Sql.newInstance(connectionUrl)
+        sql.execute("DROP TABLE IF EXISTS OFFSET;")
+        sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        when: 'performing a read into the database'
+        def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
+
+        then: 'the latest offset for the messages with one of the types is returned'
+        messageResults.getGlobalLatestOffset() == OptionalLong.empty()
     }
 
     def 'messages are ready from the database with the correct retry after'() {
@@ -448,7 +461,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'offset is written into the OFFSET table'() {
         given: "an offset to be written into the database"
         def name = 'an-offset'
-        OffsetEntity offset = new OffsetEntity(name, 1113)
+        OffsetEntity offset = new OffsetEntity(name, OptionalLong.of(1113))
 
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
@@ -460,7 +473,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         OffsetEntity result
         sql.query("SELECT name, value FROM OFFSET WHERE name = '$name'", {
             it.next()
-            result = new OffsetEntity(it.getString(1), it.getLong(2))
+            result = new OffsetEntity(it.getString(1), OptionalLong.of(it.getLong(2)))
         })
 
         result == offset
@@ -469,7 +482,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'offset is updated when already present in OFFSET table'() {
         given: "an offset to be written into the database"
         def name = 'an-offset'
-        OffsetEntity offset = new OffsetEntity(name, 1113)
+        OffsetEntity offset = new OffsetEntity(name, OptionalLong.of(1113))
 
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
@@ -478,14 +491,14 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(offset)
 
         and: "the offset is updated"
-        OffsetEntity updatedOffset = new OffsetEntity(name, 1114)
+        OffsetEntity updatedOffset = new OffsetEntity(name, OptionalLong.of(1114))
         sqliteStorage.write(updatedOffset)
 
         then: "the offset is stored into the database"
         OffsetEntity result
         sql.query("SELECT name, value FROM OFFSET WHERE name = '$name'", {
             it.next()
-            result = new OffsetEntity(it.getString(1), it.getLong(2))
+            result = new OffsetEntity(it.getString(1), OptionalLong.of(it.getLong(2)))
         })
 
         result == updatedOffset

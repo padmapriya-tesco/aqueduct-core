@@ -41,7 +41,7 @@ public class PostgresqlStorage implements MessageReader {
 
             final List<Message> messages = runMessagesQuery(messagesQuery);
 
-            return new MessageResults(messages, retry, globalLatestOffset);
+            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);
@@ -96,7 +96,7 @@ public class PostgresqlStorage implements MessageReader {
 
                 messages.add(new Message(type, key, contentType, offset, created, data));
             }
-        }finally {
+        } finally {
             long end = System.currentTimeMillis();
             LOG.info("runMessagesQuery:time", Long.toString(end - start));
         }

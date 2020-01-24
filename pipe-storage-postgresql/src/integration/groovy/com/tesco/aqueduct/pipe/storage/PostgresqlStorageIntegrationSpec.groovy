@@ -264,7 +264,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def messageResults = storage.read([type], 0, locationUuid)
 
         then: 'global latest offset is type and locationUuid independent'
-        messageResults.globalLatestOffset == 3
+        messageResults.globalLatestOffset == OptionalLong.of(3)
 
         where:
         type    | locationUuid
@@ -297,7 +297,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages.size() == 3
         messageResults.messages*.key == ["A", "B", "C"]
         messageResults.messages*.offset*.intValue() == [1, 2, 3]
-        messageResults.globalLatestOffset == 9
+        messageResults.globalLatestOffset == OptionalLong.of(9)
 
         when:
         messageResults = storage.read(["type1"], 4, "some-location")
@@ -306,7 +306,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages.size() == 3
         messageResults.messages*.key == ["G", "H", "I"]
         messageResults.messages*.offset*.intValue() == [7, 8, 9]
-        messageResults.globalLatestOffset == 9
+        messageResults.globalLatestOffset == OptionalLong.of(9)
     }
 
     @Override

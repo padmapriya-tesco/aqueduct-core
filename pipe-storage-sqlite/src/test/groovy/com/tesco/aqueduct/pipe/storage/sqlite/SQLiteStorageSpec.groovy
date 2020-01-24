@@ -31,7 +31,7 @@ class SQLiteStorageSpec extends Specification {
     }
 
     def dataSource
-    def sqliteStorage
+    SQLiteStorage sqliteStorage
 
     def setup() {
         dataSource = Mock(DataSource)
@@ -81,11 +81,29 @@ class SQLiteStorageSpec extends Specification {
     def 'throws an exception if a problem with the database arises when writing latest offset'() {
         given: 'a data store controller exists with a broken connection url'
 
-        when: 'the latest offset is requested'
-        sqliteStorage.write(new OffsetEntity("someOffsetName", 100))
+        when: 'the latest offset is written'
+        sqliteStorage.write(new OffsetEntity("someOffsetName", OptionalLong.of(100)))
 
         then: 'a runtime exception is thrown'
         thrown(RuntimeException)
+    }
+
+    def 'throws an exception if no offset value provided when writing latest offset'() {
+        given: 'a data store controller and sqlite storage exists'
+        def dataSource = Mock(DataSource)
+        dataSource.getConnection() >>> [
+            DriverManager.getConnection(connectionUrl),
+            DriverManager.getConnection(connectionUrl),
+            DriverManager.getConnection(connectionUrl)
+        ]
+
+        def sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
+
+        when: 'the latest offset is written with empty value'
+        sqliteStorage.write(new OffsetEntity("someOffsetName", OptionalLong.empty()))
+
+        then: 'no such element exception is thrown'
+        thrown(NoSuchElementException)
     }
 
     def 'retry read time limit should be activated only when the amount of received messages is 0'() {

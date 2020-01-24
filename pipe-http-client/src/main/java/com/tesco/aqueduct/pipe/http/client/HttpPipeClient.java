@@ -12,6 +12,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 @Named("remote")
 public class HttpPipeClient implements MessageReader {
@@ -42,7 +43,7 @@ public class HttpPipeClient implements MessageReader {
             .map(value -> Long.max(0, value))
             .orElse(0L);
 
-        return new MessageResults(response.body(), retryAfter, latestGlobalOffset);
+        return new MessageResults(response.body(), retryAfter, OptionalLong.of(latestGlobalOffset));
     }
 
     private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {
@@ -52,7 +53,7 @@ public class HttpPipeClient implements MessageReader {
         if (getGlobalOffsetHeader(response) == null) {
             latestGlobalOffset = getLatestOffsetMatching(types);
         } else {
-            latestGlobalOffset = Long.valueOf(getGlobalOffsetHeader(response));
+            latestGlobalOffset = Long.parseLong(getGlobalOffsetHeader(response));
         }
         return latestGlobalOffset;
     }
