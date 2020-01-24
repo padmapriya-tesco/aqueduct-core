@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe.storage.sqlite;
 
+import com.tesco.aqueduct.pipe.api.OffsetName;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,8 +63,8 @@ final class SQLiteQueries {
         return queryBuilder.toString();
     }
 
-    static String getOffset(final String name) {
-        return "SELECT name, value FROM OFFSET WHERE name = '" + name + "'";
+    static String getOffset(final OffsetName name) {
+        return "SELECT name, value FROM OFFSET WHERE name = '" + name.toString() + "'";
     }
 
     static void appendFilterByTypes(final StringBuilder queryBuilder, int typesCount) {

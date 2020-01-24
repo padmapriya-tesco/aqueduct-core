@@ -10,6 +10,8 @@ import java.sql.SQLException
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
+import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET
+
 class SQLiteStorageSpec extends Specification {
 
     static final def connectionUrl = "jdbc:sqlite:aqueduct-pipe.db"
@@ -100,7 +102,7 @@ class SQLiteStorageSpec extends Specification {
         def sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'the latest offset is written with empty value'
-        sqliteStorage.write(new OffsetEntity("someOffsetName", OptionalLong.empty()))
+        sqliteStorage.write(new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.empty()))
 
         then: 'no such element exception is thrown'
         thrown(NoSuchElementException)

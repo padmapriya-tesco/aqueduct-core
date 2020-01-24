@@ -11,6 +11,8 @@ import spock.lang.Specification
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
+import static com.tesco.aqueduct.pipe.api.OffsetName.*
+
 class SQLiteStorageIntegrationSpec extends Specification {
 
     static final def connectionUrl = "jdbc:sqlite:aqueduct-pipe.db"
@@ -18,7 +20,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
     long batchSize = 1000
     long maxOverheadBatchSize = (Message.MAX_OVERHEAD_SIZE * limit) + batchSize
-    private sqliteStorage
+    private SQLiteStorage sqliteStorage
 
     ZonedDateTime currentUTCTime() {
         ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
@@ -65,7 +67,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
-        sql.execute("INSERT INTO OFFSET (name, value) VALUES ('globalLatestOffset',  3);")
+        sql.execute("INSERT INTO OFFSET (name, value) VALUES ('${GLOBAL_LATEST_OFFSET.toString()}',  3);")
     }
 
     def successfulDataSource() {
@@ -430,17 +432,13 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2)]
 
-        and: 'offset to be stored'
-        def offset = new OffsetEntity('someOffsetName', OptionalLong.of(10))
+        and: 'offset exist already' // from setup
 
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
 
         and: 'these messages are written'
         this.sqliteStorage.write(messages)
-
-        and: 'offset is written'
-        this.sqliteStorage.write(offset)
 
         and: 'all messages are written to the data store'
         def messagesFirstSize = 0
@@ -458,7 +456,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
             offsetFirstSize = it.getInt(1)
         })
 
-        assert offsetFirstSize == 2
+        assert offsetFirstSize == 1
 
         when:
         this.sqliteStorage.deleteAll()
@@ -484,7 +482,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
     def 'offset is written into the OFFSET table'() {
         given: "an offset to be written into the database"
-        def name = 'an-offset'
+        def name = GLOBAL_LATEST_OFFSET
         OffsetEntity offset = new OffsetEntity(name, OptionalLong.of(1113))
 
         and: 'a database table exists to be written to'
@@ -495,9 +493,9 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         then: "the offset is stored into the database"
         OffsetEntity result
-        sql.query("SELECT name, value FROM OFFSET WHERE name = '$name'", {
+        sql.query("SELECT name, value FROM OFFSET WHERE name = ${name.toString()}", {
             it.next()
-            result = new OffsetEntity(it.getString(1), OptionalLong.of(it.getLong(2)))
+            result = new OffsetEntity(valueOf(it.getString(1)), OptionalLong.of(it.getLong(2)))
         })
 
         result == offset
@@ -505,7 +503,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
     def 'offset is updated when already present in OFFSET table'() {
         given: "an offset to be written into the database"
-        def name = 'an-offset'
+        def name = GLOBAL_LATEST_OFFSET
         OffsetEntity offset = new OffsetEntity(name, OptionalLong.of(1113))
 
         and: 'a database table exists to be written to'
@@ -520,9 +518,9 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         then: "the offset is stored into the database"
         OffsetEntity result
-        sql.query("SELECT name, value FROM OFFSET WHERE name = '$name'", {
+        sql.query("SELECT name, value FROM OFFSET WHERE name = ${name.toString()}", {
             it.next()
-            result = new OffsetEntity(it.getString(1), OptionalLong.of(it.getLong(2)))
+            result = new OffsetEntity(valueOf(it.getString(1)), OptionalLong.of(it.getLong(2)))
         })
 
         result == updatedOffset
