@@ -6,6 +6,8 @@ import com.tesco.aqueduct.pipe.api.OffsetEntity
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import spock.lang.Specification
 
+import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET
+
 class TimedMessageStorageSpec extends Specification {
     final long OFFSET = 1
     final Message MOCK_MESSAGE = Mock(Message)
@@ -67,7 +69,7 @@ class TimedMessageStorageSpec extends Specification {
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
         and: "offset to write"
-        def offset = new OffsetEntity("someOffset", OptionalLong.of(12))
+        def offset = new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(12))
 
         when: "we write the offset"
         timedStorage.write(offset)

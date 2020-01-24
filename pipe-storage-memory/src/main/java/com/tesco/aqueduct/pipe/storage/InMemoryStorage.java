@@ -21,7 +21,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     final private ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 
     final private List<Message> messages = new ArrayList<>();
-    final private Map<String, Long> offsets = new HashMap<>();
+    final private Map<OffsetName, Long> offsets = new HashMap<>();
     final private int limit;
 
     public InMemoryStorage(final int limit, final long retryAfter) {
@@ -156,7 +156,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     }
 
     @Override
-    public void deleteAllMessages() {
+    public void deleteAll() {
         LOG.info("Bootstrap", "Not a supported operation for In Memory Storage");
     }
 

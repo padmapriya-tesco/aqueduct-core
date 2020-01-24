@@ -50,7 +50,7 @@ public class TimedMessageStorage implements MessageStorage {
     }
 
     @Override
-    public void deleteAllMessages() {
-        storage.deleteAllMessages();
+    public void deleteAll() {
+        storage.deleteAll();
     }
 }

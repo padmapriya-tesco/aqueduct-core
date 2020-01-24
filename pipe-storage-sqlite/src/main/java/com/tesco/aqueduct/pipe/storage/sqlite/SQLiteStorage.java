@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalLong;
 
+import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
+
 public class SQLiteStorage implements MessageStorage {
 
     private final DataSource dataSource;
@@ -70,7 +72,7 @@ public class SQLiteStorage implements MessageStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalOffset());
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalLatestOffset());
     }
 
     public int calculateRetryAfter(final int messageCount) {
@@ -115,9 +117,9 @@ public class SQLiteStorage implements MessageStorage {
         );
     }
 
-    private OptionalLong getGlobalOffset() {
+    private OptionalLong getGlobalLatestOffset() {
         return executeGet(
-            SQLiteQueries.getOffset("globalLatestOffset"),
+            SQLiteQueries.getOffset(GLOBAL_LATEST_OFFSET),
             (connection, statement) -> {
                 ResultSet resultSet = statement.executeQuery();
 
@@ -159,7 +161,7 @@ public class SQLiteStorage implements MessageStorage {
         execute(
             SQLiteQueries.UPSERT_OFFSET,
             (Connection, statement) -> {
-                statement.setString(1, offset.getName());
+                statement.setString(1, offset.getName().toString());
                 statement.setLong(2, offset.getValue().getAsLong());
                 statement.setLong(3, offset.getValue().getAsLong());
                 statement.execute();
@@ -193,9 +195,10 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public void deleteAllMessages() {
+    public void deleteAll() {
         try (Connection connection = dataSource.getConnection()){
-            deleteAllEvents(connection);
+            deleteEvents(connection);
+            deleteOffsets(connection);
             vacuumDatabase(connection);
             checkpointWalFile(connection);
         } catch (SQLException exception) {
@@ -203,8 +206,15 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    private void deleteAllEvents(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_ALL_EVENTS)){
+    private void deleteOffsets(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_OFFSETS)){
+            statement.execute();
+            LOG.info("deleteOffsets", String.format("Delete offsets result: %d", statement.getUpdateCount()));
+        }
+    }
+
+    private void deleteEvents(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)){
             statement.execute();
             LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
         }

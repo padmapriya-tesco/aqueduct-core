@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe.storage.sqlite;
 
+import com.tesco.aqueduct.pipe.api.OffsetName;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +34,11 @@ final class SQLiteQueries {
     static final String COMPACT =
             "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
+    static final String DELETE_EVENTS = "DELETE FROM EVENT;";
+    static final String DELETE_OFFSETS = "DELETE FROM OFFSET";
+    static final String VACUUM_DB = "VACUUM;";
+    static final String CHECKPOINT_DB = "PRAGMA wal_checkpoint(TRUNCATE);";
+
     static String getReadEvent(final int typesCount, final long maxBatchSize) {
         final StringBuilder queryBuilder = new StringBuilder()
             .append(" SELECT type, msg_key, content_type, msg_offset, created_utc, data, event_size ")
@@ -56,13 +63,9 @@ final class SQLiteQueries {
         return queryBuilder.toString();
     }
 
-    static String getOffset(final String name) {
-        return "SELECT name, value FROM OFFSET WHERE name = '" + name + "'";
+    static String getOffset(final OffsetName name) {
+        return "SELECT name, value FROM OFFSET WHERE name = '" + name.toString() + "'";
     }
-
-    static final String DELETE_ALL_EVENTS = "DELETE FROM EVENT;";
-    static final String VACUUM_DB = "VACUUM;";
-    static final String CHECKPOINT_DB = "PRAGMA wal_checkpoint(TRUNCATE);";
 
     static void appendFilterByTypes(final StringBuilder queryBuilder, int typesCount) {
         if (typesCount != 0) {
