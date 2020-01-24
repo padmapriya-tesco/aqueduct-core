@@ -316,7 +316,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.getGlobalLatestOffset() == OptionalLong.of(3)
     }
 
-    def 'retrieves the global latest offset when it does not exist'() {
+    def 'retrieves the global latest offset as empty when it does not exist'() {
         given: 'offset table exists with no globalLatestOffset'
         def sql = Sql.newInstance(connectionUrl)
         sql.execute("DROP TABLE IF EXISTS OFFSET;")
