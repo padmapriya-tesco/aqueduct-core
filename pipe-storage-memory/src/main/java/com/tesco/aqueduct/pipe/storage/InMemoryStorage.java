@@ -156,7 +156,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     }
 
     @Override
-    public void deleteAllMessages() {
+    public void deleteAll() {
         LOG.info("Bootstrap", "Not a supported operation for In Memory Storage");
     }
 

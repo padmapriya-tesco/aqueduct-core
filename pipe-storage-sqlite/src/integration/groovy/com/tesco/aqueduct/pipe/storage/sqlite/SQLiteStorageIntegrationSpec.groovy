@@ -426,9 +426,12 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
     }
 
-    def 'messages are deleted when deleteAllMessages is called'() {
+    def 'messages and offset are deleted when deleteAllMessages is called'() {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2)]
+
+        and: 'offset to be stored'
+        def offset = new OffsetEntity('someOffsetName', OptionalLong.of(10))
 
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
@@ -436,26 +439,47 @@ class SQLiteStorageIntegrationSpec extends Specification {
         and: 'these messages are written'
         this.sqliteStorage.write(messages)
 
+        and: 'offset is written'
+        this.sqliteStorage.write(offset)
+
         and: 'all messages are written to the data store'
-        def firstSize = 0
+        def messagesFirstSize = 0
         sql.query("SELECT COUNT(*) FROM EVENT", {
             it.next()
-            firstSize = it.getInt(1)
+            messagesFirstSize = it.getInt(1)
         })
 
-        firstSize == 2
+        assert messagesFirstSize == 2
+
+        and: 'offset exists in the OFFSET table'
+        def offsetFirstSize = 0
+        sql.query("SELECT COUNT(*) FROM OFFSET", {
+            it.next()
+            offsetFirstSize = it.getInt(1)
+        })
+
+        assert offsetFirstSize == 2
 
         when:
-        this.sqliteStorage.deleteAllMessages()
+        this.sqliteStorage.deleteAll()
 
-        then:
-        def secondSize = 0
+        then: 'no messages exists in EVENT'
+        def messagesSecondSize = 0
         sql.query("SELECT COUNT(*) FROM EVENT", {
             it.next()
-            secondSize = it.getInt(1)
+            messagesSecondSize = it.getInt(1)
         })
 
-        secondSize == 0
+        messagesSecondSize == 0
+
+        and: 'no offset exists in the table'
+        def offsetSecondSize = 0
+        sql.query("SELECT COUNT(*) FROM OFFSET", {
+            it.next()
+            offsetSecondSize = it.getInt(1)
+        })
+
+        offsetSecondSize == 0
     }
 
     def 'offset is written into the OFFSET table'() {

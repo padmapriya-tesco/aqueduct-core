@@ -193,9 +193,10 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public void deleteAllMessages() {
+    public void deleteAll() {
         try (Connection connection = dataSource.getConnection()){
-            deleteAllEvents(connection);
+            deleteEvents(connection);
+            deleteOffsets(connection);
             vacuumDatabase(connection);
             checkpointWalFile(connection);
         } catch (SQLException exception) {
@@ -203,8 +204,15 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    private void deleteAllEvents(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_ALL_EVENTS)){
+    private void deleteOffsets(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_OFFSETS)){
+            statement.execute();
+            LOG.info("deleteOffsets", String.format("Delete offsets result: %d", statement.getUpdateCount()));
+        }
+    }
+
+    private void deleteEvents(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)){
             statement.execute();
             LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
         }
