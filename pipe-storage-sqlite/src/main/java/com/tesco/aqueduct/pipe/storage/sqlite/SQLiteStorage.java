@@ -120,11 +120,9 @@ public class SQLiteStorage implements MessageStorage {
             SQLiteQueries.getOffset("globalLatestOffset"),
             (connection, statement) -> {
                 ResultSet resultSet = statement.executeQuery();
-                if (resultSet.next()) {
-                    return OptionalLong.of(resultSet.getLong("value"));
-                } else {
-                    return OptionalLong.empty();
-                }
+
+                return resultSet.next() ?
+                    OptionalLong.of(resultSet.getLong("value")) : OptionalLong.empty();
             }
         );
     }
