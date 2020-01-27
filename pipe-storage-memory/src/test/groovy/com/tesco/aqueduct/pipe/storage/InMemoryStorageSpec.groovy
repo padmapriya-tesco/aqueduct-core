@@ -6,7 +6,7 @@ import spock.lang.Unroll
 
 class InMemoryStorageSpec extends StorageSpec {
 
-    InMemoryStorage storage = new InMemoryStorage(limit, 10000)
+    InMemoryStorage storage = new CentralInMemoryStorage(limit, 10000)
 
     @Override
     void insert(Message msg) {
