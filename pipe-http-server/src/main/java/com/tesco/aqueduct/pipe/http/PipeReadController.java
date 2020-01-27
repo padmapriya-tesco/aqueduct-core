@@ -14,14 +14,14 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.rules.SecurityRule;
 import lombok.val;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -83,7 +83,8 @@ public class PipeReadController {
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
 
         MutableHttpResponse<List<Message>> response =
-                HttpResponse.ok(list)
+            HttpResponse
+                .ok(list)
                 .header("Retry-After", String.valueOf(retryTime));
 
         messageResults.getGlobalLatestOffset().ifPresent(globalLatestOffset ->

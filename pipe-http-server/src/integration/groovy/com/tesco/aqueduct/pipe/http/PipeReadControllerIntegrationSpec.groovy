@@ -2,9 +2,8 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
-import com.tesco.aqueduct.pipe.api.OffsetEntity
-import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
+import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
@@ -26,7 +25,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     static String type = "type1"
     static int RETRY_AFTER_SECONDS = 600
 
-    @Shared InMemoryStorage storage = new InMemoryStorage(10, RETRY_AFTER_SECONDS)
+    @Shared InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
     @Shared PipeStateProvider pipeStateProvider= Mock()
@@ -189,8 +188,6 @@ class PipeReadControllerIntegrationSpec extends Specification {
         storage.write([
             Message("type2", "b", "ct", 101, null, null)
         ])
-
-        storage.write(new OffsetEntity(OffsetName.GLOBAL_LATEST_OFFSET, OptionalLong.of(101)))
 
         when:
         def request = RestAssured.get("/pipe/0?type=$type")
