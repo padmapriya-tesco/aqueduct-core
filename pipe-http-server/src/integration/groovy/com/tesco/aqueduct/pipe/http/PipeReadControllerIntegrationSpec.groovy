@@ -2,6 +2,8 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.OffsetEntity
+import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
@@ -188,6 +190,8 @@ class PipeReadControllerIntegrationSpec extends Specification {
             Message("type2", "b", "ct", 101, null, null)
         ])
 
+        storage.write(new OffsetEntity(OffsetName.GLOBAL_LATEST_OFFSET, OptionalLong.of(101)))
+
         when:
         def request = RestAssured.get("/pipe/0?type=$type")
 
@@ -202,6 +206,22 @@ class PipeReadControllerIntegrationSpec extends Specification {
         type    | statusCode    | headerName                    | headerValue           | response
         'type1' |  200          | 'Global-Latest-Offset'        | '101'                 | '[]'
         'type2' |  200          | 'Global-Latest-Offset'        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
+    }
+
+    @Unroll
+    void "the header does not contain Global-Latest-Offset when no global latest offset is stored"() {
+        given:
+
+        when:
+        def response = RestAssured.get("/pipe/0?type=type1")
+
+        then:
+        response
+            .then()
+            .statusCode(200)
+            .body(equalTo('[]'))
+
+        response.getHeader('Global-Latest-Offset') == null
     }
 
     @Unroll

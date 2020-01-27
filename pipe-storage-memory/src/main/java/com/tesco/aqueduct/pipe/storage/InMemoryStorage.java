@@ -42,17 +42,19 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
             lock.lock();
 
             final int index = findIndex(offset);
-            final long globalLatestOffset = messages.stream().mapToLong(Message::getOffset).max().orElse(0L);
+
+            OptionalLong globalLatestOffset = offsets.containsKey(OffsetName.GLOBAL_LATEST_OFFSET) ?
+                OptionalLong.of(offsets.get(OffsetName.GLOBAL_LATEST_OFFSET)) : OptionalLong.empty();
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(types,index), 0, OptionalLong.of(globalLatestOffset));
+                return new MessageResults(readFrom(types,index), 0, globalLatestOffset);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(types,-index-1), retry, OptionalLong.of(globalLatestOffset));
+                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset);
             }
         } finally {
             lock.unlock();
@@ -166,6 +168,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
         try {
             lock.lock();
             messages.clear();
+            offsets.clear();
         } finally {
             lock.unlock();
         }
