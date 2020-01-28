@@ -29,7 +29,7 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
         this.retryAfter = retryAfter;
     }
 
-    protected abstract OptionalLong getGlobalOffset();
+    protected abstract OptionalLong getLatestGlobalOffset();
 
     @Override
     public abstract void write(OffsetEntity offset);
@@ -48,7 +48,7 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
             final int index = findIndex(offset);
 
-            OptionalLong globalLatestOffset = getGlobalOffset();
+            OptionalLong globalLatestOffset = getLatestGlobalOffset();
 
             if (index >= 0) {
                 // found

@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client
 
+import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import io.micronaut.cache.CacheManager
@@ -17,8 +18,8 @@ class HttpPipeClientSpec extends Specification {
         given: "call returns a http response with retry after header"
         HttpResponse<List<Message>> response = Mock()
         response.body() >> [Mock(Message)]
-        response.header("Retry-After") >> retry
-        response.header("Global-Latest-Offset") >> 0L
+        response.header(HttpHeaders.RETRY_AFTER) >> retry
+        response.header(HttpHeaders.GLOBAL_LATEST_OFFSET) >> 0L
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read and get defined response back"
@@ -42,7 +43,7 @@ class HttpPipeClientSpec extends Specification {
         given: "call returns a http response with retry after header"
         HttpResponse<List<Message>> response = Mock()
         response.body() >> [Mock(Message)]
-        response.header("Retry-After") >> 1
+        response.header(HttpHeaders.RETRY_AFTER) >> 1
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"

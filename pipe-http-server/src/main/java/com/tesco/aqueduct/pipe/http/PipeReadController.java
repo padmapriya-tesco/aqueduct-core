@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http;
 
+import com.tesco.aqueduct.pipe.api.HttpHeaders;
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.PipeStateResponse;
@@ -71,24 +72,15 @@ public class PipeReadController {
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
         final List<String> types = flattenRequestParams(type);
+
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-
         final val messageResults = messageReader.read(types, offset, locationUuid);
-
-        //val list = takeMessagesToSizeLimit(messageResults.getMessages(), maxPayloadSizeBytes);
         final val list = messageResults.getMessages();
-
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
-
-        MutableHttpResponse<List<Message>> response =
-            HttpResponse
-                .ok(list)
-                .header("Retry-After", String.valueOf(retryTime));
-
-        messageResults.getGlobalLatestOffset().ifPresent(globalLatestOffset ->
-                response.header("Global-Latest-Offset", Long.toString(globalLatestOffset)));
+        MutableHttpResponse<List<Message>> response = HttpResponse.ok(list).header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime));
+        messageResults.getGlobalLatestOffset().ifPresent(globalLatestOffset -> response.header(HttpHeaders.GLOBAL_LATEST_OFFSET, Long.toString(globalLatestOffset)));
 
         //Suggested formatting for lines 85 - 92
 //        MutableHttpResponse<List<Message>> response = HttpResponse.ok(list).header("Retry-After", String.valueOf(retryTime));
@@ -103,10 +95,9 @@ public class PipeReadController {
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {
         if(LOG.isDebugEnabled()) {
-            LOG.debug("pipe read controller",
-                    String.format(
-                            "reading from offset %d, requested by %s", offset, hostName
-                    )
+            LOG.debug(
+                "pipe read controller",
+                String.format("reading from offset %d, requested by %s", offset, hostName)
             );
         }
     }

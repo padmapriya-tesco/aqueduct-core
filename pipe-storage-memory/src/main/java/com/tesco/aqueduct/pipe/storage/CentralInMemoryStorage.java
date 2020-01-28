@@ -11,7 +11,7 @@ public class CentralInMemoryStorage extends InMemoryStorage {
     }
 
     @Override
-    protected OptionalLong getGlobalOffset() {
+    protected OptionalLong getLatestGlobalOffset() {
         return messages.stream().mapToLong(Message::getOffset).max();
     }
 

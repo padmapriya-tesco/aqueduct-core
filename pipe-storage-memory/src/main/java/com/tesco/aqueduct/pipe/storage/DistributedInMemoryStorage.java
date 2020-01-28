@@ -7,15 +7,15 @@ import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
 
-public class TillInMemoryStorage extends InMemoryStorage {
-    public TillInMemoryStorage(int limit, long retryAfter) {
+public class DistributedInMemoryStorage extends InMemoryStorage {
+    public DistributedInMemoryStorage(int limit, long retryAfter) {
         super(limit, retryAfter);
     }
 
     @Override
-    protected OptionalLong getGlobalOffset() {
+    protected OptionalLong getLatestGlobalOffset() {
         return offsets.containsKey(GLOBAL_LATEST_OFFSET) ?
-                OptionalLong.of(offsets.get(GLOBAL_LATEST_OFFSET)) : OptionalLong.empty();
+            OptionalLong.of(offsets.get(GLOBAL_LATEST_OFFSET)) : OptionalLong.empty();
     }
 
     @Override

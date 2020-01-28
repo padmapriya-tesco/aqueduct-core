@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http
 
+import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
@@ -79,7 +80,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .then()
             .statusCode(statusCode)
             .content(equalTo(response))
-            .header("Retry-After", "" + RETRY_AFTER_SECONDS)
+            .header(HttpHeaders.RETRY_AFTER, "" + RETRY_AFTER_SECONDS)
 
         where:
         requestPath | statusCode | retryAfter          | response
@@ -99,7 +100,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .then()
             .statusCode(statusCode)
 
-        request.getHeader("Retry-After") == null
+        request.getHeader(HttpHeaders.RETRY_AFTER) == null
 
         where:
         requestPath    | statusCode
@@ -127,7 +128,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .then()
             .statusCode(statusCode)
             .content(equalTo(expectedResponse))
-            .header("Retry-After", "0")
+            .header(HttpHeaders.RETRY_AFTER, "0")
 
         where:
         requestPath | statusCode | response

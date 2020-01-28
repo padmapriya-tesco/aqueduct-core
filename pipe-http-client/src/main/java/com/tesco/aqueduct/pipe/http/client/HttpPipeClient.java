@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client;
 
-import com.tesco.aqueduct.pipe.api.Message;
-import com.tesco.aqueduct.pipe.api.MessageReader;
-import com.tesco.aqueduct.pipe.api.MessageResults;
-import com.tesco.aqueduct.pipe.api.PipeStateResponse;
+import com.tesco.aqueduct.pipe.api.*;
 import io.micronaut.cache.CacheManager;
 import io.micronaut.http.HttpResponse;
 
@@ -32,7 +29,7 @@ public class HttpPipeClient implements MessageReader {
 
         final long latestGlobalOffset = getLatestGlobalOffset(types, response);
         final long retryAfter = Optional
-            .ofNullable(response.header("Retry-After"))
+            .ofNullable(response.header(HttpHeaders.RETRY_AFTER))
             .map(value -> {
                 try {
                     return Long.parseLong(value);
@@ -59,7 +56,7 @@ public class HttpPipeClient implements MessageReader {
     }
 
     private String getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
-        return response.header("Global-Latest-Offset");
+        return response.header(HttpHeaders.GLOBAL_LATEST_OFFSET);
     }
 
     @Override
