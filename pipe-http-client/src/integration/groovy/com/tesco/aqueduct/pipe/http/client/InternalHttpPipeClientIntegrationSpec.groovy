@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.TokenProvider
@@ -67,7 +68,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
                 called(1)
 
                 responder {
-                    header("Retry-After", "1")
+                    header(HttpHeaders.RETRY_AFTER, "1")
                     contentType('application/json')
                     body("""[
                         {

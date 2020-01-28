@@ -2,6 +2,7 @@ import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.http.PipeStateProvider
+import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
@@ -22,7 +23,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     static final String USERNAME = "username"
     static final String PASSWORD = "password"
     static final String encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-    static InMemoryStorage storage = new InMemoryStorage(10, 600)
+    static final InMemoryStorage storage = new CentralInMemoryStorage(10, 600)
 
     static final String clientId = UUID.randomUUID().toString()
     static final String secret = UUID.randomUUID().toString()

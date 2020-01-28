@@ -11,23 +11,28 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparingLong;
 
-public class InMemoryStorage implements MessageReader, MessageWriter {
+public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
-    private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(InMemoryStorage.class));
+    static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(InMemoryStorage.class));
 
     private final long retryAfter;
 
     // old fashion read-write lock - fast reads, blocking writes
-    final private ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+    final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 
-    final private List<Message> messages = new ArrayList<>();
-    final private Map<OffsetName, Long> offsets = new HashMap<>();
+    final List<Message> messages = new ArrayList<>();
+    final Map<OffsetName, Long> offsets = new HashMap<>();
     final private int limit;
 
     public InMemoryStorage(final int limit, final long retryAfter) {
         this.limit = limit;
         this.retryAfter = retryAfter;
     }
+
+    protected abstract OptionalLong getLatestGlobalOffset();
+
+    @Override
+    public abstract void write(OffsetEntity offset);
 
     /**
      * Complexity: O(log(n)+limit)
@@ -42,24 +47,25 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
             lock.lock();
 
             final int index = findIndex(offset);
-            final long globalLatestOffset = messages.stream().mapToLong(Message::getOffset).max().orElse(0L);
+
+            OptionalLong globalLatestOffset = getLatestGlobalOffset();
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(types,index), 0, OptionalLong.of(globalLatestOffset));
+                return new MessageResults(readFrom(types,index), 0, globalLatestOffset);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(types,-index-1), retry, OptionalLong.of(globalLatestOffset));
+                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset);
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private long getRetry(final long offset) {
+    long getRetry(final long offset) {
         return messages.isEmpty() || offset >= messages.get(messages.size()-1).getOffset() ? retryAfter : 0;
     }
 
@@ -141,21 +147,6 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
     }
 
     @Override
-    public void write(OffsetEntity offset) {
-        final val lock = rwl.writeLock();
-
-        LOG.withOffset(offset).info("in memory storage", "writing offset");
-
-        try {
-            lock.lock();
-
-            offsets.put(offset.getName(), offset.getValue().getAsLong());
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
     public void deleteAll() {
         LOG.info("Bootstrap", "Not a supported operation for In Memory Storage");
     }
@@ -166,6 +157,7 @@ public class InMemoryStorage implements MessageReader, MessageWriter {
         try {
             lock.lock();
             messages.clear();
+            offsets.clear();
         } finally {
             lock.unlock();
         }

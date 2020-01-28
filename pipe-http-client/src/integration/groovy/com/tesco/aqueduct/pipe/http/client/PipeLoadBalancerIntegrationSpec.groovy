@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.SelfRegistrationTask
@@ -71,8 +72,8 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                 called(1)
 
                 responder {
-                    header("Retry-After", "0")
-                    header("Global-Latest-Offset", "10")
+                    header(HttpHeaders.RETRY_AFTER, "0")
+                    header(HttpHeaders.GLOBAL_LATEST_OFFSET, "10")
                     contentType('application/json')
                     body("""[
                         {
@@ -102,8 +103,8 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                 called(1)
 
                 responder {
-                    header("Retry-After", "0")
-                    header("Global-Latest-Offset", "10")
+                    header(HttpHeaders.RETRY_AFTER, "0")
+                    header(HttpHeaders.GLOBAL_LATEST_OFFSET, "10")
                     contentType('application/json')
                     body("""[
                         {
@@ -150,8 +151,8 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
             get("$basePath/pipe/$offset") {
                 called(1)
                 responder {
-                    header("Retry-After", "0")
-                    header("Global-Latest-Offset", "10")
+                    header(HttpHeaders.RETRY_AFTER, "0")
+                    header(HttpHeaders.GLOBAL_LATEST_OFFSET, "10")
                     contentType('application/json')
                     body("""[
                         {

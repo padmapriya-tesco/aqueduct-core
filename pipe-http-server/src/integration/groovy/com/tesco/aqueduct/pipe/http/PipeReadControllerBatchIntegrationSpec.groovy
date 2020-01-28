@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.http
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
@@ -24,9 +25,8 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     static int RETRY_AFTER_SECONDS = 600
 
     @Shared
-    InMemoryStorage storage = new InMemoryStorage(10, RETRY_AFTER_SECONDS)
+    InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
     @Shared
-
     ApplicationContext context
 
     ApplicationContext setupContext(maxPayloadSize) {

@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http;
 
+import com.tesco.aqueduct.pipe.api.HttpHeaders;
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.PipeStateResponse;
@@ -9,18 +10,19 @@ import io.micronaut.context.annotation.Value;
 import io.micronaut.core.convert.format.ReadableBytes;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.security.annotation.Secured;
-import io.micronaut.security.rules.SecurityRule;
 import lombok.val;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,30 +72,28 @@ public class PipeReadController {
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
 
         final List<String> types = flattenRequestParams(type);
+
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-
         final val messageResults = messageReader.read(types, offset, locationUuid);
-
-        //val list = takeMessagesToSizeLimit(messageResults.getMessages(), maxPayloadSizeBytes);
         final val list = messageResults.getMessages();
-
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
+        MutableHttpResponse<List<Message>> response = HttpResponse.ok(list).header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime));
 
-        final long globalLatestOffset = messageResults.getGlobalLatestOffset().getAsLong();
+        messageResults.getGlobalLatestOffset()
+            .ifPresent(
+                globalLatestOffset -> response.header(HttpHeaders.GLOBAL_LATEST_OFFSET, Long.toString(globalLatestOffset))
+            );
 
-        return HttpResponse.ok(list)
-                .header("Retry-After", String.valueOf(retryTime))
-                .header("Global-Latest-Offset", Long.toString(globalLatestOffset));
+        return response;
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {
         if(LOG.isDebugEnabled()) {
-            LOG.debug("pipe read controller",
-                    String.format(
-                            "reading from offset %d, requested by %s", offset, hostName
-                    )
+            LOG.debug(
+                "pipe read controller",
+                String.format("reading from offset %d, requested by %s", offset, hostName)
             );
         }
     }

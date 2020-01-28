@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -25,7 +26,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
     static final String RUNSCOPE_USERNAME = "runscope-username"
     static final String RUNSCOPE_PASSWORD = "runscope-password"
 
-    static InMemoryStorage storage = new InMemoryStorage(10, RETRY_AFTER_SECONDS)
+    static InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
 
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
