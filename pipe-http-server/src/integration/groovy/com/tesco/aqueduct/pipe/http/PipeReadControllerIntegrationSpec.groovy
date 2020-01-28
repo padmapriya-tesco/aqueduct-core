@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
+import com.tesco.aqueduct.pipe.storage.DistributedInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
@@ -201,9 +202,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .body(equalTo(response))
 
         where:
-        type    | statusCode    | headerName                    | headerValue           | response
-        'type1' |  200          | 'Global-Latest-Offset'        | '101'                 | '[]'
-        'type2' |  200          | 'Global-Latest-Offset'        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
+        type    | statusCode    | headerName                              | headerValue           | response
+        'type1' |  200          | HttpHeaders.GLOBAL_LATEST_OFFSET        | '101'                 | '[]'
+        'type2' |  200          | HttpHeaders.GLOBAL_LATEST_OFFSET        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
     }
 
     @Unroll
@@ -219,7 +220,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .statusCode(200)
             .body(equalTo('[]'))
 
-        response.getHeader('Global-Latest-Offset') == null
+        response.getHeader(HttpHeaders.GLOBAL_LATEST_OFFSET) == null
     }
 
     @Unroll
