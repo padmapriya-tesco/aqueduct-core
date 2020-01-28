@@ -90,6 +90,14 @@ public class PipeReadController {
         messageResults.getGlobalLatestOffset().ifPresent(globalLatestOffset ->
                 response.header("Global-Latest-Offset", Long.toString(globalLatestOffset)));
 
+        //Suggested formatting for lines 85 - 92
+//        MutableHttpResponse<List<Message>> response = HttpResponse.ok(list).header("Retry-After", String.valueOf(retryTime));
+//
+//        messageResults.getGlobalLatestOffset()
+//            .ifPresent(
+//                globalLatestOffset -> response.header("Global-Latest-Offset", Long.toString(globalLatestOffset))
+//            );
+
         return response;
     }
 
