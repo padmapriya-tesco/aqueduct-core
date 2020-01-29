@@ -72,7 +72,7 @@ public class SQLiteStorage implements MessageStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalLatestOffset());
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalLatestOffset(), PipeState.UP_TO_DATE);
     }
 
     public int calculateRetryAfter(final int messageCount) {

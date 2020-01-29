@@ -2,6 +2,8 @@ package com.tesco.aqueduct.pipe.http.client
 
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.api.MessageResults
+import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import io.micronaut.cache.CacheManager
 import io.micronaut.cache.SyncCache
@@ -51,6 +53,37 @@ class HttpPipeClientSpec extends Specification {
 
         then: "getLatestOffsetMatching is called"
         1 * internalClient.getLatestOffsetMatching(_)
+    }
+
+    def "if global offset is available in the header, it should be returned in MessageResults"() {
+        given: "call returns a http response with global offset header"
+        HttpResponse<List<Message>> response = Mock()
+        response.body() >> [Mock(Message)]
+        response.header(HttpHeaders.RETRY_AFTER) >> 1
+        response.header(HttpHeaders.GLOBAL_LATEST_OFFSET) >> "100"
+        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
+
+        when: "we call read"
+        def messageResults = client.read([], 0, "locationUuid")
+
+        then: "global latest offset header is set correctly in the result"
+        messageResults.globalLatestOffset == OptionalLong.of(100)
+    }
+
+    def "if pipe state is available in the header and is true, then results should report pipe state as up to date"() {
+        given: "call returns a http response with global offset header"
+        HttpResponse<List<Message>> response = Mock()
+        response.body() >> [Mock(Message)]
+        response.header(HttpHeaders.RETRY_AFTER) >> 1
+        response.header(HttpHeaders.GLOBAL_LATEST_OFFSET) >> "100"
+        response.header(HttpHeaders.PIPE_STATE) >> true
+        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
+
+        when: "we call read"
+        MessageResults messageResults = client.read([], 0, "locationUuid")
+
+        then: "global latest offset header is set correctly in the result"
+        messageResults.pipeState == PipeState.UP_TO_DATE
     }
 
     def "an exception is thrown when getLatestOffsetMatching fails"() {

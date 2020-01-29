@@ -40,7 +40,7 @@ public class HttpPipeClient implements MessageReader {
             .map(value -> Long.max(0, value))
             .orElse(0L);
 
-        return new MessageResults(response.body(), retryAfter, OptionalLong.of(latestGlobalOffset));
+        return new MessageResults(response.body(), retryAfter, OptionalLong.of(latestGlobalOffset), PipeState.OUT_OF_DATE);
     }
 
     private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {

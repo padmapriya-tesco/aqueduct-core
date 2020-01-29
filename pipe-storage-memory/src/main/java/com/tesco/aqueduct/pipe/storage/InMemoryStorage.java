@@ -52,13 +52,13 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(types,index), 0, globalLatestOffset);
+                return new MessageResults(readFrom(types,index), 0, globalLatestOffset, PipeState.UP_TO_DATE);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset);
+                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset, PipeState.UP_TO_DATE);
             }
         } finally {
             lock.unlock();
