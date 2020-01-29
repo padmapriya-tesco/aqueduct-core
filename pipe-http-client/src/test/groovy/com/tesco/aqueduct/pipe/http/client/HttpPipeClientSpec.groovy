@@ -53,6 +53,22 @@ class HttpPipeClientSpec extends Specification {
         1 * internalClient.getLatestOffsetMatching(_)
     }
 
+    def "an exception is thrown when getLatestOffsetMatching fails"() {
+        given: "call returns a http response with retry after header"
+        HttpResponse<List<Message>> response = Mock()
+        response.body() >> [Mock(Message)]
+        response.header(HttpHeaders.RETRY_AFTER) >> 1
+
+        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
+        internalClient.getLatestOffsetMatching(_ as List) >> { throw new Exception() }
+
+        when: "we call read"
+        client.read([], 0, "locationUuid")
+
+        then: "an exception is thrown"
+        thrown Exception
+    }
+
     def "allows to get latest offset"() {
         given:
         internalClient.getLatestOffsetMatching(types) >> offset
