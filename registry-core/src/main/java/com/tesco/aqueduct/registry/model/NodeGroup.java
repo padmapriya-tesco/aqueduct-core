@@ -116,15 +116,19 @@ public class NodeGroup {
         updateGetFollowing(cloudUrl);
     }
 
-    private int comparing(Node n1, Node n2) {
-        if (n1.getStatus().equals("offline") && !n2.getStatus().equals("offline")) {
+    private int comparing(Node node1, Node node2) {
+        if (isOffline(node1) && !isOffline(node2)) {
             return 1;
-        } else if (n1.getStatus().equals("offline") && n2.getStatus().equals("offline")) {
+        } else if (isOffline(node1) && isOffline(node2)) {
             return 0;
-        } else if (!n1.getStatus().equals("offline") && n2.getStatus().equals("offline")) {
+        } else if (!isOffline(node1) && isOffline(node2)) {
             return -1;
         } else {
             return 0;
         }
+    }
+
+    private boolean isOffline(Node node) {
+        return node.getStatus().equals("offline");
     }
 }
