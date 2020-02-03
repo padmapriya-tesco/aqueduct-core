@@ -3,11 +3,9 @@ package com.tesco.aqueduct.registry.model;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -113,18 +111,20 @@ public class NodeGroup {
     }
 
     public void sortOfflineNodes(final URL cloudUrl) {
-        Comparator<Node> statusComparator = (n1, n2) -> {
-            if (n1.getStatus().equals("offline") && !n2.getStatus().equals("offline")) {
-                return 1;
-            } else if (!n1.getStatus().equals("offline") && n2.getStatus().equals("offline"){
-                return -1;
-            } else {
-                return 2;
-            }
-        };
-
-//        nodes.sort(Comparator.comparing(n -> n.getStatus().equals("offline") ? "offline" : ""));
-        nodes.sort(statusComparator);
+        //nodes.sort(Comparator.comparing(n -> n.getStatus().equals("offline") ? "offline" : ""));
+        nodes.sort(this::comparing);
         updateGetFollowing(cloudUrl);
+    }
+
+    private int comparing(Node n1, Node n2) {
+        if (n1.getStatus().equals("offline") && !n2.getStatus().equals("offline")) {
+            return 1;
+        } else if (n1.getStatus().equals("offline") && n2.getStatus().equals("offline")) {
+            return 0;
+        } else if (!n1.getStatus().equals("offline") && n2.getStatus().equals("offline")) {
+            return -1;
+        } else {
+            return 0;
+        }
     }
 }
