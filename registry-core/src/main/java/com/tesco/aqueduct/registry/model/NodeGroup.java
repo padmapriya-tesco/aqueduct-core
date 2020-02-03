@@ -3,9 +3,11 @@ package com.tesco.aqueduct.registry.model;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,7 +74,7 @@ public class NodeGroup {
         return JsonHelper.toJson(nodes);
     }
 
-    public void rebalance(final URL cloudUrl) {
+    public void updateGetFollowing(final URL cloudUrl) {
         final List<URL> allUrls = getNodeUrls();
         for (int i = 0; i < allUrls.size(); i++) {
             final List<URL> followUrls = getFollowerUrls(cloudUrl, i);
@@ -108,5 +110,21 @@ public class NodeGroup {
                 this.updateNode(node.toBuilder().status("offline").build());
             }
         }
+    }
+
+    public void sortOfflineNodes(final URL cloudUrl) {
+        Comparator<Node> statusComparator = (n1, n2) -> {
+            if (n1.getStatus().equals("offline") && !n2.getStatus().equals("offline")) {
+                return 1;
+            } else if (!n1.getStatus().equals("offline") && n2.getStatus().equals("offline"){
+                return -1;
+            } else {
+                return 2;
+            }
+        };
+
+//        nodes.sort(Comparator.comparing(n -> n.getStatus().equals("offline") ? "offline" : ""));
+        nodes.sort(statusComparator);
+        updateGetFollowing(cloudUrl);
     }
 }
