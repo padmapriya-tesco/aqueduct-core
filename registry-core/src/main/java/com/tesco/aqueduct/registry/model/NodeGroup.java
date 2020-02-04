@@ -95,12 +95,15 @@ public class NodeGroup {
 
     private List<URL> getFollowerUrls(final URL cloudUrl, int nodeIndex) {
         final List<URL> followUrls = new ArrayList<>();
-        if (nodeIndex < 0) nodeIndex = nodes.size();
-        while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
-            followUrls.add(nodes.get(nodeIndex).getLocalUrl());
+
+        if (nodeIndex == 0) {
+            followUrls.add(cloudUrl);
+        } else {
+            int parentNodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
+            followUrls.add(nodes.get(parentNodeIndex).getLocalUrl());
+            followUrls.addAll(nodes.get(parentNodeIndex).getRequestedToFollow());
         }
-        followUrls.add(cloudUrl);
+
         return followUrls;
     }
 
@@ -114,15 +117,13 @@ public class NodeGroup {
     }
 
     public void sortOfflineNodes(final URL cloudUrl) {
-        nodes.sort(this::compareStatus);
+        nodes.sort(this::comparingStatus);
         updateGetFollowing(cloudUrl);
     }
 
-    private int compareStatus(Node node1, Node node2) {
+    private int comparingStatus(Node node1, Node node2) {
         if (isOffline(node1) && !isOffline(node2)) {
             return 1;
-        } else if (isOffline(node1) && isOffline(node2)) {
-            return 0;
         } else if (!isOffline(node1) && isOffline(node2)) {
             return -1;
         } else {
