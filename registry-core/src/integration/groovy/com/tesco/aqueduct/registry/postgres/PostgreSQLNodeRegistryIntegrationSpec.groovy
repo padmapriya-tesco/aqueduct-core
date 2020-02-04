@@ -189,6 +189,13 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[4].getLocalUrl() == url2
         followers[5].getLocalUrl() == url6
 
+        followers[0].status == "following"
+        followers[1].status == "following"
+        followers[2].status == "following"
+        followers[3].status == "offline"
+        followers[4].status == "offline"
+        followers[5].status == "offline"
+
         followers[0].requestedToFollow == [cloudURL]
         followers[1].requestedToFollow == [url3, cloudURL]
         followers[2].requestedToFollow == [url3, cloudURL]
