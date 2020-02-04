@@ -339,6 +339,38 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
+    def "if some registered nodes are offline, they are sorted to the base of the hierarchy"() {
+        given: "six nodes with varying state"
+        registerNode(1234, "http://1.1.1.1:0001", 123, "offline")
+        registerNode(1234, "http://1.1.1.2:0002", 123, "offline")
+        registerNode(1234, "http://1.1.1.3:0003", 123, "pending")
+        registerNode(1234, "http://1.1.1.4:0004", 123, "following")
+        registerNode(1234, "http://1.1.1.5:0005", 123, "initialising")
+        registerNode(1234, "http://1.1.1.6:0006", 123, "offline")
+
+        when: "We get the hierarchy"
+        def request = given()
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when().get("/v2/registry")
+
+        then: "Nodes are sorted as expected"
+        request.then().body(
+            "followers[0].localUrl", equalTo("http://1.1.1.3:0003"),
+            "followers[1].localUrl", equalTo("http://1.1.1.4:0004"),
+            "followers[2].localUrl", equalTo("http://1.1.1.5:0005"),
+            "followers[3].localUrl", equalTo("http://1.1.1.1:0001"),
+            "followers[4].localUrl", equalTo("http://1.1.1.2:0002"),
+            "followers[5].localUrl", equalTo("http://1.1.1.6:0006"),
+            //following lists
+            "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://1.1.1.3:0003", "http://cloud.pipe"]),
+            "followers[4].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://1.1.1.3:0003", "http://cloud.pipe"]),
+            "followers[5].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.3:0003", "http://cloud.pipe"]),
+        )
+    }
+
     def "authenticated user without deletion role cannot delete from the database"() {
         given: "We register two nodes"
         registerNode(1234, "http://1.1.1.1:1234", 123, "status", ["http://x"])

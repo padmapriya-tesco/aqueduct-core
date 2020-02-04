@@ -111,12 +111,11 @@ public class NodeGroup {
     }
 
     public void sortOfflineNodes(final URL cloudUrl) {
-        //nodes.sort(Comparator.comparing(n -> n.getStatus().equals("offline") ? "offline" : ""));
-        nodes.sort(this::comparing);
+        nodes.sort(this::compareStatus);
         updateGetFollowing(cloudUrl);
     }
 
-    private int comparing(Node node1, Node node2) {
+    private int compareStatus(Node node1, Node node2) {
         if (isOffline(node1) && !isOffline(node2)) {
             return 1;
         } else if (isOffline(node1) && isOffline(node2)) {
