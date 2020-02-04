@@ -68,13 +68,16 @@ public class NodeGroup {
         throw new IllegalStateException("The node was not found " + updatedNode.getId());
     }
 
+    private void updateNodeByIndex(final Node updatedNode, int index) {
+        nodes.set(index, updatedNode);
+    }
+
     public String nodesToJson() throws IOException {
         return JsonHelper.toJson(nodes);
     }
 
     public void updateGetFollowing(final URL cloudUrl) {
-        final List<URL> allUrls = getNodeUrls();
-        for (int i = 0; i < allUrls.size(); i++) {
+        for (int i = 0; i < nodes.size(); i++) {
             final List<URL> followUrls = getFollowerUrls(cloudUrl, i);
             final Node updatedNode = nodes
                 .get(i)
@@ -82,7 +85,7 @@ public class NodeGroup {
                 .requestedToFollow(followUrls)
                 .build();
 
-            this.updateNode(updatedNode);
+            this.updateNodeByIndex(updatedNode, i);
         }
     }
 
@@ -92,20 +95,20 @@ public class NodeGroup {
 
     private List<URL> getFollowerUrls(final URL cloudUrl, int nodeIndex) {
         final List<URL> followUrls = new ArrayList<>();
-        final List<URL> allUrls = getNodeUrls();
-        if (nodeIndex < 0) nodeIndex = allUrls.size();
+        if (nodeIndex < 0) nodeIndex = nodes.size();
         while (nodeIndex != 0) {
             nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
-            followUrls.add(allUrls.get(nodeIndex));
+            followUrls.add(nodes.get(nodeIndex).getLocalUrl());
         }
         followUrls.add(cloudUrl);
         return followUrls;
     }
 
     public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
-        for (final Node node : nodes) {
+        for (int i = 0; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
             if (node.getLastSeen().compareTo(threshold) < 0) {
-                this.updateNode(node.toBuilder().status("offline").build());
+                updateNodeByIndex(node.toBuilder().status("offline").build(), i);
             }
         }
     }
