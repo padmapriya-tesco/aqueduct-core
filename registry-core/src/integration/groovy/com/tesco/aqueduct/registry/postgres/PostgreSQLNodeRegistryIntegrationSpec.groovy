@@ -38,8 +38,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     DataSource dataSource
     NodeRegistry registry
 
-    Status following = FOLLOWING
-
     def setup() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
@@ -64,12 +62,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
     def "registry always contains root"() {
         when: "I call summary on an empty registry"
-        def summary = registry.getSummary(1234, following, [])
+        def summary = registry.getSummary(1234, FOLLOWING, [])
 
         then: "Cloud root is returned"
         summary.root.localUrl == cloudURL
         summary.root.offset == 1234
-        summary.root.status == following
+        summary.root.status == FOLLOWING
     }
 
     def "registry accepts new elements"() {
@@ -95,14 +93,14 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         def followers = registry.getSummary(
             offset,
-            following,
+            FOLLOWING,
             []
         ).followers
 
         then: "the registry contains the node"
         followers[0].group == "group"
         followers[0].offset == offset
-        followers[0].status == following
+        followers[0].status == FOLLOWING
         followers[0].following == [cloudURL]
         followers.size() == 1
     }
@@ -119,7 +117,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url1)
             .offset(offset)
-            .status(following)
+            .status(FOLLOWING)
             .following([cloudURL])
             .build()
 
@@ -128,7 +126,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url2)
             .offset(offset)
-            .status(following)
+            .status(FOLLOWING)
             .following([cloudURL])
             .build()
 
@@ -137,7 +135,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url3)
             .offset(offset)
-            .status(following)
+            .status(FOLLOWING)
             .following([cloudURL])
             .build()
 
@@ -146,7 +144,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url4)
             .offset(offset)
-            .status(following)
+            .status(FOLLOWING)
             .following([cloudURL])
             .build()
 
@@ -155,7 +153,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url5)
             .offset(offset)
-            .status(following)
+            .status(FOLLOWING)
             .following([cloudURL])
             .build()
 
@@ -164,7 +162,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url6)
             .offset(offset)
-            .status(following)
+            .status(FOLLOWING)
             .following([cloudURL])
             .build()
 
@@ -186,7 +184,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         and: "get summary"
         def followers = registry.getSummary(
             offset,
-            following,
+            FOLLOWING,
             []
         ).followers
 
