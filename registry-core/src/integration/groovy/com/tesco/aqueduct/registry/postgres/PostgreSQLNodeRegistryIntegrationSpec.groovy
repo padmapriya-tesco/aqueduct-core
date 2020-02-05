@@ -4,7 +4,6 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.registry.model.Node
 import com.tesco.aqueduct.registry.model.NodeRegistry
-import com.tesco.aqueduct.registry.model.Status
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -20,12 +19,6 @@ import java.time.ZonedDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-
-import static com.tesco.aqueduct.registry.model.Status.FOLLOWING
-import static com.tesco.aqueduct.registry.model.Status.INITIALISING
-import static com.tesco.aqueduct.registry.model.Status.OFFLINE
-import static com.tesco.aqueduct.registry.model.Status.OK
-import static com.tesco.aqueduct.registry.model.Status.PENDING
 
 class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
@@ -62,12 +55,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
     def "registry always contains root"() {
         when: "I call summary on an empty registry"
-        def summary = registry.getSummary(1234, FOLLOWING, [])
+        def summary = registry.getSummary(1234,"status", [])
 
         then: "Cloud root is returned"
         summary.root.localUrl == cloudURL
         summary.root.offset == 1234
-        summary.root.status == FOLLOWING
+        summary.root.status == "status"
     }
 
     def "registry accepts new elements"() {
@@ -81,7 +74,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(new URL("http://1.1.1.1"))
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .providerLastAckOffset(offset-1)
             .providerLastAckTime(now)
@@ -93,14 +86,14 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         def followers = registry.getSummary(
             offset,
-            FOLLOWING,
+            "status",
             []
         ).followers
 
         then: "the registry contains the node"
         followers[0].group == "group"
         followers[0].offset == offset
-        followers[0].status == FOLLOWING
+        followers[0].status == "following"
         followers[0].following == [cloudURL]
         followers.size() == 1
     }
@@ -117,7 +110,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url1)
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .build()
 
@@ -126,7 +119,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url2)
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .build()
 
@@ -135,7 +128,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url3)
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .build()
 
@@ -144,7 +137,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url4)
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .build()
 
@@ -153,7 +146,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url5)
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .build()
 
@@ -162,7 +155,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("group")
             .localUrl(url6)
             .offset(offset)
-            .status(FOLLOWING)
+            .status("following")
             .following([cloudURL])
             .build()
 
@@ -184,7 +177,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         and: "get summary"
         def followers = registry.getSummary(
             offset,
-            FOLLOWING,
+            "status",
             []
         ).followers
 
@@ -196,12 +189,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[4].getLocalUrl() == url2
         followers[5].getLocalUrl() == url6
 
-        followers[0].status == FOLLOWING
-        followers[1].status == FOLLOWING
-        followers[2].status == FOLLOWING
-        followers[3].status == OFFLINE
-        followers[4].status == OFFLINE
-        followers[5].status == OFFLINE
+        followers[0].status == "following"
+        followers[1].status == "following"
+        followers[2].status == "following"
+        followers[3].status == "offline"
+        followers[4].status == "offline"
+        followers[5].status == "offline"
 
         followers[0].requestedToFollow == [cloudURL]
         followers[1].requestedToFollow == [url3, cloudURL]
@@ -214,14 +207,14 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     @Unroll
     def "registry can filter by groups"() {
         given: "A registry with a few nodes in different groups"
-        registerNode("groupA", "http://a1", 123, FOLLOWING, [cloudURL])
-        registerNode("groupB", "http://b1", 123, FOLLOWING, [cloudURL])
-        registerNode("groupC", "http://c1", 123, FOLLOWING, [cloudURL])
-        registerNode("groupA", "http://a2", 123, FOLLOWING, [cloudURL])
-        registerNode("groupB", "http://b2", 123, FOLLOWING, [cloudURL])
+        registerNode("groupA", "http://a1", 123, "following", [cloudURL])
+        registerNode("groupB", "http://b1", 123, "following", [cloudURL])
+        registerNode("groupC", "http://c1", 123, "following", [cloudURL])
+        registerNode("groupA", "http://a2", 123, "following", [cloudURL])
+        registerNode("groupB", "http://b2", 123, "following", [cloudURL])
 
         when: "Call summary with filters"
-        def followers = registry.getSummary(1111, FOLLOWING, filterGroups).followers
+        def followers = registry.getSummary(1111, "status", filterGroups).followers
 
         then: "Groups returned have the expected node URL's in"
         followers*.localUrl*.toString().sort() == resultUrls
@@ -297,7 +290,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registerNode("x", "http://second")
 
         then: "It is told to call the cloud"
-        registry.getSummary(0,OK,[])
+        registry.getSummary(0,"ok",[])
             .followers.find {it.localUrl.toString() == "http://second" }
             .requestedToFollow == [ new URL("http://first"), cloudURL ]
     }
@@ -308,11 +301,11 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registerNode("x", "http://second")
 
         when: "first till re-registers"
-        registerNode("x", "http://first", 0, PENDING, [], null)
+        registerNode("x", "http://first", 0, "stale", [], null)
 
         then: "It's state is updated"
-        List<Node> nodesState = registry.getSummary(0, INITIALISING, ["x"]).followers
-        nodesState.toList().get(0).status == PENDING
+        List<Node> nodesState = registry.getSummary(0, "initialising", ["x"]).followers
+        nodesState.toList().get(0).status == "stale"
     }
 
     @Unroll
@@ -398,7 +391,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "summary of the registry is as expected"
         conditions.eventually {
-            assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == iterations
+            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == iterations
         }
 
         cleanup:
@@ -436,16 +429,16 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "summary of the registry is as expected"
         conditions.eventually {
-            assert registry.getSummary(0, INITIALISING, ["x0"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x1"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x2"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x3"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x4"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x5"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x6"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x7"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x8"]).followers.size() == 50
-            assert registry.getSummary(0, INITIALISING, ["x9"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x0"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x1"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x2"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x3"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x4"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x5"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x6"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x7"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x8"]).followers.size() == 50
+            assert registry.getSummary(0, "initialising", ["x9"]).followers.size() == 50
         }
 
         cleanup:
@@ -461,7 +454,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registerNode("x1", "http://1")
 
         when: "summary is taken"
-        def summary = registry.getSummary(0, INITIALISING, [])
+        def summary = registry.getSummary(0, "initialising", [])
 
         then: "groups are returned in lexicographical order"
         summary.followers*.group == ["x1", "x2", "x3", "x4", "x5"]
@@ -489,7 +482,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "summary of the registry is as expected"
         conditions.eventually {
-            assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == tills
+            assert registry.getSummary(0, "initialising", ["x"]).followers.size() == tills
         }
 
         cleanup:
@@ -507,7 +500,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .group("x")
             .localUrl(new URL("http://1.1.1.1"))
             .offset(offset)
-            .status(INITIALISING)
+            .status("initialising")
             .following([])
             .lastSeen(now)
             .providerLastAckTime(now)
@@ -517,13 +510,13 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registry.register(theNode)
 
         when: "an following node"
-        def node = registry.getSummary(0, INITIALISING, []).followers.first()
+        def node = registry.getSummary(0, "initialising", []).followers.first()
         Thread.sleep(300)
-        def nodeAfterSomeTime = registry.getSummary(0, INITIALISING, []).followers.first()
+        def nodeAfterSomeTime = registry.getSummary(0, "initialising", []).followers.first()
 
         then:
-        node.status == INITIALISING
-        nodeAfterSomeTime.status == OFFLINE
+        node.status == "initialising"
+        nodeAfterSomeTime.status == "offline"
     }
 
     def "Delete node from database if exists"() {
@@ -535,7 +528,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registry.deleteNode("x", "first")
 
         then: "It's state is updated"
-        List<Node> nodesState = registry.getSummary(0, INITIALISING, ["x"]).followers
+        List<Node> nodesState = registry.getSummary(0, "initialising", ["x"]).followers
         nodesState.size() == 1
         nodesState.get(0).id == "x|http://second"
     }
@@ -547,7 +540,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         String group,
         String url,
         long offset=0,
-        Status status=INITIALISING,
+        String status="initialising",
         List<URL> following=[],
         List<URL> requestedToFollow=[],
         ZonedDateTime created=null

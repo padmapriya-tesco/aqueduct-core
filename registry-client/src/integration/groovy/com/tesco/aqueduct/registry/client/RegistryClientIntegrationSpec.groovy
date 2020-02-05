@@ -15,8 +15,6 @@ import spock.lang.Specification
 import java.time.ZonedDateTime
 import java.util.function.Supplier
 
-import static com.tesco.aqueduct.registry.model.Status.INITIALISING
-
 class RegistryClientIntegrationSpec extends Specification {
 
     private static final URL MY_HOST = new URL("http://localhost")
@@ -88,7 +86,7 @@ class RegistryClientIntegrationSpec extends Specification {
             .group("1234")
             .localUrl(MY_HOST)
             .offset(0)
-            .status(INITIALISING)
+            .status("initialising")
             .lastSeen(ZonedDateTime.now())
             .build()
 
