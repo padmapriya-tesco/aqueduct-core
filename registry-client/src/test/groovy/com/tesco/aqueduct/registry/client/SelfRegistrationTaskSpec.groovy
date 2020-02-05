@@ -11,8 +11,6 @@ import java.time.ZonedDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-import static com.tesco.aqueduct.registry.model.Status.INITIALISING
-
 class SelfRegistrationTaskSpec extends Specification {
     private static final URL MY_HOST = new URL("http://localhost")
 
@@ -20,7 +18,7 @@ class SelfRegistrationTaskSpec extends Specification {
         .group("1234")
         .localUrl(MY_HOST)
         .offset(0)
-        .status(INITIALISING)
+        .status("initialising")
         .following(Collections.emptyList())
         .lastSeen(ZonedDateTime.now())
         .build()
