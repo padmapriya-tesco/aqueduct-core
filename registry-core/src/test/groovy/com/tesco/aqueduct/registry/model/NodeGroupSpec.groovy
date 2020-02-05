@@ -181,11 +181,120 @@ class NodeGroupSpec extends Specification {
             .build()
         NodeGroup group = new NodeGroup([n1, n2, n3])
         when: "the group is rebalanced"
-        group.rebalance(cloudUrl)
+        group.updateGetFollowing(cloudUrl)
         then: "the result is a balanced group"
         group.nodes.get(0).requestedToFollow == [cloudUrl]
         group.nodes.get(1).requestedToFollow == [n1Url, cloudUrl]
         group.nodes.get(2).requestedToFollow == [n1Url, cloudUrl]
+    }
+
+    def "Nodes are sorted based on status"() {
+        given: "a cloud url"
+        URL cloudUrl = new URL("http://cloud")
+
+        and: "a nodegroup with balanced, but partially offline nodes"
+        URL n1Url = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(n1Url)
+            .requestedToFollow([cloudUrl])
+            .status("offline")
+            .build()
+        URL n2Url = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(n2Url)
+            .requestedToFollow([n1Url, cloudUrl])
+            .status("offline")
+            .build()
+        URL n3Url = new URL("http://node-3")
+        Node n3 = Node.builder()
+            .localUrl(n3Url)
+            .requestedToFollow([n1Url, cloudUrl])
+            .status("following")
+            .build()
+        URL n4Url = new URL("http://node-4")
+        Node n4 = Node.builder()
+            .localUrl(n4Url)
+            .requestedToFollow([n2Url, n1Url, cloudUrl])
+            .status("pending")
+            .build()
+        URL n5Url = new URL("http://node-5")
+        Node n5 = Node.builder()
+            .localUrl(n5Url)
+            .requestedToFollow([n2Url, n1Url, cloudUrl])
+            .status("initialising")
+            .build()
+        URL n6Url = new URL("http://node-6")
+        Node n6 = Node.builder()
+            .localUrl(n6Url)
+            .requestedToFollow([n3Url, n1Url, cloudUrl])
+            .status("offline")
+            .build()
+
+        NodeGroup group = new NodeGroup([n1, n2, n3, n4, n5, n6])
+
+        when: "sort based on status is called"
+        group.sortOfflineNodes(cloudUrl)
+
+        then: "nodes that are offline are sorted to be leaves"
+        group.nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n3Url, n4Url, n5Url, n1Url, n2Url, n6Url]
+
+        group.nodes.get(0).requestedToFollow == [cloudUrl]
+        group.nodes.get(1).requestedToFollow == [n3Url, cloudUrl]
+        group.nodes.get(2).requestedToFollow == [n3Url, cloudUrl]
+        group.nodes.get(3).requestedToFollow == [n4Url, n3Url, cloudUrl]
+        group.nodes.get(4).requestedToFollow == [n4Url, n3Url, cloudUrl]
+        group.nodes.get(5).requestedToFollow == [n5Url, n3Url, cloudUrl]
+    }
+
+    def "Nodes maintain sort order when none are offline"() {
+        given: "a cloud url"
+        URL cloudUrl = new URL("http://cloud")
+
+        and: "a nodegroup with balanced but no offline nodes"
+        URL n1Url = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(n1Url)
+            .requestedToFollow([cloudUrl])
+            .status("following")
+            .build()
+        URL n2Url = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(n2Url)
+            .requestedToFollow([n1Url, cloudUrl])
+            .status("pending")
+            .build()
+        URL n3Url = new URL("http://node-3")
+        Node n3 = Node.builder()
+            .localUrl(n3Url)
+            .requestedToFollow([n1Url, cloudUrl])
+            .status("following")
+            .build()
+        URL n4Url = new URL("http://node-4")
+        Node n4 = Node.builder()
+            .localUrl(n4Url)
+            .requestedToFollow([n2Url, n1Url, cloudUrl])
+            .status("pending")
+            .build()
+        URL n5Url = new URL("http://node-5")
+        Node n5 = Node.builder()
+            .localUrl(n5Url)
+            .requestedToFollow([n2Url, n1Url, cloudUrl])
+            .status("initialising")
+            .build()
+        URL n6Url = new URL("http://node-6")
+        Node n6 = Node.builder()
+            .localUrl(n6Url)
+            .requestedToFollow([n3Url, n1Url, cloudUrl])
+            .status("following")
+            .build()
+
+        NodeGroup group = new NodeGroup([n1, n2, n3, n4, n5, n6])
+
+        when: "sort based on status is called"
+        group.sortOfflineNodes(cloudUrl)
+
+        then: "the sort order is unchanged"
+        group.nodes == [n1, n2, n3, n4, n5, n6]
     }
 
     def "NodeGroup nodes json format is correct"() {

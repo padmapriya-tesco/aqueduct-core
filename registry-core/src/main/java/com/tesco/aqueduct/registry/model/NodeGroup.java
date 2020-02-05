@@ -68,13 +68,16 @@ public class NodeGroup {
         throw new IllegalStateException("The node was not found " + updatedNode.getId());
     }
 
+    private void updateNodeByIndex(final Node updatedNode, int index) {
+        nodes.set(index, updatedNode);
+    }
+
     public String nodesToJson() throws IOException {
         return JsonHelper.toJson(nodes);
     }
 
-    public void rebalance(final URL cloudUrl) {
-        final List<URL> allUrls = getNodeUrls();
-        for (int i = 0; i < allUrls.size(); i++) {
+    public void updateGetFollowing(final URL cloudUrl) {
+        for (int i = 0; i < nodes.size(); i++) {
             final List<URL> followUrls = getFollowerUrls(cloudUrl, i);
             final Node updatedNode = nodes
                 .get(i)
@@ -82,7 +85,7 @@ public class NodeGroup {
                 .requestedToFollow(followUrls)
                 .build();
 
-            this.updateNode(updatedNode);
+            this.updateNodeByIndex(updatedNode, i);
         }
     }
 
@@ -92,21 +95,43 @@ public class NodeGroup {
 
     private List<URL> getFollowerUrls(final URL cloudUrl, int nodeIndex) {
         final List<URL> followUrls = new ArrayList<>();
-        final List<URL> allUrls = getNodeUrls();
-        if (nodeIndex < 0) nodeIndex = allUrls.size();
-        while (nodeIndex != 0) {
-            nodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
-            followUrls.add(allUrls.get(nodeIndex));
+
+        if (nodeIndex == 0) {
+            followUrls.add(cloudUrl);
+        } else {
+            int parentNodeIndex = ((nodeIndex + 1) / NUMBER_OF_CHILDREN_PER_NODE) - 1;
+            followUrls.add(nodes.get(parentNodeIndex).getLocalUrl());
+            followUrls.addAll(nodes.get(parentNodeIndex).getRequestedToFollow());
         }
-        followUrls.add(cloudUrl);
+
         return followUrls;
     }
 
     public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
-        for (final Node node : nodes) {
+        for (int i = 0; i < nodes.size(); i++) {
+            Node node = nodes.get(i);
             if (node.getLastSeen().compareTo(threshold) < 0) {
-                this.updateNode(node.toBuilder().status("offline").build());
+                updateNodeByIndex(node.toBuilder().status("offline").build(), i);
             }
         }
+    }
+
+    public void sortOfflineNodes(final URL cloudUrl) {
+        nodes.sort(this::comparingStatus);
+        updateGetFollowing(cloudUrl);
+    }
+
+    private int comparingStatus(Node node1, Node node2) {
+        if (isOffline(node1) && !isOffline(node2)) {
+            return 1;
+        } else if (!isOffline(node1) && isOffline(node2)) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    private boolean isOffline(Node node) {
+        return node.getStatus().equals("offline");
     }
 }
