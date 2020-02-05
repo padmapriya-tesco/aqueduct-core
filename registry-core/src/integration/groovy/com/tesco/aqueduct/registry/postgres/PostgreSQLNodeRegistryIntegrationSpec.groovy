@@ -98,6 +98,112 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers.size() == 1
     }
 
+    def "registry marks nodes offline and sorts based on status"() {
+        given: "a registry with a short offline delta"
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
+
+        and: "6 nodes"
+        long offset = 12345
+
+        URL url1 = new URL("http://1.1.1.1")
+        Node node1 = Node.builder()
+            .group("group")
+            .localUrl(url1)
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .build()
+
+        URL url2 = new URL("http://2.2.2.2")
+        Node node2 = Node.builder()
+            .group("group")
+            .localUrl(url2)
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .build()
+
+        URL url3 = new URL("http://3.3.3.3")
+        Node node3 = Node.builder()
+            .group("group")
+            .localUrl(url3)
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .build()
+
+        URL url4= new URL("http://4.4.4.4")
+        Node node4 = Node.builder()
+            .group("group")
+            .localUrl(url4)
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .build()
+
+        URL url5 = new URL("http://5.5.5.5")
+        Node node5 = Node.builder()
+            .group("group")
+            .localUrl(url5)
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .build()
+
+        URL url6 = new URL("http://6.6.6.6")
+        Node node6 = Node.builder()
+            .group("group")
+            .localUrl(url6)
+            .offset(offset)
+            .status("following")
+            .following([cloudURL])
+            .build()
+
+        when: "nodes are registered"
+        registry.register(node1)
+        registry.register(node2)
+        registry.register(node3)
+        registry.register(node4)
+        registry.register(node5)
+        registry.register(node6)
+
+        and: "half fail to re-register within the offline delta"
+        sleep 5000
+        registry.register(node3)
+        registry.register(node4)
+        registry.register(node5)
+
+
+        and: "get summary"
+        def followers = registry.getSummary(
+            offset,
+            "status",
+            []
+        ).followers
+
+        then: "nodes are marked as offline and sorted accordingly"
+        followers[0].getLocalUrl() == url3
+        followers[1].getLocalUrl() == url4
+        followers[2].getLocalUrl() == url5
+        followers[3].getLocalUrl() == url1
+        followers[4].getLocalUrl() == url2
+        followers[5].getLocalUrl() == url6
+
+        followers[0].status == "following"
+        followers[1].status == "following"
+        followers[2].status == "following"
+        followers[3].status == "offline"
+        followers[4].status == "offline"
+        followers[5].status == "offline"
+
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [url3, cloudURL]
+        followers[2].requestedToFollow == [url3, cloudURL]
+        followers[3].requestedToFollow == [url4, url3, cloudURL]
+        followers[4].requestedToFollow == [url4, url3, cloudURL]
+        followers[5].requestedToFollow == [url5, url3, cloudURL]
+    }
+
     @Unroll
     def "registry can filter by groups"() {
         given: "A registry with a few nodes in different groups"
