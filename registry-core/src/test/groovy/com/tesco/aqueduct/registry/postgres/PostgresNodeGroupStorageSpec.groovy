@@ -18,14 +18,17 @@ class PostgresNodeGroupStorageSpec extends Specification {
 					1 * executeQuery() >> Mock(ResultSet) {
 						1* next() >> true
 						1* getString("entry") >>
-							"[" +
-							"{" +
-							"\"localUrl\":\"http://node-1\"," +
-							"\"offset\":\"0\"," +
-							"\"providerLastAckOffset\":\"0\"," +
-							"\"id\":\"http://node-1\"" +
-							"}" +
-							"]"
+						"""		
+							[ 
+								{ 
+									"localUrl":"http://node-1",
+									"offset":"0",
+									"status":"offline",
+									"providerLastAckOffset":"0",
+									"id":"http://node-1"
+								}
+							]
+						"""
 						1* getInt("version") >> 99
 						1* getString("group_id") >> "test-group-id-from-db"
 					}
