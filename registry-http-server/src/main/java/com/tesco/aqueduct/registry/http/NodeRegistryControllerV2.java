@@ -3,7 +3,6 @@ package com.tesco.aqueduct.registry.http;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.*;
-import com.tesco.aqueduct.registry.model.Status;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
@@ -39,7 +38,7 @@ public class NodeRegistryControllerV2 {
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Get
     public StateSummary getSummary(@Nullable final List<String> groups) {
-        return registry.getSummary(pipe.getLatestOffsetMatching(null), Status.OK, groups);
+        return registry.getSummary(pipe.getLatestOffsetMatching(null), "ok", groups);
     }
 
     @Secured(REGISTRY_WRITE)
