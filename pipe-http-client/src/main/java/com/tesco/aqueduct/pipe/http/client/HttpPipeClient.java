@@ -38,7 +38,7 @@ public class HttpPipeClient implements MessageReader {
                 }
             })
             .map(value -> Long.max(0, value))
-            .orElse(0L);
+            .orElse(0L0);
 
         return new MessageResults(response.body(), retryAfter, OptionalLong.of(latestGlobalOffset), PipeState.OUT_OF_DATE);
     }

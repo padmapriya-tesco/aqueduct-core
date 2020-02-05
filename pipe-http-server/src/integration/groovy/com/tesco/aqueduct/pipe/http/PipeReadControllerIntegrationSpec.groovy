@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.http
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
@@ -227,8 +228,8 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         where:
         type           | isPipeUpToDate  | headerValue
-        'type1'        | true            | "UP_TO_DATE"
-        'OutOfDateType'| false           | "OUT_OF_DATE"
+        'type1'        | true            | PipeState.UP_TO_DATE.toString()
+        'OutOfDateType'| false           | PipeState.OUT_OF_DATE.toString()
     }
 
     @Unroll
