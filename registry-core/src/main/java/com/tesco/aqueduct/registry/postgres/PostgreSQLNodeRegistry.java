@@ -44,14 +44,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         while (count < 10) {
             try (Connection connection = getConnection()) {
                 final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
-                Node node = group.getById(nodeToRegister.getId());
-                if (node != null) {
-                    node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
-                    group.updateNode(node);
-                } else {
-                    node = group.add(nodeToRegister, cloudUrl);
-                }
+
+                Node node = addOrUpdateNodeToGroup(nodeToRegister, group);
+
+                group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minus(offlineDelta));
+                group.sortOfflineNodes(cloudUrl);
                 group.persist(connection);
+
                 return node.getRequestedToFollow();
             } catch (SQLException | IOException exception) {
                 LOG.error("Postgresql node registry", "register node", exception);
@@ -67,6 +66,18 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             }
         }
         throw new RuntimeException("Failed to register");
+    }
+
+    private Node addOrUpdateNodeToGroup(Node nodeToRegister, PostgresNodeGroup group) {
+        Node node = group.getById(nodeToRegister.getId());
+        if (node == null) {
+            node = group.add(nodeToRegister, cloudUrl);
+        } else {
+            node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
+            group.updateNode(node);
+        }
+
+        return node;
     }
 
     private Connection getConnection() throws SQLException {
@@ -145,7 +156,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             if (group.isEmpty()) {
                 group.delete(connection);
             } else {
-                group.rebalance(cloudUrl);
+                group.updateGetFollowing(cloudUrl);
                 group.persist(connection);
             }
             return true;
