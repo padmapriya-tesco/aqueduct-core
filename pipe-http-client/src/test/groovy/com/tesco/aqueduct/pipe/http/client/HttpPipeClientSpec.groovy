@@ -22,6 +22,7 @@ class HttpPipeClientSpec extends Specification {
         response.body() >> [Mock(Message)]
         response.header(HttpHeaders.RETRY_AFTER) >> retry
         response.header(HttpHeaders.GLOBAL_LATEST_OFFSET) >> 0L
+        response.header(HttpHeaders.PIPE_STATE) >> PipeState.UP_TO_DATE
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read and get defined response back"
@@ -46,6 +47,7 @@ class HttpPipeClientSpec extends Specification {
         HttpResponse<List<Message>> response = Mock()
         response.body() >> [Mock(Message)]
         response.header(HttpHeaders.RETRY_AFTER) >> 1
+        response.header(HttpHeaders.PIPE_STATE) >> PipeState.UP_TO_DATE
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"
@@ -61,6 +63,7 @@ class HttpPipeClientSpec extends Specification {
         response.body() >> [Mock(Message)]
         response.header(HttpHeaders.RETRY_AFTER) >> 1
         response.header(HttpHeaders.GLOBAL_LATEST_OFFSET) >> "100"
+        response.header(HttpHeaders.PIPE_STATE) >> PipeState.UP_TO_DATE
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"
@@ -76,13 +79,35 @@ class HttpPipeClientSpec extends Specification {
         response.body() >> [Mock(Message)]
         response.header(HttpHeaders.RETRY_AFTER) >> 1
         response.header(HttpHeaders.GLOBAL_LATEST_OFFSET) >> "100"
-        response.header(HttpHeaders.PIPE_STATE) >> true
+        response.header(HttpHeaders.PIPE_STATE) >> PipeState.UP_TO_DATE
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"
         MessageResults messageResults = client.read([], 0, "locationUuid")
 
-        then: "global latest offset header is set correctly in the result"
+        then: "pipe state is set correctly in the result"
+        messageResults.pipeState == PipeState.UP_TO_DATE
+
+        and: "internal client is invoked to fetch pipe state from parent"
+        0 * internalClient.getPipeState(_ as List)
+
+    }
+
+    // Ensure backwards compatible, need to update to throw error or default once all tills have latest software
+    def "if no pipe state is available in the header, it should default to out of date"() {
+        given: "call returns a http response with retry after header"
+        HttpResponse<List<Message>> response = Mock()
+        response.body() >> [Mock(Message)]
+        response.header(HttpHeaders.RETRY_AFTER) >> 1
+        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
+
+        when: "we call read"
+        def messageResults = client.read([], 0, "locationUuid")
+
+        then: "internal client is invoked to fetch pipe state from parent"
+        1 * internalClient.getPipeState(_ as List) >> new PipeStateResponse(true, 100L)
+
+        and: "pipe state is up to date in the result"
         messageResults.pipeState == PipeState.UP_TO_DATE
     }
 
@@ -126,7 +151,7 @@ class HttpPipeClientSpec extends Specification {
         internalClient.getPipeState(types) >> pipeState
 
         when: "getting pipe state"
-        def response = client.getPipeState(types)
+        def response = client.getPipeStateResponse(types)
 
         then: "the response is as expected"
         response == pipeState
@@ -141,7 +166,7 @@ class HttpPipeClientSpec extends Specification {
         cacheManager.getCache("health-check") >> Mock(SyncCache)
 
         when: "getting pipe state"
-        def response = client.getPipeState(types)
+        def response = client.getPipeStateResponse(types)
 
         then: "the response is as expected"
         response == pipeState
