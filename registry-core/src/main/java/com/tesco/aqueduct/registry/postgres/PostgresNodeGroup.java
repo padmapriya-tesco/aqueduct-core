@@ -1,6 +1,8 @@
 package com.tesco.aqueduct.registry.postgres;
 
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import com.tesco.aqueduct.registry.model.Node;
@@ -8,12 +10,10 @@ import com.tesco.aqueduct.registry.model.NodeGroup;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class PostgresNodeGroup extends NodeGroup {
@@ -49,8 +49,19 @@ public class PostgresNodeGroup extends NodeGroup {
     }
 
     private static List<Node> readGroupEntry(final String entry) throws IOException {
-        final JavaType type = JsonHelper.MAPPER.getTypeFactory().constructCollectionType(List.class, Node.class);
-        return JsonHelper.MAPPER.readValue(entry, type);
+        ObjectMapper jsonMapper = JsonHelper.MAPPER;
+        final JavaType type = jsonMapper.getTypeFactory().constructCollectionType(List.class, Node.class);
+
+        // This is a temporary workaround for "Node" deserialization only, this is needed because
+        // we have some pre-existing nodes entries in PPE and Live Postgres DB that have "status" in lowercase
+        // whereas Status enum is uppercase hence making deserialization fail.
+        // Eventually nodes "status" should all be updated as uppercase at which point this workaround can be removed.
+        jsonMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+        final List<Node> deserializedNodes = jsonMapper.readValue(entry, type);
+        // We are disabling it afterwards so it does not affect any other object's deserialization unintentionally
+        jsonMapper.disable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+
+        return deserializedNodes;
     }
 
     private final String groupId;
