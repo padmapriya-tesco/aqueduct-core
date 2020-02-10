@@ -16,7 +16,7 @@ import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
 
-public class SQLiteStorage implements MessageStorage {
+public class SQLiteStorage implements MessageReader<MessageEntity>, MessageWriter {
 
     private final DataSource dataSource;
     private final int limit;
@@ -48,7 +48,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public MessageResults read(final List<String> types, final long offset, final String locationUuid) {
+    public MessageEntity read(final List<String> types, final long offset, final String locationUuid) {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 
@@ -72,7 +72,7 @@ public class SQLiteStorage implements MessageStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalLatestOffset(), PipeState.UP_TO_DATE);
+        return new MessageEntity(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalLatestOffset());
     }
 
     public int calculateRetryAfter(final int messageCount) {

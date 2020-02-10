@@ -9,11 +9,14 @@ import io.micronaut.cache.CacheManager
 import io.micronaut.cache.SyncCache
 import io.micronaut.http.HttpResponse
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class HttpPipeClientSpec extends Specification {
 
     InternalHttpPipeClient internalClient = Mock()
-    CacheManager cacheManager = Mock()
+    CacheManager cacheManager = Mock() {
+        getCache("health-check") >> Mock(SyncCache)
+    }
     HttpPipeClient client = new HttpPipeClient(internalClient, cacheManager)
 
     def "a read from the implemented interface method returns a result with the retry after and messages"() {
@@ -94,7 +97,8 @@ class HttpPipeClientSpec extends Specification {
     }
 
     // Ensure backwards compatible, need to update to throw error or default once all tills have latest software
-    def "if no pipe state is available in the header, it should default to out of date"() {
+    @Unroll
+    def "if no pipe state is available in the header, it should invoke getState endpoint on its parent"() {
         given: "call returns a http response with retry after header"
         HttpResponse<List<Message>> response = Mock()
         response.body() >> [Mock(Message)]
@@ -105,10 +109,15 @@ class HttpPipeClientSpec extends Specification {
         def messageResults = client.read([], 0, "locationUuid")
 
         then: "internal client is invoked to fetch pipe state from parent"
-        1 * internalClient.getPipeState(_ as List) >> new PipeStateResponse(true, 100L)
+        1 * internalClient.getPipeState(_ as List) >> new PipeStateResponse(pipeState, 100L)
 
         and: "pipe state is up to date in the result"
-        messageResults.pipeState == PipeState.UP_TO_DATE
+        messageResults.pipeState == expectedState
+
+        where:
+        pipeState | expectedState
+        true      | PipeState.UP_TO_DATE
+        false     | PipeState.OUT_OF_DATE
     }
 
     def "an exception is thrown when getLatestOffsetMatching fails"() {

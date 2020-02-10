@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageStorage
 import com.tesco.aqueduct.pipe.api.OffsetEntity
+import com.tesco.aqueduct.pipe.api.PipeState
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import spock.lang.Specification
 
@@ -78,5 +79,15 @@ class TimedMessageStorageSpec extends Specification {
         1 * mockedStorage.write(offset)
     }
 
+    def "write pipe state is timed"() {
+        given: "we have an instance of TimedMessageStorage"
+        def mockedStorage = Mock(MessageStorage)
+        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
+        when: "we call the write pipe state method"
+        timedStorage.write(PipeState.UP_TO_DATE)
+
+        then: "the write method is called on the underlying storage"
+        1 * mockedStorage.write(PipeState.UP_TO_DATE)
+    }
 }

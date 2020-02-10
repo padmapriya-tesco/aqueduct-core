@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import static java.lang.Long.parseLong;
+
 @Named("remote")
-public class HttpPipeClient implements MessageReader {
+public class HttpPipeClient implements MessageReader<MessageResults> {
 
     private final InternalHttpPipeClient client;
     private final CacheManager cacheManager;
@@ -31,7 +33,7 @@ public class HttpPipeClient implements MessageReader {
             .ofNullable(response.header(HttpHeaders.RETRY_AFTER))
             .map(value -> {
                 try {
-                    return Long.parseLong(value);
+                    return parseLong(value);
                 } catch (NumberFormatException exception) {
                     return 0L;
                 }
@@ -40,43 +42,29 @@ public class HttpPipeClient implements MessageReader {
             .orElse(0L);
 
         return new MessageResults(
-            response.body(),
-            retryAfter,
-            OptionalLong.of(getLatestGlobalOffset(types, response)),
-            getPipeState(types, response)
-        );
+            new MessageEntity(response.body(), retryAfter, OptionalLong.of(getLatestGlobalOffset(types, response))),
+            getPipeState(types, response));
     }
 
     private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {
-        long latestGlobalOffset;
-
         // TODO - Ensure backwards compatible, need to update to throw error once all tills have latest software
-        if (getGlobalOffsetHeader(response) == null) {
-            latestGlobalOffset = getLatestOffsetMatching(types);
-        } else {
-            latestGlobalOffset = Long.parseLong(getGlobalOffsetHeader(response));
-        }
-        return latestGlobalOffset;
+        return globalOffsetHeader(response) == null
+                ? getLatestOffsetMatching(types)
+                : parseLong(globalOffsetHeader(response));
     }
 
-    private String getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
+    private String globalOffsetHeader(HttpResponse<List<Message>> response) {
         return response.header(HttpHeaders.GLOBAL_LATEST_OFFSET);
     }
 
     private PipeState getPipeState(@Nullable List<String> types, HttpResponse<List<Message>> response) {
-        if (response.header(HttpHeaders.PIPE_STATE) == null) {
-            return getPipeState(types);
-        } else {
-            return PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
-        }
+        return response.header(HttpHeaders.PIPE_STATE) == null
+                ? getPipeState(types)
+                : PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
     }
 
     private PipeState getPipeState(@Nullable List<String> types) {
-        if (getPipeStateResponse(types).isUpToDate()) {
-            return PipeState.UP_TO_DATE;
-        } else {
-            return PipeState.OUT_OF_DATE;
-        }
+        return getPipeStateResponse(types).isUpToDate() ? PipeState.UP_TO_DATE : PipeState.OUT_OF_DATE;
     }
 
     @Override

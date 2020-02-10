@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.pipe.storage;
 
-import com.tesco.aqueduct.pipe.api.Message;
-import com.tesco.aqueduct.pipe.api.MessageReader;
-import com.tesco.aqueduct.pipe.api.MessageResults;
-import com.tesco.aqueduct.pipe.api.PipeState;
+import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +10,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-public class PostgresqlStorage implements MessageReader {
+public class PostgresqlStorage implements MessageReader<MessageResults> {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
 
@@ -42,7 +39,8 @@ public class PostgresqlStorage implements MessageReader {
 
             final List<Message> messages = runMessagesQuery(messagesQuery);
 
-            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
+            return new MessageResults(
+                new MessageEntity(messages, retry, OptionalLong.of(globalLatestOffset)), PipeState.UP_TO_DATE);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);

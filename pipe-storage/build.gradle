@@ -1,0 +1,8 @@
+dependencies {
+    compile project(":pipe-api")
+    compile project(":pipe-logger")
+    compile project(":pipe-http-server")
+    testCompile project(":pipe-storage-test")
+}
+
+addPublish()
