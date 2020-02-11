@@ -81,8 +81,10 @@ public class PipeReadController {
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
         MutableHttpResponse<List<Message>> response = HttpResponse.ok(list)
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
-            .header(HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, messageReader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString());
+            .header(
+                HttpHeaders.PIPE_STATE,
+                pipeStateProvider.getState(types, messageReader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
+            );
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(
