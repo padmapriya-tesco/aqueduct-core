@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.OffsetEntity;
+import com.tesco.aqueduct.pipe.api.PipeState;
 import lombok.val;
 
 import java.util.OptionalLong;
@@ -27,6 +28,20 @@ public class DistributedInMemoryStorage extends InMemoryStorage {
         try {
             lock.lock();
             offsets.put(offset.getName(), offset.getValue().getAsLong());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void write(PipeState pipeState) {
+        final val lock = rwl.writeLock();
+
+        LOG.withPipeState(pipeState).info("in memory storage", "writing pipe state");
+
+        try {
+            lock.lock();
+            this.pipeState = pipeState;
         } finally {
             lock.unlock();
         }

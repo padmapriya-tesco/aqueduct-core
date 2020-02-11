@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.storage;
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.MessageResults;
+import com.tesco.aqueduct.pipe.api.PipeState;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class PostgresqlStorage implements MessageReader {
 
             final List<Message> messages = runMessagesQuery(messagesQuery);
 
-            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset));
+            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);

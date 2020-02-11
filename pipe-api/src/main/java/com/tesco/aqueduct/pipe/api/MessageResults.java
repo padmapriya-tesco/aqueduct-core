@@ -10,4 +10,5 @@ public class MessageResults {
     private final List<Message> messages;
     private final long retryAfterSeconds;
     private final OptionalLong globalLatestOffset;
+    private final PipeState pipeState;
 }

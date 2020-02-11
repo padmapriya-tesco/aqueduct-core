@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.http
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
@@ -29,7 +30,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Shared InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
-    @Shared PipeStateProvider pipeStateProvider= Mock()
+    private static PipeStateProvider pipeStateProvider
 
     // overloads of settings for this test
     @Shared propertyOverloads = [
@@ -40,6 +41,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         // There is nicer way in the works: https://github.com/micronaut-projects/micronaut-test
         // but it is not handling some basic things yet and is not promoted yet
         // Eventually this whole thing should be replaced with @MockBean(MessageReader) def provide(){ storage }
+        pipeStateProvider = Mock(PipeStateProvider)
 
         context = ApplicationContext
             .build()
@@ -49,7 +51,11 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
 
-        pipeStateProvider.getState(_ ,_) >> new PipeStateResponse(true, 1000)
+        // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
+        pipeStateProvider.getState(_ ,_) >> { args ->
+            def type = args[0]
+            return type.contains("OutOfDateType") ? new PipeStateResponse(false, 1000) : new PipeStateResponse(true, 1000)
+        }
 
         context.registerSingleton(pipeStateProvider)
         context.start()
@@ -204,6 +210,26 @@ class PipeReadControllerIntegrationSpec extends Specification {
         type    | statusCode    | headerName                              | headerValue           | response
         'type1' |  200          | HttpHeaders.GLOBAL_LATEST_OFFSET        | '101'                 | '[]'
         'type2' |  200          | HttpHeaders.GLOBAL_LATEST_OFFSET        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
+    }
+
+    @Unroll
+    void "pipe signals pipe state in response header"() {
+        given:
+        pipeStateProvider.getState(["$type"], _) >> new PipeStateResponse(isPipeUpToDate, 1)
+
+        when:
+        def request = RestAssured.get("/pipe/0?type=$type")
+
+        then:
+        request
+            .then()
+            .statusCode(200)
+            .header(HttpHeaders.PIPE_STATE, headerValue)
+
+        where:
+        type           | isPipeUpToDate  | headerValue
+        'type1'        | true            | PipeState.UP_TO_DATE.toString()
+        'OutOfDateType'| false           | PipeState.OUT_OF_DATE.toString()
     }
 
     @Unroll

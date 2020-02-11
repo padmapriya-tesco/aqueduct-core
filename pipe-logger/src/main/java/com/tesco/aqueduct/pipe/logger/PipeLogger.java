@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.logger;
 
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.OffsetEntity;
+import com.tesco.aqueduct.pipe.api.PipeState;
 import org.slf4j.Logger;
 import org.slf4j.MDC;
 
@@ -109,6 +110,13 @@ public class PipeLogger {
         final Map<String, String> fields = new HashMap<>();
         fields.put("name", offset.getName().toString());
         fields.put("value", offset.getValue().toString());
+        return new PipeLogger(this, fields);
+    }
+
+    public PipeLogger withPipeState(PipeState pipeState) {
+        final Map<String, String> fields = new HashMap<>();
+        fields.put("name", "pipeState");
+        fields.put("value", pipeState.toString());
         return new PipeLogger(this, fields);
     }
 }

@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.http
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
@@ -23,6 +24,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     static final String DATA_BLOB = "aaaaaaaaaaaaabbbbbbbbbbbbcccccccccccccdddddddeeeeeeeee"
     static String type = "type1"
     static int RETRY_AFTER_SECONDS = 600
+    PipeStateProvider pipeStateProvider
 
     @Shared
     InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
@@ -38,7 +40,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
             .build()
 
         context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
-        context.registerSingleton(PipeStateProvider, Mock(PipeStateProvider))
+        context.registerSingleton(pipeStateProvider)
         context.start()
 
         EmbeddedServer server = context.getBean(EmbeddedServer)
@@ -51,6 +53,10 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
 
     void setup() {
         storage.clear()
+
+        pipeStateProvider = Mock(PipeStateProvider) {
+            getState(_ as List, _ as MessageReader) >> new PipeStateResponse(true, 100)
+        }
     }
 
     void cleanup() {
@@ -93,7 +99,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     }
 
     @Ignore
-    void "A batch of messages that exeeds the payload size is truncated correctly"() {
+    void "A batch of messages that exceeds the payload size is truncated correctly"() {
         given:
         def messages = [
             Message(type, "a", "contentType", 100, null, DATA_BLOB),
