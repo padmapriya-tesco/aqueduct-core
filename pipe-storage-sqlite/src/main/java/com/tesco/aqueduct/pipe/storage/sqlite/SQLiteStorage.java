@@ -92,7 +92,7 @@ public class SQLiteStorage implements MessageStorage {
                 try (ResultSet resultSet = statement.executeQuery()) {
                     return resultSet.next()
                         ? PipeState.valueOf(resultSet.getString("value"))
-                        : PipeState.OUT_OF_DATE;
+                        : PipeState.UNKNOWN;
                 }
             }
         );
