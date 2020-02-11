@@ -185,6 +185,23 @@ class SQLiteStorageIntegrationSpec extends Specification {
         rows.get(0).get("value") == PipeState.UP_TO_DATE.toString()
     }
 
+    def 'multiple writes of pipe state results in only one record in Pipe State table and value should reflect the last write'() {
+        given: 'a database connection'
+        def sql = Sql.newInstance(connectionUrl)
+
+        when: 'the pipe state is written multiple times'
+        sqliteStorage.write(PipeState.OUT_OF_DATE)
+        sqliteStorage.write(PipeState.UP_TO_DATE)
+        sqliteStorage.write(PipeState.OUT_OF_DATE)
+
+        then: 'only one record exists in pipe state table'
+        sql.rows("SELECT count(*) FROM PIPE_STATE").size() == 1
+
+        and: 'value should be the last written state'
+        def rows = sql.rows("SELECT value FROM PIPE_STATE WHERE name='pipe_state'")
+        rows.get(0).get("value") == PipeState.OUT_OF_DATE.toString()
+    }
+
     def 'newly stored message with offset is successfully retrieved from the database'() {
         def offset = 1023L
 
