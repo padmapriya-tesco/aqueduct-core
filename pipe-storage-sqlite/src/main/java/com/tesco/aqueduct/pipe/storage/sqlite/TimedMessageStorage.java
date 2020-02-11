@@ -1,6 +1,9 @@
 package com.tesco.aqueduct.pipe.storage.sqlite;
 
-import com.tesco.aqueduct.pipe.api.*;
+import com.tesco.aqueduct.pipe.api.Message;
+import com.tesco.aqueduct.pipe.api.MessageResults;
+import com.tesco.aqueduct.pipe.api.MessageStorage;
+import com.tesco.aqueduct.pipe.api.OffsetEntity;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -12,14 +15,12 @@ public class TimedMessageStorage implements MessageStorage {
     private final Timer latestOffsetTimer;
     private final Timer writeMessageTimer;
     private final Timer writeMessagesTimer;
-    private final Timer writePipeStateTimer;
 
     public TimedMessageStorage(final MessageStorage storage, final MeterRegistry meterRegistry) {
         this.storage = storage;
         readTimer = meterRegistry.timer("pipe.storage.read");
         latestOffsetTimer = meterRegistry.timer("pipe.storage.latestOffset");
         writeMessageTimer = meterRegistry.timer("pipe.storage.writeMessage");
-        writePipeStateTimer = meterRegistry.timer("pipe.storage.writePipeState");
         writeMessagesTimer = meterRegistry.timer("pipe.storage.writeMessages");
     }
 
@@ -46,11 +47,6 @@ public class TimedMessageStorage implements MessageStorage {
     @Override
     public void write(OffsetEntity offset) {
         writeMessagesTimer.record(() -> storage.write(offset));
-    }
-
-    @Override
-    public void write(PipeState pipeState) {
-        writePipeStateTimer.record(() -> storage.write(pipeState));
     }
 
     @Override

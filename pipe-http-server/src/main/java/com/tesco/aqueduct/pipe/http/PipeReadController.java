@@ -35,7 +35,7 @@ public class PipeReadController {
 
     //TODO: Use constructor
     @Inject @Named("local")
-    private MessageReader<MessageResults> messageReader;
+    private MessageReader messageReader;
 
     @Inject
     private PipeStateProvider pipeStateProvider;

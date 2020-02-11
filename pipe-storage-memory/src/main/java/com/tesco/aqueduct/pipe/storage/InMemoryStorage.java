@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparingLong;
 
-public abstract class InMemoryStorage implements MessageReader<MessageResults>, MessageWriter {
+public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
     static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(InMemoryStorage.class));
 
@@ -52,16 +52,13 @@ public abstract class InMemoryStorage implements MessageReader<MessageResults>, 
 
             if (index >= 0) {
                 // found
-                return new MessageResults(
-                    new MessageEntity(readFrom(types,index), 0, globalLatestOffset),
-                    PipeState.UP_TO_DATE);
+                return new MessageResults(readFrom(types,index), 0, globalLatestOffset, PipeState.UP_TO_DATE);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(
-                    new MessageEntity(readFrom(types,-index-1), retry, globalLatestOffset), PipeState.UP_TO_DATE);
+                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset, PipeState.UP_TO_DATE);
             }
         } finally {
             lock.unlock();
