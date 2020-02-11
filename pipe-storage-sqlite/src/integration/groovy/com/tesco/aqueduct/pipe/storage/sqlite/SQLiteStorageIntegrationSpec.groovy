@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageEntity
 import com.tesco.aqueduct.pipe.api.MessageResults
 import com.tesco.aqueduct.pipe.api.OffsetEntity
 import com.tesco.aqueduct.pipe.api.PipeState
@@ -196,8 +195,8 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(message)
 
         and: 'we retrieve the message from the database'
-        MessageEntity messageEntity = sqliteStorage.read(null, offset, "locationUuid")
-        Message retrievedMessage = messageEntity.messages.get(0)
+        MessageResults messageResults = sqliteStorage.read(null, offset, "locationUuid")
+        Message retrievedMessage = messageResults.messages.get(0)
 
         then: 'the message retrieved should be what we saved'
         notThrown(Exception)
@@ -249,12 +248,12 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         and: 'we retrieve the message from the database'
-        MessageEntity messageEntity = sqliteStorage.read(['my-new-type'], offset, "locationUuid")
-        Message retrievedMessage = messageEntity.messages.get(0)
+        MessageResults messageResults = sqliteStorage.read(['my-new-type'], offset, "locationUuid")
+        Message retrievedMessage = messageResults.messages.get(0)
 
         then: 'the message retrieved should be what we saved'
         notThrown(Exception)
-        messageEntity.messages.size() == 1
+        messageResults.messages.size() == 1
         expectedMessage == retrievedMessage
     }
 
@@ -266,10 +265,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'all messages with offset are read'
-        MessageEntity messageEntity = sqliteStorage.read(null, 2, "locationUuid")
+        MessageResults messageResults = sqliteStorage.read(null, 2, "locationUuid")
 
         then: 'multiple messages are retrieved'
-        messageEntity.messages.size() == 3
+        messageResults.messages.size() == 3
     }
 
     def 'limit on amount of multiple messages returned returns only as many messages as limit defines'() {
@@ -283,10 +282,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'all messages with offset are read'
-        MessageEntity messageEntity = sqliteStorage.read(null, 2, "locationUuid")
+        MessageResults messageResults = sqliteStorage.read(null, 2, "locationUuid")
 
         then: 'multiple messages are retrieved'
-        messageEntity.messages.size() == 3
+        messageResults.messages.size() == 3
     }
 
     def 'retrieves the latest offset'() {
@@ -332,7 +331,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(msg3)
 
         when: "reading from the database"
-        MessageEntity result = sqliteStorage.read(["type-1"], 0, "locationUuid")
+        MessageResults result = sqliteStorage.read(["type-1"], 0, "locationUuid")
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -381,10 +380,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         // setup creates the table and populates globalLatestOffset
 
         when: 'performing a read into the database'
-        def messageEntity = sqliteStorage.read(['type-1'], 1, "locationUuid")
+        def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
 
         then: 'the latest offset for the messages with one of the types is returned'
-        messageEntity.getGlobalLatestOffset() == OptionalLong.of(3)
+        messageResults.getGlobalLatestOffset() == OptionalLong.of(3)
     }
 
     def 'retrieves the global latest offset as empty when it does not exist'() {
@@ -394,10 +393,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
         when: 'performing a read into the database'
-        def messageEntity = sqliteStorage.read(['type-1'], 1, "locationUuid")
+        def messageResults = sqliteStorage.read(['type-1'], 1, "locationUuid")
 
         then: 'the latest offset for the messages with one of the types is returned'
-        messageEntity.getGlobalLatestOffset() == OptionalLong.empty()
+        messageResults.getGlobalLatestOffset() == OptionalLong.empty()
     }
 
     def 'messages are ready from the database with the correct retry after'() {
@@ -411,10 +410,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'all messages with offset are read'
-        MessageEntity messageEntity = sqliteStorage.read(null, 1, "locationUuid")
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
 
         then: 'the retry after is 0'
-        messageEntity.retryAfterSeconds == 0
+        messageResults.retryAfterSeconds == 0
     }
 
     def 'throws an exception if there is a problem with the database connection on startup'() {
@@ -438,15 +437,15 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageEntity messageEntity = sqliteStorage.read(null, 1, "locationUuid")
-        List<Message> retrievedMessages = messageEntity.messages
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
+        List<Message> retrievedMessages = messageResults.messages
 
         then: 'duplicate messages are deleted'
         retrievedMessages.size() == 2
 
         and: 'the correct compacted message list is returned in the message results'
-        messageEntity.messages*.offset*.intValue() == [2, 3]
-        messageEntity.messages*.key == ["B", "A"]
+        messageResults.messages*.offset*.intValue() == [2, 3]
+        messageResults.messages*.key == ["B", "A"]
     }
 
     def 'All duplicate messages are compacted to a given offset with 3 duplicates'() {
@@ -463,12 +462,12 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageEntity messageEntity = sqliteStorage.read(null, 1, "locationUuid")
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
 
         then: 'duplicate messages are not deleted as they are beyond the threshold'
-        messageEntity.messages.size() == 4
-        messageEntity.messages*.offset*.intValue() == [1, 2, 3, 4]
-        messageEntity.messages*.key == ["A", "A", "A", "B"]
+        messageResults.messages.size() == 4
+        messageResults.messages*.offset*.intValue() == [1, 2, 3, 4]
+        messageResults.messages*.key == ["A", "A", "A", "B"]
     }
 
     def 'All duplicate messages are compacted to a given offset, complex case'() {
@@ -489,12 +488,12 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageEntity messageEntity = sqliteStorage.read(null, 1, "locationUuid")
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
 
         then: 'duplicate messages are deleted that are within the threshold'
-        messageEntity.messages.size() == 7
-        messageEntity.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
-        messageEntity.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
+        messageResults.messages.size() == 7
+        messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
+        messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
     }
 
     def 'messages and offset are deleted when deleteAllMessages is called'() {

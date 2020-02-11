@@ -3,8 +3,6 @@ package com.tesco.aqueduct.pipe.storage.sqlite
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
-import com.tesco.aqueduct.pipe.http.PipeStateProvider
-import com.tesco.aqueduct.pipe.storage.DistributedStorage
 import groovy.sql.Sql
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
@@ -72,10 +70,9 @@ class TimedStorageIntegrationSpec extends Specification {
 
         when: 'we use the SQLiteStorage to create a connection'
         SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
-        def distributedStorage = new DistributedStorage(sqliteStorage, sqliteStorage, Mock(PipeStateProvider))
 
         and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(distributedStorage, meterRegistry)
+        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
 
         and: 'store the message to the database'
         storage.write(message)
@@ -93,10 +90,9 @@ class TimedStorageIntegrationSpec extends Specification {
 
         and: 'a data store controller exists'
         def sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
-        def distributedStorage = new DistributedStorage(sqliteStorage, sqliteStorage, Mock(PipeStateProvider))
 
         when: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(distributedStorage, meterRegistry)
+        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
 
         and: 'these messages are passed to the data store controller'
         storage.write(messages)
@@ -119,10 +115,9 @@ class TimedStorageIntegrationSpec extends Specification {
 
         when: 'we use the sqliteStorage to create a connection'
         SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
-        def distributedStorage = new DistributedStorage(sqliteStorage, sqliteStorage, Mock(PipeStateProvider))
 
         and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(distributedStorage, meterRegistry)
+        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
 
         and: 'store the message to the database'
         storage.write(message)
@@ -142,10 +137,9 @@ class TimedStorageIntegrationSpec extends Specification {
 
         and: 'a data store controller exists'
         def sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
-        def distributedStorage = new DistributedStorage(sqliteStorage, sqliteStorage, Mock(PipeStateProvider))
 
         and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(distributedStorage, meterRegistry)
+        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
 
         and: 'these messages are stored'
         storage.write(messages)
