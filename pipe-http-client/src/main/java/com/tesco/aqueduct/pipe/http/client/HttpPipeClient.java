@@ -48,15 +48,10 @@ public class HttpPipeClient implements MessageReader {
     }
 
     private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {
-        long latestGlobalOffset;
-
         // TODO - Ensure backwards compatible, need to update to throw error once all tills have latest software
-        if (getGlobalOffsetHeader(response) == null) {
-            latestGlobalOffset = getLatestOffsetMatching(types);
-        } else {
-            latestGlobalOffset = Long.parseLong(getGlobalOffsetHeader(response));
-        }
-        return latestGlobalOffset;
+        return getGlobalOffsetHeader(response) == null
+            ? getLatestOffsetMatching(types)
+            : Long.parseLong(getGlobalOffsetHeader(response));
     }
 
     private String getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
@@ -64,19 +59,13 @@ public class HttpPipeClient implements MessageReader {
     }
 
     private PipeState getPipeState(@Nullable List<String> types, HttpResponse<List<Message>> response) {
-        if (response.header(HttpHeaders.PIPE_STATE) == null) {
-            return getPipeState(types);
-        } else {
-            return PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
-        }
+        return response.header(HttpHeaders.PIPE_STATE) == null
+            ? getPipeState(types)
+            : PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
     }
 
     private PipeState getPipeState(@Nullable List<String> types) {
-        if (getPipeStateResponse(types).isUpToDate()) {
-            return PipeState.UP_TO_DATE;
-        } else {
-            return PipeState.OUT_OF_DATE;
-        }
+        return getPipeStateResponse(types).isUpToDate() ? PipeState.UP_TO_DATE : PipeState.OUT_OF_DATE;
     }
 
     @Override

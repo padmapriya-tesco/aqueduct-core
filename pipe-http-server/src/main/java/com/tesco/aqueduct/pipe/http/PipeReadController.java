@@ -82,11 +82,7 @@ public class PipeReadController {
         MutableHttpResponse<List<Message>> response = HttpResponse.ok(list)
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
             .header(HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, messageReader).isUpToDate()
-                    ?
-                    UP_TO_DATE.toString()
-                    :
-                    OUT_OF_DATE.toString());
+                pipeStateProvider.getState(types, messageReader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString());
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(
