@@ -4,6 +4,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
+import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -82,6 +83,14 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         then: "a query is created that does not contain tags in the where clause"
         1 * preparedStatement.setString(1, "some_type")
         0 * preparedStatement.setString(_ as Integer, '{}')
+    }
+
+    def "get pipe state as up to date always"() {
+        when: "reading the messages"
+        def messageResults = storage.read(["some_type"], 0, "someLocationUuid")
+
+        then: "pipe state is up to date"
+        messageResults.pipeState == PipeState.UP_TO_DATE
     }
 
     def "get messages where tags contains type but no other keys"() {

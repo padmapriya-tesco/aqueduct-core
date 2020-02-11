@@ -39,19 +39,22 @@ public class SQLiteStorage implements MessageStorage {
     private void createEventTableIfNotExists() {
         execute(
             SQLiteQueries.CREATE_EVENT_TABLE,
-            (connection, statement) -> statement.execute());
+            (connection, statement) -> statement.execute()
+        );
     }
 
     private void createOffsetTableIfNotExists() {
         execute(
             SQLiteQueries.OFFSET_TABLE,
-            (connection, statement) -> statement.execute());
+            (connection, statement) -> statement.execute()
+        );
     }
 
     private void createPipeStateTableIfNotExists() {
         execute(
             SQLiteQueries.PIPE_STATE_TABLE,
-            (Connection, statement) -> statement.execute());
+            (Connection, statement) -> statement.execute()
+        );
     }
 
     @Override
@@ -83,14 +86,16 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     private PipeState getPipeState() {
-        return executeGet(SQLiteQueries.GET_PIPE_STATE,
+        return executeGet(
+            SQLiteQueries.GET_PIPE_STATE,
             (connection, statement) -> {
                 try (ResultSet resultSet = statement.executeQuery()) {
                     return resultSet.next()
-                            ? PipeState.valueOf(resultSet.getString("value"))
-                            : PipeState.OUT_OF_DATE;
+                        ? PipeState.valueOf(resultSet.getString("value"))
+                        : PipeState.OUT_OF_DATE;
                 }
-            });
+            }
+        );
     }
 
     public int calculateRetryAfter(final int messageCount) {
@@ -183,18 +188,21 @@ public class SQLiteStorage implements MessageStorage {
                 statement.setLong(2, offset.getValue().getAsLong());
                 statement.setLong(3, offset.getValue().getAsLong());
                 statement.execute();
-            });
+            }
+        );
     }
 
     @Override
     public void write(PipeState pipeState) {
-        execute(SQLiteQueries.UPSERT_PIPE_STATE,
+        execute(
+            SQLiteQueries.UPSERT_PIPE_STATE,
             ((connection, statement) -> {
                 statement.setString(1, "pipe_state");
                 statement.setString(2, pipeState.toString());
                 statement.setString(3, pipeState.toString());
                 statement.execute();
-            }));
+            })
+        );
     }
 
     private void execute(String query, SqlConsumer consumer) {
@@ -236,21 +244,21 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     private void deleteOffsets(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_OFFSETS)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_OFFSETS)) {
             statement.execute();
             LOG.info("deleteOffsets", String.format("Delete offsets result: %d", statement.getUpdateCount()));
         }
     }
 
     private void deleteEvents(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)) {
             statement.execute();
             LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
         }
     }
 
     private void vacuumDatabase(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.VACUUM_DB)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.VACUUM_DB)) {
             statement.execute();
             LOG.info("vacuumDatabase", String.format("Vacuum result: %d", statement.getUpdateCount()));
         }
@@ -277,8 +285,8 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    private void setStatementParametersForInsertMessageQuery(final PreparedStatement statement, final Message message)
-            throws SQLException {
+    private void setStatementParametersForInsertMessageQuery(
+            final PreparedStatement statement, final Message message) throws SQLException {
         try {
             statement.setLong(1, message.getOffset());
             statement.setString(2, message.getKey());
