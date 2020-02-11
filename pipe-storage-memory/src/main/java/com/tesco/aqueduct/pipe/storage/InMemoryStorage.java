@@ -22,6 +22,8 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
     final List<Message> messages = new ArrayList<>();
     final Map<OffsetName, Long> offsets = new HashMap<>();
+    PipeState pipeState = PipeState.OUT_OF_DATE;
+
     final private int limit;
 
     public InMemoryStorage(final int limit, final long retryAfter) {

@@ -12,5 +12,6 @@ public interface MessageWriter {
 
     void write(Message message);
     void write(OffsetEntity offset);
+    void write(PipeState pipeState);
     void deleteAll();
 }

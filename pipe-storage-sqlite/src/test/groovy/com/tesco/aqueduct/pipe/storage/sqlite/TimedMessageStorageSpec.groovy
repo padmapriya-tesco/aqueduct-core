@@ -84,10 +84,13 @@ class TimedMessageStorageSpec extends Specification {
         def mockedStorage = Mock(MessageStorage)
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
-        when: "we call the write pipe state method"
-        timedStorage.write(PipeState.UP_TO_DATE)
+        and: "pipe state to write"
+        def pipeState = PipeState.UP_TO_DATE
 
-        then: "the write method is called on the underlying storage"
-        1 * mockedStorage.write(PipeState.UP_TO_DATE)
+        when: "we write the pipeState"
+        timedStorage.write(pipeState)
+
+        then: "the write pipeState is called on the underlying storage"
+        1 * mockedStorage.write(pipeState)
     }
 }

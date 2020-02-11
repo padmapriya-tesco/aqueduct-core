@@ -33,6 +33,7 @@ public class SQLiteStorage implements MessageReader<MessageEntity>, MessageWrite
 
         createEventTableIfNotExists();
         createOffsetTableIfNotExists();
+        createPipeStateTableIfNotExists();
     }
 
     private void createEventTableIfNotExists() {
@@ -45,6 +46,12 @@ public class SQLiteStorage implements MessageReader<MessageEntity>, MessageWrite
         execute(
             SQLiteQueries.OFFSET_TABLE,
             (connection, statement) -> statement.execute());
+    }
+
+    private void createPipeStateTableIfNotExists() {
+        execute(
+            SQLiteQueries.PIPE_STATE_TABLE,
+            (Connection, statement) -> statement.execute());
     }
 
     @Override
@@ -160,12 +167,24 @@ public class SQLiteStorage implements MessageReader<MessageEntity>, MessageWrite
     public void write(OffsetEntity offset) {
         execute(
             SQLiteQueries.UPSERT_OFFSET,
-            (Connection, statement) -> {
+            (connection, statement) -> {
                 statement.setString(1, offset.getName().toString());
                 statement.setLong(2, offset.getValue().getAsLong());
                 statement.setLong(3, offset.getValue().getAsLong());
                 statement.execute();
             });
+    }
+
+    @Override
+    public void write(PipeState pipeState) {
+        execute(SQLiteQueries.UPSERT_PIPE_STATE,
+                ((connection, statement) -> {
+                    statement.setString(1, "pipe_state");
+                    statement.setString(2, pipeState.toString());
+                    statement.setString(3, pipeState.toString());
+                    statement.execute();
+                }));
+
     }
 
     private void execute(String query, SqlConsumer consumer) {

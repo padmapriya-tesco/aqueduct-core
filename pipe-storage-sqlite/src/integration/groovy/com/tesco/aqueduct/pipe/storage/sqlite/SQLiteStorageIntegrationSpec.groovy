@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageEntity
 import com.tesco.aqueduct.pipe.api.MessageResults
 import com.tesco.aqueduct.pipe.api.OffsetEntity
+import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import org.sqlite.SQLiteDataSource
 import spock.lang.Specification
@@ -65,6 +66,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         sql.execute("DROP TABLE IF EXISTS EVENT;")
         sql.execute("DROP TABLE IF EXISTS OFFSET;")
+        sql.execute("DROP TABLE IF EXISTS PIPE_STATE;")
 
         sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
@@ -119,6 +121,23 @@ class SQLiteStorageIntegrationSpec extends Specification {
         tableExists
     }
 
+    def 'pipe state table gets created upon start up'() {
+        given: 'a connection to the database is established'
+        def sql = Sql.newInstance(connectionUrl)
+
+        when: 'the SQLiteStorage class is instantiated'
+        new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        then: 'the pipe state table is created'
+        def tableExists = false
+        sql.query("SELECT name FROM sqlite_master WHERE type='table' AND name='PIPE_STATE';", {
+            it.next()
+            tableExists = it.getString("name") == 'PIPE_STATE'
+        })
+
+        tableExists
+    }
+
     def 'message is successfully written to the database'() {
         def offset = 1023L
 
@@ -152,6 +171,21 @@ class SQLiteStorageIntegrationSpec extends Specification {
         size == 2
     }
 
+    def 'pipe state is successfully written to the database'() {
+        given: 'the pipe state'
+        def pipeState = PipeState.UP_TO_DATE
+
+        and: 'a database connection'
+        def sql = Sql.newInstance(connectionUrl)
+
+        when: 'the pipe state is written'
+        sqliteStorage.write(pipeState)
+
+        then: 'the pipe state is stored in the pipe state table'
+        def rows = sql.rows("SELECT value FROM PIPE_STATE WHERE name='pipe_state'")
+        rows.get(0).get("value") == PipeState.UP_TO_DATE.toString()
+    }
+
     def 'newly stored message with offset is successfully retrieved from the database'() {
         def offset = 1023L
 
@@ -168,6 +202,40 @@ class SQLiteStorageIntegrationSpec extends Specification {
         then: 'the message retrieved should be what we saved'
         notThrown(Exception)
         message == retrievedMessage
+    }
+
+    def 'message with default pipe state as OUT_OF_DATE is returned when no state exists in the database'() {
+        given: "no pipe state exist in the database"
+
+        when: 'we retrieve the message from the database'
+        MessageResults messageResults = sqliteStorage.read(null, 0, "locationUuid")
+
+        then: 'the pipe states should be defaulted to OUT_OF_DATE'
+        messageResults.pipeState == PipeState.OUT_OF_DATE
+    }
+
+    def 'newly stored message with offset and pipe_state is successfully retrieved from the database'() {
+        def offset = 1023L
+
+        given: 'a message'
+        Message message = message(offset)
+
+        and: 'store the message to the database'
+        sqliteStorage.write(message)
+
+        and: 'store the pipe state to the database'
+        sqliteStorage.write(PipeState.UP_TO_DATE)
+
+        when: 'we retrieve the message from the database'
+        MessageResults messageResults = sqliteStorage.read(null, offset, "locationUuid")
+        Message retrievedMessage = messageResults.messages.get(0)
+
+        then: 'the message retrieved should be what we saved'
+        notThrown(Exception)
+        message == retrievedMessage
+
+        and: "pipe state should be what we saved"
+        messageResults.pipeState == PipeState.UP_TO_DATE
     }
 
     def 'newly stored message with type is successfully retrieved from the database'() {
