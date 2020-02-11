@@ -189,13 +189,12 @@ public class SQLiteStorage implements MessageStorage {
     @Override
     public void write(PipeState pipeState) {
         execute(SQLiteQueries.UPSERT_PIPE_STATE,
-                ((connection, statement) -> {
-                    statement.setString(1, "pipe_state");
-                    statement.setString(2, pipeState.toString());
-                    statement.setString(3, pipeState.toString());
-                    statement.execute();
-                }));
-
+            ((connection, statement) -> {
+                statement.setString(1, "pipe_state");
+                statement.setString(2, pipeState.toString());
+                statement.setString(3, pipeState.toString());
+                statement.execute();
+            }));
     }
 
     private void execute(String query, SqlConsumer consumer) {
