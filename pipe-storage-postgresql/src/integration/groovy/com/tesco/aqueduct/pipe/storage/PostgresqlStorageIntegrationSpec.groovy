@@ -21,7 +21,6 @@ import java.time.ZonedDateTime
 
 class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
-
     // Starts real PostgreSQL database, takes some time to create it and clean it up.
     @Shared @ClassRule
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
@@ -33,9 +32,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     private static final long CLUSTER_A = 1L
     private static final long CLUSTER_B = 2L
-
     long retryAfter = 5000
-
     long batchSize = 1000
     long maxOverheadBatchSize = (Message.MAX_OVERHEAD_SIZE * limit) + batchSize
 
