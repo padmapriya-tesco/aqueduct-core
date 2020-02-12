@@ -56,7 +56,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
                 created_utc timestamp NOT NULL,
                 tags JSONB NULL, 
                 data text NULL,
-                event_size int NOT NULL
+                event_size int NOT NULL,
+                cluster_id BIGINT NOT NULL DEFAULT 1
             );
         """)
 
@@ -199,9 +200,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def 'All duplicate messages are compacted for whole data store'() {
         given: 'an existing data store with duplicate messages for the same key'
-        insert(message(1, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type", "B","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'compaction is run on the whole data store'
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
@@ -218,12 +219,18 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         result.messages*.key == ["B", "A"]
     }
 
+    def 'Messages with the same key but different clusters are not compacted'() {
+        given: 'an existing data store with 2 messages with same key but different clusters'
+        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+    }
+
     def 'All duplicate messages are compacted to a given offset with 3 duplicates'() {
         given: 'an existing data store with duplicate messages for the same key'
-        insert(message(1, "type", "A","content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type", "A","content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(4, "type", "B","content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(3, "type", "A","content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(4, "type", "B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
 
         when: 'compaction is run up to the timestamp of offset 1'
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
@@ -240,14 +247,14 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def 'All duplicate messages are compacted to a given offset, complex case'() {
         given: 'an existing data store with duplicate messages for the same key'
-        insert(message(1, "type","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(4, "type","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(5, "type","A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(6, "type","B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(7, "type","B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(8, "type","D", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(6, "type", "B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(7, "type", "B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insert(message(8, "type", "D", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
 
         when: 'compaction is run up to the timestamp of offset 4'
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
@@ -265,9 +272,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     @Unroll
     def 'Global latest offset is returned'() {
         given: 'an existing data store with two different types of messages'
-        insert(message(1, "type1","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type2","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type3","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type2", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type3", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading all messages'
         def messageResults = storage.read([type], 0, locationUuid)
@@ -289,15 +296,15 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize)
 
         and: 'an existing data store with two different types of messages'
-        insert(message(1, "type1","A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type1","B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type1","C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(4, "type2","D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(5, "type2","E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(6, "type2","F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(7, "type1","G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(8, "type1","H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(9, "type1","I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type2", "D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type2", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(6, "type2", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(7, "type1", "G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(8, "type1", "H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(9, "type1", "I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading all messages'
         def messageResults = storage.read(["type1"], 0, "some-location")
