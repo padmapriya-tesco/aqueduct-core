@@ -21,15 +21,18 @@ import java.time.ZonedDateTime
 
 class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
+
     // Starts real PostgreSQL database, takes some time to create it and clean it up.
     @Shared @ClassRule
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
     @AutoCleanup
     Sql sql
-
     PostgresqlStorage storage
     DataSource dataSource
+
+    private static final long CLUSTER_A = 1L
+    private static final long CLUSTER_B = 2L
 
     long retryAfter = 5000
 
@@ -200,9 +203,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def 'All duplicate messages are compacted for whole data store'() {
         given: 'an existing data store with duplicate messages for the same key'
-        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insertWithCluster(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(2, "type", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
 
         when: 'compaction is run on the whole data store'
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
@@ -221,16 +224,29 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def 'Messages with the same key but different clusters are not compacted'() {
         given: 'an existing data store with 2 messages with same key but different clusters'
-        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insertWithCluster(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_B)
+
+        when: 'compaction is run on the whole data store'
+        storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
+
+        and: 'all messages are requested'
+        MessageResults result = storage.read(null, 0, "locationUuid")
+        List<Message> retrievedMessages = result.messages
+
+        then:
+        retrievedMessages.size() == 2
+        and: 'the correct compacted message list is returned in the message results'
+        result.messages*.offset*.intValue() == [1, 2]
+        result.messages*.key == ["A", "A"]
     }
 
-    def 'All duplicate messages are compacted to a given offset with 3 duplicates'() {
+    def 'Duplicate messages are not compacted when published after the threshold'() {
         given: 'an existing data store with duplicate messages for the same key'
-        insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(4, "type", "B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
-        insert(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"))
+        insertWithCluster(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(3, "type", "B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(4, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"), CLUSTER_A)
 
         when: 'compaction is run up to the timestamp of offset 1'
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
@@ -241,8 +257,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         then: 'duplicate messages are not deleted as they are beyond the threshold'
         messageResults.messages.size() == 4
         messageResults.messages*.offset*.intValue() == [1, 2, 3, 4]
-        messageResults.messages*.key == ["A", "A", "A", "B"]
-
+        messageResults.messages*.key == ["A", "A", "B", "A"]
     }
 
     def 'All duplicate messages are compacted to a given offset, complex case'() {
@@ -266,7 +281,30 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages.size() == 7
         messageResults.messages*.offset*.intValue() == [1, 2, 4, 5, 6, 7, 8]
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
+    }
 
+    def 'All duplicate messages are compacted to a given offset per cluster, complex case'() {
+        given: 'an existing data store with duplicate messages for the same key'
+        insertWithCluster(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_B)
+        insertWithCluster(message(4, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_B)
+        insertWithCluster(message(5, "type", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(6, "type", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), CLUSTER_B)
+        insertWithCluster(message(7, "type", "B", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"), CLUSTER_B)
+        insertWithCluster(message(8, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"), CLUSTER_A)
+        insertWithCluster(message(9, "type", "A", "content-type", ZonedDateTime.parse("2000-12-03T10:00:00Z"), "data"), CLUSTER_B)
+
+        when: 'compaction is run up to the timestamp of offset 4'
+        storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
+
+        and: 'all messages are requested'
+        MessageResults messageResults = storage.read(null, 1, "locationUuid")
+
+        then: 'duplicate messages are deleted that are within the threshold'
+        messageResults.messages.size() == 7
+        messageResults.messages*.offset*.intValue() == [2, 4, 5, 6, 7, 8, 9]
+        messageResults.messages*.key == ["A", "A", "B", "B", "B", "A", "A"]
     }
 
     @Unroll
@@ -339,5 +377,12 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
                 msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize
             )
         }
+    }
+
+    void insertWithCluster(Message msg, Long clusterId, def time = Timestamp.valueOf(msg.created.toLocalDateTime()), int maxMessageSize=0) {
+        sql.execute(
+            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?,?);",
+            msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize, clusterId
+        )
     }
 }
