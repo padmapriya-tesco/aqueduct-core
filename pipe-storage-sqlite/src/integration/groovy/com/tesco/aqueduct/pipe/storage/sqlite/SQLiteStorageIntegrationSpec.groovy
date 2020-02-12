@@ -220,14 +220,14 @@ class SQLiteStorageIntegrationSpec extends Specification {
         message == retrievedMessage
     }
 
-    def 'message with default pipe state as OUT_OF_DATE is returned when no state exists in the database'() {
+    def 'message with pipe state as UNKNOWN is returned when no state exists in the database'() {
         given: "no pipe state exist in the database"
 
         when: 'we retrieve the message from the database'
         MessageResults messageResults = sqliteStorage.read(null, 0, "locationUuid")
 
         then: 'the pipe states should be defaulted to OUT_OF_DATE'
-        messageResults.pipeState == PipeState.OUT_OF_DATE
+        messageResults.pipeState == PipeState.UNKNOWN
     }
 
     def 'newly stored message with offset and pipe_state is successfully retrieved from the database'() {
