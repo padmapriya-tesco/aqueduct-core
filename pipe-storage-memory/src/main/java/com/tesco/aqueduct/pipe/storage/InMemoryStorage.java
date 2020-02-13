@@ -83,6 +83,15 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
         return 0;
     }
 
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
+        for (int i = messages.size()-1 ; i >= 0 ; i--) {
+            final Message message = messages.get(i);
+            return OptionalLong.of(message.getOffset());
+        }
+        return OptionalLong.of(0);
+    }
+
     private boolean messageMatchTypes(final Message message, final List<String> types) {
         return types == null || types.isEmpty() || types.contains(message.getType());
     }

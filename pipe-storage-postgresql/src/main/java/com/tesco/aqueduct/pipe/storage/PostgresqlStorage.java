@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.storage;
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.MessageResults;
+import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.PipeState;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,16 @@ public class PostgresqlStorage implements MessageReader {
             return getLatestOffsetMatchingWithConnection(connection, types);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offeset matching", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
+        try (Connection connection = dataSource.getConnection()) {
+            return OptionalLong.of(getLatestOffsetWithConnection(connection));
+        } catch (SQLException exception) {
+            LOG.error("postgresql storage", "get latest offset", exception);
             throw new RuntimeException(exception);
         }
     }

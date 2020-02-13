@@ -35,10 +35,10 @@ class TimedMessageStorageSpec extends Specification {
         def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the read method"
-        timedStorage.getLatestOffset(OffsetName.LOCAL_LATEST_OFFSET)
+        timedStorage.getOffset(OffsetName.LOCAL_LATEST_OFFSET)
 
         then: "the read method is called on the underlying storage"
-        1 * mockedStorage.getLatestOffset(OffsetName.LOCAL_LATEST_OFFSET)
+        1 * mockedStorage.getOffset(OffsetName.LOCAL_LATEST_OFFSET)
     }
 
     def "write message events are timed"() {

@@ -21,5 +21,4 @@ public class CentralInMemoryStorage extends InMemoryStorage {
 
     @Override
     public void write(PipeState pipeState) { }
-
 }

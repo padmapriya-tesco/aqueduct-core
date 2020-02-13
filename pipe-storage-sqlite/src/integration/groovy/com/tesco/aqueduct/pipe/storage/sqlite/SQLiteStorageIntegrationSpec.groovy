@@ -625,7 +625,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
                 " ON CONFLICT(name) DO UPDATE SET VALUE = ${offsetValue.asLong};")
 
         when: "we retrieve the offset"
-        def result = sqliteStorage.getLatestOffset(offsetName)
+        def result = sqliteStorage.getOffset(offsetName)
 
         then: "the correct offset value is returned"
         result == offsetValue

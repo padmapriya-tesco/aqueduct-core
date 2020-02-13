@@ -35,8 +35,8 @@ public class TimedMessageStorage implements MessageStorage {
     }
 
     @Override
-    public OptionalLong getLatestOffset(OffsetName offsetName) {
-        return latestOffsetTimer.record(() -> storage.getLatestOffset(offsetName));
+    public OptionalLong getOffset(OffsetName offsetName) {
+        return latestOffsetTimer.record(() -> storage.getOffset(offsetName));
     }
 
     @Override

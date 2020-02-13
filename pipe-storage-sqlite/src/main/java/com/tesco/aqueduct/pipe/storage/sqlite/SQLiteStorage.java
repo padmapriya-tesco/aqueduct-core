@@ -82,7 +82,7 @@ public class SQLiteStorage implements MessageStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getLatestOffset(GLOBAL_LATEST_OFFSET), getPipeState());
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getOffset(GLOBAL_LATEST_OFFSET), getPipeState());
     }
 
     private PipeState getPipeState() {
@@ -141,7 +141,7 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     @Override
-    public OptionalLong getLatestOffset(OffsetName offsetName) {
+    public OptionalLong getOffset(OffsetName offsetName) {
         return executeGet(
             SQLiteQueries.getOffset(offsetName),
             (connection, statement) -> {
