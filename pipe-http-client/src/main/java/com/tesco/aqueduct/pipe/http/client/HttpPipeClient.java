@@ -49,7 +49,7 @@ public class HttpPipeClient implements MessageReader {
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
-        throw new UnsupportedOperationException("HttpPipeClient does not support this operation");
+        throw new UnsupportedOperationException("HttpPipeClient does not support this operation.");
     }
 
     private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {

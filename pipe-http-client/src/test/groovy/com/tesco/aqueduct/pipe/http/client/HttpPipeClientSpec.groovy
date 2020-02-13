@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.http.client
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
+import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import io.micronaut.cache.CacheManager
@@ -180,5 +181,13 @@ class HttpPipeClientSpec extends Specification {
 
         and: "the cache has been invalidated"
         1* cacheManager.getCache("health-check").invalidateAll()
+    }
+
+    def "throws unsupported operation error when getOffset invoked"() {
+        when:
+        client.getOffset(OffsetName.GLOBAL_LATEST_OFFSET)
+
+        then:
+        thrown(UnsupportedOperationException)
     }
 }
