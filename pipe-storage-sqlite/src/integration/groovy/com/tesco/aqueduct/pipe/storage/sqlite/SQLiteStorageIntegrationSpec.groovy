@@ -8,6 +8,7 @@ import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import org.sqlite.SQLiteDataSource
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -565,10 +566,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         offsetSecondSize == 0
     }
 
+    @Unroll
     def 'offset is written into the OFFSET table'() {
         given: "an offset to be written into the database"
-        def name = GLOBAL_LATEST_OFFSET
-        OffsetEntity offset = new OffsetEntity(name, OptionalLong.of(1113))
+        OffsetEntity offset = new OffsetEntity(offsetName, offsetValue)
 
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
@@ -578,12 +579,17 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         then: "the offset is stored into the database"
         OffsetEntity result
-        sql.query("SELECT name, value FROM OFFSET WHERE name = ${name.toString()}", {
+        sql.query("SELECT name, value FROM OFFSET WHERE name = ${offsetName.toString()}", {
             it.next()
             result = new OffsetEntity(valueOf(it.getString(1)), OptionalLong.of(it.getLong(2)))
         })
 
         result == offset
+
+        where:
+        offsetName           | offsetValue
+        GLOBAL_LATEST_OFFSET | OptionalLong.of(1L)
+        LOCAL_LATEST_OFFSET  | OptionalLong.of(2L)
     }
 
     def 'offset is updated when already present in OFFSET table'() {
@@ -609,5 +615,24 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
 
         result == updatedOffset
+    }
+
+    @Unroll
+    def 'the latest offset entity is returned from the db'() {
+        given: "the offset entity exists in the offset table"
+        def sql = Sql.newInstance(connectionUrl)
+        sql.execute("INSERT INTO OFFSET (name, value) VALUES (${offsetName.toString()}, ${offsetValue.asLong})" +
+                " ON CONFLICT(name) DO UPDATE SET VALUE = ${offsetValue.asLong};")
+
+        when: "we retrieve the offset"
+        def result = sqliteStorage.getLatestOffset(offsetName)
+
+        then: "the correct offset value is returned"
+        result == offsetValue
+
+        where:
+        offsetName           | offsetValue
+        GLOBAL_LATEST_OFFSET | OptionalLong.of(1L)
+        LOCAL_LATEST_OFFSET  | OptionalLong.of(2L)
     }
 }
