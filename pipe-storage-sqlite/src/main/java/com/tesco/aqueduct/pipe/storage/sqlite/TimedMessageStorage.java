@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 import java.util.List;
+import java.util.OptionalLong;
 
 public class TimedMessageStorage implements MessageStorage {
     private final MessageStorage storage;
@@ -31,6 +32,11 @@ public class TimedMessageStorage implements MessageStorage {
     @Override
     public long getLatestOffsetMatching(final List<String> types) {
         return latestOffsetTimer.record(() -> storage.getLatestOffsetMatching(types));
+    }
+
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
+        return latestOffsetTimer.record(() -> storage.getOffset(offsetName));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.OffsetEntity;
+import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.PipeState;
 import lombok.val;
 
@@ -45,5 +46,10 @@ public class DistributedInMemoryStorage extends InMemoryStorage {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
+        return offsets.get(offsetName) == null ? OptionalLong.empty() : OptionalLong.of(offsets.get(offsetName));
     }
 }

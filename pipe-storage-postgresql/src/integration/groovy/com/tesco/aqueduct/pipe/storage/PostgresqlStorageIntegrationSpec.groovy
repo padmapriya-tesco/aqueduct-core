@@ -4,6 +4,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
+import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import org.junit.ClassRule
@@ -84,6 +85,31 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         then: "a query is created that does not contain tags in the where clause"
         1 * preparedStatement.setString(1, "some_type")
         0 * preparedStatement.setString(_ as Integer, '{}')
+    }
+
+    @Unroll
+    def "get #offsetName returns max offset"() {
+        given: "there are messages"
+        def msg1 = message(offset: 1)
+        def msg2 = message(offset: 2)
+        def msg3 = message(offset: 3)
+
+        and: "they are inserted into the integrated database"
+        insert(msg1, 10)
+        insert(msg2, 10)
+        insert(msg3, 10)
+
+        when: "reading latest offset from the database"
+        def offset = storage.getOffset(offsetName)
+
+        then: "offset should be the offset of latest message in the storage"
+        offset.getAsLong() == 3
+
+        where:
+        offsetName                          | _
+        OffsetName.GLOBAL_LATEST_OFFSET     | _
+        OffsetName.LAST_ACKNOWLEDGED_OFFSET | _
+        OffsetName.LOCAL_LATEST_OFFSET      | _
     }
 
     def "get pipe state as up to date always"() {

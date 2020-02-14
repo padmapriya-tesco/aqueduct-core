@@ -47,6 +47,11 @@ public class HttpPipeClient implements MessageReader {
         );
     }
 
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
+        throw new UnsupportedOperationException("HttpPipeClient does not support this operation.");
+    }
+
     private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {
         // TODO - Ensure backwards compatible, need to update to throw error once all tills have latest software
         return getGlobalOffsetHeader(response) == null
