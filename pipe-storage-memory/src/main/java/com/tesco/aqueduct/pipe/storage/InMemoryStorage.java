@@ -22,7 +22,7 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
     final List<Message> messages = new ArrayList<>();
     final Map<OffsetName, Long> offsets = new HashMap<>();
-    PipeState pipeState = PipeState.OUT_OF_DATE;
+    PipeState pipeState = PipeState.UNKNOWN;
 
     final private int limit;
 
@@ -54,13 +54,13 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(types,index), 0, globalLatestOffset, PipeState.UP_TO_DATE);
+                return new MessageResults(readFrom(types,index), 0, globalLatestOffset, pipeState);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset, PipeState.UP_TO_DATE);
+                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset, pipeState);
             }
         } finally {
             lock.unlock();
