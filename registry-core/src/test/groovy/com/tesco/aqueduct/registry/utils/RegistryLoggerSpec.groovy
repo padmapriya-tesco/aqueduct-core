@@ -6,6 +6,7 @@ import spock.lang.Specification
 
 import java.time.ZonedDateTime
 
+import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE
 import static com.tesco.aqueduct.registry.model.Status.INITIALISING
 
 class RegistryLoggerSpec extends Specification {
@@ -72,14 +73,15 @@ class RegistryLoggerSpec extends Specification {
 
         RegistryLogger LOG = new RegistryLogger(logger)
         def myNode = Node.builder()
-                .group("1234")
-                .localUrl(url)
-                .following([url])
-                .requestedToFollow([url])
-                .offset(0)
-                .status(INITIALISING)
-                .lastSeen(ZonedDateTime.now())
-                .build()
+            .group("1234")
+            .localUrl(url)
+            .following([url])
+            .requestedToFollow([url])
+            .offset(0)
+            .status(INITIALISING)
+            .pipeState(UP_TO_DATE)
+            .lastSeen(ZonedDateTime.now())
+            .build()
 
         when:
         LOG.withNode(myNode).error("testWhere", "testWhat", "testWhy")
@@ -98,14 +100,15 @@ class RegistryLoggerSpec extends Specification {
 
         RegistryLogger LOG = new RegistryLogger(logger)
         def myNode = Node.builder()
-                .group("1234")
-                .localUrl(url)
-                .following([url])
-                .requestedToFollow([url])
-                .offset(0)
-                .status(INITIALISING)
-                .lastSeen(ZonedDateTime.now())
-                .build()
+            .group("1234")
+            .localUrl(url)
+            .following([url])
+            .requestedToFollow([url])
+            .offset(0)
+            .status(INITIALISING)
+            .pipeState(UP_TO_DATE)
+            .lastSeen(ZonedDateTime.now())
+            .build()
 
         when:
         LOG.withNode(myNode).info("testWhere", "testWhat")
@@ -124,12 +127,13 @@ class RegistryLoggerSpec extends Specification {
 
         RegistryLogger LOG = new RegistryLogger(logger)
         def myNode = Node.builder()
-                .group("1234")
-                .localUrl(url)
-                .offset(0)
-                .status(INITIALISING)
-                .lastSeen(ZonedDateTime.now())
-                .build()
+            .group("1234")
+            .localUrl(url)
+            .offset(0)
+            .pipeState(UP_TO_DATE)
+            .status(INITIALISING)
+            .lastSeen(ZonedDateTime.now())
+            .build()
 
         when:
         LOG.withNode(myNode).info("testWhere", "testWhat")

@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry.model
 
+import com.tesco.aqueduct.pipe.api.PipeState
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
@@ -307,10 +308,12 @@ class NodeGroupSpec extends Specification {
         URL n1Url = new URL("http://node-1")
         Node n1 = Node.builder()
             .localUrl(n1Url)
+            .pipeState(PipeState.UP_TO_DATE)
             .build()
         URL n2Url = new URL("http://node-2")
         Node n2 = Node.builder()
             .localUrl(n2Url)
+            .pipeState(PipeState.OUT_OF_DATE)
             .build()
         NodeGroup group = new NodeGroup([n1, n2])
         when: "the NodeGroup nodes are output as JSON"
@@ -321,12 +324,14 @@ class NodeGroupSpec extends Specification {
                 "{" +
                     "\"localUrl\":\"http://node-1\"," +
                     "\"offset\":\"0\"," +
+                    "\"pipeState\":\"$PipeState.UP_TO_DATE\"," +
                     "\"providerLastAckOffset\":\"0\"," +
                     "\"id\":\"http://node-1\"" +
                 "}," +
                 "{" +
                     "\"localUrl\":\"http://node-2\"," +
                     "\"offset\":\"0\"," +
+                    "\"pipeState\":\"$PipeState.OUT_OF_DATE\"," +
                     "\"providerLastAckOffset\":\"0\"," +
                     "\"id\":\"http://node-2\"" +
                 "}" +
