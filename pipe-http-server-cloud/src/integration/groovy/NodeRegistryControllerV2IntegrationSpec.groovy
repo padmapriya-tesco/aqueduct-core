@@ -199,7 +199,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "6735",
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
-                "pipeState": "$PipeState.UP_TO_DATE",
                 "status": "$INITIALISING",
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
