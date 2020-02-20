@@ -78,8 +78,8 @@ class RegistryLoggerSpec extends Specification {
             .following([url])
             .requestedToFollow([url])
             .offset(0)
-            .status(INITIALISING)
             .pipeState(UP_TO_DATE)
+            .status(INITIALISING)
             .lastSeen(ZonedDateTime.now())
             .build()
 
@@ -105,8 +105,8 @@ class RegistryLoggerSpec extends Specification {
             .following([url])
             .requestedToFollow([url])
             .offset(0)
-            .status(INITIALISING)
             .pipeState(UP_TO_DATE)
+            .status(INITIALISING)
             .lastSeen(ZonedDateTime.now())
             .build()
 

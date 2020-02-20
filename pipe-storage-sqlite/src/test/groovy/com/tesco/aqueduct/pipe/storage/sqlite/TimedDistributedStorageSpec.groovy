@@ -107,15 +107,15 @@ class TimedDistributedStorageSpec extends Specification {
         1 * mockedStorage.write(pipeState)
     }
 
-    def "read pipe state is timed"() {
+    def "get pipe state is timed"() {
         given: "we have an instance of TimedMessageStorage"
         def mockedStorage = Mock(DistributedStorage)
         def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
-        when: "we read the pipeState"
+        when: "we get the pipeState"
         timedStorage.getPipeState()
 
-        then: "the write pipeState is called on the underlying storage"
+        then: "the get pipeState is called on the underlying storage"
         1 * mockedStorage.getPipeState()
     }
 }
