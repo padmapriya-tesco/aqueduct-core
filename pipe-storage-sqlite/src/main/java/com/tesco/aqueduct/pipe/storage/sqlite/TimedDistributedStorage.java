@@ -7,21 +7,23 @@ import io.micrometer.core.instrument.Timer;
 import java.util.List;
 import java.util.OptionalLong;
 
-public class TimedMessageStorage implements MessageStorage {
-    private final MessageStorage storage;
+public class TimedDistributedStorage implements DistributedStorage {
+    private final DistributedStorage storage;
     private final Timer readTimer;
     private final Timer latestOffsetTimer;
     private final Timer writeMessageTimer;
     private final Timer writeMessagesTimer;
     private final Timer writePipeStatetimer;
+    private final Timer readPipeStateTimer;
 
-    public TimedMessageStorage(final MessageStorage storage, final MeterRegistry meterRegistry) {
+    public TimedDistributedStorage(final DistributedStorage storage, final MeterRegistry meterRegistry) {
         this.storage = storage;
         readTimer = meterRegistry.timer("pipe.storage.read");
         latestOffsetTimer = meterRegistry.timer("pipe.storage.latestOffset");
         writeMessageTimer = meterRegistry.timer("pipe.storage.writeMessage");
         writeMessagesTimer = meterRegistry.timer("pipe.storage.writeMessages");
         writePipeStatetimer = meterRegistry.timer("pipe.storage.writePipeState");
+        readPipeStateTimer = meterRegistry.timer("pipe.storage.readPipeState");
     }
 
     @Override
@@ -62,5 +64,10 @@ public class TimedMessageStorage implements MessageStorage {
     @Override
     public void deleteAll() {
         storage.deleteAll();
+    }
+
+    @Override
+    public PipeState getPipeState() {
+        return readPipeStateTimer.record(storage::getPipeState);
     }
 }

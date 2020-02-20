@@ -70,7 +70,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
-        sql.execute("INSERT INTO OFFSET (name, value) VALUES ('${GLOBAL_LATEST_OFFSET.toString()}',  3);")
+        sql.execute("INSERT INTO OFFSET (name, value) VALUES (${GLOBAL_LATEST_OFFSET.toString()},  3);")
     }
 
     def successfulDataSource() {
@@ -634,5 +634,24 @@ class SQLiteStorageIntegrationSpec extends Specification {
         offsetName           | offsetValue
         GLOBAL_LATEST_OFFSET | OptionalLong.of(1L)
         LOCAL_LATEST_OFFSET  | OptionalLong.of(2L)
+    }
+
+    @Unroll
+    def 'the latest pipe state is returned from the db'() {
+        given: "the pipeState entity exists in the offset table"
+        def sql = Sql.newInstance(connectionUrl)
+        sql.execute("INSERT INTO PIPE_STATE (name, value) VALUES ('pipe_state', ${pipeState.toString()})" +
+                " ON CONFLICT(name) DO UPDATE SET VALUE = ${pipeState.toString()};")
+
+        when: "we retrieve the pipe state"
+        def result = sqliteStorage.getPipeState()
+
+        then: "the correct pipe state value is returned"
+        result == pipeState
+
+        where:
+        pipeState               | _
+        PipeState.UP_TO_DATE    | _
+        PipeState.OUT_OF_DATE   | _
     }
 }

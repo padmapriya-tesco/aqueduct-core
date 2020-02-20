@@ -16,7 +16,7 @@ import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
 
-public class SQLiteStorage implements MessageStorage {
+public class SQLiteStorage implements DistributedStorage {
 
     private final DataSource dataSource;
     private final int limit;
@@ -85,7 +85,8 @@ public class SQLiteStorage implements MessageStorage {
         return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getOffset(GLOBAL_LATEST_OFFSET), getPipeState());
     }
 
-    private PipeState getPipeState() {
+    @Override
+    public PipeState getPipeState() {
         return executeGet(
             SQLiteQueries.GET_PIPE_STATE,
             (connection, statement) -> {
