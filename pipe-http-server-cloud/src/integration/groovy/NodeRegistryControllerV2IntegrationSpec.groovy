@@ -3,6 +3,7 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import com.tesco.aqueduct.registry.model.TillStorage
@@ -562,6 +563,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
+                "pipeState": "$PipeState.UP_TO_DATE",
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")

@@ -13,7 +13,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.function.Supplier
 
-class TimedStorageIntegrationSpec extends Specification {
+class TimedDistributedStorageIntegrationSpec extends Specification {
     static final def CONNECTION_URL = "jdbc:sqlite:aqueduct-pipe.db"
     static final def LIMIT = 1000
     static final long BATCH_SIZE = 1000
@@ -72,7 +72,7 @@ class TimedStorageIntegrationSpec extends Specification {
         SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
 
         and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
+        TimedDistributedStorage storage = new TimedDistributedStorage(sqliteStorage, meterRegistry)
 
         and: 'store the message to the database'
         storage.write(message)
@@ -92,7 +92,7 @@ class TimedStorageIntegrationSpec extends Specification {
         def sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
 
         when: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
+        TimedDistributedStorage storage = new TimedDistributedStorage(sqliteStorage, meterRegistry)
 
         and: 'these messages are passed to the data store controller'
         storage.write(messages)
@@ -117,7 +117,7 @@ class TimedStorageIntegrationSpec extends Specification {
         SQLiteStorage sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
 
         and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
+        TimedDistributedStorage storage = new TimedDistributedStorage(sqliteStorage, meterRegistry)
 
         and: 'store the message to the database'
         storage.write(message)
@@ -139,7 +139,7 @@ class TimedStorageIntegrationSpec extends Specification {
         def sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
 
         and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedMessageStorage storage = new TimedMessageStorage(sqliteStorage, meterRegistry)
+        TimedDistributedStorage storage = new TimedDistributedStorage(sqliteStorage, meterRegistry)
 
         and: 'these messages are stored'
         storage.write(messages)

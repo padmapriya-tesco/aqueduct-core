@@ -1,7 +1,7 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageStorage
+import com.tesco.aqueduct.pipe.api.DistributedStorage
 import com.tesco.aqueduct.pipe.api.OffsetEntity
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
@@ -10,7 +10,7 @@ import spock.lang.Specification
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET
 
-class TimedMessageStorageSpec extends Specification {
+class TimedDistributedStorageSpec extends Specification {
     final long OFFSET = 1
     final Message MOCK_MESSAGE = Mock(Message)
     final List<String> MESSAGE_TYPES = []
@@ -19,8 +19,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "read events are timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the read method"
         timedStorage.read(MESSAGE_TYPES, OFFSET, LOCATION_UUID)
@@ -31,8 +31,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "read latest offsets are timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the read method"
         timedStorage.getOffset(OffsetName.LOCAL_LATEST_OFFSET)
@@ -43,8 +43,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "write message events are timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the write method"
         timedStorage.write(MOCK_MESSAGE)
@@ -55,8 +55,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "write message list events are timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the write list method"
         timedStorage.write([MOCK_MESSAGE])
@@ -67,8 +67,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "get latest offset events are timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         when: "we call the get latest offset method"
         timedStorage.getLatestOffsetMatching(MESSAGE_TYPES)
@@ -79,8 +79,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "write offset events are timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         and: "offset to write"
         def offset = new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(12))
@@ -94,8 +94,8 @@ class TimedMessageStorageSpec extends Specification {
 
     def "write pipe state is timed"() {
         given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(MessageStorage)
-        def timedStorage = new TimedMessageStorage(mockedStorage, METER_REGISTRY)
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
 
         and: "pipe state to write"
         def pipeState = PipeState.UP_TO_DATE
@@ -105,5 +105,17 @@ class TimedMessageStorageSpec extends Specification {
 
         then: "the write pipeState is called on the underlying storage"
         1 * mockedStorage.write(pipeState)
+    }
+
+    def "get pipe state is timed"() {
+        given: "we have an instance of TimedMessageStorage"
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
+
+        when: "we get the pipeState"
+        timedStorage.getPipeState()
+
+        then: "the get pipeState is called on the underlying storage"
+        1 * mockedStorage.getPipeState()
     }
 }
