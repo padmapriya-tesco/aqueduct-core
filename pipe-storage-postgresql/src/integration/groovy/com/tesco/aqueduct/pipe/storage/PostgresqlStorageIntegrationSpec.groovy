@@ -108,7 +108,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         where:
         offsetName                          | _
         OffsetName.GLOBAL_LATEST_OFFSET     | _
-        OffsetName.NEXT_OFFSET              | _
+        OffsetName.NEXT_PIPE_OFFSET         | _
         OffsetName.LOCAL_LATEST_OFFSET      | _
     }
 
