@@ -51,17 +51,7 @@ public class PostgresNodeGroup extends NodeGroup {
     private static List<Node> readGroupEntry(final String entry) throws IOException {
         ObjectMapper jsonMapper = JsonHelper.MAPPER;
         final JavaType type = jsonMapper.getTypeFactory().constructCollectionType(List.class, Node.class);
-
-        // This is a temporary workaround for "Node" deserialization only, this is needed because
-        // we have some pre-existing nodes entries in PPE and Live Postgres DB that have "status" in lowercase
-        // whereas Status enum is uppercase hence making deserialization fail.
-        // Eventually nodes "status" should all be updated as uppercase at which point this workaround can be removed.
-        jsonMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
-        final List<Node> deserializedNodes = jsonMapper.readValue(entry, type);
-        // We are disabling it afterwards so it does not affect any other object's deserialization unintentionally
-        jsonMapper.disable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
-
-        return deserializedNodes;
+        return jsonMapper.readValue(entry, type);
     }
 
     private final String groupId;

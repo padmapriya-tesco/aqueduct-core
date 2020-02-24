@@ -23,7 +23,7 @@ class PostgresNodeGroupStorageSpec extends Specification {
 								{ 
 									"localUrl":"http://node-1",
 									"offset":"0",
-									"status":"offline",
+									"status":"OFFLINE",
 									"providerLastAckOffset":"0",
 									"id":"http://node-1"
 								}
