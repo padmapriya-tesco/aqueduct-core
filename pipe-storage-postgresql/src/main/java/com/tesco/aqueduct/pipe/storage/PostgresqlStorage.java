@@ -3,6 +3,8 @@ package com.tesco.aqueduct.pipe.storage;
 import com.tesco.aqueduct.pipe.api.Message;
 import com.tesco.aqueduct.pipe.api.MessageReader;
 import com.tesco.aqueduct.pipe.api.MessageResults;
+import com.tesco.aqueduct.pipe.api.OffsetName;
+import com.tesco.aqueduct.pipe.api.PipeState;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +43,7 @@ public class PostgresqlStorage implements MessageReader {
 
             final List<Message> messages = runMessagesQuery(messagesQuery);
 
-            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset));
+            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);
@@ -57,6 +59,16 @@ public class PostgresqlStorage implements MessageReader {
             return getLatestOffsetMatchingWithConnection(connection, types);
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offeset matching", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
+        try (Connection connection = dataSource.getConnection()) {
+            return OptionalLong.of(getLatestOffsetWithConnection(connection));
+        } catch (SQLException exception) {
+            LOG.error("postgresql storage", "get latest offset", exception);
             throw new RuntimeException(exception);
         }
     }
@@ -220,15 +232,15 @@ public class PostgresqlStorage implements MessageReader {
             "   FROM " +
             "   events e, " +
             "   ( " +
-            "     SELECT msg_key, max(msg_offset) max_offset " +
+            "     SELECT msg_key, cluster_id, max(msg_offset) max_offset " +
             "     FROM events " +
             "     WHERE " +
             "       created_utc <= ? " +
-            "     GROUP BY msg_key " +
+            "     GROUP BY msg_key, cluster_id" +
             "   ) x " +
             "   WHERE " +
             "     created_utc <= ? " +
-            "     AND e.msg_key = x.msg_key AND e.msg_offset <> x.max_offset " +
+            "     AND e.msg_key = x.msg_key AND e.cluster_id = x.cluster_id AND e.msg_offset <> x.max_offset " +
             " );";
     }
 }

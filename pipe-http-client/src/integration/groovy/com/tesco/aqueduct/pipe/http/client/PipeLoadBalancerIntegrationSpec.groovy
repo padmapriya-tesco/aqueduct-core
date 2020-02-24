@@ -40,6 +40,10 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                 [
                     "pipe.http.client.url": "http://does.not.exist",
                     "registry.http.client.url": "http://does.not.exist",
+                    "micronaut.caches.health-check.maximum-size": 20,
+                    "micronaut.caches.health-check.expire-after-write": "5s",
+                    "pipe.http.latest-offset.attempts": 1,
+                    "pipe.http.latest-offset.delay": "1s"
                 ] + properties
             )
             .build()
@@ -95,6 +99,18 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                     code(500)
                 }
             }
+            get("/pipe/state") {
+                called(greaterThanOrEqualTo(1))
+
+                responder {
+                    contentType('application/json')
+                    body("""{
+                            "upToDate" : true,
+                            "localOffset": 100
+                        }""")
+                }
+            }
+
         }
 
         serverB.expectations {
@@ -117,6 +133,17 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
                     ]""")
+                }
+            }
+            get("/pipe/state") {
+                called(greaterThanOrEqualTo(1))
+
+                responder {
+                    contentType('application/json')
+                    body("""{
+                            "upToDate" : true,
+                            "localOffset": 100
+                        }""")
                 }
             }
         }
@@ -165,6 +192,17 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
                     ]""")
+                }
+            }
+            get("$basePath/pipe/state") {
+                called(greaterThanOrEqualTo(1))
+
+                responder {
+                    contentType('application/json')
+                    body("""{
+                            "upToDate" : true,
+                            "localOffset": 100
+                        }""")
                 }
             }
         }

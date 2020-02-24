@@ -2,6 +2,7 @@ package com.tesco.aqueduct.registry.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.tesco.aqueduct.pipe.api.PipeState;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,6 +29,11 @@ public class Node {
      * The offset as last reported by this node
      */
     private final long offset;
+
+    /**
+     * The pipe state of this node
+     */
+    private final PipeState pipeState;
 
     /**
      * Status as last reported by this node (computed status might be different)

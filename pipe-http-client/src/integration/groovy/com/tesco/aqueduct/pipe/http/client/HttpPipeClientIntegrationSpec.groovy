@@ -67,10 +67,10 @@ class HttpPipeClientIntegrationSpec extends Specification {
         }
 
         when: "I call state once"
-        def state = client.getPipeState(["a"])
+        def state = client.getPipeStateResponse(["a"])
 
         and: "I call state again"
-        def state2 = client.getPipeState(["a"])
+        def state2 = client.getPipeStateResponse(["a"])
 
         then: "the first result was 'up to date'"
         state == new PipeStateResponse(true, 1000)
@@ -97,10 +97,10 @@ class HttpPipeClientIntegrationSpec extends Specification {
         }
 
         when: "I call state once"
-        def state = client.getPipeState(["a"])
+        def state = client.getPipeStateResponse(["a"])
 
         and: "I call state again"
-        def state2 = client.getPipeState(["a"])
+        def state2 = client.getPipeStateResponse(["a"])
 
         then: "the first result was 'up to date'"
         state == new PipeStateResponse(false, 1000)

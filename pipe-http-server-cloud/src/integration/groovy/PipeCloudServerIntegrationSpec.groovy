@@ -31,7 +31,10 @@ class PipeCloudServerIntegrationSpec extends Specification {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
         dataSource = Mock()
-        dataSource.connection >> sql.connection
+        dataSource.connection >>> [
+            new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
+            new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection
+        ]
 
         //TODO: remove "tags" once they are removed from SCHEMA
         sql.execute("""

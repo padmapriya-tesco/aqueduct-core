@@ -16,7 +16,7 @@ import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
 
-public class SQLiteStorage implements MessageStorage {
+public class SQLiteStorage implements DistributedStorage {
 
     private final DataSource dataSource;
     private final int limit;
@@ -33,18 +33,28 @@ public class SQLiteStorage implements MessageStorage {
 
         createEventTableIfNotExists();
         createOffsetTableIfNotExists();
+        createPipeStateTableIfNotExists();
     }
 
     private void createEventTableIfNotExists() {
         execute(
             SQLiteQueries.CREATE_EVENT_TABLE,
-            (connection, statement) -> statement.execute());
+            (connection, statement) -> statement.execute()
+        );
     }
 
     private void createOffsetTableIfNotExists() {
         execute(
             SQLiteQueries.OFFSET_TABLE,
-            (connection, statement) -> statement.execute());
+            (connection, statement) -> statement.execute()
+        );
+    }
+
+    private void createPipeStateTableIfNotExists() {
+        execute(
+            SQLiteQueries.PIPE_STATE_TABLE,
+            (Connection, statement) -> statement.execute()
+        );
     }
 
     @Override
@@ -72,7 +82,21 @@ public class SQLiteStorage implements MessageStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getGlobalLatestOffset());
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getOffset(GLOBAL_LATEST_OFFSET), getPipeState());
+    }
+
+    @Override
+    public PipeState getPipeState() {
+        return executeGet(
+            SQLiteQueries.GET_PIPE_STATE,
+            (connection, statement) -> {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    return resultSet.next()
+                        ? PipeState.valueOf(resultSet.getString("value"))
+                        : PipeState.UNKNOWN;
+                }
+            }
+        );
     }
 
     public int calculateRetryAfter(final int messageCount) {
@@ -117,9 +141,10 @@ public class SQLiteStorage implements MessageStorage {
         );
     }
 
-    private OptionalLong getGlobalLatestOffset() {
+    @Override
+    public OptionalLong getOffset(OffsetName offsetName) {
         return executeGet(
-            SQLiteQueries.getOffset(GLOBAL_LATEST_OFFSET),
+            SQLiteQueries.getOffset(offsetName),
             (connection, statement) -> {
                 ResultSet resultSet = statement.executeQuery();
 
@@ -160,12 +185,26 @@ public class SQLiteStorage implements MessageStorage {
     public void write(OffsetEntity offset) {
         execute(
             SQLiteQueries.UPSERT_OFFSET,
-            (Connection, statement) -> {
+            (connection, statement) -> {
                 statement.setString(1, offset.getName().toString());
                 statement.setLong(2, offset.getValue().getAsLong());
                 statement.setLong(3, offset.getValue().getAsLong());
                 statement.execute();
-            });
+            }
+        );
+    }
+
+    @Override
+    public void write(PipeState pipeState) {
+        execute(
+            SQLiteQueries.UPSERT_PIPE_STATE,
+            ((connection, statement) -> {
+                statement.setString(1, "pipe_state");
+                statement.setString(2, pipeState.toString());
+                statement.setString(3, pipeState.toString());
+                statement.execute();
+            })
+        );
     }
 
     private void execute(String query, SqlConsumer consumer) {
@@ -199,6 +238,7 @@ public class SQLiteStorage implements MessageStorage {
         try (Connection connection = dataSource.getConnection()){
             deleteEvents(connection);
             deleteOffsets(connection);
+            deletePipeState(connection);
             vacuumDatabase(connection);
             checkpointWalFile(connection);
         } catch (SQLException exception) {
@@ -207,21 +247,28 @@ public class SQLiteStorage implements MessageStorage {
     }
 
     private void deleteOffsets(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_OFFSETS)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_OFFSETS)) {
             statement.execute();
             LOG.info("deleteOffsets", String.format("Delete offsets result: %d", statement.getUpdateCount()));
         }
     }
 
     private void deleteEvents(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)) {
             statement.execute();
             LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
         }
     }
 
+    private void deletePipeState(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_PIPE_STATE)) {
+            statement.execute();
+            LOG.info("deletePipeState", String.format("Delete pipe state result: %d", statement.getUpdateCount()));
+        }
+    }
+
     private void vacuumDatabase(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.VACUUM_DB)){
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.VACUUM_DB)) {
             statement.execute();
             LOG.info("vacuumDatabase", String.format("Vacuum result: %d", statement.getUpdateCount()));
         }
@@ -248,8 +295,8 @@ public class SQLiteStorage implements MessageStorage {
         }
     }
 
-    private void setStatementParametersForInsertMessageQuery(final PreparedStatement statement, final Message message)
-            throws SQLException {
+    private void setStatementParametersForInsertMessageQuery(
+            final PreparedStatement statement, final Message message) throws SQLException {
         try {
             statement.setLong(1, message.getOffset());
             statement.setString(2, message.getKey());

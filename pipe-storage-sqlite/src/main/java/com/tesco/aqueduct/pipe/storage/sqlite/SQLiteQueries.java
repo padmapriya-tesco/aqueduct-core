@@ -6,6 +6,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class SQLiteQueries {
+    public static final String UPSERT_PIPE_STATE =
+        "INSERT INTO PIPE_STATE (name, value) VALUES (?,?) " +
+        "ON CONFLICT(name) DO UPDATE SET VALUE = ?;";
+
+    public static final String GET_PIPE_STATE =
+        "SELECT value FROM PIPE_STATE WHERE name='pipe_state';";
+
     static final String CREATE_EVENT_TABLE =
         "CREATE TABLE IF NOT EXISTS EVENT( " +
         " msg_offset bigint PRIMARY KEY NOT NULL," +
@@ -24,18 +31,25 @@ final class SQLiteQueries {
         " value bigint NOT NULL" +
         ");";
 
+    static final String PIPE_STATE_TABLE =
+        "CREATE TABLE IF NOT EXISTS PIPE_STATE( " +
+        " name varchar UNIQUE NOT NULL," +
+        " value varchar NOT NULL" +
+        ");";
+
     static final String INSERT_EVENT =
-            "INSERT INTO EVENT (msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES (?,?,?,?,?,?,?);";
+        "INSERT INTO EVENT (msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES (?,?,?,?,?,?,?);";
 
     static final String UPSERT_OFFSET =
-            "INSERT INTO OFFSET (name, value) VALUES (?,?)" +
-            " ON CONFLICT(name) DO UPDATE SET VALUE = ?;";
+        "INSERT INTO OFFSET (name, value) VALUES (?,?)" +
+        " ON CONFLICT(name) DO UPDATE SET VALUE = ?;";
 
     static final String COMPACT =
-            "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
+        "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
     static final String DELETE_EVENTS = "DELETE FROM EVENT;";
     static final String DELETE_OFFSETS = "DELETE FROM OFFSET";
+    static final String DELETE_PIPE_STATE = "DELETE FROM PIPE_STATE";
     static final String VACUUM_DB = "VACUUM;";
     static final String CHECKPOINT_DB = "PRAGMA wal_checkpoint(TRUNCATE);";
 

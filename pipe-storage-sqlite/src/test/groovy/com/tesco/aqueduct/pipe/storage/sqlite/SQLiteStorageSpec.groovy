@@ -41,6 +41,7 @@ class SQLiteStorageSpec extends Specification {
         dataSource.getConnection() >>
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
             {throw new SQLException()}
 
         sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
@@ -96,6 +97,7 @@ class SQLiteStorageSpec extends Specification {
         dataSource.getConnection() >>> [
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
+            DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl)
         ]
 
@@ -113,6 +115,7 @@ class SQLiteStorageSpec extends Specification {
         def retryAfter = 10
         def dataSource = Mock(DataSource)
         dataSource.getConnection() >>
+            DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
             { throw new SQLException() }
