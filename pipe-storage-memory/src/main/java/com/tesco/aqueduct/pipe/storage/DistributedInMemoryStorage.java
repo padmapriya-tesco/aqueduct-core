@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.storage;
 
+import com.tesco.aqueduct.pipe.api.DistributedStorage;
 import com.tesco.aqueduct.pipe.api.OffsetEntity;
 import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.PipeState;
@@ -9,7 +10,7 @@ import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
 
-public class DistributedInMemoryStorage extends InMemoryStorage {
+public class DistributedInMemoryStorage extends InMemoryStorage implements DistributedStorage {
     public DistributedInMemoryStorage(int limit, long retryAfter) {
         super(limit, retryAfter);
     }
@@ -51,5 +52,10 @@ public class DistributedInMemoryStorage extends InMemoryStorage {
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         return offsets.get(offsetName) == null ? OptionalLong.empty() : OptionalLong.of(offsets.get(offsetName));
+    }
+
+    @Override
+    public PipeState getPipeState() {
+        return pipeState;
     }
 }

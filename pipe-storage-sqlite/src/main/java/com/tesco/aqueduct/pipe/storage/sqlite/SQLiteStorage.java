@@ -238,6 +238,7 @@ public class SQLiteStorage implements DistributedStorage {
         try (Connection connection = dataSource.getConnection()){
             deleteEvents(connection);
             deleteOffsets(connection);
+            deletePipeState(connection);
             vacuumDatabase(connection);
             checkpointWalFile(connection);
         } catch (SQLException exception) {
@@ -256,6 +257,13 @@ public class SQLiteStorage implements DistributedStorage {
         try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_EVENTS)) {
             statement.execute();
             LOG.info("deleteAllEvents", String.format("Delete events result: %d", statement.getUpdateCount()));
+        }
+    }
+
+    private void deletePipeState(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.DELETE_PIPE_STATE)) {
+            statement.execute();
+            LOG.info("deletePipeState", String.format("Delete pipe state result: %d", statement.getUpdateCount()));
         }
     }
 

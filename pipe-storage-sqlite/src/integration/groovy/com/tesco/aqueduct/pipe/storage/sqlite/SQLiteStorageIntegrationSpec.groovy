@@ -514,7 +514,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
     }
 
-    def 'messages and offset are deleted when deleteAllMessages is called'() {
+    def 'messages, offset and pipe state are deleted when deleteAllMessages is called'() {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2)]
 
@@ -544,6 +544,16 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         assert offsetFirstSize == 1
 
+        and: 'pipe state exists in PIPE_STATE table'
+        this.sqliteStorage.write(PipeState.UP_TO_DATE)
+        def pipeStateFirstSize = 0
+        sql.query("SELECT COUNT(*) FROM PIPE_STATE", {
+            it.next()
+            pipeStateFirstSize = it.getInt(1)
+        })
+
+        assert pipeStateFirstSize == 1
+
         when:
         this.sqliteStorage.deleteAll()
 
@@ -564,6 +574,15 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
 
         offsetSecondSize == 0
+
+        and: 'no pipe state exists in table'
+        def pipeStateSecondSize = 0
+        sql.query("SELECT COUNT(*) FROM PIPE_STATE", {
+            it.next()
+            pipeStateSecondSize = it.getInt(1)
+        })
+
+        pipeStateSecondSize == 0
     }
 
     @Unroll

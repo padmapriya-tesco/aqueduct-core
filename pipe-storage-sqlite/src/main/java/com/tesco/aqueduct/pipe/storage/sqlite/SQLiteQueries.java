@@ -49,6 +49,7 @@ final class SQLiteQueries {
 
     static final String DELETE_EVENTS = "DELETE FROM EVENT;";
     static final String DELETE_OFFSETS = "DELETE FROM OFFSET";
+    static final String DELETE_PIPE_STATE = "DELETE FROM PIPE_STATE";
     static final String VACUUM_DB = "VACUUM;";
     static final String CHECKPOINT_DB = "PRAGMA wal_checkpoint(TRUNCATE);";
 
