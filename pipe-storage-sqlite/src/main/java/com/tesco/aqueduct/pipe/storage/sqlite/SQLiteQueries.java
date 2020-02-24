@@ -44,11 +44,13 @@ final class SQLiteQueries {
         "INSERT INTO OFFSET (name, value) VALUES (?,?)" +
         " ON CONFLICT(name) DO UPDATE SET VALUE = ?;";
 
+
     static final String COMPACT =
         "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
     static final String DELETE_EVENTS = "DELETE FROM EVENT;";
     static final String DELETE_OFFSETS = "DELETE FROM OFFSET";
+    static final String DELETE_PIPE_STATE = "DELETE FROM PIPE_STATE";
     static final String VACUUM_DB = "VACUUM;";
     static final String CHECKPOINT_DB = "PRAGMA wal_checkpoint(TRUNCATE);";
 

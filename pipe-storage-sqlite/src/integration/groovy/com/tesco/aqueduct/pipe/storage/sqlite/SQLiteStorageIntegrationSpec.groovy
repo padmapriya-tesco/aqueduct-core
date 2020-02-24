@@ -514,7 +514,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages*.key == ["A", "B", "C", "A", "B", "B", "D"]
     }
 
-    def 'messages and offset are deleted when deleteAllMessages is called'() {
+    def 'messages, offset and pipe state are deleted when deleteAllMessages is called'() {
         given: 'multiple messages to be stored'
         def messages = [message(1), message(2)]
 
