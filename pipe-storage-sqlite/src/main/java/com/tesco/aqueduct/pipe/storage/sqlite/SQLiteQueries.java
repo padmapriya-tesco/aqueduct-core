@@ -44,7 +44,6 @@ final class SQLiteQueries {
         "INSERT INTO OFFSET (name, value) VALUES (?,?)" +
         " ON CONFLICT(name) DO UPDATE SET VALUE = ?;";
 
-
     static final String COMPACT =
         "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
