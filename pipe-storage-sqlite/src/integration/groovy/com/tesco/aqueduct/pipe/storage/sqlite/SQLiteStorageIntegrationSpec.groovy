@@ -609,6 +609,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         offsetName           | offsetValue
         GLOBAL_LATEST_OFFSET | OptionalLong.of(1L)
         LOCAL_LATEST_OFFSET  | OptionalLong.of(2L)
+        NEXT_OFFSET          | OptionalLong.of(3L)
     }
 
     def 'offset is updated when already present in OFFSET table'() {
@@ -653,6 +654,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         offsetName           | offsetValue
         GLOBAL_LATEST_OFFSET | OptionalLong.of(1L)
         LOCAL_LATEST_OFFSET  | OptionalLong.of(2L)
+        NEXT_OFFSET          | OptionalLong.of(3L)
     }
 
     @Unroll
