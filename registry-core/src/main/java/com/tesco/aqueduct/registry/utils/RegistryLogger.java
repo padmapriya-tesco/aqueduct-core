@@ -66,6 +66,12 @@ public class RegistryLogger {
             );
         }
 
+        if(node.getOffsets() != null) {
+            node.getOffsets().entrySet().forEach(e ->
+                fields.put("offsets." + e.getKey(), e.getValue())
+            );
+        }
+
         if(node.getProvider() != null) {
             node.getProvider().entrySet().forEach(e ->
                 fields.put("provider." + e.getKey(), e.getValue())
