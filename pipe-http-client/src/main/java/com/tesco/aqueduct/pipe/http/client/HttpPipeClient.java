@@ -24,8 +24,13 @@ public class HttpPipeClient implements MessageReader {
     }
 
     @Override
-    public MessageResults read(@Nullable final List<String> types, final long offset, final String locationUuid) {
-        final HttpResponse<List<Message>> response = client.httpRead(types, offset, locationUuid);
+    public MessageResults read(@Nullable final List<String> types, final long offset, final List<String> locationUuids) {
+
+        if(locationUuids.size() > 1) {
+            throw new IllegalArgumentException("Multiple location uuid's not supported in the http pipe client");
+        }
+
+        final HttpResponse<List<Message>> response = client.httpRead(types, offset, locationUuids.get(0));
 
         final long retryAfter = Optional
             .ofNullable(response.header(HttpHeaders.RETRY_AFTER))

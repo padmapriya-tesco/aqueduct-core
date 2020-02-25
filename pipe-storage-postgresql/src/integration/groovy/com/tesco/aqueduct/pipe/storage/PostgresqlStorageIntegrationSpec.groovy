@@ -114,7 +114,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def "get pipe state as up to date always"() {
         when: "reading the messages"
-        def messageResults = storage.read(["some_type"], 0, "someLocationUuid")
+        def messageResults = storage.read(["some_type"], 0, ["someLocationUuid"])
 
         then: "pipe state is up to date"
         messageResults.pipeState == PipeState.UP_TO_DATE
@@ -136,7 +136,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         connection.prepareStatement(_ as String) >> preparedStatement
 
         when: "requesting messages with tags specifying a type key"
-        postgresStorage.read(["some_type"], 0, "locationUuid")
+        postgresStorage.read(["some_type"], 0, ["locationUuid"])
 
         then: "a query is created that does not contain tags in the where clause"
         0 * preparedStatement.setString(1, "some_type")
@@ -158,7 +158,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read([], 0, "locationUuid")
+        MessageResults result = storage.read([], 0, ["locationUuid"])
 
         then: "messages that are returned are no larger than the maximum batch size when reading with a type"
         result.messages.size() == 2
@@ -179,7 +179,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read(["type-1"], 0, "locationUuid")
+        MessageResults result = storage.read(["type-1"], 0, ["locationUuid"])
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -192,7 +192,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([], 0, "locationUuid")
+        MessageResults result = storage.read([], 0, ["locationUuid"])
 
         then:
         result.retryAfterSeconds == 0
@@ -206,7 +206,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([], 4, "locationUuid")
+        MessageResults result = storage.read([], 4, ["locationUuid"])
 
         then:
         result.retryAfterSeconds > 0
@@ -217,7 +217,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "I have no records in the integrated database"
 
         when:
-        MessageResults result = storage.read([], 0,"locationUuid")
+        MessageResults result = storage.read([], 0,["locationUuid"])
 
         then:
         result.retryAfterSeconds > 0
@@ -234,7 +234,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults result = storage.read(null, 0, "locationUuid")
+        MessageResults result = storage.read(null, 0, ["locationUuid"])
         List<Message> retrievedMessages = result.messages
 
         then: 'duplicate messages are deleted'
@@ -254,7 +254,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults result = storage.read(null, 0, "locationUuid")
+        MessageResults result = storage.read(null, 0, ["locationUuid"])
         List<Message> retrievedMessages = result.messages
 
         then:
@@ -275,7 +275,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = storage.read(null, 1, "locationUuid")
+        MessageResults messageResults = storage.read(null, 1, ["locationUuid"])
 
         then: 'duplicate messages are not deleted as they are beyond the threshold'
         messageResults.messages.size() == 4
@@ -298,7 +298,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = storage.read(null, 1, "locationUuid")
+        MessageResults messageResults = storage.read(null, 1, ["locationUuid"])
 
         then: 'duplicate messages are deleted that are within the threshold'
         messageResults.messages.size() == 7
@@ -322,7 +322,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
 
         and: 'all messages are requested'
-        MessageResults messageResults = storage.read(null, 1, "locationUuid")
+        MessageResults messageResults = storage.read(null, 1, ["locationUuid"])
 
         then: 'duplicate messages are deleted that are within the threshold'
         messageResults.messages.size() == 7
@@ -345,9 +345,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         where:
         type    | locationUuid
-        "type1" | "locationUuid1"
-        "type2" | "locationUuid2"
-        "type3" | "locationUuid3"
+        "type1" | ["locationUuid1"]
+        "type2" | ["locationUuid2"]
+        "type3" | ["locationUuid3"]
     }
 
     @Unroll
@@ -368,7 +368,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(9, "type1", "I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading all messages'
-        def messageResults = storage.read(["type1"], 0, "some-location")
+        def messageResults = storage.read(["type1"], 0, ["some-location"])
 
         then: 'duplicate messages are deleted that are within the threshold'
         messageResults.messages.size() == 3
@@ -377,7 +377,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.globalLatestOffset == OptionalLong.of(9)
 
         when:
-        messageResults = storage.read(["type1"], 4, "some-location")
+        messageResults = storage.read(["type1"], 4, ["some-location"])
 
         then:
         messageResults.messages.size() == 3
