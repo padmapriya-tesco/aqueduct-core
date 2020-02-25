@@ -190,4 +190,17 @@ class HttpPipeClientSpec extends Specification {
         then:
         thrown(UnsupportedOperationException)
     }
+
+    def "throws IllegalArgumentException when locationUuids does not contain single value"() {
+        when:
+        client.read([], 0, locationUuids)
+
+        then:
+        thrown(IllegalArgumentException)
+
+        where:
+        locationUuids           | _
+        ["uuid-1", "uuid-2"]    | _
+        []                      | _
+    }
 }

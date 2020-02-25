@@ -26,7 +26,7 @@ public class HttpPipeClient implements MessageReader {
     @Override
     public MessageResults read(@Nullable final List<String> types, final long offset, final List<String> locationUuids) {
 
-        if(locationUuids.size() > 1) {
+        if(locationUuids.size() != 1) {
             throw new IllegalArgumentException("Multiple location uuid's not supported in the http pipe client");
         }
 
