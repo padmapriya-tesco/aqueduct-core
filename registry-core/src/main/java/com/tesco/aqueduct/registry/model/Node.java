@@ -78,6 +78,11 @@ public class Node {
     private final Map<String, String> pipe;
 
     /**
+     * Fields representing offsets
+     */
+    private final Map<String, String> offsets;
+
+    /**
      * Fields populated by provider
      */
     private final Map<String, String> provider;
