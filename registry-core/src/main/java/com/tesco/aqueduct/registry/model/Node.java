@@ -31,6 +31,11 @@ public class Node {
     private final long offset;
 
     /**
+     * The pipe state of this node
+     */
+    private final PipeState pipeState;
+
+    /**
      * Status as last reported by this node (computed status might be different)
      */
     private final Status status;
