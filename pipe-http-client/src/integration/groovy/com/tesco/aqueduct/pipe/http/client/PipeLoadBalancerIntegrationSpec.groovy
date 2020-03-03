@@ -129,8 +129,8 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         }
 
         when: "messages are read from server A until retry fails"
-        def firstMessages = client.read([], 0, "locationUuid")
-        client.read([], 1, "locationUuid")
+        def firstMessages = client.read([], 0, ["locationUuid"])
+        client.read([], 1, ["locationUuid"])
 
         then: "messages are received and an exception is thrown"
         thrown(HttpClientException)
@@ -142,7 +142,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         serviceList.stream().findFirst().ifPresent({ c -> c.isUp(false) })
 
         and: "client reads again"
-        def secondMessages = client.read([], 1, "locationUuid")
+        def secondMessages = client.read([], 1, ["locationUuid"])
 
         then: "second server is called"
         secondMessages.messages*.key == ["x1"]
@@ -182,7 +182,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
         serviceList.update([ URL(serverUrl) ])
 
         when: "the client calls the server"
-        client.read([], 0, "locationUuid")
+        client.read([], 0, ["locationUuid"])
 
         then: "the server has been called on the right path"
         serverA.verify()

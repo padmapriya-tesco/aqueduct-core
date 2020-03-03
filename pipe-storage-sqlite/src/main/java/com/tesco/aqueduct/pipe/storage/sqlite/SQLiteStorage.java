@@ -58,7 +58,7 @@ public class SQLiteStorage implements DistributedStorage {
     }
 
     @Override
-    public MessageResults read(final List<String> types, final long offset, final String locationUuid) {
+    public MessageResults read(final List<String> types, final long offset, final List<String> locationUuids) {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 

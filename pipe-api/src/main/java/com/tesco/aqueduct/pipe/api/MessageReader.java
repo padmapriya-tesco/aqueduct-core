@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.OptionalLong;
 
 public interface MessageReader {
-    MessageResults read(List<String> types, long offset, final String locationUuid);
+    MessageResults read(List<String> types, long offset, final List<String> targetUuids);
     OptionalLong getOffset(OffsetName offsetName);
 
     @Deprecated

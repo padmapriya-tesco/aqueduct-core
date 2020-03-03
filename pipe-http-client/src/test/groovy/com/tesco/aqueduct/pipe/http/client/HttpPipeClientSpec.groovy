@@ -28,7 +28,7 @@ class HttpPipeClientSpec extends Specification {
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read and get defined response back"
-        def results = client.read([], 0, "locationUuid")
+        def results = client.read([], 0, ["locationUuid"])
 
         then: "we parse the retry after if its correct or return 0 otherwise"
         results.messages.size() == 1
@@ -53,7 +53,7 @@ class HttpPipeClientSpec extends Specification {
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"
-        client.read([], 0, "locationUuid")
+        client.read([], 0, ["locationUuid"])
 
         then: "getLatestOffsetMatching is called"
         1 * internalClient.getLatestOffsetMatching(_)
@@ -69,7 +69,7 @@ class HttpPipeClientSpec extends Specification {
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"
-        def messageResults = client.read([], 0, "locationUuid")
+        def messageResults = client.read([], 0, ["locationUuid"])
 
         then: "global latest offset header is set correctly in the result"
         messageResults.globalLatestOffset == OptionalLong.of(100)
@@ -85,7 +85,7 @@ class HttpPipeClientSpec extends Specification {
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
 
         when: "we call read"
-        MessageResults messageResults = client.read([], 0, "locationUuid")
+        MessageResults messageResults = client.read([], 0, ["locationUuid"])
 
         then: "pipe state is set correctly in the result"
         messageResults.pipeState == PipeState.UP_TO_DATE
@@ -105,7 +105,7 @@ class HttpPipeClientSpec extends Specification {
         internalClient.getLatestOffsetMatching(_ as List) >> { throw new Exception() }
 
         when: "we call read"
-        client.read([], 0, "locationUuid")
+        client.read([], 0, ["locationUuid"])
 
         then: "an exception is thrown"
         thrown Exception
@@ -133,5 +133,18 @@ class HttpPipeClientSpec extends Specification {
 
         then:
         thrown(UnsupportedOperationException)
+    }
+
+    def "throws IllegalArgumentException when locationUuids does not contain single value"() {
+        when:
+        client.read([], 0, locationUuids)
+
+        then:
+        thrown(IllegalArgumentException)
+
+        where:
+        locationUuids           | _
+        ["uuid-1", "uuid-2"]    | _
+        []                      | _
     }
 }
