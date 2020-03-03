@@ -12,19 +12,19 @@ class LocationServiceClusterResponseSpec extends Specification {
                 {
                     "clusters": [
                         {
-                            "id": "c8559b7d-5a46-451e-b692-739725caf570",
-                            "name": "Metro UK Premium",
-                            "origin": "PROMOTION"
+                            "id": "c8559b7d-5a46-1234-b692-739725caf570",
+                            "name": "placeholder name",
+                            "origin": "placeholder_origin"
                         },
                         {
-                            "id": "041fece7-aa93-42c6-9e76-72a43f599498",
-                            "name": "Premium Metro",
-                            "origin": "PRICE"
+                            "id": "041fece7-1234-42c6-9e76-72a43f599498",
+                            "name": "placeholder name",
+                            "origin": "placeholder_origin"
                         },
                         {
-                            "id": "417bda80-bfba-412c-9b52-c35d68530342",
-                            "name": "UK National",
-                            "origin": "MARKDOWN"
+                            "id": "417bda80-bfba-412c-1234-c35d68530342",
+                            "name": "placeholder name",
+                            "origin": "placeholder_origin"
                         }
                     ],
                     "totalCount": 3
