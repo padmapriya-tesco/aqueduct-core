@@ -73,6 +73,9 @@ public class PipeReadController {
 
         final List<String> types = flattenRequestParams(type);
 
+        // call location service to resolve location uuid to list of cluster ids
+
+
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
         final val messageResults = messageReader.read(types, offset, locationUuid);
         final val list = messageResults.getMessages();
