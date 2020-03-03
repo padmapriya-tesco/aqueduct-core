@@ -12,17 +12,17 @@ class LocationServiceClusterResponseSpec extends Specification {
                 {
                     "clusters": [
                         {
-                            "id": "c8559b7d-5a46-1234-b692-739725caf570",
+                            "id": "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
                             "name": "placeholder name",
                             "origin": "placeholder_origin"
                         },
                         {
-                            "id": "041fece7-1234-42c6-9e76-72a43f599498",
+                            "id": "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1",
                             "name": "placeholder name",
                             "origin": "placeholder_origin"
                         },
                         {
-                            "id": "417bda80-bfba-412c-1234-c35d68530342",
+                            "id": "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1",
                             "name": "placeholder name",
                             "origin": "placeholder_origin"
                         }
@@ -38,9 +38,9 @@ class LocationServiceClusterResponseSpec extends Specification {
         then: "it is deserialized as expected"
         locationServiceClusterResponse.clusters.size() == 3
 
-        locationServiceClusterResponse.clusters.get(0).id == "c8559b7d-5a46-451e-b692-739725caf570"
-        locationServiceClusterResponse.clusters.get(1).id == "041fece7-aa93-42c6-9e76-72a43f599498"
-        locationServiceClusterResponse.clusters.get(2).id == "417bda80-bfba-412c-9b52-c35d68530342"
+        locationServiceClusterResponse.clusters.get(0).id == "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"
+        locationServiceClusterResponse.clusters.get(1).id == "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1"
+        locationServiceClusterResponse.clusters.get(2).id == "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1"
 
 
     }
