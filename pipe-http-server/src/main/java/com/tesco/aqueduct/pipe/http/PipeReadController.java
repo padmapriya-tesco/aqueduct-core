@@ -74,7 +74,7 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = messageReader.read(types, offset, locationUuid);
+        final val messageResults = messageReader.read(types, offset, Collections.singletonList(locationUuid));
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
