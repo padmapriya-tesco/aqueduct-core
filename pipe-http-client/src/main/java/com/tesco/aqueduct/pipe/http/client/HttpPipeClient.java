@@ -43,7 +43,7 @@ public class HttpPipeClient implements MessageReader {
             response.body(),
             retryAfter,
             OptionalLong.of(getLatestGlobalOffset(types, response)),
-            getPipeState(types, response)
+            getPipeState(response)
         );
     }
 
@@ -63,27 +63,12 @@ public class HttpPipeClient implements MessageReader {
         return response.header(HttpHeaders.GLOBAL_LATEST_OFFSET);
     }
 
-    private PipeState getPipeState(@Nullable List<String> types, HttpResponse<List<Message>> response) {
-        return response.header(HttpHeaders.PIPE_STATE) == null
-            ? getPipeState(types)
-            : PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
-    }
-
-    private PipeState getPipeState(@Nullable List<String> types) {
-        return getPipeStateResponse(types).isUpToDate() ? PipeState.UP_TO_DATE : PipeState.OUT_OF_DATE;
+    private PipeState getPipeState(HttpResponse<List<Message>> response) {
+        return PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
     }
 
     @Override
     public long getLatestOffsetMatching(final List<String> types) {
         return client.getLatestOffsetMatching(types);
-    }
-
-    // This exists for backwards compatibility until we start using pipe state in header in till estate
-    public PipeStateResponse getPipeStateResponse(final List<String> types) {
-        final PipeStateResponse pipeState = client.getPipeState(types);
-        if (!pipeState.isUpToDate()) {
-            cacheManager.getCache("health-check").invalidateAll();
-        }
-        return pipeState;
     }
 }

@@ -2,7 +2,7 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageReader
-import com.tesco.aqueduct.pipe.api.PipeStateResponse
+import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
@@ -57,7 +57,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
 
         context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
         def pipeStateProvider = Mock(PipeStateProvider) {
-            getState(_ as List, _ as MessageReader) >> new PipeStateResponse(true, 100)
+            getState(_ as MessageReader) >> PipeState.UP_TO_DATE
         }
         context.registerSingleton(pipeStateProvider)
         context.start()

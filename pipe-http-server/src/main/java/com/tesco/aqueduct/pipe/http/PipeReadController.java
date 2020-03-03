@@ -1,6 +1,9 @@
 package com.tesco.aqueduct.pipe.http;
 
-import com.tesco.aqueduct.pipe.api.*;
+import com.tesco.aqueduct.pipe.api.HttpHeaders;
+import com.tesco.aqueduct.pipe.api.Message;
+import com.tesco.aqueduct.pipe.api.MessageReader;
+import com.tesco.aqueduct.pipe.api.PipeState;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.context.annotation.Value;
@@ -22,9 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.tesco.aqueduct.pipe.api.PipeState.OUT_OF_DATE;
-import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE;
 
 @Secured("PIPE_READ")
 @Measure
@@ -52,10 +52,9 @@ public class PipeReadController {
         return messageReader.getLatestOffsetMatching(types);
     }
 
-    @Get("/pipe/state{?type}")
-    public PipeStateResponse state(@Nullable final List<String> type) {
-        final List<String> types = flattenRequestParams(type);
-        return pipeStateProvider.getState(types, messageReader);
+    @Get("/pipe/state")
+    public PipeState state() {
+        return pipeStateProvider.getState(messageReader);
     }
 
     @Get("/pipe/{offset}{?type}")
@@ -81,10 +80,7 @@ public class PipeReadController {
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
         MutableHttpResponse<List<Message>> response = HttpResponse.ok(list)
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
-            .header(
-                HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, messageReader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
-            );
+            .header(HttpHeaders.PIPE_STATE, messageResults.getPipeState().toString());
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(

@@ -10,6 +10,7 @@ import java.util.OptionalLong;
 public class CentralInMemoryStorage extends InMemoryStorage {
     public CentralInMemoryStorage(int limit, long retryAfter) {
         super(limit, retryAfter);
+        this.pipeState = PipeState.UP_TO_DATE;
     }
 
     @Override
