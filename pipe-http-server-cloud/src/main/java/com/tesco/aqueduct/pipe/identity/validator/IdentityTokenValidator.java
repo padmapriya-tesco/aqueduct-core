@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.identity;
+package com.tesco.aqueduct.pipe.identity.validator;
 
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.cache.annotation.Cacheable;
@@ -41,7 +41,7 @@ public class IdentityTokenValidator implements TokenValidator {
     @Cacheable("identity-cache")
     public Publisher<Authentication> validateToken(String token) {
 
-        if(token == null) {
+        if (token == null) {
             LOG.error("token validator", "null token", "");
             return Flowable.empty();
         }
