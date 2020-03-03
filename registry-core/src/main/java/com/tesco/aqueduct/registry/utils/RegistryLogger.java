@@ -35,7 +35,7 @@ public class RegistryLogger {
         fields.put("group", node.getGroup());
         fields.put("localUrl", node.getLocalUrl().toString());
         fields.put("offset", String.valueOf(node.getOffset()));
-        // TODO remove null check once the pipeState field is deployed everywhere
+        // TODO - remove null check once the pipeState field is deployed everywhere
         if(node.getPipeState() != null){
             fields.put("pipeState", node.getPipeState().toString());
         }
@@ -63,6 +63,12 @@ public class RegistryLogger {
         if(node.getPipe() != null) {
             node.getPipe().entrySet().forEach(e ->
                 fields.put("pipe." + e.getKey(), e.getValue())
+            );
+        }
+
+        if(node.getOffsets() != null) {
+            node.getOffsets().entrySet().forEach(e ->
+                fields.put("offsets." + e.getKey(), e.getValue())
             );
         }
 

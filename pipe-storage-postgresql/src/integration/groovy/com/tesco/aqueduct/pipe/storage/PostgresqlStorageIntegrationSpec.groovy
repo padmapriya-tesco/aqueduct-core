@@ -106,10 +106,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         offset.getAsLong() == 3
 
         where:
-        offsetName                          | _
-        OffsetName.GLOBAL_LATEST_OFFSET     | _
-        OffsetName.NEXT_PIPE_OFFSET         | _
-        OffsetName.LOCAL_LATEST_OFFSET      | _
+        offsetName                      | _
+        OffsetName.GLOBAL_LATEST_OFFSET | _
+        OffsetName.PIPE_OFFSET          | _
+        OffsetName.LOCAL_LATEST_OFFSET  | _
     }
 
     def "get pipe state as up to date always"() {

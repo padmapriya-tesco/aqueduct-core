@@ -13,16 +13,20 @@ public class TimedDistributedStorage implements DistributedStorage {
     private final Timer latestOffsetTimer;
     private final Timer writeMessageTimer;
     private final Timer writeMessagesTimer;
-    private final Timer writePipeStatetimer;
+    private final Timer writePipeStateTimer;
     private final Timer readPipeStateTimer;
+    private final Timer readOffsetTimer;
+    private final Timer writeOffsetTimer;
 
     public TimedDistributedStorage(final DistributedStorage storage, final MeterRegistry meterRegistry) {
         this.storage = storage;
         readTimer = meterRegistry.timer("pipe.storage.read");
         latestOffsetTimer = meterRegistry.timer("pipe.storage.latestOffset");
+        readOffsetTimer = meterRegistry.timer("pipe.storage.readOffset");
+        writeOffsetTimer = meterRegistry.timer("pipe.storage.writeOffset");
         writeMessageTimer = meterRegistry.timer("pipe.storage.writeMessage");
         writeMessagesTimer = meterRegistry.timer("pipe.storage.writeMessages");
-        writePipeStatetimer = meterRegistry.timer("pipe.storage.writePipeState");
+        writePipeStateTimer = meterRegistry.timer("pipe.storage.writePipeState");
         readPipeStateTimer = meterRegistry.timer("pipe.storage.readPipeState");
     }
 
@@ -38,7 +42,7 @@ public class TimedDistributedStorage implements DistributedStorage {
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
-        return latestOffsetTimer.record(() -> storage.getOffset(offsetName));
+        return readOffsetTimer.record(() -> storage.getOffset(offsetName));
     }
 
     @Override
@@ -53,12 +57,12 @@ public class TimedDistributedStorage implements DistributedStorage {
 
     @Override
     public void write(OffsetEntity offset) {
-        writeMessagesTimer.record(() -> storage.write(offset));
+        writeOffsetTimer.record(() -> storage.write(offset));
     }
 
     @Override
     public void write(PipeState pipeState) {
-        writePipeStatetimer.record(() -> storage.write(pipeState));
+        writePipeStateTimer.record(() -> storage.write(pipeState));
     }
 
     @Override
