@@ -1,6 +1,6 @@
 package com.tesco.aqueduct.registry.http;
 
-import com.tesco.aqueduct.pipe.api.MessageReader;
+import com.tesco.aqueduct.pipe.api.Reader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.model.Status;
@@ -28,9 +28,9 @@ public class NodeRegistryControllerV2 {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
     private final NodeRegistry registry;
     private final TillStorage tillStorage;
-    private final MessageReader pipe;
+    private final Reader pipe;
 
-    public NodeRegistryControllerV2(final NodeRegistry registry, final TillStorage tillStorage, final MessageReader pipe) {
+    public NodeRegistryControllerV2(final NodeRegistry registry, final TillStorage tillStorage, final Reader pipe) {
         this.registry = registry;
         this.tillStorage = tillStorage;
         this.pipe = pipe;

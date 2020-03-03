@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparingLong;
 
-public abstract class InMemoryStorage implements MessageReader, MessageWriter {
+public abstract class InMemoryStorage implements Reader, Writer {
 
     static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(InMemoryStorage.class));
 
@@ -34,7 +34,10 @@ public abstract class InMemoryStorage implements MessageReader, MessageWriter {
     protected abstract OptionalLong getLatestGlobalOffset();
 
     @Override
-    public abstract void write(OffsetEntity offset);
+    public void write(OffsetEntity offset) { }
+
+    @Override
+    public void write(PipeState pipeState) { }
 
     /**
      * Complexity: O(log(n)+limit)

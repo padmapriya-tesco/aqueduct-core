@@ -1,6 +1,6 @@
 package com.tesco.aqueduct.pipe.api;
 
-public interface MessageWriter {
+public interface Writer {
 
     /**
      * Put messages ordered by offset to a store.
