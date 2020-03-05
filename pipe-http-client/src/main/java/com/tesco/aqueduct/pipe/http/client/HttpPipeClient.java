@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 @Named("remote")
-public class HttpPipeClient implements MessageReader {
+public class HttpPipeClient implements Reader {
 
     private final InternalHttpPipeClient client;
     private final CacheManager cacheManager;
@@ -54,6 +54,11 @@ public class HttpPipeClient implements MessageReader {
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
+        throw new UnsupportedOperationException("HttpPipeClient does not support this operation.");
+    }
+
+    @Override
+    public PipeState getPipeState() {
         throw new UnsupportedOperationException("HttpPipeClient does not support this operation.");
     }
 

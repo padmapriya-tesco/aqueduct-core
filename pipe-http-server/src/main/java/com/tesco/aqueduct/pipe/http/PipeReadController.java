@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.pipe.http;
 
-import com.tesco.aqueduct.pipe.api.HttpHeaders;
-import com.tesco.aqueduct.pipe.api.Message;
-import com.tesco.aqueduct.pipe.api.MessageReader;
-import com.tesco.aqueduct.pipe.api.PipeState;
+import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.context.annotation.Value;
@@ -26,6 +23,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.tesco.aqueduct.pipe.api.PipeState.OUT_OF_DATE;
+import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE;
+
 @Secured("PIPE_READ")
 @Measure
 @Controller
@@ -35,7 +35,7 @@ public class PipeReadController {
 
     //TODO: Use constructor
     @Inject @Named("local")
-    private MessageReader messageReader;
+    private Reader reader;
 
     @Inject
     private PipeStateProvider pipeStateProvider;
@@ -49,12 +49,13 @@ public class PipeReadController {
     @Get("/pipe/offset/latest")
     public long latestOffset(@QueryValue final List<String> type) {
         final List<String> types = flattenRequestParams(type);
-        return messageReader.getLatestOffsetMatching(types);
+        return reader.getLatestOffsetMatching(types);
     }
 
-    @Get("/pipe/state")
-    public PipeState state() {
-        return pipeStateProvider.getState(messageReader);
+    @Get("/pipe/state{?type}")
+    public PipeStateResponse state(@Nullable final List<String> type) {
+        final List<String> types = flattenRequestParams(type);
+        return pipeStateProvider.getState(types, reader);
     }
 
     @Get("/pipe/{offset}{?type}")
@@ -73,14 +74,17 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = messageReader.read(types, offset, Collections.singletonList(locationUuid));
+        final val messageResults = reader.read(types, offset, Collections.singletonList(locationUuid));
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
         MutableHttpResponse<List<Message>> response = HttpResponse.ok(list)
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
-            .header(HttpHeaders.PIPE_STATE, messageResults.getPipeState().toString());
+            .header(
+                HttpHeaders.PIPE_STATE,
+                pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
+            );
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(
