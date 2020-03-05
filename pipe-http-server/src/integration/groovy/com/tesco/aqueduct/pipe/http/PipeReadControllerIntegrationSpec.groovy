@@ -42,7 +42,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         // but it is not handling some basic things yet and is not promoted yet
         // Eventually this whole thing should be replaced with @MockBean(Reader) def provide(){ storage }
         pipeStateProvider = Mock(PipeStateProvider) {
-            getState([], _) >> new PipeStateResponse(true, 1)
+            getState(_, _) >> new PipeStateResponse(true, 1000)
         }
 
         context = ApplicationContext

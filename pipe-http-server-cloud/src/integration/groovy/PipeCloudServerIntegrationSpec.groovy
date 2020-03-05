@@ -106,11 +106,11 @@ class PipeCloudServerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/state")
 
         then: "response is correct"
-        def response = "\"" + PipeState.UP_TO_DATE.toString() + "\""
+        def response = """{"upToDate":true,"localOffset":"100"}"""
         request
-                .then()
-                .statusCode(200)
-                .body(equalTo(response))
+            .then()
+            .statusCode(200)
+            .body(equalTo(response))
     }
 
     void insert(Long msg_offset, String msg_key, String content_type, String type, LocalDateTime created, String data) {
