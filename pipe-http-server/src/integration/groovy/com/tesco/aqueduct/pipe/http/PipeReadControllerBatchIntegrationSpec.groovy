@@ -2,7 +2,7 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
@@ -39,7 +39,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
             .mainClass(EmbeddedServer)
             .build()
 
-        context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+        context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
         context.registerSingleton(pipeStateProvider)
         context.start()
 
@@ -55,7 +55,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
         storage.clear()
 
         pipeStateProvider = Mock(PipeStateProvider) {
-            getState(_ as List, _ as MessageReader) >> new PipeStateResponse(true, 100)
+            getState(_ as List, _ as Reader) >> new PipeStateResponse(true, 100)
         }
     }
 

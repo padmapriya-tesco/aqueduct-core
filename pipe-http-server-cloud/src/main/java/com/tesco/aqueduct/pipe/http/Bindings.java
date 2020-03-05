@@ -1,8 +1,8 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.model.NodeRegistry;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
+import com.tesco.aqueduct.registry.model.NodeRegistry;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage;
 import com.tesco.aqueduct.registry.model.TillStorage;
@@ -18,7 +18,7 @@ import java.time.Duration;
 @Singleton
 public class Bindings {
 
-    // This provides MessageReader as it implements it
+    // This provides Reader as it implements it
     @Singleton @Named("local")
     PostgresqlStorage bindPostgreSQL(
         @Value("${persistence.read.limit}") final int limit,

@@ -1,13 +1,11 @@
 package com.tesco.aqueduct.pipe.storage;
 
-import com.tesco.aqueduct.pipe.api.Message;
-import com.tesco.aqueduct.pipe.api.OffsetEntity;
-import com.tesco.aqueduct.pipe.api.OffsetName;
-import com.tesco.aqueduct.pipe.api.PipeState;
+import com.tesco.aqueduct.pipe.api.*;
 
 import java.util.OptionalLong;
 
-public class CentralInMemoryStorage extends InMemoryStorage {
+public class CentralInMemoryStorage extends InMemoryStorage implements CentralStorage {
+
     public CentralInMemoryStorage(int limit, long retryAfter) {
         super(limit, retryAfter);
     }
@@ -16,12 +14,6 @@ public class CentralInMemoryStorage extends InMemoryStorage {
     protected OptionalLong getLatestGlobalOffset() {
         return messages.stream().mapToLong(Message::getOffset).max();
     }
-
-    @Override
-    public void write(OffsetEntity offset) { }
-
-    @Override
-    public void write(PipeState pipeState) { }
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {

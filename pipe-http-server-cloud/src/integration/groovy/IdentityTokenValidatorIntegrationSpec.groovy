@@ -1,7 +1,7 @@
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
+import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.http.PipeStateProvider
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
@@ -47,7 +47,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         })
 
         def pipeStateProvider = Mock(PipeStateProvider) {
-            getState(_ as List, _ as MessageReader) >> new PipeStateResponse(true, 100)
+            getState(_ as List, _ as Reader) >> new PipeStateResponse(true, 100)
         }
 
         identityMock.start()
@@ -86,7 +86,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             .build()
 
         context
-            .registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+            .registerSingleton(Reader, storage, Qualifiers.byName("local"))
             .registerSingleton(pipeStateProvider)
             .start()
 
