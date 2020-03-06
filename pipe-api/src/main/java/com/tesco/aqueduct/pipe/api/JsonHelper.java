@@ -29,7 +29,6 @@ public class JsonHelper {
 
             .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
 
-            .enable(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS)
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
             .enable(JsonParser.Feature.ALLOW_COMMENTS)

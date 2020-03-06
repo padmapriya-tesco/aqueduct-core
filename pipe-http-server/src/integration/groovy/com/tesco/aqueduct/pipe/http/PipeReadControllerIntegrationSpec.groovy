@@ -331,12 +331,12 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         where:
         types   | offset
-        "a"     | '"100"'
-        "b"     | '"101"'
-        "c"     | '"102"'
-        "b,a"   | '"101"'
-        "a,c"   | '"102"'
-        "a,b,c" | '"102"'
+        "a"     | "100"
+        "b"     | "101"
+        "c"     | "102"
+        "b,a"   | "101"
+        "a,c"   | "102"
+        "a,b,c" | "102"
     }
 
     def "Latest offset endpoint requires types"() {

@@ -2,6 +2,8 @@ package com.tesco.aqueduct.pipe.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import lombok.experimental.Wither;
 
@@ -13,6 +15,7 @@ public class Message {
     private final String type;
     private final String key;
     private final String contentType;
+    @JsonSerialize(using = ToStringSerializer.class)
     private final Long offset;
     private final ZonedDateTime created;
     private final String data;

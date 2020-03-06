@@ -65,17 +65,18 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
     def "Identity token is issued from Identity service when valid token request is passed"() {
         given: "a mocked Identity service for issue token endpoint"
         def requestJson = JsonOutput.toJson([
+                client_id       : CLIENT_ID,
+                client_secret   : CLIENT_SECRET,
                 grant_type      : "client_credentials",
                 scope           : "internal public",
-                confidence_level: 12,
-                client_id       : CLIENT_ID,
-                client_secret   : CLIENT_SECRET
+                confidence_level: 12
         ])
 
         identityMockService.expectations {
             post(ISSUE_TOKEN_PATH) {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
+                header("TraceId", "someTraceId")
                 called(1)
 
                 responder {

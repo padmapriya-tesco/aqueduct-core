@@ -47,9 +47,9 @@ public class PipeReadController {
     private int maxPayloadSizeBytes;
 
     @Get("/pipe/offset/latest")
-    public long latestOffset(@QueryValue final List<String> type) {
+    public String latestOffset(@QueryValue final List<String> type) {
         final List<String> types = flattenRequestParams(type);
-        return reader.getLatestOffsetMatching(types);
+        return Long.toString(reader.getLatestOffsetMatching(types));
     }
 
     @Get("/pipe/state{?type}")
