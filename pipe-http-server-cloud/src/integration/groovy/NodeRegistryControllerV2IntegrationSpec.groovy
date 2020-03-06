@@ -2,8 +2,8 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.api.PipeState
+import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import com.tesco.aqueduct.registry.model.TillStorage
@@ -150,7 +150,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(NodeRegistry, registry)
-            .registerSingleton(MessageReader, Mock(MessageReader))
+            .registerSingleton(Reader, Mock(Reader))
             .registerSingleton(TillStorage, tillStorage)
             .start()
 

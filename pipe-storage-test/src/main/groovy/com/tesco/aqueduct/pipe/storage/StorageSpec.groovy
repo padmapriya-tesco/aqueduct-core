@@ -1,7 +1,7 @@
 package com.tesco.aqueduct.pipe.storage
 
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageReader
+import com.tesco.aqueduct.pipe.api.Reader
 import groovy.transform.NamedVariant
 import spock.lang.Shared
 import spock.lang.Specification
@@ -22,7 +22,7 @@ abstract class StorageSpec extends Specification {
     @Shared
     def msg2 = message(offset: 107, key:"y")
 
-    abstract MessageReader getStorage();
+    abstract Reader getStorage();
     abstract void insert(Message msg);
 
     def "can persist messages without offset"() {

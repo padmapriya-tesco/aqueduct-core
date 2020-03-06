@@ -2,8 +2,8 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
+import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.storage.DistributedInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
@@ -19,7 +19,7 @@ import spock.lang.Unroll
 import static org.hamcrest.Matchers.equalTo
 
 @Newify(Message)
-class DistributedPipeReadControllerIntegrationSpec extends Specification {
+class DistributedStoragePipeReadControllerIntegrationSpec extends Specification {
     static int RETRY_AFTER_SECONDS = 600
 
     @Shared InMemoryStorage storage = new DistributedInMemoryStorage(10, RETRY_AFTER_SECONDS)
@@ -35,7 +35,7 @@ class DistributedPipeReadControllerIntegrationSpec extends Specification {
     void setupSpec() {
         // There is nicer way in the works: https://github.com/micronaut-projects/micronaut-test
         // but it is not handling some basic things yet and is not promoted yet
-        // Eventually this whole thing should be replaced with @MockBean(MessageReader) def provide(){ storage }
+        // Eventually this whole thing should be replaced with @MockBean(Reader) def provide(){ storage }
 
         context = ApplicationContext
             .build()
@@ -43,7 +43,7 @@ class DistributedPipeReadControllerIntegrationSpec extends Specification {
             .mainClass(EmbeddedServer)
             .build()
 
-        context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+        context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
 
         pipeStateProvider.getState(_ ,_) >> new PipeStateResponse(true, 1000)
 

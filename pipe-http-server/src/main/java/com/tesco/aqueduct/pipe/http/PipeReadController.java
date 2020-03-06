@@ -35,7 +35,7 @@ public class PipeReadController {
 
     //TODO: Use constructor
     @Inject @Named("local")
-    private MessageReader messageReader;
+    private Reader reader;
 
     @Inject
     private PipeStateProvider pipeStateProvider;
@@ -49,13 +49,13 @@ public class PipeReadController {
     @Get("/pipe/offset/latest")
     public long latestOffset(@QueryValue final List<String> type) {
         final List<String> types = flattenRequestParams(type);
-        return messageReader.getLatestOffsetMatching(types);
+        return reader.getLatestOffsetMatching(types);
     }
 
     @Get("/pipe/state{?type}")
     public PipeStateResponse state(@Nullable final List<String> type) {
         final List<String> types = flattenRequestParams(type);
-        return pipeStateProvider.getState(types, messageReader);
+        return pipeStateProvider.getState(types, reader);
     }
 
     @Get("/pipe/{offset}{?type}")
@@ -77,7 +77,7 @@ public class PipeReadController {
 
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = messageReader.read(types, offset, Collections.singletonList(locationUuid));
+        final val messageResults = reader.read(types, offset, Collections.singletonList(locationUuid));
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
@@ -86,7 +86,7 @@ public class PipeReadController {
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
             .header(
                 HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, messageReader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
+                pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
             );
 
         messageResults.getGlobalLatestOffset()

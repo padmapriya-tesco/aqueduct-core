@@ -2,9 +2,9 @@ package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageReader
 import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
+import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
@@ -40,7 +40,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     void setupSpec() {
         // There is nicer way in the works: https://github.com/micronaut-projects/micronaut-test
         // but it is not handling some basic things yet and is not promoted yet
-        // Eventually this whole thing should be replaced with @MockBean(MessageReader) def provide(){ storage }
+        // Eventually this whole thing should be replaced with @MockBean(Reader) def provide(){ storage }
         pipeStateProvider = Mock(PipeStateProvider)
 
         context = ApplicationContext
@@ -49,7 +49,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .mainClass(EmbeddedServer)
             .build()
 
-        context.registerSingleton(MessageReader, storage, Qualifiers.byName("local"))
+        context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
 
         // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
         pipeStateProvider.getState(_ ,_) >> { args ->
