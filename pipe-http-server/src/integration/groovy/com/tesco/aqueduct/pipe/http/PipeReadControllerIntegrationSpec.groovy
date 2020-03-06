@@ -41,7 +41,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
         // There is nicer way in the works: https://github.com/micronaut-projects/micronaut-test
         // but it is not handling some basic things yet and is not promoted yet
         // Eventually this whole thing should be replaced with @MockBean(Reader) def provide(){ storage }
-        pipeStateProvider = Mock(PipeStateProvider)
+        pipeStateProvider = Mock(PipeStateProvider) {
+            getState(_, _) >> new PipeStateResponse(true, 1000)
+        }
 
         context = ApplicationContext
             .build()
@@ -50,12 +52,6 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .build()
 
         context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
-
-        // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
-        pipeStateProvider.getState(_ ,_) >> { args ->
-            def type = args[0]
-            return type.contains("OutOfDateType") ? new PipeStateResponse(false, 1000) : new PipeStateResponse(true, 1000)
-        }
 
         context.registerSingleton(pipeStateProvider)
         context.start()
@@ -212,24 +208,16 @@ class PipeReadControllerIntegrationSpec extends Specification {
         'type2' |  200          | HttpHeaders.GLOBAL_LATEST_OFFSET        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
     }
 
-    @Unroll
     void "pipe signals pipe state in response header"() {
         given:
-        pipeStateProvider.getState(["$type"], _) >> new PipeStateResponse(isPipeUpToDate, 1)
-
         when:
-        def request = RestAssured.get("/pipe/0?type=$type")
+        def request = RestAssured.get("/pipe/0?type=type1")
 
         then:
         request
             .then()
             .statusCode(200)
-            .header(HttpHeaders.PIPE_STATE, headerValue)
-
-        where:
-        type           | isPipeUpToDate  | headerValue
-        'type1'        | true            | PipeState.UP_TO_DATE.toString()
-        'OutOfDateType'| false           | PipeState.OUT_OF_DATE.toString()
+            .header(HttpHeaders.PIPE_STATE, PipeState.UP_TO_DATE.toString())
     }
 
     @Unroll
@@ -362,7 +350,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         given: "A pipe state provider mocked"
 
         when: "we call to get state"
-        def request = RestAssured.get("/pipe/state?type=a")
+        def request = RestAssured.get("/pipe/state")
 
         then: "response is serialised correctly"
         def response = """{"upToDate":true,"localOffset":"1000"}"""

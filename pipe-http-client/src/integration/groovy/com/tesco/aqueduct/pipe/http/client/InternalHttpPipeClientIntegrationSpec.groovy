@@ -3,7 +3,6 @@ package com.tesco.aqueduct.pipe.http.client
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.SelfRegistrationTask
@@ -147,35 +146,5 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         then:
         server.verify()
         latest == 100
-    }
-
-    def "can get pipe state"(){
-        given:
-        server.expectations {
-            get("/pipe/state") {
-                called(1)
-                query("type", "a")
-
-                responder {
-                    contentType('application/json')
-                    body('{"upToDate":true,"localOffset":"1000"}')
-                }
-            }
-        }
-
-        when: "I call state once"
-        def state = client.getPipeState(["a"])
-
-        and: "I call state again"
-        def state2 = client.getPipeState(["a"])
-
-        then: "the first result was 'up to date'"
-        state == new PipeStateResponse(true, 1000)
-
-        and: "I got the same result from the second call"
-        state2 == state
-
-        and: "the server has only been called once (the result was cached)"
-        server.verify()
     }
 }

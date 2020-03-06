@@ -1,6 +1,7 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.inject.qualifiers.Qualifiers
@@ -102,14 +103,14 @@ class PipeCloudServerIntegrationSpec extends Specification {
         insert(100,  "a", "contentType", "type1", time, "data")
 
         when: "we call to get state"
-        def request = RestAssured.get("/pipe/state?type=type1")
+        def request = RestAssured.get("/pipe/state")
 
         then: "response is correct"
         def response = """{"upToDate":true,"localOffset":"100"}"""
         request
-                .then()
-                .statusCode(200)
-                .body(equalTo(response))
+            .then()
+            .statusCode(200)
+            .body(equalTo(response))
     }
 
     void insert(Long msg_offset, String msg_key, String content_type, String type, LocalDateTime created, String data) {
