@@ -36,6 +36,10 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                 .properties(
                         parseYamlConfig(
                         """
+                            micronaut:
+                                caches:
+                                    identity-issue-token:
+                                        enable: "UTF-8"
                             authentication:
                               identity:
                                 url:                ${identityMockService.getHttpUrl()}
@@ -56,6 +60,10 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
         server.start()
 
         RestAssured.port = server.port
+    }
+
+    def setup() {
+        identityMockService.clearExpectations()
     }
 
     void cleanupSpec() {
@@ -105,6 +113,62 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
         identityToken.accessToken == ACCESS_TOKEN
         identityToken.tokenExpiry == TOKEN_EXPIRY
 
+        and: "Identity mock service is called once"
+        identityMockService.verify()
+    }
+
+    def "Identity token is cached once fetched from Identity service"() {
+        given: "a mocked Identity service for issue token endpoint"
+        def requestJson = JsonOutput.toJson([
+                client_id       : CLIENT_ID,
+                client_secret   : CLIENT_SECRET,
+                grant_type      : "client_credentials",
+                scope           : "internal public",
+                confidence_level: 12
+        ])
+
+        identityMockService.expectations {
+            post(ISSUE_TOKEN_PATH) {
+                body(requestJson, "application/json")
+                header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
+                called(1)
+                responder {
+                    header("Content-Type", "application/vnd.tesco.identity.tokenresponse+json")
+                    body("""
+                        {
+                            "access_token": "${ACCESS_TOKEN}",
+                            "token_type"  : "bearer",
+                            "expires_in"  : 1000,
+                            "scope"       : "some: scope: value"
+                        }
+                    """)
+                }
+            }
+        }
+
+        and: "identity issue token client bean"
+        IdentityIssueTokenClient identityIssueTokenClient = context.getBean(IdentityIssueTokenClient)
+
+        when: "get issued token through Identity client"
+        def firstIdentityToken = identityIssueTokenClient.retrieveIdentityToken(
+            "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+        )
+
+        then: "received expected identity token back"
+        firstIdentityToken.accessToken == ACCESS_TOKEN
+        firstIdentityToken.tokenExpiry == TOKEN_EXPIRY
+
+        when: "token is fetched again"
+        def secondIdentityToken = identityIssueTokenClient.retrieveIdentityToken(
+                "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+        )
+
+        then: "cached identity token is provided"
+        secondIdentityToken.accessToken == ACCESS_TOKEN
+        secondIdentityToken.tokenExpiry == TOKEN_EXPIRY
+
+        and: "Identity mock service is called once"
+        identityMockService.verify()
     }
 
     Map<String, Object> parseYamlConfig(String str) {

@@ -2,13 +2,11 @@ package com.tesco.aqueduct.pipe.identity.issuer;
 
 import com.tesco.aqueduct.pipe.api.IdentityToken;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
-import io.micronaut.cache.annotation.CacheConfig;
-import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.context.annotation.Property;
 
 import java.util.UUID;
 
-@CacheConfig("identity-issue-token-cache")
+
 public class IdentityIssueTokenProvider implements TokenProvider {
 
     private final IdentityIssueTokenClient identityIssueTokenClient;
@@ -28,7 +26,6 @@ public class IdentityIssueTokenProvider implements TokenProvider {
     // Look into expiring Identity token cache here by
     // potentially calling cache expiry method on identity client if the token has expired
     @Override
-    @Cacheable
     public IdentityToken retrieveIdentityToken() {
         return identityIssueTokenClient.retrieveIdentityToken(
             UUID.randomUUID().toString(),
