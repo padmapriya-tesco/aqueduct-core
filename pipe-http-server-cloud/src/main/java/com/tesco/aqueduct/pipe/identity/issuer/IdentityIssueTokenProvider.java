@@ -4,14 +4,16 @@ import com.tesco.aqueduct.pipe.api.IdentityToken;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
 import io.micronaut.context.annotation.Property;
 
+import javax.inject.Singleton;
 import java.util.UUID;
 
-
+@Singleton
 public class IdentityIssueTokenProvider implements TokenProvider {
 
     private final IdentityIssueTokenClient identityIssueTokenClient;
     private final String identityClientId;
     private final String identityClientSecret;
+    private IdentityToken identityToken;
 
     public IdentityIssueTokenProvider(
         IdentityIssueTokenClient identityIssueTokenClient,
@@ -23,16 +25,20 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         this.identityClientSecret = identityClientSecret;
     }
 
-    // Look into expiring Identity token cache here by
-    // potentially calling cache expiry method on identity client if the token has expired
     @Override
     public IdentityToken retrieveIdentityToken() {
-        return identityIssueTokenClient.retrieveIdentityToken(
-            UUID.randomUUID().toString(),
-            new IssueTokenRequest(
-                identityClientId,
-                identityClientSecret
-            )
+        if (identityToken != null && !identityToken.isTokenExpired()) {
+            return identityToken;
+        }
+
+        identityToken = identityIssueTokenClient.retrieveIdentityToken(
+                UUID.randomUUID().toString(),
+                new IssueTokenRequest(
+                        identityClientId,
+                        identityClientSecret
+                )
         );
+
+        return identityToken;
     }
 }

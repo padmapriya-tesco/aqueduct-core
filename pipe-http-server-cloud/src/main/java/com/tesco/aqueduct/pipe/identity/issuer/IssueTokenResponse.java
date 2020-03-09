@@ -9,15 +9,15 @@ import com.tesco.aqueduct.pipe.api.IdentityToken;
 public class IssueTokenResponse implements IdentityToken {
 
     private final String accessToken;
-    private final long tokenExpiry;
+    private final long expiresAt;
 
     @JsonCreator
     public IssueTokenResponse(
         @JsonProperty("access_token") final String accessToken,
-        @JsonProperty("expires_in") long tokenExpiry
+        @JsonProperty("expires_in") long tokenExpiresInSec
     ) {
         this.accessToken = accessToken;
-        this.tokenExpiry = tokenExpiry;
+        this.expiresAt = System.currentTimeMillis() + (tokenExpiresInSec * 1000);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class IssueTokenResponse implements IdentityToken {
     }
 
     @Override
-    public long getTokenExpiry() {
-        return tokenExpiry;
+    public boolean isTokenExpired() {
+        return System.currentTimeMillis() > expiresAt;
     }
 }
