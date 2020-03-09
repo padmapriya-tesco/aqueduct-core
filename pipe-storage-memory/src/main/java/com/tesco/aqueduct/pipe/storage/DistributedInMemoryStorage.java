@@ -1,11 +1,9 @@
 package com.tesco.aqueduct.pipe.storage;
 
-import com.tesco.aqueduct.pipe.api.DistributedStorage;
-import com.tesco.aqueduct.pipe.api.OffsetEntity;
-import com.tesco.aqueduct.pipe.api.OffsetName;
-import com.tesco.aqueduct.pipe.api.PipeState;
+import com.tesco.aqueduct.pipe.api.*;
 import lombok.val;
 
+import java.util.List;
 import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
@@ -47,6 +45,11 @@ public class DistributedInMemoryStorage extends InMemoryStorage implements Distr
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    boolean messageMatchCluster(Message message, List<String> clusterId) {
+        return true;
     }
 
     @Override

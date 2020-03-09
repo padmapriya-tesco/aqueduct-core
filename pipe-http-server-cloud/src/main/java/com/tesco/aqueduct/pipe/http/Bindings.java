@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe.http;
 
+import com.tesco.aqueduct.pipe.api.LocationResolver;
+import com.tesco.aqueduct.pipe.location.CloudLocationResolver;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
@@ -49,5 +51,10 @@ public class Bindings {
     @Singleton
     PipeStateProvider bindPipeStateProvider() {
         return new CloudPipeStateProvider();
+    }
+
+    @Singleton
+    LocationResolver bindLocationResolver() {
+        return new CloudLocationResolver();
     }
 }

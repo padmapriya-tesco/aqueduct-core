@@ -40,6 +40,9 @@ public class PipeReadController {
     @Inject
     private PipeStateProvider pipeStateProvider;
 
+    @Inject
+    private LocationResolver locationResolver;
+
     @Value("${pipe.http.server.read.poll-seconds:0}")
     private int pollSeconds;
 
@@ -74,10 +77,10 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         // call location service to resolve location uuid to list of cluster ids
-
+         List<String> locations = locationResolver.resolve(locationUuid);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = reader.read(types, offset, Collections.singletonList(locationUuid));
+        final val messageResults = reader.read(types, offset, locationUuid == null ? Collections.emptyList() : Collections.singletonList(locationUuid));
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
