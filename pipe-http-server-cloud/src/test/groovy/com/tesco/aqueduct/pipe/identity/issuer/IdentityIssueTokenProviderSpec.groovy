@@ -80,7 +80,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         )
 
         and: "an issue token response"
-        IssueTokenResponse issueTokenResponse = new IssueTokenResponse("accessToken", 0)
+        IssueTokenResponse issueTokenResponse = new IssueTokenResponse("accessToken", -1)
 
         when: "a call is made to retrieve an Identity token"
         IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
