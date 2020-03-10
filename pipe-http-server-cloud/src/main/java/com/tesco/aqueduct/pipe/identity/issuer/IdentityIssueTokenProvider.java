@@ -2,12 +2,9 @@ package com.tesco.aqueduct.pipe.identity.issuer;
 
 import com.tesco.aqueduct.pipe.api.IdentityToken;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
-import io.micronaut.context.annotation.Property;
 
-import javax.inject.Singleton;
 import java.util.UUID;
 
-@Singleton
 public class IdentityIssueTokenProvider implements TokenProvider {
 
     private final IdentityIssueTokenClient identityIssueTokenClient;
@@ -17,8 +14,8 @@ public class IdentityIssueTokenProvider implements TokenProvider {
 
     public IdentityIssueTokenProvider(
         IdentityIssueTokenClient identityIssueTokenClient,
-        @Property(name = "authentication.identity.client.id") String identityClientId,
-        @Property(name = "authentication.identity.client.secret") String identityClientSecret
+        String identityClientId,
+        String identityClientSecret
     ) {
         this.identityIssueTokenClient = identityIssueTokenClient;
         this.identityClientId = identityClientId;

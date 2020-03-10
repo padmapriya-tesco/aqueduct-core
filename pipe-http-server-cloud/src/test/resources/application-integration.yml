@@ -1,0 +1,73 @@
+micronaut:
+  metrics.binders:
+    jvm.enabled: true
+    web.enabled: true
+    processor.enabled: true
+    jdbc.enabled: false
+  security:
+    enabled: true
+    token.jwt:
+      enabled: true
+      bearer.enabled: true
+  caches:
+    identity-cache:
+      expire-after-write: 10m
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+
+endpoints:
+  all:
+    enabled: true
+    path: /endpoints
+    sensitive: false
+
+persistence:
+  compact:
+    threshold: 3d
+    schedule.cron: "0 14 2 1/1 * ?"
+  read:
+    limit: 1000
+    max-batch-size: 2000000
+    retry-after: 10
+
+datasources:
+  postgres:
+    url: "jdbc:postgresql://${POSTGRE_SERVER}/${POSTGRE_DATABASE}"
+    username: "${POSTGRE_USERNAME}"
+    password: "${POSTGRE_PASSWORD}"
+    driverClassName: org.postgresql.Driver
+
+authentication:
+  users:
+    pipe-provider-live:
+      password: "${PIPE_READ_PASSWORD}"
+    pipe-runscope-live:
+      password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
+      roles:
+        - PIPE_READ
+    live-support:
+      password: "${SUPPORT_PASSWORD}"
+      roles:
+        - REGISTRY_DELETE
+        - BOOTSTRAP_TILL
+        - PIPE_READ
+  identity:
+    url: "${IDENTITY_URL}"
+    validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
+    issue.token.path: "${IDENTITY_ISSUE_TOKEN_PATH}"
+    client:
+      id: "${IDENTITY_CLIENT_ID}"
+      secret: "${IDENTITY_CLIENT_ID_SECRET}"
+    users:
+      till:
+        clientId: "${TILL_CLIENT_UID}"
+        roles:
+          - PIPE_READ
+          - REGISTRY_WRITE
+
+pipe:
+  server:
+    url: "https://api.tesco.com/messaging/v1"

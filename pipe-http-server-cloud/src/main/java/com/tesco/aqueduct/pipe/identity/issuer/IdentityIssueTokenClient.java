@@ -12,7 +12,7 @@ import io.micronaut.retry.annotation.Retryable;
 public interface IdentityIssueTokenClient {
 
     @Post(value = "${authentication.identity.issue.token.path}", consumes = "application/vnd.tesco.identity.tokenresponse+json")
-    @Retryable(attempts = "${authentication.identity.attempts}", delay = "${authentication.identity.delay}") // TODO - need to look into
+    @Retryable(attempts = "${authentication.identity.attempts}", delay = "${authentication.identity.delay}")
     IssueTokenResponse retrieveIdentityToken(
         @Header("TraceId") String traceId,
         @Body IssueTokenRequest issueTokenRequest

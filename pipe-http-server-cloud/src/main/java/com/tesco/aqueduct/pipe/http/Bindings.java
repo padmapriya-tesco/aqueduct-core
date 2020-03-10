@@ -1,6 +1,9 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.api.LocationResolver;
+import com.tesco.aqueduct.pipe.api.TokenProvider;
+import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
+import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
 import com.tesco.aqueduct.pipe.location.CloudLocationResolver;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
@@ -54,7 +57,16 @@ public class Bindings {
     }
 
     @Singleton
-    LocationResolver bindLocationResolver() {
-        return new CloudLocationResolver();
+    TokenProvider bindTokenProvider(
+            final IdentityIssueTokenClient identityIssueTokenClient,
+            @Property(name = "authentication.identity.client.id") String identityClientId,
+            @Property(name = "authentication.identity.client.secret") String identityClientSecret
+    ) {
+        return new IdentityIssueTokenProvider(identityIssueTokenClient, identityClientId, identityClientSecret);
+    }
+
+    @Singleton
+    LocationResolver bindLocationResolver(final TokenProvider tokenProvider) {
+        return new CloudLocationResolver(tokenProvider);
     }
 }
