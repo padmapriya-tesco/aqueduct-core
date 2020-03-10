@@ -196,25 +196,26 @@ class PipeReadControllerIntegrationSpec extends Specification {
     }
 
     @Unroll
-    void "filtering by location: #location"() {
+    void "filtering by location: #query"() {
         given:
         storage.write([
-                new CentralInMemoryStorage.ClusteredMessage(Message("type1", "a", "ct", 100, null, null), "cluster_A"),
-                new CentralInMemoryStorage.ClusteredMessage(Message("type1", "b", "ct", 101, null, null), SOME_CLUSTER)
+            new CentralInMemoryStorage.ClusteredMessage(Message("type1", "a", "ct", 100, null, null), "cluster_A"),
+            new CentralInMemoryStorage.ClusteredMessage(Message("type1", "b", "ct", 101, null, null), SOME_CLUSTER)
         ])
 
         when:
-        def request = RestAssured.get("/pipe/0?type=type1&location=$location")
+        def request = RestAssured.get("/pipe/0?$query")
 
         then:
         request
-                .then()
-                .statusCode(statusCode)
-                .body(equalTo(response))
+            .then()
+            .statusCode(statusCode)
+            .body(equalTo(response))
 
         where:
-        location           | statusCode | response
-        "1234"             | 200        | '[{"type":"type1","key":"a","contentType":"ct","offset":"100"}]'
+        query                          | statusCode | response
+        "type=type1&location=1234"     | 200        | '[{"type":"type1","key":"a","contentType":"ct","offset":"100"}]'
+        "type=type1"                   | 200        | '[{"type":"type1","key":"a","contentType":"ct","offset":"100"},{"type":"type1","key":"b","contentType":"ct","offset":"101"}]'
     }
 
     @Unroll

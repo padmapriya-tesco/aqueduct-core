@@ -40,5 +40,10 @@ public class CentralInMemoryStorage extends InMemoryStorage implements CentralSt
             super(message.getType(), message.getKey(), message.getContentType(), message.getOffset(), message.getCreated(), message.getData());
             this.clusterId = clusterId;
         }
+
+        @Override
+        public Message withOffset(Long offset) {
+            return new ClusteredMessage(super.withOffset(offset), clusterId);
+        }
     }
 }

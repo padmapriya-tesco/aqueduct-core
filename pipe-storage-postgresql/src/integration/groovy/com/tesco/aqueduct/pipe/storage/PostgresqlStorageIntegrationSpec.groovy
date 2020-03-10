@@ -7,6 +7,7 @@ import com.tesco.aqueduct.pipe.api.MessageResults
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
+import groovy.transform.NamedVariant
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -406,6 +407,19 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         sql.execute(
             "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?,?);",
             msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize, clusterId
+        )
+    }
+
+    @NamedVariant
+    @Override
+    Message message(Long offset, String type, String key, String contentType, ZonedDateTime created, String data) {
+        new Message(
+                type ?: "type",
+                key ?: "key",
+                contentType ?: "contentType",
+                offset,
+                created ?: time,
+                data ?: "data"
         )
     }
 }

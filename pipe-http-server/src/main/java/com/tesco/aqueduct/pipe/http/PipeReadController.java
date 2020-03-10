@@ -61,7 +61,7 @@ public class PipeReadController {
         return pipeStateProvider.getState(types, reader);
     }
 
-    @Get("/pipe/{offset}{?type}{?location}")
+    @Get("/pipe/{offset}{?type,location}")
     public HttpResponse<List<Message>> readMessages(
         final long offset,
         final HttpRequest<?> request,
@@ -76,11 +76,8 @@ public class PipeReadController {
 
         final List<String> types = flattenRequestParams(type);
 
-        // call location service to resolve location uuid to list of cluster ids
-         List<String> locations = locationResolver.resolve(location);
-
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = reader.read(types, offset, location == null ? Collections.emptyList() : locations);
+        final val messageResults = reader.read(types, offset, resolveTargetUuidsFrom(location));
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
@@ -98,6 +95,10 @@ public class PipeReadController {
             );
 
         return response;
+    }
+
+    private List<String> resolveTargetUuidsFrom(@Nullable String location) {
+        return location == null ? Collections.emptyList() : locationResolver.resolve(location);
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {
