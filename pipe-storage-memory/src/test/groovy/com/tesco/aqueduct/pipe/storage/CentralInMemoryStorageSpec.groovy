@@ -1,16 +1,32 @@
 package com.tesco.aqueduct.pipe.storage
 
 import com.tesco.aqueduct.pipe.api.Message
+import groovy.transform.NamedVariant
 import spock.lang.Unroll
 
+import java.time.ZonedDateTime
 
-class InMemoryStorageSpec extends StorageSpec {
+class CentralInMemoryStorageSpec extends StorageSpec {
 
     InMemoryStorage storage = new CentralInMemoryStorage(limit, 10000)
 
     @Override
     void insert(Message msg) {
         storage.write(msg)
+    }
+
+    @NamedVariant
+    @Override
+    Message message(Long offset, String type, String key, String contentType, ZonedDateTime created, String data) {
+        return new CentralInMemoryStorage.ClusteredMessage(new Message(
+                type ?: "type",
+                key ?: "key",
+                contentType ?: "contentType",
+                offset,
+                created ?: time,
+                data ?: "data"),
+                "someCluster"
+        )
     }
 
     @Unroll

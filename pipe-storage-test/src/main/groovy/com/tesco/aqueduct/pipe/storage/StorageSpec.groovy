@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.storage
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.Reader
-import groovy.transform.NamedVariant
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -152,22 +151,12 @@ abstract class StorageSpec extends Specification {
         ["missing"] | 0 // no such type
     }
 
-    @NamedVariant // allows to use names of parameters in method call
-    Message message(
+    abstract Message message(
         Long offset,
         String type,
         String key,
         String contentType,
         ZonedDateTime created,
         String data
-    ) {
-        new Message(
-            type ?: "type",
-            key ?: "key",
-            contentType ?: "contentType",
-            offset,
-            created ?: time,
-            data ?: "data"
-        )
-    }
+    );
 }
