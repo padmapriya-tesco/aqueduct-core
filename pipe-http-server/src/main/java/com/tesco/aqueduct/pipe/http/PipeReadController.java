@@ -61,12 +61,12 @@ public class PipeReadController {
         return pipeStateProvider.getState(types, reader);
     }
 
-    @Get("/pipe/{offset}{?type}")
+    @Get("/pipe/{offset}{?type}{?location}")
     public HttpResponse<List<Message>> readMessages(
         final long offset,
         final HttpRequest<?> request,
         @Nullable final List<String> type,
-        @Nullable final String locationUuid
+        @Nullable final String location // TODO - Do we need to make it non-optional once all tills are sending stores through?
     ) {
         if(offset < 0) {
             return HttpResponse.badRequest();
@@ -77,10 +77,10 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         // call location service to resolve location uuid to list of cluster ids
-         List<String> locations = locationResolver.resolve(locationUuid);
+         List<String> locations = locationResolver.resolve(location);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = reader.read(types, offset, locationUuid == null ? Collections.emptyList() : Collections.singletonList(locationUuid));
+        final val messageResults = reader.read(types, offset, location == null ? Collections.emptyList() : locations);
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 

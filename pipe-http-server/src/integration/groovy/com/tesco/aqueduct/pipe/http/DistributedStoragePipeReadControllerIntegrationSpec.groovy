@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.HttpHeaders
+import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.Reader
@@ -25,7 +26,8 @@ class DistributedStoragePipeReadControllerIntegrationSpec extends Specification 
     @Shared InMemoryStorage storage = new DistributedInMemoryStorage(10, RETRY_AFTER_SECONDS)
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
-    @Shared PipeStateProvider pipeStateProvider= Mock()
+    @Shared PipeStateProvider pipeStateProvider = Mock()
+    @Shared LocationResolver locationResolver = Mock()
 
     // overloads of settings for this test
     @Shared propertyOverloads = [
@@ -48,6 +50,7 @@ class DistributedStoragePipeReadControllerIntegrationSpec extends Specification 
         pipeStateProvider.getState(_ ,_) >> new PipeStateResponse(true, 1000)
 
         context.registerSingleton(pipeStateProvider)
+        context.registerSingleton(locationResolver)
         context.start()
 
         server = context.getBean(EmbeddedServer)

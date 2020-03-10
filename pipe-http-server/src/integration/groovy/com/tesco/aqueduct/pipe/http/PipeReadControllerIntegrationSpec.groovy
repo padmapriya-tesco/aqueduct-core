@@ -199,12 +199,12 @@ class PipeReadControllerIntegrationSpec extends Specification {
     void "filtering by location: #location"() {
         given:
         storage.write([
-                new CentralInMemoryStorage.ClusteredMessage(Message("type1", "a", "ct", 100, null, null), "cluster_1234"),
-                new CentralInMemoryStorage.ClusteredMessage(Message("type2", "b", "ct", 101, null, null), SOME_CLUSTER)
+                new CentralInMemoryStorage.ClusteredMessage(Message("type1", "a", "ct", 100, null, null), "cluster_A"),
+                new CentralInMemoryStorage.ClusteredMessage(Message("type1", "b", "ct", 101, null, null), SOME_CLUSTER)
         ])
 
         when:
-        def request = RestAssured.get("/pipe/0?locationUuid=$location")
+        def request = RestAssured.get("/pipe/0?type=type1&location=$location")
 
         then:
         request
@@ -378,7 +378,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/offset/latest")
 
         then:
-        def response = """{"message":"Required QueryValue [List type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
+        def response = """{"message":"Required QueryValue [type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
         request
             .then()
             .statusCode(400)
