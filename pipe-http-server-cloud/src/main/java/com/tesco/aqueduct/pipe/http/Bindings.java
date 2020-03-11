@@ -58,9 +58,9 @@ public class Bindings {
 
     @Singleton
     TokenProvider bindTokenProvider(
-            final IdentityIssueTokenClient identityIssueTokenClient,
-            @Property(name = "authentication.identity.client.id") String identityClientId,
-            @Property(name = "authentication.identity.client.secret") String identityClientSecret
+        final IdentityIssueTokenClient identityIssueTokenClient,
+        @Property(name = "authentication.identity.client.id") String identityClientId,
+        @Property(name = "authentication.identity.client.secret") String identityClientSecret
     ) {
         return new IdentityIssueTokenProvider(identityIssueTokenClient, identityClientId, identityClientSecret);
     }
