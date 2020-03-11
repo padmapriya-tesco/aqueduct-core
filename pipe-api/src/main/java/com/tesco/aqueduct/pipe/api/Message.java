@@ -15,14 +15,13 @@ public class Message {
     private final String type;
     private final String key;
     private final String contentType;
-    private final ZonedDateTime created;
-    private final String data;
 
     @JsonSerialize(using = ToStringSerializer.class)
     private final Long offset;
-    @JsonIgnore
-    private final Long size;
 
+    private final ZonedDateTime created;
+    private final String data;
+    @JsonIgnore private final Long size;
     private static final int MAX_OFFSET_LENGTH = 19;
     private static final int MAX_DATE_LENGTH = 64;
     private static final int EXTRA_ENCODING_CHARACTERS = 6;
