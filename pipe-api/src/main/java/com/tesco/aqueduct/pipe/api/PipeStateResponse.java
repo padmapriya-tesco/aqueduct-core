@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class PipeStateResponse {
     private final boolean upToDate;
+
     @JsonSerialize(using = ToStringSerializer.class)
     private final long localOffset;
 }
