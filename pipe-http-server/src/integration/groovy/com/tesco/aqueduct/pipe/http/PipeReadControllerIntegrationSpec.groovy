@@ -371,7 +371,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         def request = RestAssured.get("/pipe/offset/latest")
 
         then:
-        def response = """{"message":"Required QueryValue [type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
+        def response = """{"message":"Required QueryValue [List type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
         request
             .then()
             .statusCode(400)
