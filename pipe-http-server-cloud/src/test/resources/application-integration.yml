@@ -58,9 +58,11 @@ authentication:
     url: "${IDENTITY_URL}"
     validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
     issue.token.path: "${IDENTITY_ISSUE_TOKEN_PATH}"
+    delay: 500ms
+    attempts: 3
     client:
       id: "${IDENTITY_CLIENT_ID}"
-      secret: "${IDENTITY_CLIENT_ID_SECRET}"
+      secret: "${IDENTITY_CLIENT_SECRET}"
     users:
       till:
         clientId: "${TILL_CLIENT_UID}"

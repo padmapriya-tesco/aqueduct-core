@@ -18,7 +18,7 @@ authentication:
     issue.token.path: "${IDENTITY_ISSUE_TOKEN_PATH}"
     client:
       id: "${IDENTITY_CLIENT_ID}"
-      secret: "${IDENTITY_CLIENT_ID_SECRET}"
+      secret: "${IDENTITY_CLIENT_SECRET}"
     users:
       till:
         clientId: "${TILL_CLIENT_UID}"

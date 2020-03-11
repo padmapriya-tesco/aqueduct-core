@@ -41,3 +41,6 @@ datasources:
     driverClassName: org.postgresql.Driver
 
 authentication:
+  identity:
+    delay: 500ms
+    attempts: 3

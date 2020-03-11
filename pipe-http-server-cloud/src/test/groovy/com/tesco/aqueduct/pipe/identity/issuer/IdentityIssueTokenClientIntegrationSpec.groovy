@@ -5,6 +5,7 @@ import com.stehno.ersatz.ErsatzServer
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
 import spock.lang.AutoCleanup
@@ -39,8 +40,8 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                               identity:
                                 url:                ${identityMockService.getHttpUrl()}
                                 issue.token.path:   "$ISSUE_TOKEN_PATH"
-                                attempts:           1
-                                delay:              10
+                                attempts:           3
+                                delay:              500ms
                                 client:
                                  id:                "$CLIENT_ID"
                                  secret:            "$CLIENT_SECRET"
@@ -110,6 +111,54 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         and: "Identity mock service is called once"
         identityMockService.verify()
+    }
+
+    def "Identity service circuit is opened when it returns 5xx to connect for given number of times"() {
+        given: "a mocked Identity service for issue token endpoint failing to connect"
+        def requestJson = JsonOutput.toJson([
+                client_id       : CLIENT_ID,
+                client_secret   : CLIENT_SECRET,
+                grant_type      : "client_credentials",
+                scope           : "internal public",
+                confidence_level: 12
+        ])
+
+        identityMockService.expectations {
+            post(ISSUE_TOKEN_PATH) {
+                body(requestJson, "application/json")
+                header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
+                header("TraceId", "someTraceId")
+                called(4)
+                responder {
+                    code(500)
+                }
+            }
+        }
+
+        and: "identity issue token client bean"
+        IdentityIssueTokenClient identityIssueTokenClient = context.getBean(IdentityIssueTokenClient)
+
+        when: "get issued token through Identity client"
+        identityIssueTokenClient.retrieveIdentityToken(
+            "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+        )
+
+        then: "identity service is retried 4 times"
+        identityMockService.verify()
+
+        and:
+        thrown(HttpClientResponseException)
+
+        when:
+        identityIssueTokenClient.retrieveIdentityToken(
+                "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+        )
+
+        then:
+        identityMockService.verify()
+
+        and:
+        thrown(HttpClientResponseException)
     }
 
     Map<String, Object> parseYamlConfig(String str) {
