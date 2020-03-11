@@ -19,13 +19,13 @@ class CentralInMemoryStorageSpec extends StorageSpec {
     @Override
     Message message(Long offset, String type, String key, String contentType, ZonedDateTime created, String data) {
         return new CentralInMemoryStorage.ClusteredMessage(new Message(
-                type ?: "type",
-                key ?: "key",
-                contentType ?: "contentType",
-                offset,
-                created ?: time,
-                data ?: "data"),
-                "someCluster"
+            type ?: "type",
+            key ?: "key",
+            contentType ?: "contentType",
+            offset,
+            created ?: time,
+            data ?: "data"),
+            "someCluster"
         )
     }
 
