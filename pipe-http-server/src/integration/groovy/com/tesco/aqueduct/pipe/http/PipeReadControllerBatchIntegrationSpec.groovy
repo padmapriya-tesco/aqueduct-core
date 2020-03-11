@@ -67,9 +67,9 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     void "A batch of messages that equals the payload size is still transported"() {
         given:
         def messages = [
-                new CentralInMemoryStorage.ClusteredMessage(Message(type, "a", "contentType", 100, null, DATA_BLOB), "cluster1"),
-                new CentralInMemoryStorage.ClusteredMessage(Message(type, "b", "contentType", 101, null, DATA_BLOB), "cluster2"),
-                new CentralInMemoryStorage.ClusteredMessage(Message(type, "c", "contentType", 102, null, DATA_BLOB), "cluster3"),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "a", "contentType", 100, null, DATA_BLOB), "cluster1"),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "b", "contentType", 101, null, DATA_BLOB), "cluster2"),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "c", "contentType", 102, null, DATA_BLOB), "cluster3")
         ]
 
         def batchInJson = JsonHelper.toJson(messages)
