@@ -15,13 +15,13 @@ import java.util.List;
 @Client(id = "pipe")
 public interface InternalHttpPipeClient {
 
-    @Get("/pipe/{offset}{?type}")
+    @Get("/pipe/{offset}{?type,location}")
     @Consumes
     @Header(name="Accept-Encoding", value="gzip, deflate")
     HttpResponse<List<Message>> httpRead(
         @Nullable List<String> type,
         long offset,
-        String locationUuid
+        String location
     );
 
     @Get("/pipe/offset/latest{?type}")
