@@ -71,7 +71,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                   identity:
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
-                    client
+                    client:
                         id: "someClientId"
                         secret: "someClientSecret"
                     users:
