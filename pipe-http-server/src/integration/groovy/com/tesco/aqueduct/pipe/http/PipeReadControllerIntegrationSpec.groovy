@@ -4,6 +4,7 @@ import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeState
+import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
 import io.micronaut.context.ApplicationContext
@@ -45,6 +46,12 @@ class PipeReadControllerIntegrationSpec extends Specification {
         pipeStateProvider = Mock(PipeStateProvider)
         locationResolver = Mock(LocationResolver) {
             resolve(_) >> ["cluster_A", "cluster_B"]
+        }
+
+        // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
+        pipeStateProvider.getState(_ ,_) >> { args ->
+            def type = args[0]
+            return type.contains("OutOfDateType") ? new PipeStateResponse(false, 1000) : new PipeStateResponse(true, 1000)
         }
 
         context = ApplicationContext
