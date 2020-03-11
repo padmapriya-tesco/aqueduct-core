@@ -31,8 +31,8 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         identityToken = identityIssueTokenClient.retrieveIdentityToken(
                 UUID.randomUUID().toString(),
                 new IssueTokenRequest(
-                        identityClientId,
-                        identityClientSecret
+                    identityClientId,
+                    identityClientSecret
                 )
         );
 
