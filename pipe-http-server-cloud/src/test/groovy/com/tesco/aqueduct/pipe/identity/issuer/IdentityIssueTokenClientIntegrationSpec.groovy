@@ -78,7 +78,7 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         identityMockService.expectations {
             post(ISSUE_TOKEN_PATH) {
-                body(requestJson, "application/json")
+               1 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
                 header("TraceId", "someTraceId")
                 called(1)
