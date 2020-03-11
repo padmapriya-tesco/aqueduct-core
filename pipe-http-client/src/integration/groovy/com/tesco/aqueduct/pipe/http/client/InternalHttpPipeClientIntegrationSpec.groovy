@@ -3,7 +3,6 @@ package com.tesco.aqueduct.pipe.http.client
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.SelfRegistrationTask
@@ -64,7 +63,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             get("/pipe/$offset") {
                 header('Accept', 'application/json')
                 header('Accept-Encoding', 'gzip, deflate')
-                queries(type: type)
+                queries(type: type, location: location)
                 called(1)
 
                 responder {
@@ -85,7 +84,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         }
 
         when:
-        def messages = client.httpRead([type], offset, "locationUuid").body()
+        def messages = client.httpRead([type], offset, location).body()
 
         def expectedMessage = new Message(
             type,
@@ -100,11 +99,11 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         messages[0] == expectedMessage
 
         where:
-        type    | ct             | offset
-        "type1" | "contentType1" | 123
-        "type2" | "contentType2" | 123
-        "type1" | "contentType3" | 111
-        "type2" | "contentType4" | 123
+        type    | location    | ct             | offset
+        "type1" | "location1" | "contentType1" | 123
+        "type2" | "location2" | "contentType2" | 123
+        "type1" | "location1" | "contentType3" | 111
+        "type2" | "location2" | "contentType4" | 123
     }
 
     def "can get latest offset"(){
@@ -147,35 +146,5 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         then:
         server.verify()
         latest == 100
-    }
-
-    def "can get pipe state"(){
-        given:
-        server.expectations {
-            get("/pipe/state") {
-                called(1)
-                query("type", "a")
-
-                responder {
-                    contentType('application/json')
-                    body('{"upToDate":true,"localOffset":"1000"}')
-                }
-            }
-        }
-
-        when: "I call state once"
-        def state = client.getPipeState(["a"])
-
-        and: "I call state again"
-        def state2 = client.getPipeState(["a"])
-
-        then: "the first result was 'up to date'"
-        state == new PipeStateResponse(true, 1000)
-
-        and: "I got the same result from the second call"
-        state2 == state
-
-        and: "the server has only been called once (the result was cached)"
-        server.verify()
     }
 }
