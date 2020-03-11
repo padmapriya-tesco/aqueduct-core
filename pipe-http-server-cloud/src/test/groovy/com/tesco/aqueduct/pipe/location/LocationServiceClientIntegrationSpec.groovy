@@ -92,6 +92,9 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
         then:
         clusters == ["cluster_A", "cluster_B"]
+
+        and: "location service is called once"
+        locationMockService.verify()
     }
 
     Map<String, Object> parseYamlConfig(String str) {
