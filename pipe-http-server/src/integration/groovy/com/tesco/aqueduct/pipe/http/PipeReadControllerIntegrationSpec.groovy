@@ -1,12 +1,12 @@
 package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.HttpHeaders
+import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
-import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.inject.qualifiers.Qualifiers
@@ -26,11 +26,13 @@ class PipeReadControllerIntegrationSpec extends Specification {
     static final String DATA_BLOB = "aaaaaaaaaaaaabbbbbbbbbbbbcccccccccccccdddddddeeeeeeeee"
     static String type = "type1"
     static int RETRY_AFTER_SECONDS = 600
+    public static final String SOME_CLUSTER = "someCluster"
 
-    @Shared InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
+    @Shared CentralInMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
     private static PipeStateProvider pipeStateProvider
+    private static LocationResolver locationResolver
 
     // overloads of settings for this test
     @Shared propertyOverloads = [
@@ -41,8 +43,15 @@ class PipeReadControllerIntegrationSpec extends Specification {
         // There is nicer way in the works: https://github.com/micronaut-projects/micronaut-test
         // but it is not handling some basic things yet and is not promoted yet
         // Eventually this whole thing should be replaced with @MockBean(Reader) def provide(){ storage }
-        pipeStateProvider = Mock(PipeStateProvider) {
-            getState(_, _) >> new PipeStateResponse(true, 1000)
+        pipeStateProvider = Mock(PipeStateProvider)
+        locationResolver = Mock(LocationResolver) {
+            resolve(_) >> ["cluster_A", "cluster_B"]
+        }
+
+        // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
+        pipeStateProvider.getState(_ ,_) >> { args ->
+            def type = args[0]
+            return type.contains("OutOfDateType") ? new PipeStateResponse(false, 1000) : new PipeStateResponse(true, 1000)
         }
 
         context = ApplicationContext
@@ -54,6 +63,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
 
         context.registerSingleton(pipeStateProvider)
+        context.registerSingleton(locationResolver)
         context.start()
 
         server = context.getBean(EmbeddedServer)
@@ -119,7 +129,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Unroll
     void "Check responses has correct payload and that Retry-After header has a value of 0 - #requestPath"() {
         given:
-        storage.write(Message(type, "a", "ct", 100, null, null))
+        storage.write(Message(type, "a", "ct", 100, null, null), SOME_CLUSTER)
 
         when:
         def request = RestAssured.get(requestPath)
@@ -141,7 +151,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Unroll
     void "non empty response returns first available element - #requestPath"() {
         given:
-        storage.write(Message(type, "a", "ct", 100, null, null))
+        storage.write(Message(type, "a", "ct", 100, null, null), SOME_CLUSTER)
 
         when:
         def request = RestAssured.get(requestPath)
@@ -163,8 +173,8 @@ class PipeReadControllerIntegrationSpec extends Specification {
     void "filtering by type: #types"() {
         given:
         storage.write([
-            Message("type1", "a", "ct", 100, null, null),
-            Message("type2", "b", "ct", 101, null, null)
+            new CentralInMemoryStorage.ClusteredMessage(Message("type1", "a", "ct", 100, null, null), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message("type2", "b", "ct", 101, null, null), SOME_CLUSTER)
         ])
 
         when:
@@ -186,11 +196,32 @@ class PipeReadControllerIntegrationSpec extends Specification {
     }
 
     @Unroll
-    void "pipe signals next offset despite messages not routed"() {
+    void "filtering by location: #query"() {
         given:
         storage.write([
-            Message("type2", "b", "ct", 101, null, null)
+            new CentralInMemoryStorage.ClusteredMessage(Message("type1", "a", "ct", 100, null, null), "cluster_A"),
+            new CentralInMemoryStorage.ClusteredMessage(Message("type1", "b", "ct", 101, null, null), SOME_CLUSTER)
         ])
+
+        when:
+        def request = RestAssured.get("/pipe/0?$query")
+
+        then:
+        request
+            .then()
+            .statusCode(statusCode)
+            .body(equalTo(response))
+
+        where:
+        query                          | statusCode | response
+        "type=type1&location=1234"     | 200        | '[{"type":"type1","key":"a","contentType":"ct","offset":"100"}]'
+        "type=type1"                   | 200        | '[{"type":"type1","key":"a","contentType":"ct","offset":"100"},{"type":"type1","key":"b","contentType":"ct","offset":"101"}]'
+    }
+
+    @Unroll
+    void "pipe signals next offset despite messages not routed"() {
+        given:
+        storage.write(Message("type2", "b", "ct", 101, null, null), SOME_CLUSTER)
 
         when:
         def request = RestAssured.get("/pipe/0?type=$type")
@@ -240,7 +271,8 @@ class PipeReadControllerIntegrationSpec extends Specification {
     void "responds with messages - #requestPath"() {
         given:
         storage.write(
-            Message(type, "a", "contentType", 100, null, data)
+            Message(type, "a", "contentType", 100, null, data),
+            "cluster_A"
         )
 
         when:
@@ -263,7 +295,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     void "A single message that is over the payload size is still transported"() {
         given:
         Message message1 = Message(type, "a", "contentType", 100, null, DATA_BLOB)
-        storage.write(message1)
+        storage.write(message1, SOME_CLUSTER)
 
         when:
         def response = RestAssured.get("/pipe/100")
@@ -282,8 +314,8 @@ class PipeReadControllerIntegrationSpec extends Specification {
     def "assert response schema"() {
         given:
         storage.write([
-            Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-            Message(type, "b", null, 101, null, null)
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "b", null, 101, null, null), SOME_CLUSTER)
         ])
 
         when:
@@ -306,7 +338,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         storage.write([
             Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
             Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-            Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+            Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data")
         ])
 
         when:
@@ -319,20 +351,20 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         where:
         types   | offset
-        "a"     | '"100"'
-        "b"     | '"101"'
-        "c"     | '"102"'
-        "b,a"   | '"101"'
-        "a,c"   | '"102"'
-        "a,b,c" | '"102"'
+        "a"     | "100"
+        "b"     | "101"
+        "c"     | "102"
+        "b,a"   | "101"
+        "a,c"   | "102"
+        "a,b,c" | "102"
     }
 
     def "Latest offset endpoint requires types"() {
         given:
         storage.write([
-                Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-                Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-                Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+            new CentralInMemoryStorage.ClusteredMessage(Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER)
         ])
 
         when:

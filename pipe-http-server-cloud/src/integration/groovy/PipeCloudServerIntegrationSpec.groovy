@@ -1,5 +1,6 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
@@ -26,16 +27,20 @@ class PipeCloudServerIntegrationSpec extends Specification {
     @AutoCleanup("stop") ApplicationContext context
 
     DataSource dataSource
+    LocationResolver locationResolver
 
     def setup() {
 
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
         dataSource = Mock()
+        locationResolver = Mock()
+
         dataSource.connection >>> [
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection
         ]
+        locationResolver.resolve(_) >> []
 
         //TODO: remove "tags" once they are removed from SCHEMA
         sql.execute("""
@@ -64,6 +69,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
             .mainClass(EmbeddedServer)
             .build()
             .registerSingleton(DataSource, dataSource, Qualifiers.byName("postgres"))
+            .registerSingleton(LocationResolver, locationResolver)
 
 
         context.start()

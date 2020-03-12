@@ -2,6 +2,8 @@ package com.tesco.aqueduct.registry.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.tesco.aqueduct.pipe.api.PipeState;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +30,7 @@ public class Node {
     /**
      * The offset as last reported by this node
      */
+    @JsonSerialize(using = ToStringSerializer.class)
     private final long offset;
 
     /**
@@ -62,6 +65,7 @@ public class Node {
      * Reported by older versions of aqueduct pipe / provider.
      */
     @Deprecated
+    @JsonSerialize(using = ToStringSerializer.class)
     private final long providerLastAckOffset;
 
     /**

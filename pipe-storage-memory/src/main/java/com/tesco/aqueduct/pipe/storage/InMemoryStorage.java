@@ -51,19 +51,19 @@ public abstract class InMemoryStorage implements Reader, Writer {
         try {
             lock.lock();
 
-            final int index = findIndex(offset);
+            final int index = findIndex(offset, messages);
 
             OptionalLong globalLatestOffset = getLatestGlobalOffset();
 
             if (index >= 0) {
                 // found
-                return new MessageResults(readFrom(types,index), 0, globalLatestOffset, pipeState);
+                return new MessageResults(readFrom(types,index, messages, targetUuids), 0, globalLatestOffset, pipeState);
             } else {
                 // determine if at the head of the queue to return retry after
                 final long retry = getRetry(offset);
 
                 // not found
-                return new MessageResults(readFrom(types,-index-1), retry, globalLatestOffset, pipeState);
+                return new MessageResults(readFrom(types,-index-1, messages, targetUuids), retry, globalLatestOffset, pipeState);
             }
         } finally {
             lock.unlock();
@@ -90,12 +90,14 @@ public abstract class InMemoryStorage implements Reader, Writer {
         return types == null || types.isEmpty() || types.contains(message.getType());
     }
 
+    abstract boolean messageMatchCluster(final Message message, final List<String> clusterId);
+
     /**
      * @return If found returns non negative index of element.
      *         If not found returns negative index = (-expectedPosition) - 1.
      *         Where expected position is the index where the element would finish after inserting.
      */
-    private int findIndex(final long offset) {
+    protected int findIndex(final long offset, List<Message> messages) {
         return Collections.binarySearch(
             messages,
             new Message(null, null, null, offset, null, null),
@@ -106,14 +108,14 @@ public abstract class InMemoryStorage implements Reader, Writer {
     /**
      * Complexity: avg O(limit), worst case O(size), where limit is number of elements taken
      */
-    private List<Message> readFrom(final List<String> types, final int index) {
+    protected List<Message> readFrom(final List<String> types, final int index, List<Message> messages, List<String> clusterIds) {
         return messages
             .stream()
             .skip(index)
             .filter(m -> messageMatchTypes(m, types))
+            .filter(m -> messageMatchCluster(m, clusterIds))
             .limit(limit)
-            .collect(Collectors.toList())
-        ;
+            .collect(Collectors.toList());
     }
 
     /**

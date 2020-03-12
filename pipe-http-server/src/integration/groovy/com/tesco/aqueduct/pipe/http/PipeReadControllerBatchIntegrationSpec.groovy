@@ -1,11 +1,11 @@
 package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.JsonHelper
+import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
-import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.PropertySource
 import io.micronaut.inject.qualifiers.Qualifiers
@@ -26,10 +26,9 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     static int RETRY_AFTER_SECONDS = 600
     PipeStateProvider pipeStateProvider
 
-    @Shared
-    InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
-    @Shared
-    ApplicationContext context
+    @Shared CentralInMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
+    @Shared ApplicationContext context
+    @Shared LocationResolver locationResolver = Mock(LocationResolver)
 
     ApplicationContext setupContext(maxPayloadSize) {
 
@@ -41,6 +40,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
 
         context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
         context.registerSingleton(pipeStateProvider)
+        context.registerSingleton(locationResolver)
         context.start()
 
         EmbeddedServer server = context.getBean(EmbeddedServer)
@@ -67,9 +67,9 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     void "A batch of messages that equals the payload size is still transported"() {
         given:
         def messages = [
-            Message(type, "a", "contentType", 100, null, DATA_BLOB),
-            Message(type, "b", "contentType", 101, null, DATA_BLOB),
-            Message(type, "c", "contentType", 102, null, DATA_BLOB)
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "a", "contentType", 100, null, DATA_BLOB), "cluster1"),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "b", "contentType", 101, null, DATA_BLOB), "cluster2"),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "c", "contentType", 102, null, DATA_BLOB), "cluster3")
         ]
 
         def batchInJson = JsonHelper.toJson(messages)

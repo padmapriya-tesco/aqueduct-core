@@ -1,4 +1,4 @@
-import com.tesco.aqueduct.pipe.identity.ValidateTokenResponse
+import com.tesco.aqueduct.pipe.identity.validator.ValidateTokenResponse
 import spock.lang.Specification
 import spock.lang.Unroll
 

@@ -1,8 +1,8 @@
-import com.tesco.aqueduct.pipe.identity.IdentityTokenValidator
-import com.tesco.aqueduct.pipe.identity.IdentityTokenValidatorClient
-import com.tesco.aqueduct.pipe.identity.TokenUser
-import com.tesco.aqueduct.pipe.identity.ValidateTokenRequest
-import com.tesco.aqueduct.pipe.identity.ValidateTokenResponse
+import com.tesco.aqueduct.pipe.identity.validator.IdentityTokenValidator
+import com.tesco.aqueduct.pipe.identity.validator.IdentityTokenValidatorClient
+import com.tesco.aqueduct.pipe.identity.validator.TokenUser
+import com.tesco.aqueduct.pipe.identity.validator.ValidateTokenRequest
+import com.tesco.aqueduct.pipe.identity.validator.ValidateTokenResponse
 import io.micronaut.security.authentication.Authentication
 import io.reactivex.Flowable
 import spock.lang.Specification

@@ -40,6 +40,9 @@ public class PipeReadController {
     @Inject
     private PipeStateProvider pipeStateProvider;
 
+    @Inject
+    private LocationResolver locationResolver;
+
     @Value("${pipe.http.server.read.poll-seconds:0}")
     private int pollSeconds;
 
@@ -47,9 +50,9 @@ public class PipeReadController {
     private int maxPayloadSizeBytes;
 
     @Get("/pipe/offset/latest")
-    public long latestOffset(@QueryValue final List<String> type) {
+    public String latestOffset(@QueryValue final List<String> type) {
         final List<String> types = flattenRequestParams(type);
-        return reader.getLatestOffsetMatching(types);
+        return Long.toString(reader.getLatestOffsetMatching(types));
     }
 
     @Get("/pipe/state{?type}")
@@ -63,7 +66,7 @@ public class PipeReadController {
         final long offset,
         final HttpRequest<?> request,
         @Nullable final List<String> type,
-        @Nullable final String location
+        @Nullable final String location // TODO - make it non-optional once all tills are sending stores through
     ) {
         if(offset < 0) {
             return HttpResponse.badRequest();
@@ -74,7 +77,7 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = reader.read(types, offset, Collections.singletonList(location));
+        final val messageResults = reader.read(types, offset, resolveTargetUuidsFrom(location));
         final val list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
@@ -92,6 +95,10 @@ public class PipeReadController {
             );
 
         return response;
+    }
+
+    private List<String> resolveTargetUuidsFrom(@Nullable String location) {
+        return location == null ? Collections.emptyList() : locationResolver.resolve(location);
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {

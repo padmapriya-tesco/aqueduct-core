@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.identity;
+package com.tesco.aqueduct.pipe.identity.validator;
 
 import io.micronaut.context.annotation.EachProperty;
 import io.micronaut.context.annotation.Parameter;

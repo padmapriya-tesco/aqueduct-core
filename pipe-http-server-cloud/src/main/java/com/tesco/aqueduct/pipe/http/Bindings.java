@@ -1,5 +1,10 @@
 package com.tesco.aqueduct.pipe.http;
 
+import com.tesco.aqueduct.pipe.api.LocationResolver;
+import com.tesco.aqueduct.pipe.api.TokenProvider;
+import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
+import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
+import com.tesco.aqueduct.pipe.location.CloudLocationResolver;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
@@ -7,6 +12,7 @@ import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage;
 import com.tesco.aqueduct.registry.model.TillStorage;
 import io.micronaut.context.annotation.Factory;
+import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Value;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -21,9 +27,9 @@ public class Bindings {
     // This provides Reader as it implements it
     @Singleton @Named("local")
     PostgresqlStorage bindPostgreSQL(
-        @Value("${persistence.read.limit}") final int limit,
-        @Value("${persistence.read.retry-after}") final int retryAfter,
-        @Value("${persistence.read.max-batch-size}") final int maxBatchSize,
+        @Property(name = "persistence.read.limit") final int limit,
+        @Property(name = "persistence.read.retry-after") final int retryAfter,
+        @Property(name = "persistence.read.max-batch-size") final int maxBatchSize,
         @Named("postgres") final DataSource dataSource
     ) {
         return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize);
@@ -33,7 +39,7 @@ public class Bindings {
     @Measure
     NodeRegistry bindNodeRegistry(
         @Named("postgres") final DataSource dataSource,
-        @Value("${pipe.server.url}") final URL selfUrl,
+        @Property(name = "pipe.server.url") final URL selfUrl,
         @Value("${registry.mark-offline-after:1m}") final Duration markAsOffline
     ) {
         return new PostgreSQLNodeRegistry(dataSource, selfUrl, markAsOffline);
@@ -48,5 +54,19 @@ public class Bindings {
     @Singleton
     PipeStateProvider bindPipeStateProvider() {
         return new CloudPipeStateProvider();
+    }
+
+    @Singleton
+    TokenProvider bindTokenProvider(
+        final IdentityIssueTokenClient identityIssueTokenClient,
+        @Property(name = "authentication.identity.client.id") String identityClientId,
+        @Property(name = "authentication.identity.client.secret") String identityClientSecret
+    ) {
+        return new IdentityIssueTokenProvider(identityIssueTokenClient, identityClientId, identityClientSecret);
+    }
+
+    @Singleton
+    LocationResolver bindLocationResolver(final TokenProvider tokenProvider) {
+        return new CloudLocationResolver(tokenProvider);
     }
 }

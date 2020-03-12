@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.storage
 
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.Reader
-import groovy.transform.NamedVariant
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -31,7 +30,7 @@ abstract class StorageSpec extends Specification {
         insert(message(offset: null))
 
         when:
-        List<Message> messages = storage.read(null, 0, ["locationUuid"]).messages
+        List<Message> messages = storage.read(null, 0, []).messages
 
         then:
         messages*.offset == [1,2]
@@ -44,7 +43,7 @@ abstract class StorageSpec extends Specification {
         insert(msg2)
 
         when:
-        List<Message> messages = storage.read(null, 0, ["locationUuid"]).messages
+        List<Message> messages = storage.read(null, 0, []).messages
 
         then:
         messages*.offset == [102,107]
@@ -56,7 +55,7 @@ abstract class StorageSpec extends Specification {
         insert(msg)
 
         when: "When we read"
-        List<Message> messages = storage.read(null, 0, ["locationUuid"]).messages
+        List<Message> messages = storage.read(null, 0, []).messages
 
         then: "We get exactly the message we send"
         messages == [msg]
@@ -69,7 +68,7 @@ abstract class StorageSpec extends Specification {
         }
 
         when:
-        def messages = storage.read(null, 0, ["locationUuid"]).messages.toList()
+        def messages = storage.read(null, 0, []).messages.toList()
 
         then:
         messages.size() == limit
@@ -84,7 +83,7 @@ abstract class StorageSpec extends Specification {
         insert(message(type: "type-v3"))
 
         when:
-        List<Message> messages = storage.read(types, 0, ["locationUuid"]).messages
+        List<Message> messages = storage.read(types, 0, []).messages
 
         then:
         messages.size() == resultsSize
@@ -108,7 +107,7 @@ abstract class StorageSpec extends Specification {
         insert(msg2)
 
         then:
-        storage.read(null, offset, ["locationUuid"]).messages == result
+        storage.read(null, offset, []).messages == result
 
         where:
         offset          | result       | rule
@@ -126,7 +125,7 @@ abstract class StorageSpec extends Specification {
         insert(message(key:"x"))
 
         then:
-        storage.read(null, 0, ["locationUuid"]).messages.size() == 3
+        storage.read(null, 0, []).messages.size() == 3
     }
 
     @Unroll
@@ -152,22 +151,12 @@ abstract class StorageSpec extends Specification {
         ["missing"] | 0 // no such type
     }
 
-    @NamedVariant // allows to use names of parameters in method call
-    Message message(
+    abstract Message message(
         Long offset,
         String type,
         String key,
         String contentType,
         ZonedDateTime created,
         String data
-    ) {
-        new Message(
-            type ?: "type",
-            key ?: "key",
-            contentType ?: "contentType",
-            offset,
-            created ?: time,
-            data ?: "data"
-        )
-    }
+    );
 }

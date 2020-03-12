@@ -139,6 +139,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                       identity:
                         url: ${identityMock.getHttpUrl()}
                         validate.token.path: $validateTokenPath
+                        client:
+                            id: "someClientId"
+                            secret: "someClientSecret"
                         users:
                           till:
                             clientId: "${TILL_CLIENT_UID}"

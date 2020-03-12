@@ -9,12 +9,12 @@ import io.swagger.v3.oas.annotations.info.License;
 import org.slf4j.LoggerFactory;
 
 @OpenAPIDefinition(
-        info = @Info(
-                title = "Aqueduct",
-                version = "1.0",
-                description = "Aqueduct Cloud API",
-                license = @License(name = "MIT", url = "https://opensource.org/licenses/MIT")
-        )
+    info = @Info(
+        title = "Aqueduct",
+        version = "1.0",
+        description = "Aqueduct Cloud API",
+        license = @License(name = "MIT", url = "https://opensource.org/licenses/MIT")
+    )
 )
 public class PipeCloudServer {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PipeCloudServer.class));
