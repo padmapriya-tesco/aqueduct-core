@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.location
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.stehno.ersatz.junit.ErsatzServerRule
+import com.tesco.aqueduct.pipe.api.Cluster
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader

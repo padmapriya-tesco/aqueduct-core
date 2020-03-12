@@ -98,7 +98,9 @@ public class PipeReadController {
     }
 
     private List<String> resolveTargetUuidsFrom(@Nullable String location) {
-        return location == null ? Collections.emptyList() : locationResolver.resolve(location);
+        return location == null
+            ? Collections.emptyList()
+            : locationResolver.resolve(location).stream().map(Cluster::getId).collect(Collectors.toList());
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {

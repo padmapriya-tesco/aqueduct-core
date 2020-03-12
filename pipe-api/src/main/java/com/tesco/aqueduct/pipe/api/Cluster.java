@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.location;
+package com.tesco.aqueduct.pipe.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
