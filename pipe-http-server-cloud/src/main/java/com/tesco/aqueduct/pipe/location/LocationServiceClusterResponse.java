@@ -19,16 +19,4 @@ public class LocationServiceClusterResponse {
     public List<Cluster> getClusters() {
         return clusters;
     }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Cluster {
-        private final String id;
-        @JsonCreator
-        private Cluster(@JsonProperty("id") String id) {
-            this.id = id;
-        }
-        public String getId() {
-            return id;
-        }
-    }
 }

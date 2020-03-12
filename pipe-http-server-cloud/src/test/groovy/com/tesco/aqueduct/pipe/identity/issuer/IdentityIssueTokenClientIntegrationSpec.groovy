@@ -34,19 +34,19 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                 .build()
                 .mainClass(EmbeddedServer)
                 .properties(
-                        parseYamlConfig(
-                        """
-                            authentication:
-                              identity:
-                                url:                ${identityMockService.getHttpUrl()}
-                                issue.token.path:   "$ISSUE_TOKEN_PATH"
-                                attempts:           3
-                                delay:              500ms
-                                client:
-                                 id:                "$CLIENT_ID"
-                                 secret:            "$CLIENT_SECRET"
-                        """
-                        )
+                    parseYamlConfig(
+                    """
+                    authentication:
+                      identity:
+                        url:                ${identityMockService.getHttpUrl()}
+                        issue.token.path:   "$ISSUE_TOKEN_PATH"
+                        attempts:           3
+                        delay:              500ms
+                        client:
+                         id:                "$CLIENT_ID"
+                         secret:            "$CLIENT_SECRET"
+                    """
+                    )
                 )
                 .build()
 
@@ -78,21 +78,23 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         identityMockService.expectations {
             post(ISSUE_TOKEN_PATH) {
-               1 body(requestJson, "application/json")
+                body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
                 header("TraceId", "someTraceId")
                 called(1)
 
                 responder {
                     header("Content-Type", "application/vnd.tesco.identity.tokenresponse+json")
-                    body("""
-                        {
-                            "access_token": "${ACCESS_TOKEN}",
-                            "token_type"  : "bearer",
-                            "expires_in"  : 1000,
-                            "scope"       : "some: scope: value"
-                        }
-                    """)
+                    body(
+                    """
+                    {
+                        "access_token": "${ACCESS_TOKEN}",
+                        "token_type"  : "bearer",
+                        "expires_in"  : 1000,
+                        "scope"       : "some: scope: value"
+                    }
+                    """
+                    )
                 }
             }
         }
@@ -116,11 +118,11 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
     def "Identity service circuit is opened when it returns 5xx to connect for given number of times"() {
         given: "a mocked Identity service for issue token endpoint failing to connect"
         def requestJson = JsonOutput.toJson([
-                client_id       : CLIENT_ID,
-                client_secret   : CLIENT_SECRET,
-                grant_type      : "client_credentials",
-                scope           : "internal public",
-                confidence_level: 12
+            client_id       : CLIENT_ID,
+            client_secret   : CLIENT_SECRET,
+            grant_type      : "client_credentials",
+            scope           : "internal public",
+            confidence_level: 12
         ])
 
         identityMockService.expectations {
@@ -151,7 +153,7 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         when:
         identityIssueTokenClient.retrieveIdentityToken(
-                "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+            "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
         )
 
         then:
