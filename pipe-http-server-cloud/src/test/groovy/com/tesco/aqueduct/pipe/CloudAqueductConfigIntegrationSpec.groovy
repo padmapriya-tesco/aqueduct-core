@@ -46,7 +46,6 @@ class CloudAqueductConfigIntegrationSpec extends Specification {
         applicationContext.stop()
     }
 
-
     def loadSingletonBeansUsing(ApplicationContext context) {
         context.getAllBeanDefinitions()
             .findAll { it.isSingleton() && isAqueductBean(it) }
