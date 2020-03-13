@@ -12,6 +12,8 @@ micronaut:
   caches:
     identity-cache:
       expire-after-write: 10m
+    cluster-cache:
+      expire-after-write: 24h
   router:
     static-resources:
       swagger:

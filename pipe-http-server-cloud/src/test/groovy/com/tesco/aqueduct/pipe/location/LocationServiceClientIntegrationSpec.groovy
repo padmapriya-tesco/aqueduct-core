@@ -30,6 +30,8 @@ class LocationServiceClientIntegrationSpec extends Specification {
     def CLIENT_ID = "someClientId"
     @Shared
     def CLIENT_SECRET = "someClientSecret"
+    @Shared
+    def CACHE_EXPIRY_HOURS = "24h"
 
     def setupSpec() {
         locationMockService = new ErsatzServer({
@@ -51,6 +53,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
                 .properties(
                     parseYamlConfig(
                     """
+                    micronaut.caches.cluster-cache..expire-after-write: $CACHE_EXPIRY_HOURS
                     location:
                         service: 
                             cluster:
@@ -103,10 +106,33 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
     }
 
+    def "location is cached"() {
+        given: "a mocked identity service"
+        identityIssueTokenService()
+
+        and: "location service returning list of clusters for a given Uuid"
+        def locationUuid = "locationUuid"
+        locationServiceReturningListOfClustersForGiven(locationUuid)
+
+        and: "location service bean is initialized"
+        def locationServiceClient = context.getBean(LocationServiceClient)
+
+        when: "location cluster is called with locationUuid"
+        locationServiceClient.getClusters("someTraceId", locationUuid)
+
+        then: "locatin service is called"
+        locationMockService.verify()
+
+        when: "location service is called with the same locationUuid"
+        locationServiceClient.getClusters("anotherTraceId", locationUuid)
+
+        then: "location is cached"
+        locationMockService.verify()
+    }
+
     private void locationServiceReturningListOfClustersForGiven(String locationUuid) {
         locationMockService.expectations {
             get(LOCATION_CLUSTER_PATH + "/" + locationUuid) {
-                header("TraceId", "someTraceId")
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(1)
 

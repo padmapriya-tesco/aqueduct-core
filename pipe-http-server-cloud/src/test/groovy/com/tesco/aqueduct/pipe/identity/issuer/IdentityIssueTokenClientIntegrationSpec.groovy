@@ -15,6 +15,7 @@ import spock.lang.Specification
 class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
     private final static String ISSUE_TOKEN_PATH = "v4/issue-token/token"
+    private final static String GET_CLUSTER_PATH = "/v4/clusters/locations"
     private final static String ACCESS_TOKEN = "asdfasfsfsdfsfssasdfsfwerwe"
 
     @Shared @AutoCleanup ErsatzServer identityMockService
@@ -45,6 +46,10 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                         client:
                          id:                "$CLIENT_ID"
                          secret:            "$CLIENT_SECRET"
+                    location:
+                        service:
+                            cluster:
+                                path:   "$GET_CLUSTER_PATH"
                     """
                     )
                 )
