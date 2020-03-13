@@ -22,7 +22,7 @@ endpoints:
   all:
     enabled: true
     path: /endpoints
-    sensitive: false
+    sensitive: true
 
 persistence:
   compact:
