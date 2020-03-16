@@ -7,6 +7,7 @@ import com.tesco.aqueduct.pipe.api.Cluster
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
+import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.runtime.server.EmbeddedServer
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -130,6 +131,29 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
     }
 
+    def "Unauthorised expection is thrown if token is invalid or missing"() {
+        given: "a location Uuid"
+        def locationUuid = "locationUuid"
+
+        and: "a mocked Identity service for issue token endpoint"
+        identityIssueTokenFailure()
+
+        and: "a mock for location service is not called"
+        locationServiceNotInvoked(locationUuid)
+
+        and: "location service bean is initialized"
+        def locationServiceClient = context.getBean(LocationServiceClient)
+
+        when: "get clusters for a location Uuid"
+       locationServiceClient.getClusters("someTraceId", locationUuid)
+
+        then: "location service is not called"
+        locationMockService.verify()
+
+        and: "an exception is thrown"
+        thrown(HttpClientException)
+    }
+
     private void locationServiceReturningListOfClustersForGiven(String locationUuid) {
         locationMockService.expectations {
             get(LOCATION_CLUSTER_PATH + "/" + locationUuid) {
@@ -160,6 +184,15 @@ class LocationServiceClientIntegrationSpec extends Specification {
         }
     }
 
+    private void locationServiceNotInvoked(String locationUuid) {
+        locationMockService.expectations {
+            get(LOCATION_CLUSTER_PATH + "/" + locationUuid) {
+                header("Authorization", "Bearer ${ACCESS_TOKEN}")
+                called(0)
+            }
+        }
+    }
+
     private void identityIssueTokenService() {
         def requestJson = JsonOutput.toJson([
                 client_id       : CLIENT_ID,
@@ -176,6 +209,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
                 called(1)
                 responder {
                     header("Content-Type", "application/vnd.tesco.identity.tokenresponse+json")
+                    code(200)
                     body("""
                         {
                             "access_token": "${ACCESS_TOKEN}",
@@ -184,6 +218,27 @@ class LocationServiceClientIntegrationSpec extends Specification {
                             "scope"       : "some: scope: value"
                         }
                     """)
+                }
+            }
+        }
+    }
+
+    private void identityIssueTokenFailure() {
+        def requestJson = JsonOutput.toJson([
+                client_id       : CLIENT_ID,
+                client_secret   : CLIENT_SECRET,
+                grant_type      : "client_credentials",
+                scope           : "internal public",
+                confidence_level: 12
+        ])
+
+        identityServiceMock.expectations {
+            post(ISSUE_TOKEN_PATH) {
+                body(requestJson, "application/json")
+                header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
+                called(1)
+                responder {
+                    code(403)
                 }
             }
         }
