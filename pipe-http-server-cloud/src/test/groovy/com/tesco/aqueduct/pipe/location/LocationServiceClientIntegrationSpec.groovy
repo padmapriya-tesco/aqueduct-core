@@ -32,7 +32,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
     @Shared
     def CLIENT_SECRET = "someClientSecret"
     @Shared
-    def CACHE_EXPIRY_HOURS = "24h"
+    def CACHE_EXPIRY_HOURS = "1h"
 
     def setupSpec() {
         locationMockService = new ErsatzServer({
