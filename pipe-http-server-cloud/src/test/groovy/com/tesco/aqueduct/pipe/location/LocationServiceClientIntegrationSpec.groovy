@@ -135,7 +135,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
 
-        and: "a mocked Identity service for issue token endpoint"
+        and: "a mocked Identity service that fails to issue a token"
         identityIssueTokenFailure()
 
         and: "a mock for location service is not called"
