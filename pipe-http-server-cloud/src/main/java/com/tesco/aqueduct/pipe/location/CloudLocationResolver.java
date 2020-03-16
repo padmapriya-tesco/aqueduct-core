@@ -12,17 +12,11 @@ public class CloudLocationResolver implements LocationResolver {
     private final LocationServiceClient locationServiceClient;
 
     public CloudLocationResolver(@NotNull LocationServiceClient locationServiceClient) {
-        if (locationServiceClient == null) {
-            throw new IllegalArgumentException("Location service client passed in the constructor cannot be null");
-        }
         this.locationServiceClient = locationServiceClient;
     }
 
     @Override
     public List<Cluster> resolve(@NotNull String locationId) {
-        if (locationId == null) {
-            throw new IllegalArgumentException("Location id cannot be null");
-        }
         return locationServiceClient.getClusters(UUID.randomUUID().toString(), locationId).getClusters();
     }
 }

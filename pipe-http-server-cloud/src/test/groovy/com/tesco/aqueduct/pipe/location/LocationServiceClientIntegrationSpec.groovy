@@ -18,6 +18,10 @@ class LocationServiceClientIntegrationSpec extends Specification {
     private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
     private final static String ISSUE_TOKEN_PATH = "v4/issue-token/token"
     private final static String ACCESS_TOKEN = "some_encrypted_token"
+    private final static String CLIENT_ID = "someClientId"
+    private final static String CLIENT_SECRET = "someClientSecret"
+    private final static String CACHE_EXPIRY_HOURS = "1h"
+
     @Shared
     @AutoCleanup
     ErsatzServer locationMockService
@@ -27,14 +31,8 @@ class LocationServiceClientIntegrationSpec extends Specification {
     @Shared
     @AutoCleanup
     ApplicationContext context
-    @Shared
-    def CLIENT_ID = "someClientId"
-    @Shared
-    def CLIENT_SECRET = "someClientSecret"
-    @Shared
-    def CACHE_EXPIRY_HOURS = "1h"
 
-    def setupSpec() {
+    def setup() {
         locationMockService = new ErsatzServer({
             decoder('application/json', Decoders.utf8String)
             reportToConsole()
@@ -80,10 +78,6 @@ class LocationServiceClientIntegrationSpec extends Specification {
         server.start()
     }
 
-    def setup() {
-        locationMockService.clearExpectations()
-    }
-
     def "A list of clusters are provided for given location Uuid by authorized location service"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
@@ -108,20 +102,22 @@ class LocationServiceClientIntegrationSpec extends Specification {
     }
 
     def "location is cached"() {
-        given: "a mocked identity service"
+        given: "a location Uuid"
+        def locationUuid = "locationUuid"
+
+        and: "a mocked Identity service for issue token endpoint"
         identityIssueTokenService()
 
         and: "location service returning list of clusters for a given Uuid"
-        def locationUuid = "locationUuid"
         locationServiceReturningListOfClustersForGiven(locationUuid)
 
         and: "location service bean is initialized"
         def locationServiceClient = context.getBean(LocationServiceClient)
 
-        when: "location cluster is called with locationUuid"
+        when: "get clusters for a location Uuid"
         locationServiceClient.getClusters("someTraceId", locationUuid)
 
-        then: "locatin service is called"
+        then: "location service is called"
         locationMockService.verify()
 
         when: "location service is called with the same locationUuid"
@@ -131,7 +127,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
     }
 
-    def "Unauthorised expection is thrown if token is invalid or missing"() {
+    def "Unauthorised exception is thrown if token is invalid or missing"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
 
@@ -145,7 +141,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         def locationServiceClient = context.getBean(LocationServiceClient)
 
         when: "get clusters for a location Uuid"
-       locationServiceClient.getClusters("someTraceId", locationUuid)
+        locationServiceClient.getClusters("someTraceId", locationUuid)
 
         then: "location service is not called"
         locationMockService.verify()
@@ -168,12 +164,12 @@ class LocationServiceClientIntegrationSpec extends Specification {
                             {
                                 "id": "cluster_A",
                                 "name": "Cluster A",
-                                "origin": "PRICE"
+                                "origin": "ORIGIN1"
                             },
                             {
                                 "id": "cluster_B",
                                 "name": "Cluster B",
-                                "origin": "MARKETING"
+                                "origin": "ORIGIN2"
                             }
                         ],
                         "totalCount": 2
