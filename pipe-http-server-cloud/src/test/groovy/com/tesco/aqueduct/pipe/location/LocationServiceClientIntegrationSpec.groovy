@@ -225,11 +225,11 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void identityIssueTokenFailure() {
         def requestJson = JsonOutput.toJson([
-                client_id       : CLIENT_ID,
-                client_secret   : CLIENT_SECRET,
-                grant_type      : "client_credentials",
-                scope           : "internal public",
-                confidence_level: 12
+            client_id       : CLIENT_ID,
+            client_secret   : CLIENT_SECRET,
+            grant_type      : "client_credentials",
+            scope           : "internal public",
+            confidence_level: 12
         ])
 
         identityServiceMock.expectations {
