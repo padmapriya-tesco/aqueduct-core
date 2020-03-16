@@ -49,6 +49,12 @@ class PipeReadControllerIntegrationSpec extends Specification {
             resolve(_) >> [new Cluster("cluster_A"), new Cluster("cluster_B")]
         }
 
+        // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
+        pipeStateProvider.getState(_ ,_) >> { args ->
+            def type = args[0]
+            return type.contains("OutOfDateType") ? new PipeStateResponse(false, 1000) : new PipeStateResponse(true, 1000)
+        }
+
         context = ApplicationContext
             .build()
             .propertySources(PropertySource.of(propertyOverloads))
@@ -56,12 +62,6 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .build()
 
         context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
-
-        // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here
-        pipeStateProvider.getState(_ ,_) >> { args ->
-            def type = args[0]
-            return type.contains("OutOfDateType") ? new PipeStateResponse(false, 1000) : new PipeStateResponse(true, 1000)
-        }
 
         context.registerSingleton(pipeStateProvider)
         context.registerSingleton(locationResolver)
@@ -240,24 +240,16 @@ class PipeReadControllerIntegrationSpec extends Specification {
         'type2' |  200          | HttpHeaders.GLOBAL_LATEST_OFFSET        | '101'                 | '[{"type":"type2","key":"b","contentType":"ct","offset":"101"}]'
     }
 
-    @Unroll
     void "pipe signals pipe state in response header"() {
         given:
-        pipeStateProvider.getState(["$type"], _) >> new PipeStateResponse(isPipeUpToDate, 1)
-
         when:
-        def request = RestAssured.get("/pipe/0?type=$type")
+        def request = RestAssured.get("/pipe/0?type=type1")
 
         then:
         request
             .then()
             .statusCode(200)
-            .header(HttpHeaders.PIPE_STATE, headerValue)
-
-        where:
-        type           | isPipeUpToDate  | headerValue
-        'type1'        | true            | PipeState.UP_TO_DATE.toString()
-        'OutOfDateType'| false           | PipeState.OUT_OF_DATE.toString()
+            .header(HttpHeaders.PIPE_STATE, PipeState.UP_TO_DATE.toString())
     }
 
     @Unroll
@@ -323,8 +315,8 @@ class PipeReadControllerIntegrationSpec extends Specification {
     def "assert response schema"() {
         given:
         storage.write([
-                new CentralInMemoryStorage.ClusteredMessage(Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
-                new CentralInMemoryStorage.ClusteredMessage(Message(type, "b", null, 101, null, null), SOME_CLUSTER)
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message(type, "b", null, 101, null, null), SOME_CLUSTER)
         ])
 
         when:
@@ -347,7 +339,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         storage.write([
             Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
             Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-            Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
+            Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data")
         ])
 
         when:
@@ -371,9 +363,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
     def "Latest offset endpoint requires types"() {
         given:
         storage.write([
-                new CentralInMemoryStorage.ClusteredMessage(Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
-                new CentralInMemoryStorage.ClusteredMessage(Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
-                new CentralInMemoryStorage.ClusteredMessage(Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER)
+            new CentralInMemoryStorage.ClusteredMessage(Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
+            new CentralInMemoryStorage.ClusteredMessage(Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER)
         ])
 
         when:
@@ -391,7 +383,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         given: "A pipe state provider mocked"
 
         when: "we call to get state"
-        def request = RestAssured.get("/pipe/state?type=a")
+        def request = RestAssured.get("/pipe/state")
 
         then: "response is serialised correctly"
         def response = """{"upToDate":true,"localOffset":"1000"}"""

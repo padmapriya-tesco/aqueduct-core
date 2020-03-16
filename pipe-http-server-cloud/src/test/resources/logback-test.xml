@@ -1,0 +1,7 @@
+<configuration>
+    <appender name="test-appender" class="com.tesco.aqueduct.pipe.TestAppender" />
+
+    <root level="info">
+        <appender-ref ref="test-appender" />
+    </root>
+</configuration>

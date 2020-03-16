@@ -29,11 +29,11 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         }
 
         identityToken = identityIssueTokenClient.retrieveIdentityToken(
-                UUID.randomUUID().toString(),
-                new IssueTokenRequest(
-                        identityClientId,
-                        identityClientSecret
-                )
+            UUID.randomUUID().toString(),
+            new IssueTokenRequest(
+                identityClientId,
+                identityClientSecret
+            )
         );
 
         return identityToken;

@@ -46,7 +46,6 @@ class CloudAqueductConfigIntegrationSpec extends Specification {
         applicationContext.stop()
     }
 
-
     def loadSingletonBeansUsing(ApplicationContext context) {
         context.getAllBeanDefinitions()
             .findAll { it.isSingleton() && isAqueductBean(it) }
@@ -61,15 +60,13 @@ class CloudAqueductConfigIntegrationSpec extends Specification {
 
     def loadNamed(BeanDefinition<?> beanDefinition, ApplicationContext context) {
         beanDefinition
-                .getAnnotation(Named)
-                .getValue(String)
-                .map { context.getBean(beanDefinition.beanType, Qualifiers.byName(it)) }
-                .orElseGet { context.getBean(beanDefinition.beanType) }
+            .getAnnotation(Named)
+            .getValue(String)
+            .map { context.getBean(beanDefinition.beanType, Qualifiers.byName(it)) }
+            .orElseGet { context.getBean(beanDefinition.beanType) }
     }
 
     boolean isAqueductBean(BeanDefinition<?> it) {
         it.getName().contains(AQUEDUCT_PACKAGE)
     }
-
-
 }

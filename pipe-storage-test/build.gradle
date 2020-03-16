@@ -1,6 +1,5 @@
 dependencies {
     compile project(":pipe-api")
-    compile project(":pipe-storage-memory")
 
     compile 'org.codehaus.groovy:groovy-all:2.5.5'
     compile 'org.spockframework:spock-core:1.2-groovy-2.5'

@@ -9,6 +9,7 @@ public class CentralInMemoryStorage extends InMemoryStorage implements CentralSt
 
     public CentralInMemoryStorage(int limit, long retryAfter) {
         super(limit, retryAfter);
+        this.pipeState = PipeState.UP_TO_DATE;
     }
 
     @Override

@@ -15,17 +15,17 @@ class IdentityIssueTokenProviderSpec extends Specification {
         identityIssueTokenClient = Mock()
 
         identityIssueTokenProvider = new IdentityIssueTokenProvider(
-                identityIssueTokenClient,
-                IDENTITY_CLIENT_ID,
-                IDENTITY_CLIENT_SECRET
+            identityIssueTokenClient,
+            IDENTITY_CLIENT_ID,
+            IDENTITY_CLIENT_SECRET
         )
     }
 
     def "token provider returns issued Identity token from Identity client" () {
         given: "an issue token request"
         IssueTokenRequest issueTokenRequest = new IssueTokenRequest(
-                IDENTITY_CLIENT_ID,
-                IDENTITY_CLIENT_SECRET
+            IDENTITY_CLIENT_ID,
+            IDENTITY_CLIENT_SECRET
         )
 
         and:"an issue token response"
@@ -45,8 +45,8 @@ class IdentityIssueTokenProviderSpec extends Specification {
     def "token is cached if it is not expired" () {
         given: "an issue token request"
         IssueTokenRequest issueTokenRequest = new IssueTokenRequest(
-                IDENTITY_CLIENT_ID,
-                IDENTITY_CLIENT_SECRET
+            IDENTITY_CLIENT_ID,
+            IDENTITY_CLIENT_SECRET
         )
 
         and: "an issue token response"
@@ -75,8 +75,8 @@ class IdentityIssueTokenProviderSpec extends Specification {
     def "token is issued again if it has expired"(){
         given: "an issue token request"
         IssueTokenRequest issueTokenRequest = new IssueTokenRequest(
-                IDENTITY_CLIENT_ID,
-                IDENTITY_CLIENT_SECRET
+            IDENTITY_CLIENT_ID,
+            IDENTITY_CLIENT_SECRET
         )
 
         and: "an issue token response"

@@ -5,7 +5,6 @@ import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
-import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import io.micronaut.cache.CacheManager
 import io.micronaut.cache.SyncCache
 import io.micronaut.http.HttpResponse
@@ -96,29 +95,6 @@ class HttpPipeClientSpec extends Specification {
 
     }
 
-    // Ensure backwards compatible, need to update to throw error or default once all tills have latest software
-    def "if no pipe state is available in the header then fetch it from get pipe state endpoint"() {
-        given: "call returns a http response with retry after header"
-        HttpResponse<List<Message>> response = Mock()
-        response.body() >> [Mock(Message)]
-        response.header(HttpHeaders.RETRY_AFTER) >> 1
-        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
-
-        when: "we call read"
-        def messageResults = client.read([], 0, ["locationUuid"])
-
-        then: "internal client is invoked to fetch pipe state from parent"
-        1 * internalClient.getPipeState(_ as List) >> new PipeStateResponse(returnedPipeState, 100L)
-
-        and: "pipe state is up to date in the result"
-        messageResults.pipeState == expectedPipeState
-
-        where:
-        returnedPipeState | expectedPipeState
-        true              | PipeState.UP_TO_DATE
-        false             | PipeState.OUT_OF_DATE
-    }
-
     def "an exception is thrown when getLatestOffsetMatching fails"() {
         given: "call returns a http response with retry after header"
         HttpResponse<List<Message>> response = Mock()
@@ -149,38 +125,6 @@ class HttpPipeClientSpec extends Specification {
         types  | offset
         ["x"]  | 1
         []     | 2
-    }
-
-    def "allows to get pipe status"() {
-        given:
-        def offset = 1
-        def types = []
-        def pipeState = new PipeStateResponse(true, offset)
-        internalClient.getPipeState(types) >> pipeState
-
-        when: "getting pipe state"
-        def response = client.getPipeStateResponse(types)
-
-        then: "the response is as expected"
-        response == pipeState
-    }
-
-    def "invalidates cache if pipestatus is not up to date"() {
-        given:
-        def offset = 1
-        def types = []
-        def pipeState = new PipeStateResponse(false, offset)
-        internalClient.getPipeState(types) >> pipeState
-        cacheManager.getCache("health-check") >> Mock(SyncCache)
-
-        when: "getting pipe state"
-        def response = client.getPipeStateResponse(types)
-
-        then: "the response is as expected"
-        response == pipeState
-
-        and: "the cache has been invalidated"
-        1* cacheManager.getCache("health-check").invalidateAll()
     }
 
     def "throws unsupported operation error when getOffset invoked"() {

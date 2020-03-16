@@ -99,7 +99,7 @@ public abstract class InMemoryStorage implements Reader, Writer {
      */
     protected int findIndex(final long offset, List<Message> messages) {
         return Collections.binarySearch(
-                messages,
+            messages,
             new Message(null, null, null, offset, null, null),
             comparingLong(Message::getOffset)
         );
