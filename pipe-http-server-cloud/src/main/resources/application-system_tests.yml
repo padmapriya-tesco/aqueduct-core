@@ -27,6 +27,10 @@ authentication:
           - PIPE_READ
           - REGISTRY_WRITE
 
+location:
+  url: "${LOCATION_URL}"
+  get.cluster.path: "${LOCATION_GET_CLUSTER_PATH}"
+
 pipe:
   server:
     url: "${PIPE_URL}"

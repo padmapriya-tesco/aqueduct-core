@@ -47,9 +47,10 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                          id:                "$CLIENT_ID"
                          secret:            "$CLIENT_SECRET"
                     location:
-                        service:
+                        url:                "location_base_path"
+                        get:
                             cluster:
-                                path:   "$GET_CLUSTER_PATH"
+                                path:       "$GET_CLUSTER_PATH"
                     """
                     )
                 )

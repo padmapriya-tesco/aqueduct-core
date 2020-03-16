@@ -54,9 +54,9 @@ class LocationServiceClientIntegrationSpec extends Specification {
                     """
                     micronaut.caches.cluster-cache..expire-after-write: $CACHE_EXPIRY_HOURS
                     location:
-                        service: 
+                        url:    ${locationMockService.getHttpUrl()}
+                        get: 
                             cluster:
-                                url:    "${locationMockService.getHttpUrl()}"
                                 path:   "${LOCATION_CLUSTER_PATH}"
                     authentication:
                         identity:
