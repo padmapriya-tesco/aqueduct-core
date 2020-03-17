@@ -27,7 +27,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
     ErsatzServer locationMockService
     @Shared
     @AutoCleanup
-    ErsatzServer identityServiceMock
+    ErsatzServer identityMockService
     @Shared
     @AutoCleanup
     ApplicationContext context
@@ -38,13 +38,13 @@ class LocationServiceClientIntegrationSpec extends Specification {
             reportToConsole()
         })
 
-        identityServiceMock = new ErsatzServerRule({
+        identityMockService = new ErsatzServerRule({
             decoder('application/json', Decoders.utf8String)
             reportToConsole()
         })
 
         locationMockService.start()
-        identityServiceMock.start()
+        identityMockService.start()
 
         context = ApplicationContext
                 .build()
@@ -60,7 +60,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
                                 path:   "${LOCATION_CLUSTER_PATH}"
                     authentication:
                         identity:
-                            url:                ${identityServiceMock.getHttpUrl()}
+                            url:                ${identityMockService.getHttpUrl()}
                             issue.token.path:   "$ISSUE_TOKEN_PATH"
                             attempts:           3
                             delay:              500ms
@@ -99,6 +99,9 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
         and: "location service is called once"
         locationMockService.verify()
+
+        and: "identity service is called once"
+        identityMockService.verify()
     }
 
     def "location is cached"() {
@@ -191,14 +194,14 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void identityIssueTokenService() {
         def requestJson = JsonOutput.toJson([
-                client_id       : CLIENT_ID,
-                client_secret   : CLIENT_SECRET,
-                grant_type      : "client_credentials",
-                scope           : "internal public",
-                confidence_level: 12
+            client_id       : CLIENT_ID,
+            client_secret   : CLIENT_SECRET,
+            grant_type      : "client_credentials",
+            scope           : "internal public",
+            confidence_level: 12
         ])
 
-        identityServiceMock.expectations {
+        identityMockService.expectations {
             post(ISSUE_TOKEN_PATH) {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
@@ -228,7 +231,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
             confidence_level: 12
         ])
 
-        identityServiceMock.expectations {
+        identityMockService.expectations {
             post(ISSUE_TOKEN_PATH) {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
