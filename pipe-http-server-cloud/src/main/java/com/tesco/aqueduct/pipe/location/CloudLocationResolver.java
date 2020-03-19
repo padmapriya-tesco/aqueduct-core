@@ -20,7 +20,6 @@ public class CloudLocationResolver implements LocationResolver {
 
     @Override
     public List<String> resolve(String location) {
-        tokenProvider.retrieveIdentityToken();
         return Collections.emptyList();
     }
 }

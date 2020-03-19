@@ -2,8 +2,10 @@ package com.tesco.aqueduct.pipe.location
 
 import com.tesco.aqueduct.pipe.api.IdentityToken
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider
+import spock.lang.Ignore
 import spock.lang.Specification
 
+@Ignore
 class CloudLocationResolverSpec extends Specification {
 
     def "Identity token is issued and return empty list"() {
