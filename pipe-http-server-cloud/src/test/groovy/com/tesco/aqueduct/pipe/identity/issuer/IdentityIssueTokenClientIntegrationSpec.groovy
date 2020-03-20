@@ -87,6 +87,7 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
                 header("TraceId", "someTraceId")
+                header("Content-Type", "application/json")
                 called(1)
 
                 responder {
