@@ -13,6 +13,8 @@ import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
+import javax.validation.ConstraintViolationException
+
 class LocationServiceClientIntegrationSpec extends Specification {
 
     private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
@@ -128,6 +130,20 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
         then: "location is cached"
         locationMockService.verify()
+    }
+
+    def "location uuid must not be null"(){
+        given: "a mocked Identity service for issue token endpoint"
+        identityIssueTokenService()
+
+        and: "location service bean is initialized"
+        def locationServiceClient = context.getBean(LocationServiceClient)
+
+        when: "get clusters for a null location uuid"
+        locationServiceClient.getClusters("someTraceId", null)
+
+        then: "constrain violation is thrown"
+        thrown(ConstraintViolationException)
     }
 
     def "Unauthorised exception is thrown if token is invalid or missing"() {
