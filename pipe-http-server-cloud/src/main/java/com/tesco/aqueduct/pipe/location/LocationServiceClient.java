@@ -7,7 +7,7 @@ import io.micronaut.http.client.annotation.Client;
 
 @Client("${location.url}")
 public interface LocationServiceClient {
-    @Get(value = "${location.get.cluster.path}/{locationUuid}", consumes = "application/json")
+    @Get(value = "/v4/clusters/locations/{locationUuid}", consumes = "application/json")
     @Cacheable(value = "cluster-cache", parameters = "locationUuid")
     LocationServiceClusterResponse getClusters(
         @Header("TraceId") String traceId,
