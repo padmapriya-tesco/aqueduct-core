@@ -1,25 +1,22 @@
 package com.tesco.aqueduct.pipe.location
 
-import com.tesco.aqueduct.pipe.api.Cluster
+import com.tesco.aqueduct.pipe.api.IdentityToken
+import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider
 import spock.lang.Specification
 
 class CloudLocationResolverSpec extends Specification {
 
-    def "Location service is invoked to fetch cluster for given location Uuid"() {
+    def "Identity token is issued and return empty list"() {
         given:
-        def locationUuid = "someLocationUuid"
-
-        and:
-        def locationServiceClient = Mock(LocationServiceClient)
+        def tokenProvider = Mock(IdentityIssueTokenProvider)
 
         when:
-        def locations = new CloudLocationResolver(locationServiceClient).resolve(locationUuid)
+        def locations = new CloudLocationResolver(tokenProvider).resolve("someLocation")
 
         then:
-        1 * locationServiceClient.getClusters(_, locationUuid) >>
-            new LocationServiceClusterResponse([new Cluster("cluster_A"), new Cluster("cluster_B")])
+        1 * tokenProvider.retrieveIdentityToken() >> Mock(IdentityToken)
 
-        and: "target clusters are returned"
-        locations == [new Cluster("cluster_A"), new Cluster("cluster_B")]
+        and: "locations are returned"
+        locations == []
     }
 }
