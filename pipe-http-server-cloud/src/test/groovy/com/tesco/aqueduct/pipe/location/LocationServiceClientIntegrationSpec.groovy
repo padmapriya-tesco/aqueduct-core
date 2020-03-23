@@ -132,20 +132,6 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
     }
 
-    def "location uuid must not be null"(){
-        given: "a mocked Identity service for issue token endpoint"
-        identityIssueTokenService()
-
-        and: "location service bean is initialized"
-        def locationServiceClient = context.getBean(LocationServiceClient)
-
-        when: "get clusters for a null location uuid"
-        locationServiceClient.getClusters("someTraceId", null)
-
-        then: "constrain violation is thrown"
-        thrown(ConstraintViolationException)
-    }
-
     def "Unauthorised exception is thrown if token is invalid or missing"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
