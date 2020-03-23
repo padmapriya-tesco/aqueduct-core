@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http
 
+import com.tesco.aqueduct.pipe.api.Cluster
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
@@ -45,7 +46,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         // Eventually this whole thing should be replaced with @MockBean(Reader) def provide(){ storage }
         pipeStateProvider = Mock(PipeStateProvider)
         locationResolver = Mock(LocationResolver) {
-            resolve(_) >> ["cluster_A", "cluster_B"]
+            resolve(_) >> [new Cluster("cluster_A"), new Cluster("cluster_B")]
         }
 
         // SetupSpec cannot be overridden within specific features, hence we had to mock the conditional behaviour here

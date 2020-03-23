@@ -8,7 +8,7 @@ import io.micronaut.http.filter.ClientFilterChain;
 import io.micronaut.http.filter.HttpClientFilter;
 import org.reactivestreams.Publisher;
 
-@Filter(serviceId = "location")
+@Filter("${location.get.cluster.path}/**")
 public class AuthenticateLocationServiceFilter implements HttpClientFilter {
 
     private final TokenProvider identityTokenProvider;
