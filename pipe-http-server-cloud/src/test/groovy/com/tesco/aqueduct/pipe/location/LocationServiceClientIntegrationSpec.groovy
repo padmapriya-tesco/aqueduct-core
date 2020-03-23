@@ -16,7 +16,7 @@ import spock.lang.Specification
 class LocationServiceClientIntegrationSpec extends Specification {
 
     private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
-    private final static String ISSUE_TOKEN_PATH = "v4/issue-token/token"
+    private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
     private final static String ACCESS_TOKEN = "some_encrypted_token"
     private final static String CLIENT_ID = "someClientId"
     private final static String CLIENT_SECRET = "someClientSecret"

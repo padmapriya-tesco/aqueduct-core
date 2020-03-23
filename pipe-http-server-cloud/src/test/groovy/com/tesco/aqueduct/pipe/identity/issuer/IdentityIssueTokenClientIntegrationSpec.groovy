@@ -14,7 +14,7 @@ import spock.lang.Specification
 
 class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
-    private final static String ISSUE_TOKEN_PATH = "v4/issue-token/token"
+    private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
     private final static String GET_CLUSTER_PATH = "/v4/clusters/locations"
     private final static String ACCESS_TOKEN = "asdfasfsfsdfsfssasdfsfwerwe"
 
@@ -47,10 +47,8 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                          id:                "$CLIENT_ID"
                          secret:            "$CLIENT_SECRET"
                     location:
-                        url:                "location_base_path"
-                        get:
-                            cluster:
-                                path:       "$GET_CLUSTER_PATH"
+                      url:                "location_base_path"
+                      get.cluster.path:   "$GET_CLUSTER_PATH"  
                     """
                     )
                 )
@@ -92,16 +90,14 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
                 responder {
                     header("Content-Type", "application/vnd.tesco.identity.tokenresponse+json")
-                    body(
-                    """
+                    body("""
                     {
                         "access_token": "${ACCESS_TOKEN}",
                         "token_type"  : "bearer",
                         "expires_in"  : 1000,
                         "scope"       : "some: scope: value"
                     }
-                    """
-                    )
+                    """)
                 }
             }
         }

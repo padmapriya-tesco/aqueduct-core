@@ -126,7 +126,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                     micronaut.caches.identity-cache.expire-after-write: 1m
                     micronaut.security.token.jwt.enabled: true
                     micronaut.security.token.jwt.bearer.enabled: true
-                    location.get.cluster.path: "some/path"
+                    location.get.cluster.path: "/some/path"
                     authentication:
                       users:
                         $USERNAME:
