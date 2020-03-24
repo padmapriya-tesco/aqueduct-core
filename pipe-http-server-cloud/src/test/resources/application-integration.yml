@@ -74,7 +74,6 @@ authentication:
 
 location:
   url: "${LOCATION_URL}"
-  get.cluster.path: "${LOCATION_GET_CLUSTER_PATH}"
 
 pipe:
   server:

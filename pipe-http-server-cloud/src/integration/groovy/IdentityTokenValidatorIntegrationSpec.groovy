@@ -62,7 +62,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                 micronaut.security.token.jwt.enabled: true
                 micronaut.security.token.jwt.bearer.enabled: true
                 micronaut.caches.identity-cache.expire-after-write: ${CACHE_EXPIRY_SECONDS}s
-                location.get.cluster.path: "/some/path"
                 authentication:
                   users:
                     $USERNAME:
