@@ -77,8 +77,8 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final val messageResults = reader.read(types, offset, resolveTargetUuidsFrom(location));
-        final val list = messageResults.getMessages();
+        final MessageResults messageResults = reader.read(types, offset, resolveTargetUuidsFrom(location));
+        final List<Message> list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
@@ -98,7 +98,9 @@ public class PipeReadController {
     }
 
     private List<String> resolveTargetUuidsFrom(@Nullable String location) {
-        return location == null ? Collections.emptyList() : locationResolver.resolve(location);
+        return location == null
+            ? Collections.emptyList()
+            : locationResolver.resolve(location).stream().map(Cluster::getId).collect(Collectors.toList());
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {

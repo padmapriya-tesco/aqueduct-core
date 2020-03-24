@@ -1,16 +1,18 @@
 package com.tesco.aqueduct.pipe.location;
 
+import io.micronaut.cache.annotation.Cacheable;
+import io.micronaut.http.annotation.Consumes;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Header;
 import io.micronaut.http.client.annotation.Client;
-import io.reactivex.Flowable;
 
-@Client(id="location")
+@Client("${location.url}")
 public interface LocationServiceClient {
-
-    @Get("${location.service.clusters.path}/{?locationUuid}")
-    Flowable<LocationServiceClusterResponse> getClusters(
+    @Get("/v4/clusters/locations/{locationUuid}")
+    @Consumes
+    @Cacheable(value = "cluster-cache", parameters = "locationUuid")
+    LocationServiceClusterResponse getClusters(
         @Header("TraceId") String traceId,
         String locationUuid
-    );
+        );
 }

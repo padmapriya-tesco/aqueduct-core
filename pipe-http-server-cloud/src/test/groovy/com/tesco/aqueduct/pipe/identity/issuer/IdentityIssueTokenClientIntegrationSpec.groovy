@@ -14,8 +14,8 @@ import spock.lang.Specification
 
 class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
-    private final static String ISSUE_TOKEN_PATH = "v4/issue-token/token"
-    private final static String ACCESS_TOKEN = "asdfasfsfsdfsfssasdfsfwerwe"
+    private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
+    private final static String ACCESS_TOKEN = "some-access-token"
 
     @Shared @AutoCleanup ErsatzServer identityMockService
     @Shared @AutoCleanup ApplicationContext context
@@ -45,6 +45,8 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
                         client:
                          id:                "$CLIENT_ID"
                          secret:            "$CLIENT_SECRET"
+                    location:
+                      url:                "location_base_path"
                     """
                     )
                 )
