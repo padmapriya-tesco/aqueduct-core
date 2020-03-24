@@ -13,10 +13,9 @@ import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
-import javax.validation.ConstraintViolationException
-
 class LocationServiceClientIntegrationSpec extends Specification {
 
+    private final static String LOCATION_BASE_PATH = "/tescolocation"
     private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
     private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
     private final static String ACCESS_TOKEN = "some_encrypted_token"
@@ -48,6 +47,8 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.start()
         identityMockService.start()
 
+        String locationBasePath = locationMockService.getHttpUrl() + "$LOCATION_BASE_PATH/"
+
         context = ApplicationContext
                 .build()
                 .mainClass(EmbeddedServer)
@@ -56,7 +57,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
                     """
                     micronaut.caches.cluster-cache..expire-after-write: $CACHE_EXPIRY_HOURS
                     location:
-                        url:    ${locationMockService.getHttpUrl()}
+                        url:    $locationBasePath
                         get: 
                             cluster:
                                 path:   "${LOCATION_CLUSTER_PATH}"
@@ -157,7 +158,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void locationServiceReturningListOfClustersForGiven(String locationUuid) {
         locationMockService.expectations {
-            get(LOCATION_CLUSTER_PATH + "/" + locationUuid) {
+            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(1)
 
@@ -187,7 +188,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void locationServiceNotInvoked(String locationUuid) {
         locationMockService.expectations {
-            get(LOCATION_CLUSTER_PATH + "/" + locationUuid) {
+            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(0)
             }
