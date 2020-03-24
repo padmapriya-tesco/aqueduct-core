@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.location;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.tesco.aqueduct.pipe.api.Cluster;
 
 import java.util.List;
 
@@ -18,17 +19,5 @@ public class LocationServiceClusterResponse {
 
     public List<Cluster> getClusters() {
         return clusters;
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Cluster {
-        private final String id;
-        @JsonCreator
-        private Cluster(@JsonProperty("id") String id) {
-            this.id = id;
-        }
-        public String getId() {
-            return id;
-        }
     }
 }
