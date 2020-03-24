@@ -13,6 +13,7 @@ public class Cluster {
     public Cluster(@JsonProperty("id") String id) {
         this.id = id;
     }
+
     public String getId() {
         return id;
     }
