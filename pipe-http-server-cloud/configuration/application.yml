@@ -46,3 +46,7 @@ authentication:
   identity:
     delay: 500ms
     attempts: 3
+
+location:
+  delay: 500ms
+  attempts: 3

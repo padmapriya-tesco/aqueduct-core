@@ -74,6 +74,8 @@ authentication:
 
 location:
   url: "${LOCATION_URL}"
+  attempts: 3
+  delay: 500ms
 
 pipe:
   server:

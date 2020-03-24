@@ -8,6 +8,7 @@ import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.client.exceptions.HttpClientException
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.server.EmbeddedServer
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -57,10 +58,12 @@ class LocationServiceClientIntegrationSpec extends Specification {
                     """
                     micronaut.caches.cluster-cache..expire-after-write: $CACHE_EXPIRY_HOURS
                     location:
-                        url:    $locationBasePath
+                        url:                    $locationBasePath
                         get: 
                             cluster:
-                                path:   "${LOCATION_CLUSTER_PATH}"
+                            path:               "${LOCATION_CLUSTER_PATH}"
+                        attempts:               3
+                        delay:                  500ms  
                     authentication:
                         identity:
                             url:                ${identityMockService.getHttpUrl()}
@@ -133,6 +136,32 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
     }
 
+    def "location service is retried 3 times when it fails to resolve location to cluster"() {
+        given: "a location Uuid"
+        def locationUuid = "locationUuid"
+
+        and: "a mocked Identity service for issue token endpoint"
+        identityIssueTokenService()
+
+        and: "location service returning error"
+        locationServiceReturningError(locationUuid)
+
+        and: "location service bean is initialized"
+        def locationServiceClient = context.getBean(LocationServiceClient)
+
+        when: "get clusters for a location Uuid"
+        locationServiceClient.getClusters("someTraceId", locationUuid)
+
+        then: "location service is called 4 times in total"
+        locationMockService.verify()
+
+        and: "identity is called once"
+        identityMockService.verify()
+
+        and: "Http client response exception is thrown"
+        thrown(HttpClientResponseException)
+    }
+
     def "Unauthorised exception is thrown if token is invalid or missing"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
@@ -181,6 +210,20 @@ class LocationServiceClientIntegrationSpec extends Specification {
                         "totalCount": 2
                     }
                """)
+                }
+            }
+        }
+    }
+
+    private void locationServiceReturningError(String locationUuid) {
+        locationMockService.expectations {
+            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+                header("Authorization", "Bearer ${ACCESS_TOKEN}")
+                called(4)
+
+                responder {
+                    header("Content-Type", "application/json")
+                    code(500)
                 }
             }
         }
