@@ -12,7 +12,7 @@ public interface LocationServiceClient {
     @Consumes
     @Cacheable(value = "cluster-cache", parameters = "locationUuid")
     LocationServiceClusterResponse getClusters(
-            @Header("TraceId") String traceId,
-            String locationUuid
-            );
+        @Header("TraceId") String traceId,
+        String locationUuid
+        );
 }
