@@ -136,7 +136,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
     }
 
-    def "location service is retried 3 times when it fails to resolve location to cluster"() {
+    def "location service is retried 3 times before throwing exception when it fails to resolve location to cluster"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
 
