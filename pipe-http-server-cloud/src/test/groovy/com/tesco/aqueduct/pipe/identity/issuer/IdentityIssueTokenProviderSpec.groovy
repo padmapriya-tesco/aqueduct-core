@@ -1,6 +1,13 @@
 package com.tesco.aqueduct.pipe.identity.issuer
 
 import com.tesco.aqueduct.pipe.api.IdentityToken
+import io.micronaut.core.convert.ConversionService
+import io.micronaut.core.convert.value.MutableConvertibleValues
+import io.micronaut.http.HttpHeaders
+import io.micronaut.http.HttpResponse
+import io.micronaut.http.HttpStatus
+import io.micronaut.http.client.exceptions.HttpClientResponseException
+import io.micronaut.http.simple.SimpleHttpHeaders
 import spock.lang.Specification
 
 class IdentityIssueTokenProviderSpec extends Specification {
@@ -97,5 +104,67 @@ class IdentityIssueTokenProviderSpec extends Specification {
 
         then: "a new token is issued"
         1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest)
+    }
+
+    def "IdentityServiceUnavailable error thrown when identity client returns 5xx status code"() {
+        given: "an issue token request"
+        IssueTokenRequest issueTokenRequest = new IssueTokenRequest(
+                IDENTITY_CLIENT_ID,
+                IDENTITY_CLIENT_SECRET
+        )
+
+        when: "a call is made to retrieve an Identity token"
+        identityIssueTokenProvider.retrieveIdentityToken()
+
+        then: "issue token client is invoked throwing http client response error with 5xx status code"
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
+            throw httpResponseWithStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+
+        and: "IdentityServiceUnavailable error is thrown"
+        thrown(IdentityServiceUnavailableException)
+    }
+
+    def "Http client response error is propagated when identity client returns 4xx status code"() {
+        given: "an issue token request"
+        IssueTokenRequest issueTokenRequest = new IssueTokenRequest(
+                IDENTITY_CLIENT_ID,
+                IDENTITY_CLIENT_SECRET
+        )
+
+        when: "a call is made to retrieve an Identity token"
+        identityIssueTokenProvider.retrieveIdentityToken()
+
+        then: "issue token client is invoked throwing http client response error with 5xx status code"
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
+            throw httpResponseWithStatus(HttpStatus.BAD_REQUEST)
+        }
+
+        and: "IdentityServiceUnavailable error is thrown"
+        thrown(HttpClientResponseException)
+    }
+
+    private HttpClientResponseException httpResponseWithStatus(HttpStatus httpStatus) {
+        new HttpClientResponseException("some error message", new HttpResponse<Object>() {
+            @Override
+            HttpStatus getStatus() {
+                httpStatus
+            }
+
+            @Override
+            HttpHeaders getHeaders() {
+                new SimpleHttpHeaders(ConversionService.SHARED)
+            }
+
+            @Override
+            MutableConvertibleValues<Object> getAttributes() {
+                return null
+            }
+
+            @Override
+            Optional<Object> getBody() {
+                Optional.empty()
+            }
+        })
     }
 }
