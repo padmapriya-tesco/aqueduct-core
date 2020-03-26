@@ -24,7 +24,11 @@ public class CloudLocationResolver implements LocationResolver {
     public List<Cluster> resolve(@NotNull String locationId) {
         final String traceId = UUID.randomUUID().toString();
         try {
-            return locationServiceClient.getClusters(traceId, locationId).getClusters();
+            return locationServiceClient.getClusters(traceId, locationId)
+                .getBody()
+                .map(LocationServiceClusterResponse::getClusters)
+                .orElseThrow(() -> new RuntimeException("No clusters found for given location. trace_id: " + traceId));
+
         } catch (final HttpClientResponseException exception) {
             LOG.error("resolve", "trace_id: " + traceId, exception);
             if (exception.getStatus().getCode() > 499) {
@@ -32,6 +36,9 @@ public class CloudLocationResolver implements LocationResolver {
             } else {
                 throw exception;
             }
+        } catch (Exception exception) {
+            LOG.error("resolve", "Unexpected error, trace_id: " + traceId, exception);
+            throw exception;
         }
     }
 }
