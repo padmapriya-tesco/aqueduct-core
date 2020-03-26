@@ -36,9 +36,6 @@ public class CloudLocationResolver implements LocationResolver {
             } else {
                 throw exception;
             }
-        } catch (Exception exception) {
-            LOG.error("resolve", "Unexpected error, trace_id: " + traceId, exception);
-            throw exception;
         }
     }
 }
