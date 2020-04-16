@@ -45,6 +45,7 @@ public class NodeRegistryControllerV2 {
     @Secured(REGISTRY_WRITE)
     @Post
     public RegistryResponse registerNode(@Body final Node node) throws SQLException {
+        LOG.withNode(node).info("register node: ", "node registered");
         final List<URL> requestedToFollow = registry.register(node);
         final String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
         final BootstrapType bootstrapType = tillStorage.requiresBootstrap(node.getHost());
