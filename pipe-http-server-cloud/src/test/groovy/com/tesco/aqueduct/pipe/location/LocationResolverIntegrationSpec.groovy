@@ -165,7 +165,7 @@ class LocationResolverIntegrationSpec extends Specification {
     }
 
 
-    def "http client response error reported when location service fails with 404"() {
+    def "Empty list of location clusters when location service fails with 404"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
 
@@ -179,10 +179,10 @@ class LocationResolverIntegrationSpec extends Specification {
         def locationResolver = context.getBean(CloudLocationResolver)
 
         when: "get clusters for a location Uuid"
-        locationResolver.resolve(locationUuid)
+        def listOfClusters = locationResolver.resolve(locationUuid)
 
         then:
-        thrown(RuntimeException)
+        listOfClusters.isEmpty()
 
         and: "location service is called once"
         locationMockService.verify()
