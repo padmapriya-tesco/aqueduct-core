@@ -101,7 +101,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         def clusterResponse = locationServiceClient.getClusters("someTraceId", locationUuid)
 
         then:
-        clusterResponse.clusters == [new Cluster("cluster_A"), new Cluster("cluster_B")]
+        clusterResponse.body().clusters == [new Cluster("cluster_A"), new Cluster("cluster_B")]
 
         and: "location service is called once"
         locationMockService.verify()
