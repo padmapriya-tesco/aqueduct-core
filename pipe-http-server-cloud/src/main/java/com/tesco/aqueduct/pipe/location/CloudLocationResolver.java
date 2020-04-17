@@ -7,6 +7,7 @@ import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,7 +25,11 @@ public class CloudLocationResolver implements LocationResolver {
     public List<Cluster> resolve(@NotNull String locationId) {
         final String traceId = UUID.randomUUID().toString();
         try {
-            return locationServiceClient.getClusters(traceId, locationId).getClusters();
+            return locationServiceClient.getClusters(traceId, locationId)
+                .getBody()
+                .map(LocationServiceClusterResponse::getClusters)
+                .orElse(Collections.emptyList());
+
         } catch (final HttpClientResponseException exception) {
             LOG.error("resolve", "trace_id: " + traceId, exception);
             if (exception.getStatus().getCode() > 499) {
