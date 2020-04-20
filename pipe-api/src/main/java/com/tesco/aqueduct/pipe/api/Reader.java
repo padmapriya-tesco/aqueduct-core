@@ -7,7 +7,4 @@ public interface Reader {
     MessageResults read(List<String> types, long offset, final List<String> targetUuids);
     OptionalLong getOffset(OffsetName offsetName);
     PipeState getPipeState();
-
-    @Deprecated
-    long getLatestOffsetMatching(List<String> types);
 }

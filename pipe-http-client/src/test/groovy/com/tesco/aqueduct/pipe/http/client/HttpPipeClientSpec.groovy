@@ -43,22 +43,6 @@ class HttpPipeClientSpec extends Specification {
         "foo" | 0
     }
 
-    // Ensure backwards compatible, need to update to throw error once all tills have latest software
-    def "if no global offset is available in the header, call getLatestOffsetMatching"() {
-        given: "call returns a http response with retry after header"
-        HttpResponse<List<Message>> response = Mock()
-        response.body() >> [Mock(Message)]
-        response.header(HttpHeaders.RETRY_AFTER) >> 1
-        response.header(HttpHeaders.PIPE_STATE) >> PipeState.UP_TO_DATE
-        internalClient.httpRead(_ as List, _ as Long, _ as String) >> response
-
-        when: "we call read"
-        client.read([], 0, ["locationUuid"])
-
-        then: "getLatestOffsetMatching is called"
-        1 * internalClient.getLatestOffsetMatching(_)
-    }
-
     def "if global offset is available in the header, it should be returned in MessageResults"() {
         given: "call returns a http response with global offset header"
         HttpResponse<List<Message>> response = Mock()
@@ -109,22 +93,6 @@ class HttpPipeClientSpec extends Specification {
 
         then: "an exception is thrown"
         thrown Exception
-    }
-
-    def "allows to get latest offset"() {
-        given:
-        internalClient.getLatestOffsetMatching(types) >> offset
-
-        when:
-        def response = client.getLatestOffsetMatching(types)
-
-        then:
-        response == offset
-
-        where:
-        types  | offset
-        ["x"]  | 1
-        []     | 2
     }
 
     def "throws unsupported operation error when getOffset invoked"() {

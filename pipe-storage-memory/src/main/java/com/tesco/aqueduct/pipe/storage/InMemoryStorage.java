@@ -74,18 +74,6 @@ public abstract class InMemoryStorage implements Reader, Writer {
         return messages.isEmpty() || offset >= messages.get(messages.size()-1).getOffset() ? retryAfter : 0;
     }
 
-    @Override
-    public long getLatestOffsetMatching(final List<String> types) {
-        for (int i = messages.size()-1 ; i >= 0 ; i--) {
-            final Message message = messages.get(i);
-
-            if (messageMatchTypes(message, types)) {
-                return message.getOffset();
-            }
-        }
-        return 0;
-    }
-
     private boolean messageMatchTypes(final Message message, final List<String> types) {
         return types == null || types.isEmpty() || types.contains(message.getType());
     }
