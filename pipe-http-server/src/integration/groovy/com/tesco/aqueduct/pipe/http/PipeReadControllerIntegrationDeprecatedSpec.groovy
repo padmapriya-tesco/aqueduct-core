@@ -17,7 +17,7 @@ import java.time.ZonedDateTime
 import static org.hamcrest.Matchers.equalTo
 
 @Newify(Message)
-@Deprecated // Remove this test when /offset/latest and /pipe/state endpoints are removed
+@Deprecated // Remove this test when /pipe/state endpoints is removed
 class PipeReadControllerIntegrationDeprecatedSpec extends Specification {
     public static final String SOME_CLUSTER = "someCluster"
 
@@ -71,52 +71,6 @@ class PipeReadControllerIntegrationDeprecatedSpec extends Specification {
 
     void cleanupSpec() {
         RestAssured.port = RestAssured.DEFAULT_PORT
-    }
-
-    @Unroll
-    def "Returns latest offset of #types"() {
-        given:
-        storage.write([
-            Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-            Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
-            Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data")
-        ])
-
-        when:
-        def request = RestAssured.get("/pipe/offset/latest?type=$types")
-
-        then:
-        request
-            .then()
-            .content(equalTo(offset))
-
-        where:
-        types   | offset
-        "a"     | "100"
-        "b"     | "101"
-        "c"     | "102"
-        "b,a"   | "101"
-        "a,c"   | "102"
-        "a,b,c" | "102"
-    }
-
-    def "Latest offset endpoint requires types"() {
-        given:
-        storage.write([
-            new CentralInMemoryStorage.ClusteredMessage(Message("a", "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
-            new CentralInMemoryStorage.ClusteredMessage(Message("b", "b", "contentType", 101, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER),
-            new CentralInMemoryStorage.ClusteredMessage(Message("c", "c", "contentType", 102, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"), SOME_CLUSTER)
-        ])
-
-        when:
-        def request = RestAssured.get("/pipe/offset/latest")
-
-        then:
-        def response = """{"message":"Required QueryValue [type] not specified","path":"/type","_links":{"self":{"href":"/pipe/offset/latest","templated":false}}}"""
-        request
-            .then()
-            .statusCode(400)
-            .body(equalTo(response))
     }
 
     def "state endpoint returns result of state provider"() {

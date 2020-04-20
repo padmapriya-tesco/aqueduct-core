@@ -128,29 +128,6 @@ abstract class StorageSpec extends Specification {
         storage.read(null, 0, []).messages.size() == 3
     }
 
-    @Unroll
-    def "find latest offset by types #types" (){
-        given:
-        insert(message(type: "first", key: "x"))
-        insert(message(type: "middle", key: "y"))
-        insert(message(type: "other_type", key: "z"))
-        insert(message(type: "middle", key: "q"))
-        insert(message(type: "last",  key: "w"))
-
-        when:
-        def actualOffset = storage.getLatestOffsetMatching(types)
-
-        then:
-        actualOffset == offset
-
-        where:
-        types       | offset
-        ["first"]   | 1
-        ["middle"]  | 4
-        ["last"]    | 5
-        ["missing"] | 0 // no such type
-    }
-
     abstract Message message(
         Long offset,
         String type,
