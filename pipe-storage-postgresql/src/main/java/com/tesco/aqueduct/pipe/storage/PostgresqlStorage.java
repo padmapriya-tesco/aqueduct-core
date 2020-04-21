@@ -76,7 +76,7 @@ public class PostgresqlStorage implements CentralStorage {
             return resultSet.getLong("last_offset");
         }finally {
             long end = System.currentTimeMillis();
-            LOG.info("getLatestOffsetMatchingWithConnection:time", Long.toString(end - start));
+            LOG.info("getLatestOffsetWithConnection:time", Long.toString(end - start));
         }
     }
 
