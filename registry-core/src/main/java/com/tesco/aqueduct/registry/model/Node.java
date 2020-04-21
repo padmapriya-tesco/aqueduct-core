@@ -60,23 +60,6 @@ public class Node {
     private final ZonedDateTime lastSeen;
 
     /**
-     * The last ACKed offset from the Provider.
-     *
-     * Reported by older versions of aqueduct pipe / provider.
-     */
-    @Deprecated
-    @JsonSerialize(using = ToStringSerializer.class)
-    private final long providerLastAckOffset;
-
-    /**
-     * Tracks the time that the last message was ACKed by a client.
-     *
-     * Reported by older versions of aqueduct pipe / provider.
-     */
-    @Deprecated
-    private final ZonedDateTime providerLastAckTime;
-
-    /**
      * Fields populated by pipe
      */
     private final Map<String, String> pipe;
