@@ -27,6 +27,7 @@ import javax.sql.DataSource
 import java.sql.DriverManager
 import java.time.Duration
 
+import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE
 import static com.tesco.aqueduct.registry.model.Status.FOLLOWING
 import static com.tesco.aqueduct.registry.model.Status.INITIALISING
 import static com.tesco.aqueduct.registry.model.Status.OFFLINE
@@ -207,6 +208,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "6735",
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
+                "pipeState": "$UP_TO_DATE",
                 "status": "$INITIALISING",
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
@@ -571,7 +573,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
-                "pipeState": "$PipeState.UP_TO_DATE",
+                "pipeState": "$UP_TO_DATE",
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")
