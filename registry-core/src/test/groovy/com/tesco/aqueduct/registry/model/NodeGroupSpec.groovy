@@ -325,14 +325,12 @@ class NodeGroupSpec extends Specification {
                     "\"localUrl\":\"http://node-1\"," +
                     "\"offset\":\"0\"," +
                     "\"pipeState\":\"$PipeState.UP_TO_DATE\"," +
-                    "\"providerLastAckOffset\":\"0\"," +
                     "\"id\":\"http://node-1\"" +
                 "}," +
                 "{" +
                     "\"localUrl\":\"http://node-2\"," +
                     "\"offset\":\"0\"," +
                     "\"pipeState\":\"$PipeState.OUT_OF_DATE\"," +
-                    "\"providerLastAckOffset\":\"0\"," +
                     "\"id\":\"http://node-2\"" +
                 "}" +
             "]"
