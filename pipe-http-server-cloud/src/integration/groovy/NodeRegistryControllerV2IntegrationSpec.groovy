@@ -208,7 +208,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "6735",
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
-                "pipeState": "$UP_TO_DATE",
+                "pipe": {"pipeState" : "$UP_TO_DATE"},
                 "status": "$INITIALISING",
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
@@ -573,7 +573,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
-                "pipeState": "$UP_TO_DATE",
+                "pipe": {"pipeState" : "$UP_TO_DATE"},
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")
