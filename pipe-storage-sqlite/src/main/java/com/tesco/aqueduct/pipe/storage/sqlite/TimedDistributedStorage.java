@@ -36,11 +36,6 @@ public class TimedDistributedStorage implements DistributedStorage {
     }
 
     @Override
-    public long getLatestOffsetMatching(final List<String> types) {
-        return latestOffsetTimer.record(() -> storage.getLatestOffsetMatching(types));
-    }
-
-    @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         return readOffsetTimer.record(() -> storage.getOffset(offsetName));
     }

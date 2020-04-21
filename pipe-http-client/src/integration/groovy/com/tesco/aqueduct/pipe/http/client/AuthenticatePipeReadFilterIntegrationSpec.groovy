@@ -16,6 +16,10 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
     @Shared @AutoCleanup ErsatzServer server
     @Shared @AutoCleanup("stop") ApplicationContext context
 
+    def type = "type"
+    def location = "someLocation"
+    def offset = 100L
+
     InternalHttpPipeClient client
     def identityToken= Mock(IdentityToken) {
         getAccessToken() >> "someToken"
@@ -28,14 +32,23 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         given: "latest offset requiring authentication"
         server = new ErsatzServer({
             expectations {
-                get("/pipe/offset/latest") {
+                get("/pipe/100") {
+                    queries(type: type, location: location)
                     called(1)
-
                     header("Authorization", "Bearer someToken")
 
                     responder {
                         contentType('application/json')
-                        body('123')
+                        body("""[
+                        {
+                            "type": "$type",
+                            "key": "x",
+                            "contentType": "contentType",
+                            "offset": $offset,
+                            "created": "2018-10-01T13:45:00Z", 
+                            "data": "{ \\"valid\\": \\"json\\" }"
+                        }
+                    ]""")
                     }
                 }
             }
@@ -66,11 +79,11 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         client = context.getBean(InternalHttpPipeClient)
 
         when:
-        def latest = client.getLatestOffsetMatching([])
+        def body = client.httpRead([type], offset, location).body()
 
         then:
         server.verify()
-        latest == 123
+        body.offset.first() == offset
     }
 
     def "basic auth is used when settings are provided calling another till"() {
@@ -80,12 +93,22 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
                 basic 'admin', 'my-password'
             }
             expectations {
-                get("/pipe/offset/latest") {
+                get("/pipe/100") {
+                    queries(type: type, location: location)
                     called(1)
 
                     responder {
                         contentType('application/json')
-                        body('123')
+                        body("""[
+                        {
+                            "type": "$type",
+                            "key": "x",
+                            "contentType": "contentType",
+                            "offset": $offset,
+                            "created": "2018-10-01T13:45:00Z", 
+                            "data": "{ \\"valid\\": \\"json\\" }"
+                        }
+                    ]""")
                     }
                 }
             }
@@ -116,10 +139,10 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         client = context.getBean(InternalHttpPipeClient)
 
         when:
-        def latest = client.getLatestOffsetMatching([])
+        def body = client.httpRead([type], offset, location).body()
 
         then:
         server.verify()
-        latest == 123
+        body.offset.first() == offset
     }
 }

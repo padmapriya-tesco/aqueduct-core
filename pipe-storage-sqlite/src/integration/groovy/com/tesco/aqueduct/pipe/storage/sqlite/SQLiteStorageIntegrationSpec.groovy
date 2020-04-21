@@ -306,34 +306,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages.size() == 3
     }
 
-    def 'retrieves the latest offset'() {
-        given: 'multiple messages to be stored'
-        def messages = [message(1), message(2), message(3), message(4)]
-
-        and: 'these messages are stored'
-        sqliteStorage.write(messages)
-
-        when: 'requesting the latest offset with no tags'
-        def latestOffset = sqliteStorage.getLatestOffsetMatching([])
-
-        then: 'the latest offset is returned'
-        latestOffset == 4
-    }
-
-    def 'retrieves the latest offset for a given type'() {
-        given: 'multiple messages to be stored'
-        def messages = [message(1), message(2, 'my-new-type'), message(3), message(4)]
-
-        and: 'these messages are stored'
-        sqliteStorage.write(messages)
-
-        when: 'requesting the latest offset with no tags'
-        def latestOffset = sqliteStorage.getLatestOffsetMatching(['my-new-type'])
-
-        then: 'the latest offset is returned'
-        latestOffset == 2
-    }
-
     def "the messages returned are no larger than the maximum batch size"() {
         given: "a size of each message is calculated so that 3 messages are just larger than the max overhead batch size"
         int messageSize = Double.valueOf(maxOverheadBatchSize / 3).intValue() + 1
@@ -372,25 +344,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
         receivedMessages.messages.size() == 2
         receivedMessages.messages[0] == messages.get(1)
         receivedMessages.messages[1] == messages.get(2)
-    }
-
-    def 'retrieves the latest offset for multiple specified types'() {
-        given: 'multiple messages to be stored'
-        def messages = [
-            message(1),
-            message(2, 'type-1'),
-            message(3, 'type-2'),
-            message(4)
-        ]
-
-        and: 'these messages are stored'
-        sqliteStorage.write(messages)
-
-        when: 'requesting the latest offset with multiple specified types'
-        def latestOffset = sqliteStorage.getLatestOffsetMatching(['type-1', 'type-2'])
-
-        then: 'the latest offset for the messages with one of the types is returned'
-        latestOffset == 3
     }
 
     def 'retrieves the global latest offset'() {

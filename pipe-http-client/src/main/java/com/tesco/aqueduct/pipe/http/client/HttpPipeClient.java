@@ -47,7 +47,7 @@ public class HttpPipeClient implements Reader {
         return new MessageResults(
             response.body(),
             retryAfter,
-            OptionalLong.of(getLatestGlobalOffset(types, response)),
+            OptionalLong.of(getGlobalOffsetHeader(response)),
             getPipeState(response)
         );
     }
@@ -62,23 +62,11 @@ public class HttpPipeClient implements Reader {
         throw new UnsupportedOperationException("HttpPipeClient does not support this operation.");
     }
 
-    private long getLatestGlobalOffset(@Nullable List<String> types, HttpResponse<List<Message>> response) {
-        // TODO - Ensure backwards compatible, need to update to throw error once all tills have latest software
-        return getGlobalOffsetHeader(response) == null
-            ? getLatestOffsetMatching(types)
-            : Long.parseLong(getGlobalOffsetHeader(response));
-    }
-
-    private String getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
-        return response.header(HttpHeaders.GLOBAL_LATEST_OFFSET);
+    private Long getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
+        return Long.parseLong(response.header(HttpHeaders.GLOBAL_LATEST_OFFSET));
     }
 
     private PipeState getPipeState(HttpResponse<List<Message>> response) {
         return PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
-    }
-
-    @Override
-    public long getLatestOffsetMatching(final List<String> types) {
-        return client.getLatestOffsetMatching(types);
     }
 }

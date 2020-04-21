@@ -65,18 +65,6 @@ class TimedDistributedStorageSpec extends Specification {
         1 * mockedStorage.write([MOCK_MESSAGE])
     }
 
-    def "get latest offset events are timed"() {
-        given: "we have an instance of TimedMessageStorage"
-        def mockedStorage = Mock(DistributedStorage)
-        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
-
-        when: "we call the get latest offset method"
-        timedStorage.getLatestOffsetMatching(MESSAGE_TYPES)
-
-        then: "the get latest method is called on the underlying storage"
-        1 * mockedStorage.getLatestOffsetMatching(MESSAGE_TYPES)
-    }
-
     def "write offset events are timed"() {
         given: "we have an instance of TimedMessageStorage"
         def mockedStorage = Mock(DistributedStorage)

@@ -2,6 +2,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
@@ -115,6 +116,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         setupDatabase()
 
+        Reader reader = Mock(Reader) {
+            getOffset(OffsetName.GLOBAL_LATEST_OFFSET) >> OptionalLong.of(100L);
+        }
+
         context = ApplicationContext
                 .build()
                 .properties(
@@ -153,7 +158,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(NodeRegistry, registry)
-            .registerSingleton(Reader, Mock(Reader))
+            .registerSingleton(Reader, reader)
             .registerSingleton(TillStorage, tillStorage)
             .start()
 

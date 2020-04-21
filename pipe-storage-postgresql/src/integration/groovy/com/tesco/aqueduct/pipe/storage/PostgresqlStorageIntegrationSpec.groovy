@@ -74,28 +74,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize)
     }
 
-    def "get the latest offset where tags contains type but no other keys"() {
-        given: "there is postgres storage"
-        def dataSourceWithMockedConnection = Mock(DataSource)
-        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize)
-
-        and: "a mock connection is provided when requested"
-        def connection = Mock(Connection)
-        dataSourceWithMockedConnection.getConnection() >> connection
-
-        and: "a connection returns a prepared statement"
-        def preparedStatement = Mock(PreparedStatement)
-        preparedStatement.executeQuery() >> Mock(ResultSet)
-        connection.prepareStatement(_ as String) >> preparedStatement
-
-        when: "requesting the latest matching offset with tags specifying a type key"
-        postgresStorage.getLatestOffsetMatching(["some_type"])
-
-        then: "a query is created that does not contain tags in the where clause"
-        1 * preparedStatement.setString(1, "some_type")
-        0 * preparedStatement.setString(_ as Integer, '{}')
-    }
-
     @Unroll
     def "get #offsetName returns max offset"() {
         given: "there are messages"
