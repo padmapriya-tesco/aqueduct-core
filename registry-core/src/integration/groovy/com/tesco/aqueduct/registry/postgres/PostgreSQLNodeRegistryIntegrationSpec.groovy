@@ -83,8 +83,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .offset(offset)
             .status(FOLLOWING)
             .following([cloudURL])
-            .providerLastAckOffset(offset-1)
-            .providerLastAckTime(now)
             .lastSeen(now)
             .build()
 
@@ -510,8 +508,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .status(INITIALISING)
             .following([])
             .lastSeen(now)
-            .providerLastAckTime(now)
-            .providerLastAckOffset(1)
             .build()
 
         registry.register(theNode)
@@ -552,8 +548,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         List<URL> requestedToFollow=[],
         ZonedDateTime created=null
     ) {
-        def now = ZonedDateTime.now()
-
         Node theNode = Node.builder()
             .localUrl(new URL(url))
             .group(group)
@@ -562,8 +556,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .following(following)
             .lastSeen(created)
             .requestedToFollow(requestedToFollow)
-            .providerLastAckOffset(offset-1)
-            .providerLastAckTime(now)
             .build()
 
         registry.register(theNode)
