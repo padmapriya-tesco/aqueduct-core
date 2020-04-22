@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry.http;
 
+import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.Reader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.*;
@@ -39,7 +40,7 @@ public class NodeRegistryControllerV2 {
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Get
     public StateSummary getSummary(@Nullable final List<String> groups) {
-        return registry.getSummary(pipe.getLatestOffsetMatching(null), Status.OK, groups);
+        return registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
     }
 
     @Secured(REGISTRY_WRITE)
