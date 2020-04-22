@@ -34,11 +34,6 @@ public class Node {
     private final long offset;
 
     /**
-     * The pipe state of this node
-     */
-    private final PipeState pipeState;
-
-    /**
      * Status as last reported by this node (computed status might be different)
      */
     private final Status status;
@@ -58,23 +53,6 @@ public class Node {
      * Populated on server side as NOW
      */
     private final ZonedDateTime lastSeen;
-
-    /**
-     * The last ACKed offset from the Provider.
-     *
-     * Reported by older versions of aqueduct pipe / provider.
-     */
-    @Deprecated
-    @JsonSerialize(using = ToStringSerializer.class)
-    private final long providerLastAckOffset;
-
-    /**
-     * Tracks the time that the last message was ACKed by a client.
-     *
-     * Reported by older versions of aqueduct pipe / provider.
-     */
-    @Deprecated
-    private final ZonedDateTime providerLastAckTime;
 
     /**
      * Fields populated by pipe

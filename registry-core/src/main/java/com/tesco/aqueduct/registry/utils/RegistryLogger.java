@@ -35,30 +35,25 @@ public class RegistryLogger {
         fields.put("group", node.getGroup());
         fields.put("localUrl", node.getLocalUrl().toString());
         fields.put("offset", String.valueOf(node.getOffset()));
-        // TODO - remove null check once the pipeState field is deployed everywhere
-        if(node.getPipeState() != null){
-            fields.put("pipeState", node.getPipeState().toString());
-        }
+        fields.put("pipeState", node.getPipe().get("pipeState"));
         fields.put("status", node.getStatus().toString());
         fields.put(
-                "following",
-                Optional.ofNullable(node.getFollowing())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(URL::toString)
-                        .collect(Collectors.joining(","))
+            "following",
+            Optional.ofNullable(node.getFollowing())
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(URL::toString)
+                .collect(Collectors.joining(","))
         );
         fields.put(
-                "requestedToFollow",
-                Optional.ofNullable(node.getRequestedToFollow())
-                        .orElseGet(Collections::emptyList)
-                        .stream()
-                        .map(URL::toString)
-                        .collect(Collectors.joining(","))
+            "requestedToFollow",
+            Optional.ofNullable(node.getRequestedToFollow())
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(URL::toString)
+                .collect(Collectors.joining(","))
         );
         fields.put("lastSeen", String.valueOf(node.getLastSeen()));
-        fields.put("providerLastAckOffset", String.valueOf(node.getProviderLastAckOffset()));
-        fields.put("providerLastAckTime", String.valueOf(node.getProviderLastAckTime()));
 
         if(node.getPipe() != null) {
             node.getPipe().entrySet().forEach(e ->
