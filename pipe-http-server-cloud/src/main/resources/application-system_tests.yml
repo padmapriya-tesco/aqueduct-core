@@ -12,7 +12,7 @@ authentication:
       password: "${SUPPORT_PASSWORD}"
       roles:
         - REGISTRY_DELETE
-        - BOOTSTRAP_TILL
+        - BOOTSTRAP_NODE
   identity:
     url: "${IDENTITY_URL}"
     validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Controller("/v2/registry")
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
-    private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
+    private static final String BOOTSTRAP_NODE = "BOOTSTRAP_NODE";
     private static final String REGISTRY_WRITE = "REGISTRY_WRITE";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
@@ -65,7 +65,7 @@ public class NodeRegistryControllerV2 {
         }
     }
 
-    @Secured(BOOTSTRAP_TILL)
+    @Secured(BOOTSTRAP_NODE)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
         bootstrapRequest.save(tillStorage);

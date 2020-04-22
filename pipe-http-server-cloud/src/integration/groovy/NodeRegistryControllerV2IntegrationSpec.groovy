@@ -3,7 +3,6 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.OffsetName
-import com.tesco.aqueduct.pipe.api.PipeState
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
@@ -47,7 +46,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     private static final String PASSWORD_TWO = "password-two"
     private static final int SERVER_TIMEOUT_MS = 5000
     private static final int SERVER_SLEEP_TIME_MS = 500
-    private static final String TILL_CLIENT_UID = "random"
+    private static final String NODE_A_CLIENT_UID = "random"
 
     private static final String clientId = UUID.randomUUID().toString()
     private static final String secret = UUID.randomUUID().toString()
@@ -138,7 +137,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                           password: $PASSWORD
                           roles:
                             - REGISTRY_DELETE
-                            - BOOTSTRAP_TILL
+                            - BOOTSTRAP_NODE
                             - REGISTRY_WRITE
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
@@ -149,8 +148,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                             id: "someClientId"
                             secret: "someClientSecret"
                         users:
-                          till:
-                            clientId: "${TILL_CLIENT_UID}"
+                          nodeA:
+                            clientId: "${NODE_A_CLIENT_UID}"
                             roles:
                               - PIPE_READ
                               - REGISTRY_WRITE
