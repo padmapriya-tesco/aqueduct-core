@@ -130,24 +130,4 @@ class TimedDistributedStorageIntegrationSpec extends Specification {
         notThrown(Exception)
         message == retrievedMessage
     }
-
-    def 'we can retrieve the latest offset via TimedMessageStorage'() {
-        given: 'multiple messages to be stored'
-        def messages = [message(1), message(2), message(3), message(4)]
-
-        and: 'a data store controller exists'
-        def sqliteStorage = new SQLiteStorage(successfulDataSource(), LIMIT, 10, BATCH_SIZE)
-
-        and: 'we use the TimedMessageStorage class to wrap sqlLite'
-        TimedDistributedStorage storage = new TimedDistributedStorage(sqliteStorage, meterRegistry)
-
-        and: 'these messages are stored'
-        storage.write(messages)
-
-        when: 'requesting the latest offset with no tags'
-        def latestOffset = storage.getLatestOffsetMatching([])
-
-        then: 'the latest offset is returned'
-        latestOffset == 4
-    }
 }

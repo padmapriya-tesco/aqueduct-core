@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry.http;
 
+import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.Reader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.*;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 @Controller("/v2/registry")
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
-    private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
+    private static final String BOOTSTRAP_NODE = "BOOTSTRAP_NODE";
     private static final String REGISTRY_WRITE = "REGISTRY_WRITE";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
@@ -39,7 +40,7 @@ public class NodeRegistryControllerV2 {
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Get
     public StateSummary getSummary(@Nullable final List<String> groups) {
-        return registry.getSummary(pipe.getLatestOffsetMatching(null), Status.OK, groups);
+        return registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
     }
 
     @Secured(REGISTRY_WRITE)
@@ -64,7 +65,7 @@ public class NodeRegistryControllerV2 {
         }
     }
 
-    @Secured(BOOTSTRAP_TILL)
+    @Secured(BOOTSTRAP_NODE)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
         bootstrapRequest.save(tillStorage);

@@ -71,16 +71,6 @@ class SQLiteStorageSpec extends Specification {
         thrown(RuntimeException)
     }
 
-    def 'throws an exception if a problem with the database arises when retrieving latest offset'() {
-        given: 'a data store controller exists with a broken connection url'
-
-        when: 'the latest offset is requested'
-        sqliteStorage.getLatestOffsetMatching([:])
-
-        then: 'a runtime exception is thrown'
-        thrown(RuntimeException)
-    }
-
     def 'throws an exception if a problem with the database arises when writing latest offset'() {
         given: 'a data store controller exists with a broken connection url'
 

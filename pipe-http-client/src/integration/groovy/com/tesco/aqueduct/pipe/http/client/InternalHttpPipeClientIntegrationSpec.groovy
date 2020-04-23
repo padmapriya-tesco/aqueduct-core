@@ -105,46 +105,4 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         "type1" | "location1" | "contentType3" | 111
         "type2" | "location2" | "contentType4" | 123
     }
-
-    def "can get latest offset"(){
-        given:
-        server.expectations {
-            get("/pipe/offset/latest") {
-                called(1)
-
-                responder {
-                    contentType('application/json')
-                    body('123')
-                }
-            }
-        }
-
-        when:
-        def latest = client.getLatestOffsetMatching([])
-        then:
-        server.verify()
-        latest == 123
-    }
-
-    def "can get latest offset with tags"(){
-        given:
-        server.expectations {
-            get("/pipe/offset/latest") {
-                called(1)
-                query("type","a,b,c")
-
-                responder {
-                    contentType('application/json')
-                    body('100')
-                }
-            }
-        }
-
-        when:
-        def latest = client.getLatestOffsetMatching(["a", "b", "c"])
-
-        then:
-        server.verify()
-        latest == 100
-    }
 }

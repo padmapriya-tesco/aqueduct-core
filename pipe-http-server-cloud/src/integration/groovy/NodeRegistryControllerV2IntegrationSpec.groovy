@@ -2,7 +2,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.PipeState
+import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
@@ -26,6 +26,7 @@ import javax.sql.DataSource
 import java.sql.DriverManager
 import java.time.Duration
 
+import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE
 import static com.tesco.aqueduct.registry.model.Status.FOLLOWING
 import static com.tesco.aqueduct.registry.model.Status.INITIALISING
 import static com.tesco.aqueduct.registry.model.Status.OFFLINE
@@ -45,7 +46,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     private static final String PASSWORD_TWO = "password-two"
     private static final int SERVER_TIMEOUT_MS = 5000
     private static final int SERVER_SLEEP_TIME_MS = 500
-    private static final String TILL_CLIENT_UID = "random"
+    private static final String NODE_A_CLIENT_UID = "random"
 
     private static final String clientId = UUID.randomUUID().toString()
     private static final String secret = UUID.randomUUID().toString()
@@ -115,6 +116,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         setupDatabase()
 
+        Reader reader = Mock(Reader) {
+            getOffset(OffsetName.GLOBAL_LATEST_OFFSET) >> OptionalLong.of(100L);
+        }
+
         context = ApplicationContext
                 .build()
                 .properties(
@@ -132,7 +137,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                           password: $PASSWORD
                           roles:
                             - REGISTRY_DELETE
-                            - BOOTSTRAP_TILL
+                            - BOOTSTRAP_NODE
                             - REGISTRY_WRITE
                         $USERNAME_TWO:
                           password: $PASSWORD_TWO
@@ -143,8 +148,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                             id: "someClientId"
                             secret: "someClientSecret"
                         users:
-                          till:
-                            clientId: "${TILL_CLIENT_UID}"
+                          nodeA:
+                            clientId: "${NODE_A_CLIENT_UID}"
                             roles:
                               - PIPE_READ
                               - REGISTRY_WRITE
@@ -153,7 +158,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(NodeRegistry, registry)
-            .registerSingleton(Reader, Mock(Reader))
+            .registerSingleton(Reader, reader)
             .registerSingleton(TillStorage, tillStorage)
             .start()
 
@@ -202,6 +207,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "6735",
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
+                "pipe": {"pipeState" : "$UP_TO_DATE"},
                 "status": "$INITIALISING",
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
@@ -566,7 +572,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
-                "pipeState": "$PipeState.UP_TO_DATE",
+                "pipe": {"pipeState" : "$UP_TO_DATE"},
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")

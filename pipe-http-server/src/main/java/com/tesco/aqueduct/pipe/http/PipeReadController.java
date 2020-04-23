@@ -49,20 +49,6 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
-    @Get("/pipe/offset/latest")
-    @Deprecated // remove when its non-usage is confirmed
-    public String latestOffset(@QueryValue final List<String> type) {
-        final List<String> types = flattenRequestParams(type);
-        return Long.toString(reader.getLatestOffsetMatching(types));
-    }
-
-    @Get("/pipe/state{?type}")
-    @Deprecated // remove when its non-usage is confirmed
-    public PipeStateResponse state(@Nullable final List<String> type) {
-        final List<String> types = flattenRequestParams(type);
-        return pipeStateProvider.getState(types, reader);
-    }
-
     @Get("/pipe/{offset}{?type,location}")
     public HttpResponse<List<Message>> readMessages(
         final long offset,

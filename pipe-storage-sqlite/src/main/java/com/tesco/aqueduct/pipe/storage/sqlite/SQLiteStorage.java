@@ -124,24 +124,6 @@ public class SQLiteStorage implements DistributedStorage {
     }
 
     @Override
-    public long getLatestOffsetMatching(final List<String> types) {
-        final int typesCount = types == null ? 0 : types.size();
-
-        return executeGet(
-            SQLiteQueries.getLastOffsetQuery(typesCount),
-            (connection, statement) -> {
-                for (int i = 0; i < typesCount; i++) {
-                    statement.setString(i + 1, types.get(i));
-                }
-
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    return resultSet.getLong("last_offset");
-                }
-            }
-        );
-    }
-
-    @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         return executeGet(
             SQLiteQueries.getOffset(offsetName),
