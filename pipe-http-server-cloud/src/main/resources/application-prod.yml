@@ -10,7 +10,7 @@ authentication:
       password: "${SUPPORT_PASSWORD}"
       roles:
         - REGISTRY_DELETE
-        - BOOTSTRAP_TILL
+        - BOOTSTRAP_NODE
         - PIPE_READ
   identity:
     url: "${IDENTITY_URL}"
@@ -20,8 +20,13 @@ authentication:
       id: "${IDENTITY_CLIENT_ID}"
       secret: "${IDENTITY_CLIENT_SECRET}"
     users:
-      till:
-        clientId: "${TILL_CLIENT_UID}"
+      nodeA:
+        clientId: "${NODE_A_CLIENT_UID}"
+        roles:
+          - PIPE_READ
+          - REGISTRY_WRITE
+      nodeB:
+        clientId: "${NODE_B_CLIENT_UID}"
         roles:
           - PIPE_READ
           - REGISTRY_WRITE

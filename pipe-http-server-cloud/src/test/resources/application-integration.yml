@@ -54,7 +54,7 @@ authentication:
       password: "${SUPPORT_PASSWORD}"
       roles:
         - REGISTRY_DELETE
-        - BOOTSTRAP_TILL
+        - BOOTSTRAP_NODE
         - PIPE_READ
   identity:
     url: "${IDENTITY_URL}"
