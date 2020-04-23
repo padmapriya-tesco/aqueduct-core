@@ -21,7 +21,7 @@ class CloudAqueductConfigIntegrationSpec extends Specification {
         System.setProperty("IDENTITY_ISSUE_TOKEN_PATH", "some/path/")
         System.setProperty("IDENTITY_CLIENT_ID", "some_client_id")
         System.setProperty("IDENTITY_CLIENT_SECRET", "some_secret")
-        System.setProperty("TILL_CLIENT_UID", "some_client_uuid")
+        System.setProperty("NODE_A_CLIENT_UID", "some_client_uuid")
         System.setProperty("POSTGRE_SERVER", "some_value")
         System.setProperty("POSTGRE_DATABASE", "some_value")
         System.setProperty("POSTGRE_USERNAME", "some_value")
