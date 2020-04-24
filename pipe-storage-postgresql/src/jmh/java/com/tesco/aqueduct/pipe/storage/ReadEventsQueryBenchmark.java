@@ -192,21 +192,21 @@ public class ReadEventsQueryBenchmark {
     }
 
     private static final String MESSAGE_CONTENT = "{\n" +
-            "  \"promotions\" : [\n" +
+            "  \"data\" : [\n" +
             "    {\n" +
-            "      \"id\": \"A32187466\",\n" +
+            "      \"id\": \"DATA1\",\n" +
             "      \"bucketNumber\": \"790\",\n" +
-            "      \"storeGroups\": [\n" +
-            "        \"Z1\"\n" +
+            "      \"dataGroups\": [\n" +
+            "        \"D1\"\n" +
             "      ],\n" +
             "      \"startDateTime\": \"2017-04-19T00:00:00+00:00\",\n" +
             "      \"endDateTime\": \"2030-07-11T23:59:59+00:00\",\n" +
-            "      \"name\": \"Save 20% on fuels and other products\",\n" +
-            "      \"shortDescription\": \"Save 20% on fuels and other products\",\n" +
+            "      \"name\": \"data\",\n" +
+            "      \"shortDescription\": \"data\",\n" +
             "      \"condition\": {\n" +
             "        \"id\": \"1\",\n" +
-            "        \"type\": \"productMatch\",\n" +
-            "        \"productGtins\": [\n" +
+            "        \"type\": \"dataMatch\",\n" +
+            "        \"data\": [\n" +
             "          \"05050179865189\",\n" +
             "          \"00111122223333\"\n" +
             "        ],\n" +
@@ -214,7 +214,7 @@ public class ReadEventsQueryBenchmark {
             "        \"requiredQuantityMax\": \"1\",\n" +
             "        \"cheapest\": true\n" +
             "      },\n" +
-            "      \"rewardRules\": [\n" +
+            "      \"dataRules\": [\n" +
             "        {\n" +
             "          \"applyTo\": {\n" +
             "            \"conditions\": [\n" +
@@ -223,18 +223,18 @@ public class ReadEventsQueryBenchmark {
             "            \"cheapest\": true,\n" +
             "            \"maxQuantity\": \"1\"\n" +
             "          },\n" +
-            "          \"type\": \"percentageDiscount\",\n" +
-            "          \"percentageDiscount\": \"20\",\n" +
-            "          \"addToTillRewards\" : true\n" +
+            "          \"type\": \"percentageData\",\n" +
+            "          \"percentageData\": \"20\",\n" +
+            "          \"addToData\" : true\n" +
             "        }\n" +
             "      ],\n" +
-            "      \"type\": \"multi_buy_promotion\"\n" +
+            "      \"type\": \"data\"\n" +
             "    }\n" +
             "  ],\n" +
-            "  \"storeGroups\": [\n" +
+            "  \"dataGroups\": [\n" +
             "    {\n" +
-            "      \"id\": \"Z1\",\n" +
-            "      \"storeNumbers\": [\n" +
+            "      \"id\": \"A1\",\n" +
+            "      \"data\": [\n" +
             "        \"02065\"\n" +
             "      ]\n" +
             "    }\n" +

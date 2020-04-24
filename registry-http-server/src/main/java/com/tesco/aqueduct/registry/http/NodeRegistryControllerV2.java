@@ -23,17 +23,17 @@ import java.util.stream.Collectors;
 @Controller("/v2/registry")
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
-    private static final String BOOTSTRAP_TILL = "BOOTSTRAP_TILL";
+    private static final String BOOTSTRAP_NODE = "BOOTSTRAP_NODE";
     private static final String REGISTRY_WRITE = "REGISTRY_WRITE";
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
     private final NodeRegistry registry;
-    private final TillStorage tillStorage;
+    private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
 
-    public NodeRegistryControllerV2(final NodeRegistry registry, final TillStorage tillStorage, final Reader pipe) {
+    public NodeRegistryControllerV2(final NodeRegistry registry, final NodeRequestStorage nodeRequestStorage, final Reader pipe) {
         this.registry = registry;
-        this.tillStorage = tillStorage;
+        this.nodeRequestStorage = nodeRequestStorage;
         this.pipe = pipe;
     }
 
@@ -49,7 +49,7 @@ public class NodeRegistryControllerV2 {
         LOG.withNode(node).info("register node: ", "node registered");
         final List<URL> requestedToFollow = registry.register(node);
         final String followStr = requestedToFollow.stream().map(URL::toString).collect(Collectors.joining(","));
-        final BootstrapType bootstrapType = tillStorage.requiresBootstrap(node.getHost());
+        final BootstrapType bootstrapType = nodeRequestStorage.requiresBootstrap(node.getHost());
         LOG.withNode(node).info("requested to follow", followStr);
         return new RegistryResponse(requestedToFollow, bootstrapType);
     }
@@ -65,10 +65,10 @@ public class NodeRegistryControllerV2 {
         }
     }
 
-    @Secured(BOOTSTRAP_TILL)
+    @Secured(BOOTSTRAP_NODE)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
-        bootstrapRequest.save(tillStorage);
+        bootstrapRequest.save(nodeRequestStorage);
         return HttpResponse.status(HttpStatus.OK);
     }
 }
