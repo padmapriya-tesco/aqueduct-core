@@ -39,9 +39,9 @@ class PostgresSQLNodeRequestStorageIntegrationSpec extends Specification {
         }
 
         sql.execute("""
-            DROP TABLE IF EXISTS tills;
+            DROP TABLE IF EXISTS node_requests;
             
-            CREATE TABLE tills(
+            CREATE TABLE node_requests(
                 host_id VARCHAR PRIMARY KEY NOT NULL,
                 bootstrap_requested timestamp NOT NULL,
                 bootstrap_type VARCHAR NOT NULL,
@@ -60,7 +60,7 @@ class PostgresSQLNodeRequestStorageIntegrationSpec extends Specification {
         nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
 
         then: "data store contains the correct entry"
-        def rows = sql.rows("SELECT * FROM tills;")
+        def rows = sql.rows("SELECT * FROM node_requests;")
         Timestamp timestamp = Timestamp.valueOf(now.atOffset(ZoneOffset.UTC).toLocalDateTime())
 
         rows.get(0).getProperty("host_id") == "host-id"
@@ -81,7 +81,7 @@ class PostgresSQLNodeRequestStorageIntegrationSpec extends Specification {
         nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(BootstrapType.PIPE_AND_PROVIDER, secondTime)))
 
         then: "data store contains the correct entry"
-        def rows = sql.rows("SELECT * FROM tills;")
+        def rows = sql.rows("SELECT * FROM node_requests;")
         Timestamp timestamp = Timestamp.valueOf(secondTime.atOffset(ZoneOffset.UTC).toLocalDateTime())
 
         rows.get(0).getProperty("host_id") == "host-id"
