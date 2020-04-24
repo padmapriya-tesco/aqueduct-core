@@ -89,9 +89,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         """)
 
         sql.execute("""
-            DROP TABLE IF EXISTS tills;
+            DROP TABLE IF EXISTS node_requests;
             
-            CREATE TABLE tills(
+            CREATE TABLE node_requests(
             host_id VARCHAR PRIMARY KEY NOT NULL,
             bootstrap_requested timestamp NOT NULL,
             bootstrap_type VARCHAR NOT NULL,
@@ -448,7 +448,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .when()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
-                "tillHosts": ["0000", "1111", "2222"], 
+                "nodeRequests": ["0000", "1111", "2222"], 
                 "bootstrapType": "$bootstrapString"
             }""")
             .post("/v2/registry/bootstrap")
@@ -456,7 +456,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(statusCode)
 
         then: "node request is saved"
-        def rows = sql.rows("SELECT * FROM tills;")
+        def rows = sql.rows("SELECT * FROM node_requests;")
 
         rows.get(0).getProperty("host_id") == "0000"
         rows.get(0).getProperty("bootstrap_requested") != null
@@ -486,7 +486,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .when()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
-                "tillHosts": ["0000", "1111", "2222"], 
+                "nodeRequests": ["0000", "1111", "2222"], 
                 "bootstrapType": "INVALID"
              }""")
             .post("/v2/registry/bootstrap")
@@ -494,7 +494,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(400)
 
         then: "node request is not saved"
-        def rows = sql.rows("SELECT * FROM tills;")
+        def rows = sql.rows("SELECT * FROM node_requests;")
         rows.size() == 0
     }
 

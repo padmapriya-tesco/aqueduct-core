@@ -15,8 +15,8 @@ public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
 
     private final DataSource dataSource;
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRequestStorage.class));
-    private static final String QUERY_INSERT_OR_UPDATE_TILL =
-        "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
+    private static final String QUERY_INSERT_OR_UPDATE_NODE_REQUEST =
+        "INSERT INTO node_requests (host_id, bootstrap_requested, bootstrap_type)" +
             "VALUES (" +
             "?, " +
             "?, " +
@@ -27,12 +27,12 @@ public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
             "bootstrap_requested = EXCLUDED.bootstrap_requested, " +
             "bootstrap_type = EXCLUDED.bootstrap_type, " +
             "bootstrap_received = null;";
-    private static final String QUERY_READ_TILL =
+    private static final String QUERY_READ_NODE_REQUEST =
         "SELECT bootstrap_type " +
-        "FROM tills " +
+        "FROM node_requests " +
         "WHERE host_id = ? AND bootstrap_received IS null;";
-    private static final String QUERY_UPDATE_TILL_RECEIVED =
-        "UPDATE tills " +
+    private static final String QUERY_UPDATE_NODE_REQUEST_RECEIVED =
+        "UPDATE node_requests " +
         "SET bootstrap_received = ? " +
         "WHERE host_id = ?;";
 
@@ -45,7 +45,7 @@ public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
          try (Connection connection = getConnection()) {
              insertOrUpdate(connection, nodeRequest);
          } catch (SQLException exception) {
-             LOG.error("save", "insert a till", exception);
+             LOG.error("save", "insert a node request", exception);
              throw exception;
          }
     }
@@ -59,14 +59,14 @@ public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
             }
             return bootstrapType;
         } catch (SQLException exception) {
-            LOG.error("read", "read a till", exception);
+            LOG.error("read", "read a node request", exception);
             throw exception;
         }
     }
 
     private BootstrapType readBootstrapType(String hostId, Connection connection) throws SQLException {
         long start = System.currentTimeMillis();
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_READ_TILL)) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_READ_NODE_REQUEST)) {
             statement.setString(1, hostId);
             return getBootstrapType(statement.executeQuery());
         } finally {
@@ -96,7 +96,7 @@ public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
     private void updateReceivedBootstrap(Connection connection, String hostId) throws SQLException {
         long start = System.currentTimeMillis();
         Timestamp timestamp = Timestamp.valueOf(ZonedDateTime.now(ZoneOffset.UTC).toLocalDateTime());
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_TILL_RECEIVED)) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_NODE_REQUEST_RECEIVED)) {
             statement.setTimestamp(1, timestamp);
             statement.setString(2, hostId);
             statement.execute();
@@ -113,7 +113,7 @@ public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
         long start = System.currentTimeMillis();
         Timestamp timestamp = Timestamp.valueOf(nodeRequest.getBootstrap().getRequestedDate().atOffset(ZoneOffset.UTC).toLocalDateTime());
 
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_OR_UPDATE_TILL)) {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_OR_UPDATE_NODE_REQUEST)) {
             statement.setString(1, nodeRequest.getHostId());
             statement.setTimestamp(2, timestamp);
             statement.setString(3, nodeRequest.getBootstrap().getType().toString());
