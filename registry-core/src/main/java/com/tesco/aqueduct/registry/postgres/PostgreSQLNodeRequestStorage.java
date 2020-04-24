@@ -2,8 +2,8 @@ package com.tesco.aqueduct.registry.postgres;
 
 import com.tesco.aqueduct.registry.model.BootstrapType;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
-import com.tesco.aqueduct.registry.model.Till;
-import com.tesco.aqueduct.registry.model.TillStorage;
+import com.tesco.aqueduct.registry.model.NodeRequest;
+import com.tesco.aqueduct.registry.model.NodeRequestStorage;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -11,10 +11,10 @@ import java.sql.*;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
-public class PostgreSQLTillStorage implements TillStorage {
+public class PostgreSQLNodeRequestStorage implements NodeRequestStorage {
 
     private final DataSource dataSource;
-    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLTillStorage.class));
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRequestStorage.class));
     private static final String QUERY_INSERT_OR_UPDATE_TILL =
         "INSERT INTO tills (host_id, bootstrap_requested, bootstrap_type)" +
             "VALUES (" +
@@ -36,14 +36,14 @@ public class PostgreSQLTillStorage implements TillStorage {
         "SET bootstrap_received = ? " +
         "WHERE host_id = ?;";
 
-    public PostgreSQLTillStorage(final DataSource dataSource) {
+    public PostgreSQLNodeRequestStorage(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     @Override
-    public void save(Till till) throws SQLException {
+    public void save(NodeRequest nodeRequest) throws SQLException {
          try (Connection connection = getConnection()) {
-             insertOrUpdate(connection, till);
+             insertOrUpdate(connection, nodeRequest);
          } catch (SQLException exception) {
              LOG.error("save", "insert a till", exception);
              throw exception;
@@ -108,15 +108,15 @@ public class PostgreSQLTillStorage implements TillStorage {
 
     private void insertOrUpdate(
         final Connection connection,
-        final Till till
+        final NodeRequest nodeRequest
     ) throws SQLException {
         long start = System.currentTimeMillis();
-        Timestamp timestamp = Timestamp.valueOf(till.getBootstrap().getRequestedDate().atOffset(ZoneOffset.UTC).toLocalDateTime());
+        Timestamp timestamp = Timestamp.valueOf(nodeRequest.getBootstrap().getRequestedDate().atOffset(ZoneOffset.UTC).toLocalDateTime());
 
         try (PreparedStatement statement = connection.prepareStatement(QUERY_INSERT_OR_UPDATE_TILL)) {
-            statement.setString(1, till.getHostId());
+            statement.setString(1, nodeRequest.getHostId());
             statement.setTimestamp(2, timestamp);
-            statement.setString(3, till.getBootstrap().getType().toString());
+            statement.setString(3, nodeRequest.getBootstrap().getType().toString());
             statement.execute();
         } finally {
             long end = System.currentTimeMillis();

@@ -13,10 +13,10 @@ public class BootstrapRequest {
     private final List<String> tillHosts;
     private final BootstrapType bootstrapType;
 
-    public void save(TillStorage tillStorage) throws SQLException {
+    public void save(NodeRequestStorage nodeRequestStorage) throws SQLException {
         for (String tillHost : tillHosts) {
-            tillStorage.save(
-                new Till(tillHost, new Bootstrap(bootstrapType, LocalDateTime.now()))
+            nodeRequestStorage.save(
+                new NodeRequest(tillHost, new Bootstrap(bootstrapType, LocalDateTime.now()))
             );
         }
     }

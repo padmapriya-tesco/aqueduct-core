@@ -234,7 +234,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         []                   | ["http://a1", "http://a2", "http://b1", "http://b2", "http://c1"]
     }
 
-    def "the first till in the group to register gets assigned to the cloud"() {
+    def "the first node in the group to register gets assigned to the cloud"() {
         when: "Nodes are registered in different groups"
         def followA = registerNode("groupA", "http://a")
         def followB = registerNode("groupB", "http://a")
@@ -246,25 +246,25 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followC == [cloudURL]
     }
 
-    def "the second till in the group should be told to calls the first till"() {
-        given: "We have one till registered"
+    def "the second node in the group should be told to calls the first node"() {
+        given: "We have one node registered"
         registerNode("x", "http://first")
 
-        when: "Second till registers"
+        when: "Second node registers"
         def follow = registerNode("x", "http://second")
 
         then: "It is told to call the first one"
         follow == [new URL("http://first"), cloudURL]
     }
 
-    def "the third till in the group should be told to calls the first till and the cloud"() {
-        given: "We have one till registered"
+    def "the third node in the group should be told to calls the first node and the cloud"() {
+        given: "We have one node registered"
         registerNode("x", "http://first")
 
-        and: "Second till registers"
+        and: "Second node registers"
         registerNode("x", "http://second")
 
-        when: "Third till registers"
+        when: "Third node registers"
         def follow = registerNode("x", "http://third")
 
         then: "It is told to call the first one"
@@ -272,12 +272,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     }
 
 
-    def "registering the same till again returns the unchanged hierarchy"() {
-        given: "We have two tills registered"
+    def "registering the same node again returns the unchanged hierarchy"() {
+        given: "We have two nodes registered"
         def expectedFirst = registerNode("x", "http://first")
         def expectedSecond = registerNode("x", "http://second")
 
-        when: "Both tills re-register"
+        when: "Both nodes re-register"
         def actualFirst = registerNode("x", "http://first")
         def actualSecond = registerNode("x", "http://second")
 
@@ -286,7 +286,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         actualSecond == expectedSecond
     }
 
-    def "registering the same till again does not break the original hierarchy in storage"() {
+    def "registering the same node again does not break the original hierarchy in storage"() {
         given: "some nodes"
         registerNode("x", "http://first")
         registerNode("x", "http://second")
@@ -301,11 +301,11 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     }
 
     def "nodes can update state without changing hierachy"() {
-        given: "two tills register"
+        given: "two nodes register"
         registerNode("x", "http://first")
         registerNode("x", "http://second")
 
-        when: "first till re-registers"
+        when: "first node re-registers"
         registerNode("x", "http://first", 0, PENDING, [], null)
 
         then: "It's state is updated"
@@ -407,26 +407,26 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         iterations | threads | timeout | name
         2          | 2       | 5       | "case A" // we have seen bad changes to the code that make case A and B pass/fail in a non-deterministic way, hence they're here
         2          | 2       | 5       | "case B"
-        1          | 1       | 1       | "1 till"
-        10         | 1       | 1       | "1 till 10 calls"
-        2          | 2       | 1       | "2 tills"
-        10         | 2       | 5       | "2 tills 10 calls"
-        3          | 3       | 1       | "3 tills"
-        10         | 3       | 5       | "3 tills 10 calls"
-        100        | 3       | 5       | "3 tills 100 calls"
-        500        | 3       | 20      | "3 tills 500 calls"
-        10         | 10      | 3       | "10 tills"
-        50         | 50      | 3       | "50 tills"
-        100        | 100     | 5       | "100 tills"
-        250        | 250     | 10      | "250 tills"
+        1          | 1       | 1       | "1 node"
+        10         | 1       | 1       | "1 node 10 calls"
+        2          | 2       | 1       | "2 nodes"
+        10         | 2       | 5       | "2 nodes 10 calls"
+        3          | 3       | 1       | "3 nodes"
+        10         | 3       | 5       | "3 nodes 10 calls"
+        100        | 3       | 5       | "3 nodes 100 calls"
+        500        | 3       | 20      | "3 nodes 500 calls"
+        10         | 10      | 3       | "10 nodes"
+        50         | 50      | 3       | "50 nodes"
+        100        | 100     | 5       | "100 nodes"
+        250        | 250     | 10      | "250 nodes"
     }
 
-    def "node registry can handle concurrent multiple group requests (10 stores with 50 tills each)"() {
+    def "node registry can handle concurrent multiple group requests (10 stores with 50 nodes each)"() {
         when: "nodes register concurrently"
-        def tills = 500
-        ExecutorService pool = Executors.newFixedThreadPool(tills)
+        def nodes = 500
+        ExecutorService pool = Executors.newFixedThreadPool(nodes)
         PollingConditions conditions = new PollingConditions(timeout: 10)
-        tills.times{ i ->
+        nodes.times{ i ->
             pool.execute{
                 registerNode("x" + i % 10, "http://" + i, i)
             }
@@ -467,8 +467,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
     def "when there is contention for first node, this is handled safely"() {
         given:
-        int tills = 200
-        int threads = tills
+        int nodes = 200
+        int threads = nodes
 
         when: "100 nodes register concurrently"
         ExecutorService pool = Executors.newFixedThreadPool(threads)
@@ -476,7 +476,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         CompletableFuture startLock = new CompletableFuture()
 
-        tills.times { i ->
+        nodes.times { i ->
             pool.execute{
                 startLock.get()
                 registerNode("x", "http://" + i, i)
@@ -487,7 +487,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "summary of the registry is as expected"
         conditions.eventually {
-            assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == tills
+            assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == nodes
         }
 
         cleanup:
@@ -523,7 +523,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     }
 
     def "Delete node from database if exists"() {
-        given: "two tills register"
+        given: "two nodes register"
         registerNode("x", "http://first")
         registerNode("x", "http://second")
 

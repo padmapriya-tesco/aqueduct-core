@@ -86,7 +86,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         body.offset.first() == offset
     }
 
-    def "basic auth is used when settings are provided calling another till"() {
+    def "basic auth is used when settings are provided calling another node"() {
         given: "latest offset requiring authentication"
         server = new ErsatzServer({
             authentication {

@@ -4,8 +4,8 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.registry.model.Bootstrap
 import com.tesco.aqueduct.registry.model.BootstrapType
-import com.tesco.aqueduct.registry.model.Till
-import com.tesco.aqueduct.registry.model.TillStorage
+import com.tesco.aqueduct.registry.model.NodeRequest
+import com.tesco.aqueduct.registry.model.NodeRequestStorage
 import groovy.sql.Sql
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -19,7 +19,7 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-class PostgresSQLTIllStorageIntegrationSpec extends Specification {
+class PostgresSQLNodeRequestStorageIntegrationSpec extends Specification {
 
     @ClassRule @Shared
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
@@ -27,7 +27,7 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
     @AutoCleanup
     Sql sql
     DataSource dataSource
-    TillStorage tillStorage
+    NodeRequestStorage nodeRequestStorage
 
     def setup() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -49,15 +49,15 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
             );
         """)
 
-        tillStorage = new PostgreSQLTillStorage(dataSource)
+        nodeRequestStorage = new PostgreSQLNodeRequestStorage(dataSource)
     }
 
-    def "When a till is updated an entry is added to the database"() {
-        given: "a postgres till storage"
+    def "When a node request is updated an entry is added to the database"() {
+        given: "a postgres node request storage"
 
         when: "bootstrap is requested"
         LocalDateTime now = LocalDateTime.now()
-        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
+        nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")
@@ -69,16 +69,16 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
         rows.get(0).getProperty("bootstrap_received") == null
     }
 
-    def "when a till is updated twice, the first request is overwritten"() {
-        given: "a postgres till storage"
+    def "when a node request is updated twice, the first request is overwritten"() {
+        given: "a postgres node request storage"
 
         when: "bootstrap is requested for the first time"
         LocalDateTime firstTime = LocalDateTime.now()
-        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, firstTime)))
+        nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(BootstrapType.PROVIDER, firstTime)))
 
         and: "bootstrap is requested for the second time with different params"
         LocalDateTime secondTime = LocalDateTime.now()
-        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PIPE_AND_PROVIDER, secondTime)))
+        nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(BootstrapType.PIPE_AND_PROVIDER, secondTime)))
 
         then: "data store contains the correct entry"
         def rows = sql.rows("SELECT * FROM tills;")
@@ -92,12 +92,12 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
 
     @Unroll
     def "when I read with host-id it should return the BootstrapType"() {
-        given: "data is stored within a postgres till storage"
+        given: "data is stored within a postgres node request storage"
         LocalDateTime now = LocalDateTime.now()
-        tillStorage.save(new Till("host-id", new Bootstrap(bootstrapType, now)))
+        nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(bootstrapType, now)))
 
         when: "read is called with the host-id"
-        def returnedBootstrap = tillStorage.requiresBootstrap("host-id")
+        def returnedBootstrap = nodeRequestStorage.requiresBootstrap("host-id")
 
         then: "the BootstrapType is returned"
         returnedBootstrap == bootstrapType
@@ -107,28 +107,28 @@ class PostgresSQLTIllStorageIntegrationSpec extends Specification {
     }
 
     def "bootstrap request is only sent once"() {
-        given: "data is stored within a postgres till storage"
+        given: "data is stored within a postgres node request storage"
         LocalDateTime now = LocalDateTime.now()
-        tillStorage.save(new Till("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
+        nodeRequestStorage.save(new NodeRequest("host-id", new Bootstrap(BootstrapType.PROVIDER, now)))
 
         when: "read is called with the host-id"
-        def firstReturnedBootstrap = tillStorage.requiresBootstrap("host-id")
+        def firstReturnedBootstrap = nodeRequestStorage.requiresBootstrap("host-id")
 
         and: "read is called for a second time"
-        def secondReturnedBootstrap = tillStorage.requiresBootstrap("host-id")
+        def secondReturnedBootstrap = nodeRequestStorage.requiresBootstrap("host-id")
 
         then: "bootstrap is only returned once"
         firstReturnedBootstrap == BootstrapType.PROVIDER
         secondReturnedBootstrap == BootstrapType.NONE
     }
 
-    def "bootstrap request is made when till doesn't exist"() {
-        given: "the till doesn't exist"
+    def "bootstrap request is made when node request doesn't exist"() {
+        given: "the node request doesn't exist"
 
         when: "read is called with the host-id"
-        def response = tillStorage.requiresBootstrap("host-id")
+        def response = nodeRequestStorage.requiresBootstrap("host-id")
 
-        then: "bootstrap is only returned once"
+        then: "bootstrap is not returned"
         response == BootstrapType.NONE
     }
 }
