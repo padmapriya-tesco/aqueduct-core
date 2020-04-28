@@ -1,5 +1,8 @@
 dependencies {
     compile project(":registry-core")
+
+    addMicronautDependencies()
+
     compile 'io.micronaut:micronaut-http-server-netty'
     compile 'ch.qos.logback:logback-classic:1.2.3'
     testCompile 'com.opentable.components:otj-pg-embedded:0.13.0'
