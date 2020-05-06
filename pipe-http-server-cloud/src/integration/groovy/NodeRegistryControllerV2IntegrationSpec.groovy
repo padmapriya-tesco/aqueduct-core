@@ -6,9 +6,9 @@ import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.model.TillStorage
+import com.tesco.aqueduct.registry.model.NodeRequestStorage
 import com.tesco.aqueduct.registry.model.BootstrapType
-import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRequestStorage
 import groovy.json.JsonOutput
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
@@ -67,7 +67,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     DataSource dataSource
     NodeRegistry registry
-    TillStorage tillStorage
+    NodeRequestStorage nodeRequestStorage
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -89,9 +89,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         """)
 
         sql.execute("""
-            DROP TABLE IF EXISTS tills;
+            DROP TABLE IF EXISTS node_requests;
             
-            CREATE TABLE tills(
+            CREATE TABLE node_requests(
             host_id VARCHAR PRIMARY KEY NOT NULL,
             bootstrap_requested timestamp NOT NULL,
             bootstrap_type VARCHAR NOT NULL,
@@ -99,7 +99,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             );
         """)
 
-        tillStorage = new PostgreSQLTillStorage(dataSource)
+        nodeRequestStorage = new PostgreSQLNodeRequestStorage(dataSource)
         registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
     }
 
@@ -159,7 +159,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .build()
             .registerSingleton(NodeRegistry, registry)
             .registerSingleton(Reader, reader)
-            .registerSingleton(TillStorage, tillStorage)
+            .registerSingleton(NodeRequestStorage, nodeRequestStorage)
             .start()
 
         identityMock.clearExpectations()
@@ -441,22 +441,22 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     @Unroll
-    def "when a bootstrap is requested, a bootstrap request is saved for that till"() {
+    def "when a bootstrap is requested, a bootstrap request is saved for that node"() {
         when: "bootstrap is called"
         given()
             .contentType("application/json")
         .when()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
-                "tillHosts": ["0000", "1111", "2222"], 
+                "nodeRequests": ["0000", "1111", "2222"], 
                 "bootstrapType": "$bootstrapString"
             }""")
             .post("/v2/registry/bootstrap")
         .then()
             .statusCode(statusCode)
 
-        then: "till is saved"
-        def rows = sql.rows("SELECT * FROM tills;")
+        then: "node request is saved"
+        def rows = sql.rows("SELECT * FROM node_requests;")
 
         rows.get(0).getProperty("host_id") == "0000"
         rows.get(0).getProperty("bootstrap_requested") != null
@@ -486,15 +486,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .when()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
-                "tillHosts": ["0000", "1111", "2222"], 
+                "nodeRequests": ["0000", "1111", "2222"], 
                 "bootstrapType": "INVALID"
              }""")
             .post("/v2/registry/bootstrap")
         .then()
             .statusCode(400)
 
-        then: "till is not saved"
-        def rows = sql.rows("SELECT * FROM tills;")
+        then: "node request is not saved"
+        def rows = sql.rows("SELECT * FROM node_requests;")
         rows.size() == 0
     }
 
