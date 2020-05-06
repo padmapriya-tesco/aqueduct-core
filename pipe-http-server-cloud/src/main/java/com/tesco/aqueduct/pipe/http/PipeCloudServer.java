@@ -23,6 +23,7 @@ public class PipeCloudServer {
         LOG.info("Pipe cloud server", "server started");
         Micronaut.run(new Class[]{
             PipeReadController.class,
+            PipeErrorHandler.class,
             NodeRegistryControllerV2.class
         });
     }
