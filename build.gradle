@@ -205,6 +205,14 @@ subprojects {
 
     version scmVersion.version
 
+    jar {
+        manifest {
+            attributes 'Specification-Version': scmVersion.version
+            attributes 'Implementation-Title': 'com.tesco.aqueduct.pipe'
+            attributes 'Implementation-Version': scmVersion.version
+        }
+    }
+
     repositories {
         jcenter()
         mavenCentral()
