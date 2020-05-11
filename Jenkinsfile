@@ -37,14 +37,14 @@ ansiColor('xterm') {
         String latestImage = "$registry/aqueduct-pipe:latest"
 
 
-                stage("spotbugs") {
+
                     stage('Spot Bugs') {
                         sh "./gradlew spotbugsMain"
                         def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
                         publishIssues issues: [spotbugs]
                     }
-                }
-                stage("pmd") {
+
+
                     stage('Pmd Analysis') {
                         sh "./gradlew pmdMain"
                         def pmd
@@ -56,14 +56,14 @@ ansiColor('xterm') {
 
                         publishIssues issues: [pmd]
                     }
-                }
-                stage("owasp") {
+
+
                     stage('OWASP Scan') {
                         sh "./gradlew dependencyCheckAggregate"
                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: 'Dependency Check Report'])
                     }
-                }
-                stage("unitTests") {
+
+
                     stage('Unit Test') {
                         try {
                             sh "./gradlew test"
@@ -72,8 +72,8 @@ ansiColor('xterm') {
                             throw err
                         }
                     }
-                }
-                stage("integrationTests") {
+
+
                     stage('Integration Test') {
                         try {
                             sh "./gradlew integration"
@@ -82,7 +82,7 @@ ansiColor('xterm') {
                             throw err
                         }
                     }
-                }
+
 
         stage('Publish Test Report') {
             junit '**/build/test-results/test/*.xml'
