@@ -36,53 +36,50 @@ ansiColor('xterm') {
         String ppeRollbackImage = "$registry/aqueduct-pipe:ppe-rollback-from-${scmVars.GIT_COMMIT}"
         String latestImage = "$registry/aqueduct-pipe:latest"
 
-
-
-                    stage('Spot Bugs') {
-                        sh "./gradlew spotbugsMain"
-                        def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
-                        publishIssues issues: [spotbugs]
-                    }
-
-
-                    stage('Pmd Analysis') {
-                        sh "./gradlew pmdMain"
-                        def pmd
-                        try {
-                            pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
-                        } catch (exception) {
-                            echo exception.message
-                        }
-
-                        publishIssues issues: [pmd]
-                    }
-
-
-                    stage('OWASP Scan') {
-                        sh "./gradlew dependencyCheckAggregate"
-                        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: 'Dependency Check Report'])
-                    }
-
-
-                    stage('Unit Test') {
-                        try {
-                            sh "./gradlew test"
-                        } catch (err) {
-                            junit '**/build/test-results/test/*.xml'
-                            throw err
-                        }
-                    }
-
-
-                    stage('Integration Test') {
-                        try {
-                            sh "./gradlew integration"
-                        } catch (err) {
-                            junit '**/build/test-results/test/*.xml'
-                            throw err
-                        }
-                    }
-
+        stage('Run Tests') {
+             parallel(
+                 spotbugs: {
+                     stage('Spot Bugs') {
+                         sh "./gradlew spotbugsMain"
+                         def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
+                         publishIssues issues: [spotbugs]
+                     }
+                 },
+                 pmd: {
+                     stage('Pmd Analysis') {
+                         sh "./gradlew pmdMain"
+                         def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
+                         publishIssues issues: [pmd]
+                     }
+                 },
+                 owasp: {
+                     stage('OWASP Scan') {
+                         sh "./gradlew dependencyCheckAggregate"
+                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: 'Dependency Check Report'])
+                     }
+                 },
+                 unitTests: {
+                     stage('Unit Test') {
+                         try {
+                             sh "./gradlew test"
+                         } catch (err) {
+                             junit '**/build/test-results/test/*.xml'
+                             throw err
+                         }
+                     }
+                 },
+                 integrationTests: {
+                     stage('Integration Test') {
+                         try {
+                             sh "./gradlew integration"
+                         } catch (err) {
+                             junit '**/build/test-results/test/*.xml'
+                             throw err
+                         }
+                     }
+                 }
+             )
+         }
 
         stage('Publish Test Report') {
             junit '**/build/test-results/test/*.xml'
