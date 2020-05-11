@@ -95,7 +95,7 @@ public class PipeServiceInstance implements ServiceInstance {
     }
 
     private URI getUriWithBasePath(final URI relativeURI) throws URISyntaxException {
-        // replace() needed to make it compatible with the interim till Windows file system
+        // replace() needed to make it compatible with the Windows file system
         final String path = Paths.get(url.getPath(), relativeURI.getPath()).toString().replace('\\', '/');
         return new URI(
             relativeURI.getScheme(),

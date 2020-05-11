@@ -10,13 +10,13 @@ import java.util.List;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BootstrapRequest {
-    private final List<String> tillHosts;
+    private final List<String> nodeRequests;
     private final BootstrapType bootstrapType;
 
-    public void save(TillStorage tillStorage) throws SQLException {
-        for (String tillHost : tillHosts) {
-            tillStorage.save(
-                new Till(tillHost, new Bootstrap(bootstrapType, LocalDateTime.now()))
+    public void save(NodeRequestStorage nodeRequestStorage) throws SQLException {
+        for (String nodeRequest : nodeRequests) {
+            nodeRequestStorage.save(
+                new NodeRequest(nodeRequest, new Bootstrap(bootstrapType, LocalDateTime.now()))
             );
         }
     }

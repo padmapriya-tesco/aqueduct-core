@@ -10,8 +10,8 @@ import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
-import com.tesco.aqueduct.registry.postgres.PostgreSQLTillStorage;
-import com.tesco.aqueduct.registry.model.TillStorage;
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRequestStorage;
+import com.tesco.aqueduct.registry.model.NodeRequestStorage;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Value;
@@ -48,8 +48,8 @@ public class Bindings {
 
     @Singleton
     @Measure
-    TillStorage bindTillStorage(@Named("postgres") final DataSource dataSource) {
-        return new PostgreSQLTillStorage(dataSource);
+    NodeRequestStorage bindNodeRequestStorage(@Named("postgres") final DataSource dataSource) {
+        return new PostgreSQLNodeRequestStorage(dataSource);
     }
 
     @Singleton

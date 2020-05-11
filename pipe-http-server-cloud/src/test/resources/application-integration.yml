@@ -66,8 +66,8 @@ authentication:
       id: "${IDENTITY_CLIENT_ID}"
       secret: "${IDENTITY_CLIENT_SECRET}"
     users:
-      till:
-        clientId: "${TILL_CLIENT_UID}"
+      nodeA:
+        clientId: "${NODE_A_CLIENT_UID}"
         roles:
           - PIPE_READ
           - REGISTRY_WRITE
