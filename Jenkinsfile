@@ -48,7 +48,13 @@ ansiColor('xterm') {
                 pmd: {
                     stage('Pmd Analysis') {
                         sh "./gradlew pmdMain"
-                        def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
+                        def pmd
+                        try {
+                            pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
+                        } catch (exception) {
+                            echo exception.message
+                        }
+
                         publishIssues issues: [pmd]
                     }
                 },
