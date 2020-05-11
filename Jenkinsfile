@@ -83,8 +83,6 @@ ansiColor('xterm') {
                         }
                     }
                 }
-            )
-        }
 
         stage('Publish Test Report') {
             junit '**/build/test-results/test/*.xml'
