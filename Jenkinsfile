@@ -36,16 +36,15 @@ ansiColor('xterm') {
         String ppeRollbackImage = "$registry/aqueduct-pipe:ppe-rollback-from-${scmVars.GIT_COMMIT}"
         String latestImage = "$registry/aqueduct-pipe:latest"
 
-        stage('Run Tests') {
-            parallel(
-                spotbugs: {
+
+                stage("spotbugs") {
                     stage('Spot Bugs') {
                         sh "./gradlew spotbugsMain"
                         def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
                         publishIssues issues: [spotbugs]
                     }
-                },
-                pmd: {
+                }
+                stage("pmd") {
                     stage('Pmd Analysis') {
                         sh "./gradlew pmdMain"
                         def pmd
@@ -57,14 +56,14 @@ ansiColor('xterm') {
 
                         publishIssues issues: [pmd]
                     }
-                },
-                owasp: {
+                }
+                stage("owasp") {
                     stage('OWASP Scan') {
                         sh "./gradlew dependencyCheckAggregate"
                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: 'Dependency Check Report'])
                     }
-                },
-                unitTests: {
+                }
+                stage("unitTests") {
                     stage('Unit Test') {
                         try {
                             sh "./gradlew test"
@@ -73,8 +72,8 @@ ansiColor('xterm') {
                             throw err
                         }
                     }
-                },
-                integrationTests: {
+                }
+                stage("integrationTests") {
                     stage('Integration Test') {
                         try {
                             sh "./gradlew integration"
