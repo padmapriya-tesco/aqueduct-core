@@ -1,7 +1,10 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.api.MessageResults
 import com.tesco.aqueduct.pipe.api.OffsetEntity
+import com.tesco.aqueduct.pipe.api.PipeState
+import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.sql.DataSource
@@ -9,6 +12,8 @@ import java.sql.DriverManager
 import java.sql.SQLException
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET
 
@@ -22,29 +27,25 @@ class SQLiteStorageSpec extends Specification {
     def message(long offset, String type) {
         def timeNow = ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
         return new Message(
-                type,
-                "some-key",
-                "text/plain",
-                offset,
-                timeNow,
-                null,
-                "some-data"
+            type,
+            "some-key",
+            "text/plain",
+            offset,
+            timeNow,
+            null
         )
     }
 
     def dataSource
+    @Shared
     SQLiteStorage sqliteStorage
 
     def setup() {
         dataSource = Mock(DataSource)
-
-        dataSource.getConnection() >>
-            DriverManager.getConnection(connectionUrl) >>
-            DriverManager.getConnection(connectionUrl) >>
-            DriverManager.getConnection(connectionUrl) >>
-            {throw new SQLException()}
-
+        dataSource.getConnection() >> {DriverManager.getConnection(connectionUrl)}
         sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
+        //make sure everything is clear before starting
+        sqliteStorage.deleteAll()
     }
 
     def message(long offset) {
@@ -53,6 +54,13 @@ class SQLiteStorageSpec extends Specification {
 
     def 'throws an exception if a problem with the database arises when reading messages'() {
         given: 'a data store controller exists with a broken connection url'
+        dataSource = Mock(DataSource)
+        dataSource.getConnection() >>
+            DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
+            {throw new SQLException()}
+        sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'messages are requested to be read from a given offset'
         sqliteStorage.read([], 0)
@@ -63,6 +71,13 @@ class SQLiteStorageSpec extends Specification {
 
     def 'throws an exception if a problem with the database arises when writing messages'() {
         given: 'a data store controller exists with a broken connection url'
+        dataSource = Mock(DataSource)
+        dataSource.getConnection() >>
+            DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
+            {throw new SQLException()}
+        sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'the latest offset is requested'
         sqliteStorage.write(message(1))
@@ -73,9 +88,16 @@ class SQLiteStorageSpec extends Specification {
 
     def 'throws an exception if a problem with the database arises when writing latest offset'() {
         given: 'a data store controller exists with a broken connection url'
+        dataSource = Mock(DataSource)
+        dataSource.getConnection() >>
+            DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
+            {throw new SQLException()}
+        sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'the latest offset is written'
-        sqliteStorage.write(new OffsetEntity("someOffsetName", OptionalLong.of(100)))
+        sqliteStorage.write(new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(100)))
 
         then: 'a runtime exception is thrown'
         thrown(RuntimeException)
@@ -103,13 +125,6 @@ class SQLiteStorageSpec extends Specification {
     def 'retry read time limit should be activated only when the amount of received messages is 0'() {
         given: 'a data store controller'
         def retryAfter = 10
-        def dataSource = Mock(DataSource)
-        dataSource.getConnection() >>
-            DriverManager.getConnection(connectionUrl) >>
-            DriverManager.getConnection(connectionUrl) >>
-            DriverManager.getConnection(connectionUrl) >>
-            { throw new SQLException() }
-
         def sqliteStorage = new SQLiteStorage(dataSource, testLimit, retryAfter, batchSize)
 
         when: 'the retry after is calculated'
@@ -130,5 +145,25 @@ class SQLiteStorageSpec extends Specification {
         100       | 100          | 0
         99        | 100          | 0
         0         | 1            | 0
+    }
+
+    def 'concurrent write of global latest offset doesnt cause inconsistencies' () {
+        given: 'sqlite storage with a message and offsets loaded'
+        sqliteStorage = new SQLiteStorage(dataSource, 1, 1, 1)
+        sqliteStorage.write(message(1L))
+        sqliteStorage.write(new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(1L)))
+        sqliteStorage.write(PipeState.UP_TO_DATE)
+
+        when: 'read is called and write happens concurrently'
+        ExecutorService pool = Executors.newFixedThreadPool(1)
+        pool.execute{
+            //sleep just long enough for the offset write to run during the read
+            sleep 1
+            sqliteStorage.write(new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(10L)))
+        }
+        MessageResults messageResults = sqliteStorage.read(["some-type"],0, ["na"])
+
+        then: 'global offset that is read is not the concurrently written one, but a consistent one'
+        messageResults.globalLatestOffset.asLong == 1L
     }
 }
