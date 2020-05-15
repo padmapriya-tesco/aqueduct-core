@@ -62,6 +62,13 @@ public class SQLiteStorage implements DistributedStorage {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 
+        /*
+         * Assumption is that reading offset and state before messages will be consistent, could be wrong
+         * We think this is better than before, but needs more investigation in the future
+         */
+        OptionalLong globalLatestOffset = getOffset(GLOBAL_LATEST_OFFSET);
+        PipeState pipeState = getPipeState();
+
         execute(
             SQLiteQueries.getReadEvent(typesCount, maxBatchSize),
             (connection, statement) -> {
@@ -82,7 +89,7 @@ public class SQLiteStorage implements DistributedStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getOffset(GLOBAL_LATEST_OFFSET), getPipeState());
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), globalLatestOffset, pipeState);
     }
 
     @Override
