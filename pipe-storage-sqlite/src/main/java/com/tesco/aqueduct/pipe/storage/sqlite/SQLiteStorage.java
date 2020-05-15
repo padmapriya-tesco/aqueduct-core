@@ -62,6 +62,9 @@ public class SQLiteStorage implements DistributedStorage {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 
+        OptionalLong globalLatestOffset = getOffset(GLOBAL_LATEST_OFFSET);
+        PipeState pipeState = getPipeState();
+
         execute(
             SQLiteQueries.getReadEvent(typesCount, maxBatchSize),
             (connection, statement) -> {
@@ -82,7 +85,7 @@ public class SQLiteStorage implements DistributedStorage {
             }
         );
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), getOffset(GLOBAL_LATEST_OFFSET), getPipeState());
+        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), globalLatestOffset, pipeState);
     }
 
     @Override
