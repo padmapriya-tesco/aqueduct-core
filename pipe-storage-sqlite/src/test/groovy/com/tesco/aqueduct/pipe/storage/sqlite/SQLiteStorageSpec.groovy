@@ -158,7 +158,7 @@ class SQLiteStorageSpec extends Specification {
         ExecutorService pool = Executors.newFixedThreadPool(1)
         pool.execute{
             //sleep just long enough for the offset write to run during the read
-            sleep 1
+            sleep 5
             sqliteStorage.write(new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(10L)))
         }
         MessageResults messageResults = sqliteStorage.read(["some-type"],0, ["na"])
