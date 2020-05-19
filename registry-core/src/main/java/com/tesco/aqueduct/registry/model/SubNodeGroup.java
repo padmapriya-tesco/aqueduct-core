@@ -16,18 +16,23 @@ public class SubNodeGroup {
 
     public final String subGroupId; //this is version for now
 
-    public SubNodeGroup(List<Node> nodes, String subGroupId) {
-        this.nodes = nodes;
+    public SubNodeGroup(String subGroupId) {
+        this.nodes = new ArrayList<>();
         this.subGroupId = subGroupId;
     }
 
-    public boolean isNodeMember(Node node) {
+    public boolean isFor(Node node) {
         return node.getPipeVersion().equals(subGroupId);
     }
 
     public Node add(Node node, URL cloudUrl) {
         final List<URL> followUrls = calculateFollowerUrls(cloudUrl, getNodeUrls().size());
         final Node newNode = node.buildWith(followUrls);
+        nodes.add(newNode);
+        return newNode;
+    }
+
+    public Node add(Node newNode) {
         nodes.add(newNode);
         return newNode;
     }
@@ -123,7 +128,11 @@ public class SubNodeGroup {
         }
     }
 
-    public void addToList(Node node) {
-        nodes.add(node);
+    public Node upsert(final Node node, final URL cloudUrl) {
+        return nodes.stream()
+            .filter(n -> n.getId().equals(node.getId()))
+            .findFirst()
+            .map(n -> updateNode(node.buildWith(n.getRequestedToFollow())))
+            .orElse(add(node, cloudUrl));
     }
 }

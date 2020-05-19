@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class NodeGroup {
@@ -17,18 +16,26 @@ public class NodeGroup {
     }
 
     public NodeGroup(final List<Node> nodes) {
-        for(Node node : nodes) {
-            subGroups.add(subGroups.stream()
-                .filter(subNodeGroup -> subNodeGroup.isNodeMember(node))
-                .findFirst()
-                .map(subNodeGroup -> {
-                    subNodeGroup.addToList(node);
-                    return subNodeGroup;
-                })
-                .orElse(
-                    new SubNodeGroup(Collections.singletonList(node), node.getPipeVersion())
-                ));
-        }
+        nodes.forEach(node ->
+            subGroups.add(existingOrNewSubNodeGroupFor(node))
+        );
+    }
+
+    private SubNodeGroup existingOrNewSubNodeGroupFor(Node node) {
+        return subGroups.stream()
+            .filter(subNodeGroup -> subNodeGroup.isFor(node))
+            .findFirst()
+            .map(subNodeGroup -> {
+                subNodeGroup.add(node);
+                return subNodeGroup;
+            })
+            .orElse(newSubGroupNodeFor(node));
+    }
+
+    private SubNodeGroup newSubGroupNodeFor(Node node) {
+        SubNodeGroup subNodeGroup = new SubNodeGroup(node.getPipeVersion());
+        subNodeGroup.add(node);
+        return subNodeGroup;
     }
 
     public boolean isEmpty() {
@@ -40,7 +47,7 @@ public class NodeGroup {
     }
 
     public Node add(final Node node, final URL cloudUrl) {
-        subGroups.stream().filter(subNodeGroup -> subNodeGroup.isNodeMember(node))
+        subGroups.stream().filter(subNodeGroup -> subNodeGroup.isFor(node))
             .findFirst()
             .ifPresen
         return subGroups.get(0).add(node, cloudUrl);
@@ -51,7 +58,7 @@ public class NodeGroup {
     }
 
     public Node getById(final Node node) {
-        return subGroups.stream().filter(s -> s.isNodeMember(node)).
+        return subGroups.stream().filter(s -> s.isFor(node)).
         return subGroups.get(0).getById(nodeId);
     }
 
@@ -75,24 +82,16 @@ public class NodeGroup {
         subGroups.get(0).sortOfflineNodes(cloudUrl);
     }
 
-    public Node upsert(Node nodeToRegister, URL cloudUrl) {
-
-        subGroups.stream()
-            .filter(s -> s.isNodeMember(nodeToRegister))
+    public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
+        return subGroups.stream()
+            .filter(group -> group.isFor(nodeToRegister))
             .findFirst()
-            .map(s -> s.getById(nodeToRegister.getId()))
-            .ifPresent();
-
-
-
-        if (node == null) {
-            node = add(nodeToRegister, cloudUrl);
-        } else {
-            node = nodeToRegister.buildWith(node.getRequestedToFollow());
-            updateNode(node);
-        }
-
-        return node;
+            .map(subGroup -> subGroup.upsert(nodeToRegister, cloudUrl))
+            .orElseGet(() -> {
+                SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getPipeVersion());
+                subGroups.add(subNodeGroup);
+                return subNodeGroup.add(nodeToRegister);
+            });
     }
 
 }
