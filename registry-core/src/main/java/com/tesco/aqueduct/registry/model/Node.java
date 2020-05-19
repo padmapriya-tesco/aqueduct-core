@@ -84,7 +84,7 @@ public class Node {
         return localUrl.getHost();
     }
 
-    public Node buildWith(List<URL> followUrls, ZonedDateTime lastSeen) {
+    public Node buildWith(List<URL> followUrls) {
         return this.toBuilder()
             .requestedToFollow(followUrls)
             .lastSeen(ZonedDateTime.now())
@@ -93,5 +93,9 @@ public class Node {
 
     public boolean isOffline() {
         return getStatus() == OFFLINE;
+    }
+
+    public String getPipeVersion() {
+        return pipe.get("v");
     }
 }

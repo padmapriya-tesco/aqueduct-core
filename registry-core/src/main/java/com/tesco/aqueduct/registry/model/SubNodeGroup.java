@@ -14,22 +14,28 @@ public class SubNodeGroup {
 
     public final List<Node> nodes;
 
-    public SubNodeGroup(List<Node> nodes) {
+    public final String subGroupId; //this is version for now
+
+    public SubNodeGroup(List<Node> nodes, String subGroupId) {
         this.nodes = nodes;
+        this.subGroupId = subGroupId;
+    }
+
+    public boolean isNodeMember(Node node) {
+        return node.getPipeVersion().equals(subGroupId);
     }
 
     public Node add(Node node, URL cloudUrl) {
         final List<URL> followUrls = calculateFollowerUrls(cloudUrl, getNodeUrls().size());
-        final Node newNode = node.buildWith(followUrls, ZonedDateTime.now());
+        final Node newNode = node.buildWith(followUrls);
         nodes.add(newNode);
         return newNode;
-
     }
 
     public List<URL> getNodeUrls() {
         return nodes.stream()
-                .map(Node::getLocalUrl)
-                .collect(Collectors.toList());
+            .map(Node::getLocalUrl)
+            .collect(Collectors.toList());
     }
 
     private List<URL> calculateFollowerUrls(final URL cloudUrl, int nodeIndex) {
@@ -78,5 +84,46 @@ public class SubNodeGroup {
             .filter(n -> n.getId().equals(nodeId))
             .findAny()
             .orElse(null);
+    }
+
+    public boolean isEmpty() {
+        return nodes.isEmpty();
+    }
+
+    public boolean removeByHost(String host) {
+        return nodes.removeIf(node -> node.getHost().equals(host));
+    }
+
+    public Node get(int index) {
+        return nodes.get(index);
+    }
+
+    public Node updateNode(Node updatedNode) {
+        for (int i = 0; i < nodes.size(); i++) {
+            if (nodes.get(i).getId().equals(updatedNode.getId())) {
+                return nodes.set(i, updatedNode);
+            }
+        }
+
+        throw new IllegalStateException("The node was not found " + updatedNode.getId());
+    }
+
+    public void sortOfflineNodes(URL cloudUrl) {
+        nodes.sort(this::comparingStatus);
+        updateGetFollowing(cloudUrl);
+    }
+
+    private int comparingStatus(Node node1, Node node2) {
+        if (node1.isOffline() && !node2.isOffline()) {
+            return 1;
+        } else if (!node1.isOffline() && node2.isOffline()) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    public void addToList(Node node) {
+        nodes.add(node);
     }
 }

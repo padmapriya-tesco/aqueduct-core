@@ -86,7 +86,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
 
         final List<Node> followers = groups.stream()
-            .map(group -> group.nodes)
+            .map(group -> group.subGroups.get(0).nodes)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
 

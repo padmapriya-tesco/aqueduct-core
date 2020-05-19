@@ -6,60 +6,61 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.tesco.aqueduct.registry.model.Status.OFFLINE;
 
 public class NodeGroup {
-    public final List<Node> nodes;
-
-    public final List<SubNodeGroup> subGroups ;
+    public final List<SubNodeGroup> subGroups = new ArrayList<>();
 
     public NodeGroup() {
         this(new ArrayList<>());
     }
 
     public NodeGroup(final List<Node> nodes) {
-        this.nodes = nodes;
-        subGroups = new ArrayList<>();
-        SubNodeGroup subNodeGroup = new SubNodeGroup(nodes);
-        subGroups.add(subNodeGroup);
+        for(Node node : nodes) {
+            subGroups.add(subGroups.stream()
+                .filter(subNodeGroup -> subNodeGroup.isNodeMember(node))
+                .findFirst()
+                .map(subNodeGroup -> {
+                    subNodeGroup.addToList(node);
+                    return subNodeGroup;
+                })
+                .orElse(
+                    new SubNodeGroup(Collections.singletonList(node), node.getPipeVersion())
+                ));
+        }
     }
 
     public boolean isEmpty() {
-        return nodes.isEmpty();
+        return subGroups.get(0).isEmpty();
     }
 
     public boolean removeByHost(final String host) {
-        return nodes.removeIf(node -> node.getHost().equals(host));
+        return subGroups.get(0).removeByHost(host);
     }
 
     public Node add(final Node node, final URL cloudUrl) {
+        subGroups.stream().filter(subNodeGroup -> subNodeGroup.isNodeMember(node))
+            .findFirst()
+            .ifPresen
         return subGroups.get(0).add(node, cloudUrl);
     }
 
     public Node get(final int index) {
-        return nodes.get(index);
+        return subGroups.get(0).get(index);
     }
 
-    public Node getById(final String nodeId) {
+    public Node getById(final Node node) {
+        return subGroups.stream().filter(s -> s.isNodeMember(node)).
         return subGroups.get(0).getById(nodeId);
     }
 
     public Node updateNode(final Node updatedNode) {
-        for (int i = 0; i < nodes.size(); i++) {
-            if (nodes.get(i).getId().equals(updatedNode.getId())) {
-                return nodes.set(i, updatedNode);
-            }
-        }
-
-        throw new IllegalStateException("The node was not found " + updatedNode.getId());
+        return subGroups.get(0).updateNode(updatedNode);
     }
 
-
     public String nodesToJson() throws IOException {
-        return JsonHelper.toJson(nodes);
+        return JsonHelper.toJson(subGroups.get(0).nodes);
     }
 
     public void updateGetFollowing(final URL cloudUrl) {
@@ -71,29 +72,23 @@ public class NodeGroup {
     }
 
     public void sortOfflineNodes(final URL cloudUrl) {
-        nodes.sort(this::comparingStatus);
-        updateGetFollowing(cloudUrl);
+        subGroups.get(0).sortOfflineNodes(cloudUrl);
     }
-
-    private int comparingStatus(Node node1, Node node2) {
-        if (node1.isOffline() && !node2.isOffline()) {
-            return 1;
-        } else if (!node1.isOffline() && node2.isOffline()) {
-            return -1;
-        } else {
-            return 0;
-        }
-    }
-
 
     public Node upsert(Node nodeToRegister, URL cloudUrl) {
 
-        Node node = getById(nodeToRegister.getId());
+        subGroups.stream()
+            .filter(s -> s.isNodeMember(nodeToRegister))
+            .findFirst()
+            .map(s -> s.getById(nodeToRegister.getId()))
+            .ifPresent();
+
+
 
         if (node == null) {
             node = add(nodeToRegister, cloudUrl);
         } else {
-            node = nodeToRegister.buildWith(node.getRequestedToFollow(), ZonedDateTime.now());
+            node = nodeToRegister.buildWith(node.getRequestedToFollow());
             updateNode(node);
         }
 
