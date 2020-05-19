@@ -45,8 +45,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         while (count < 10) {
             try (Connection connection = getConnection()) {
                 final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
-
-                Node node = addOrUpdateNodeToGroup(nodeToRegister, group);
+                Node node = group.upsert(nodeToRegister, cloudUrl);
 
                 group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minus(offlineDelta));
                 group.sortOfflineNodes(cloudUrl);
@@ -67,18 +66,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             }
         }
         throw new RuntimeException("Failed to register");
-    }
-
-    private Node addOrUpdateNodeToGroup(Node nodeToRegister, PostgresNodeGroup group) {
-        Node node = group.getById(nodeToRegister.getId());
-        if (node == null) {
-            node = group.add(nodeToRegister, cloudUrl);
-        } else {
-            node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
-            group.updateNode(node);
-        }
-
-        return node;
     }
 
     private Connection getConnection() throws SQLException {
@@ -165,10 +152,4 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return false;
     }
 
-    private Node updateNodeToFollow(final Node node, final List<URL> followURLs) {
-        return node.toBuilder()
-            .requestedToFollow(followURLs)
-            .lastSeen(ZonedDateTime.now())
-            .build();
-    }
 }

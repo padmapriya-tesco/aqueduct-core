@@ -13,6 +13,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static com.tesco.aqueduct.registry.model.Status.OFFLINE;
+
 @Builder(toBuilder = true)
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -80,5 +82,16 @@ public class Node {
     @JsonIgnore
     public String getHost() {
         return localUrl.getHost();
+    }
+
+    public Node buildWith(List<URL> followUrls, ZonedDateTime lastSeen) {
+        return this.toBuilder()
+            .requestedToFollow(followUrls)
+            .lastSeen(ZonedDateTime.now())
+            .build();
+    }
+
+    public boolean isOffline() {
+        return getStatus() == OFFLINE;
     }
 }

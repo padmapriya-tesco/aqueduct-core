@@ -300,7 +300,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .requestedToFollow == [ new URL("http://first"), cloudURL ]
     }
 
-    def "nodes can update state without changing hierachy"() {
+    def "nodes can update state without changing hierarchy"() {
         given: "two nodes register"
         registerNode("x", "http://first")
         registerNode("x", "http://second")
@@ -536,7 +536,19 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodesState.get(0).id == "x|http://second"
     }
 
-    // provided hierarchy, vs expected hierarchy
+    def "the second node in the group with different version to first node should get their own hierarchy"() {
+        given: "We have one node registered"
+        def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
+
+        when: "Second node registers"
+        def secondNode = registerNode("groupA", "http://a2", 123, FOLLOWING, [], ["v":"1.1"])
+
+        then: "both nodes follow cloud"
+        firstNode == [cloudURL]
+        secondNode == [cloudURL]
+    }
+
+// provided hierarchy, vs expected hierarchy
     // update last seen date
 
     def registerNode(
@@ -545,6 +557,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset=0,
         Status status=INITIALISING,
         List<URL> following=[],
+        Map<String, String> pipeProperties=[:],
         List<URL> requestedToFollow=[],
         ZonedDateTime created=null
     ) {
@@ -556,6 +569,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .following(following)
             .lastSeen(created)
             .requestedToFollow(requestedToFollow)
+            .pipe(pipeProperties)
             .build()
 
         registry.register(theNode)

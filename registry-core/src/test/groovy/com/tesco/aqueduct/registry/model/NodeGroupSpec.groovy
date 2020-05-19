@@ -101,7 +101,7 @@ class NodeGroupSpec extends Specification {
         def group = new NodeGroup([node, anotherNode])
 
         when: "all Node urls have been fetched"
-        def result = group.getNodeUrls()
+        def result = group.subGroups.get(0).getNodeUrls()
 
         then: "Both URLs have been returned"
         result == [nodeUrl, anotherNodeUrl]
