@@ -40,7 +40,7 @@ public class NodeGroup {
     }
 
     public boolean isEmpty() {
-        return subGroups.get(0).isEmpty();
+        return subGroups.isEmpty();
     }
 
     public boolean removeByHost(final String host) {
@@ -52,26 +52,12 @@ public class NodeGroup {
         return null;
     }
 
-    public Node get(final int index) {
-        return subGroups.get(0).get(index);
-    }
-
-    public Node getById(final Node node) {
-//        return subGroups.stream().filter(s -> s.isFor(node)).
-//        return subGroups.get(0).getById(nodeId);
-        return null;
-    }
-
-    public Node updateNode(final Node updatedNode) {
-        return subGroups.get(0).update(updatedNode);
-    }
-
     public String nodesToJson() throws IOException {
         return JsonHelper.toJson(subGroups.stream().flatMap(subNodeGroup -> subNodeGroup.nodes.stream()).collect(Collectors.toList()));
     }
 
     public void updateGetFollowing(final URL cloudUrl) {
-        subGroups.get(0).updateGetFollowing(cloudUrl);
+        subGroups.forEach(subgroup -> subgroup.updateGetFollowing(cloudUrl));
     }
 
     public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
@@ -83,6 +69,8 @@ public class NodeGroup {
     }
 
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
+        removeNodeIfSwitchingSubgroup(nodeToRegister);
+
         return subGroups.stream()
             .filter(subGroup -> subGroup.isFor(nodeToRegister))
             .findFirst()
@@ -92,5 +80,17 @@ public class NodeGroup {
                 subGroups.add(subNodeGroup);
                 return subNodeGroup.add(nodeToRegister, cloudUrl);
             });
+    }
+
+    private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {
+        subGroups.stream()
+        .filter(subgroup -> subgroup.getById(nodeToRegister.getId()) != null)
+        .findFirst()
+        .ifPresent(subgroup -> {
+            Node node = subgroup.getById(nodeToRegister.getId());
+            if (!node.getPipeVersion().equals(nodeToRegister.getPipeVersion())) {
+                subgroup.removeByHost(nodeToRegister.getHost());
+            }
+        });
     }
 }

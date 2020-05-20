@@ -37,7 +37,7 @@ public class SubNodeGroup {
         return newNode;
     }
 
-    public List<URL> getNodeUrls() {
+    private List<URL> getNodeUrls() {
         return nodes.stream()
             .map(Node::getLocalUrl)
             .collect(Collectors.toList());

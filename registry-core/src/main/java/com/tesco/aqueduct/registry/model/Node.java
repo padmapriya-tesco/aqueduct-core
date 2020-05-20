@@ -91,10 +91,12 @@ public class Node {
             .build();
     }
 
+    @JsonIgnore
     public boolean isOffline() {
         return getStatus() == OFFLINE;
     }
 
+    @JsonIgnore
     public String getPipeVersion() {
         return pipe.get("v");
     }
