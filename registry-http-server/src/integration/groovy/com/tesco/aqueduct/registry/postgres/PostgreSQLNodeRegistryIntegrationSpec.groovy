@@ -77,14 +77,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         long offset = 12345
 
-        Node expectedNode = Node.builder()
-            .group("group")
-            .localUrl(new URL("http://1.1.1.1"))
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .lastSeen(now)
-            .build()
+        Node expectedNode = createNode("group", new URL("http://1.1.1.1"), offset, FOLLOWING, [cloudURL], now)
 
         when: "The node is registered"
         registry.register(expectedNode)
@@ -111,58 +104,22 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset = 12345
 
         URL url1 = new URL("http://1.1.1.1")
-        Node node1 = Node.builder()
-            .group("group")
-            .localUrl(url1)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL])
 
         URL url2 = new URL("http://2.2.2.2")
-        Node node2 = Node.builder()
-            .group("group")
-            .localUrl(url2)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL])
 
         URL url3 = new URL("http://3.3.3.3")
-        Node node3 = Node.builder()
-            .group("group")
-            .localUrl(url3)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node3 = createNode("group", url3, offset, FOLLOWING, [cloudURL])
 
         URL url4= new URL("http://4.4.4.4")
-        Node node4 = Node.builder()
-            .group("group")
-            .localUrl(url4)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node4 = createNode("group", url4, offset, FOLLOWING, [cloudURL])
 
         URL url5 = new URL("http://5.5.5.5")
-        Node node5 = Node.builder()
-            .group("group")
-            .localUrl(url5)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node5 = createNode("group", url5, offset, FOLLOWING, [cloudURL])
 
         URL url6 = new URL("http://6.6.6.6")
-        Node node6 = Node.builder()
-            .group("group")
-            .localUrl(url6)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node6 = createNode("group", url6, offset, FOLLOWING, [cloudURL])
 
         when: "nodes are registered"
         registry.register(node1)
@@ -306,7 +263,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registerNode("x", "http://second")
 
         when: "first node re-registers"
-        registerNode("x", "http://first", 0, PENDING, [], null)
+        registerNode("x", "http://first", 0, PENDING, [])
 
         then: "It's state is updated"
         List<Node> nodesState = registry.getSummary(0, INITIALISING, ["x"]).followers
@@ -501,14 +458,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         def offset = 100
         def now = ZonedDateTime.now()
 
-        Node theNode = Node.builder()
-            .group("x")
-            .localUrl(new URL("http://1.1.1.1"))
-            .offset(offset)
-            .status(INITIALISING)
-            .following([])
-            .lastSeen(now)
-            .build()
+        Node theNode = createNode("x", new URL("http://1.1.1.1"), offset, INITIALISING, [], now)
 
         registry.register(theNode)
 
@@ -536,7 +486,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodesState.get(0).id == "x|http://second"
     }
 
-    def "the second node in the group with different version to first node should get their own hierarchy"() {
+    def "the second node in the group with different version to first node should get its own hierarchy"() {
         given: "We have one node registered"
         def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
 
@@ -557,7 +507,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset=0,
         Status status=INITIALISING,
         List<URL> following=[],
-        Map<String, String> pipeProperties=[:],
+        Map<String, String> pipeProperties=["v":"1.0"],
         List<URL> requestedToFollow=[],
         ZonedDateTime created=null
     ) {
@@ -573,5 +523,27 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .build()
 
         registry.register(theNode)
+    }
+
+    def createNode(
+        String group,
+        URL url,
+        long offset=0,
+        Status status=INITIALISING,
+        List<URL> following=[],
+        ZonedDateTime created=null,
+        Map<String, String> pipeProperties=["v":"1.0"],
+        List<URL> requestedToFollow=[]
+    ) {
+        return Node.builder()
+            .localUrl(url)
+            .group(group)
+            .status(status)
+            .offset(offset)
+            .following(following)
+            .lastSeen(created)
+            .requestedToFollow(requestedToFollow)
+            .pipe(pipeProperties)
+            .build()
     }
 }

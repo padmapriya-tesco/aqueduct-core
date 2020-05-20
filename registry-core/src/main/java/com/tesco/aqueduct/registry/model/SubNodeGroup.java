@@ -103,7 +103,7 @@ public class SubNodeGroup {
         return nodes.get(index);
     }
 
-    public Node updateNode(Node updatedNode) {
+    public Node update(Node updatedNode) {
         for (int i = 0; i < nodes.size(); i++) {
             if (nodes.get(i).getId().equals(updatedNode.getId())) {
                 return nodes.set(i, updatedNode);
@@ -132,7 +132,7 @@ public class SubNodeGroup {
         return nodes.stream()
             .filter(n -> n.getId().equals(node.getId()))
             .findFirst()
-            .map(n -> updateNode(node.buildWith(n.getRequestedToFollow())))
-            .orElse(add(node, cloudUrl));
+            .map(n -> update(node.buildWith(n.getRequestedToFollow())))
+            .orElseGet(() -> add(node, cloudUrl));
     }
 }

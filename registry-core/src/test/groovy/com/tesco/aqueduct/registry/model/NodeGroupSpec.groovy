@@ -11,6 +11,59 @@ import static com.tesco.aqueduct.registry.model.Status.OFFLINE
 import static com.tesco.aqueduct.registry.model.Status.PENDING
 
 class NodeGroupSpec extends Specification {
+
+
+    def "one subGroup is created for nodes belonging to same group"() {
+        given: "two nodes"
+        def node1 = createNode("group", new URL("http://1.1.1.1"))
+        def node2 = createNode("group", new URL("http://2.2.2.2"))
+
+        when: "a group with these nodes is created"
+        def group = new NodeGroup([node1, node2])
+
+        then: "nodegroup contains a subgroup with two nodes"
+        group.subGroups.size() == 1
+        group.subGroups.get(0).nodes == [node1, node2]
+    }
+
+    def "two subGroups are created for nodes belonging to different versions"() {
+        given: "two nodes"
+        def node1 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.0"])
+        def node2 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.1"])
+
+        when: "a group with these nodes is created"
+        def group = new NodeGroup([node1, node2])
+
+        then: "nodegroup contains a subgroup with two nodes"
+        group.subGroups.size() == 2
+        group.subGroups.get(0).nodes == [node1]
+        group.subGroups.get(1).nodes == [node2]
+    }
+
+
+
+    def createNode(
+            String group,
+            URL url,
+            long offset=0,
+            Status status=INITIALISING,
+            List<URL> following=[],
+            ZonedDateTime created=null,
+            Map<String, String> pipeProperties=["v":"1.0"],
+            List<URL> requestedToFollow=[]
+    ) {
+        return Node.builder()
+                .localUrl(url)
+                .group(group)
+                .status(status)
+                .offset(offset)
+                .following(following)
+                .lastSeen(created)
+                .requestedToFollow(requestedToFollow)
+                .pipe(pipeProperties)
+                .build()
+    }
+
     def "Group has node"() {
         given: "A Group with Nodes"
         def group = new NodeGroup([Mock(Node)])
