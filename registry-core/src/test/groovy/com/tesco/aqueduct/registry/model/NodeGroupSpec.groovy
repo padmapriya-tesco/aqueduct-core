@@ -40,8 +40,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(1).nodes == [node2]
     }
 
-
-
     def createNode(
             String group,
             URL url,
@@ -413,5 +411,45 @@ class NodeGroupSpec extends Specification {
         group.nodes.get(0).status == FOLLOWING
         group.nodes.get(1).status == OFFLINE
         group.nodes.get(0).status == FOLLOWING
+    }
+
+    def "A new subgroup is created if it does not exist"(){
+        given: "a node"
+        def url1 = new URL("http://node-1")
+        Node n1 = Node.builder()
+                .localUrl(url1)
+                .lastSeen(ZonedDateTime.now())
+                .status(FOLLOWING)
+                .pipe(["v":"1.0"])
+                .build()
+
+        NodeGroup group = new NodeGroup([n1])
+
+        def url = new URL("http://node-2")
+        Node n2 = Node.builder()
+                .localUrl(url)
+                .lastSeen(ZonedDateTime.now())
+                .status(FOLLOWING)
+                .pipe(["v":"2.0"])
+                .build()
+
+        def cloudUrl = new URL("http://some-cloud-url")
+        when:
+        group.upsert(n2, cloudUrl)
+
+        then:
+        Node expectedN1 = n1.builder()
+                .requestedToFollow([cloudUrl])
+                .build()
+
+        Node expectedN2 = n2.builder()
+            .requestedToFollow([cloudUrl])
+            .build()
+
+        group.subGroups.size() == 2
+        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(1).subGroupId == "2.0"
+        group.subGroups.get(0).nodes == [expectedN1]
+        group.subGroups.get(1).nodes == [expectedN2]
     }
 }

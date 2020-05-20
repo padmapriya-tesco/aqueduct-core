@@ -498,6 +498,48 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         secondNode == [cloudURL]
     }
 
+    def "on new version appearing, the hierarchy splits into two trees"() {
+
+        given: "2 nodes"
+        long offset = 12345
+
+        URL url1 = new URL("http://1.1.1.1")
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL])
+
+        URL url2 = new URL("http://2.2.2.2")
+        Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL])
+
+        when: "nodes are registered"
+        registry.register(node1)
+        registry.register(node2)
+
+        and: "get summary"
+        def followers = registry.getSummary(
+                offset,
+                FOLLOWING,
+                []
+        ).followers
+
+        then:
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [url1, cloudURL]
+
+        when: "a new version is deployed to a node"
+        node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL], null, ["v":"2.0"])
+        registry.register(node2)
+
+        and: "get summary"
+        followers = registry.getSummary(
+                offset,
+                FOLLOWING,
+                []
+        ).followers
+
+        then: "the hierarchy splits by version"
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [cloudURL]
+    }
+
 // provided hierarchy, vs expected hierarchy
     // update last seen date
 
