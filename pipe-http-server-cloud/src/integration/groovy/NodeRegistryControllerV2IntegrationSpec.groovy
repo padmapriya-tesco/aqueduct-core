@@ -572,7 +572,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
-                "pipe": {"pipeState" : "$UP_TO_DATE"},
+                "pipe": {"pipeState" : "$UP_TO_DATE", "v":"1.0"},
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")

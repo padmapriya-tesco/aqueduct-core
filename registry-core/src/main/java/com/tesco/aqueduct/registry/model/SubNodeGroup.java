@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.registry.model;
 
+import lombok.EqualsAndHashCode;
+
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -8,6 +10,7 @@ import java.util.stream.Collectors;
 
 import static com.tesco.aqueduct.registry.model.Status.OFFLINE;
 
+@EqualsAndHashCode
 public class SubNodeGroup {
 
     private static final int NUMBER_OF_CHILDREN_PER_NODE = 2;

@@ -46,6 +46,7 @@ public class NodeRegistryControllerV2 {
     @Secured(REGISTRY_WRITE)
     @Post
     public RegistryResponse registerNode(@Body final Node node) throws SQLException {
+        // TODO - validate or not validate on pipe version property to exist for the Node
         LOG.withNode(node).info("register node: ", "node registered");
         final List<URL> requestedToFollow = registry.register(node);
         final BootstrapType bootstrapType = nodeRequestStorage.requiresBootstrap(node.getHost());

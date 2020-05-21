@@ -7,14 +7,15 @@ import javax.sql.DataSource
 import java.time.Duration
 
 class PostgreSQLNodeRegistrySpec extends Specification {
+
 	def "New node can register"() {
 		given: "a mock node group factory"
 		def cloudUrl = new URL("http://cloud.url")
 		def mockNodeGroup = Mock(PostgresNodeGroup)
-		1* mockNodeGroup.getById(_) >> null
-		1* mockNodeGroup.add(_, _) >> Node.builder().requestedToFollow([cloudUrl]).build()
+
+		1 * mockNodeGroup.upsert(_, _) >> Node.builder().requestedToFollow([cloudUrl]).build()
 		def mockNodeGroupFactory = Mock(PostgresNodeGroupStorage)
-		1* mockNodeGroupFactory.getNodeGroup(_, _) >> mockNodeGroup
+		1 * mockNodeGroupFactory.getNodeGroup(_, _) >> mockNodeGroup
 
 		and: "a node registry"
 		def dataSourceMock = Mock(DataSource)

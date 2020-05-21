@@ -483,4 +483,39 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(0).nodes.get(0).localUrl == url1
         group.subGroups.get(1).nodes.get(0).localUrl == url2
     }
+
+    def "Empty subgroups should be removed when nodes migrate across subgroups"() {
+        given: "a node in a nodegroup"
+        def cloudUrl = CLOUD_URL
+        def url = new URL("http://node-1")
+        Node node = Node.builder()
+            .localUrl(url)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .requestedToFollow([cloudUrl])
+            .build()
+
+        when: "a node is added to node group"
+        NodeGroup group = new NodeGroup([node])
+
+        then:
+        group.subGroups.size() == 1
+        group.subGroups.get(0).subGroupId == "1.0"
+
+        when: "a new version is deployed to the node"
+        Node updatedNode = Node.builder()
+            .localUrl(url)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"2.0"])
+            .build()
+
+        and: "upsert is called"
+        group.upsert(updatedNode, cloudUrl)
+
+        then:
+        group.subGroups.size() == 1
+        group.subGroups.get(0).subGroupId == "2.0"
+    }
 }

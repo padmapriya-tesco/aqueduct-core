@@ -70,10 +70,11 @@ public class NodeGroup {
     }
 
     public void sortOfflineNodes(final URL cloudUrl) {
-        subGroups.get(0).sortOfflineNodes(cloudUrl);
+        subGroups.forEach(subGroup -> subGroup.sortOfflineNodes(cloudUrl));
     }
 
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
+
         removeNodeIfSwitchingSubgroup(nodeToRegister);
 
         return subGroups.stream()
@@ -93,8 +94,13 @@ public class NodeGroup {
         .findFirst()
         .ifPresent(subgroup -> {
             Node node = subgroup.getById(nodeToRegister.getId());
+
             if (!node.getPipeVersion().equals(nodeToRegister.getPipeVersion())) {
                 subgroup.removeByHost(nodeToRegister.getHost());
+
+                if (subgroup.isEmpty()) { // when last node from the subgroup has been migrated to new version
+                    subGroups.remove(subgroup);
+                }
             }
         });
     }
