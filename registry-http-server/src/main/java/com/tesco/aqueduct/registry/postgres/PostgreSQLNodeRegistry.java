@@ -1,10 +1,7 @@
 package com.tesco.aqueduct.registry.postgres;
 
-import com.tesco.aqueduct.registry.model.Status;
+import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
-import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.NodeRegistry;
-import com.tesco.aqueduct.registry.model.StateSummary;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -86,9 +83,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
 
         final List<Node> followers = groups.stream()
-            .map(group -> group.subGroups.get(0).nodes)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                .flatMap(nodeGroup -> nodeGroup.getNodes().stream()).collect(Collectors.toList());
 
         return new StateSummary(getCloudNode(offset, status), followers);
     }

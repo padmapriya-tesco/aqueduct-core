@@ -30,4 +30,6 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 		then: "we cloud url is returned"
 		result == [cloudUrl]
 	}
+
+	//TODO add test for getSummary if not tested in integration test
 }

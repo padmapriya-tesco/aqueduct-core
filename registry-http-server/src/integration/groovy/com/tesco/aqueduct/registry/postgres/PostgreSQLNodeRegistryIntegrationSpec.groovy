@@ -499,7 +499,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     }
 
     def "on new version appearing, the hierarchy splits into two trees"() {
-
         given: "2 nodes"
         long offset = 12345
 

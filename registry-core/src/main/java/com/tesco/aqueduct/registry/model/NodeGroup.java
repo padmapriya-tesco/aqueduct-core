@@ -53,7 +53,12 @@ public class NodeGroup {
     }
 
     public String nodesToJson() throws IOException {
-        return JsonHelper.toJson(subGroups.stream().flatMap(subNodeGroup -> subNodeGroup.nodes.stream()).collect(Collectors.toList()));
+        return JsonHelper.toJson(getNodes());
+    }
+
+    public List<Node> getNodes() {
+        return subGroups.stream()
+                .flatMap(subNodeGroup -> subNodeGroup.nodes.stream()).collect(Collectors.toList());
     }
 
     public void updateGetFollowing(final URL cloudUrl) {
