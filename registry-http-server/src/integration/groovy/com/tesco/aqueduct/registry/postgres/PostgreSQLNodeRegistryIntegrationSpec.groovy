@@ -214,7 +214,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         follow == [new URL("http://first"), cloudURL]
     }
 
-    def "the third node in the group should be told to calls the first node and the cloud"() {
+    def "the third node in the group should be told to call the first node and the cloud"() {
         given: "We have one node registered"
         registerNode("x", "http://first")
 
@@ -582,7 +582,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         URL url3 = new URL("http://3.3.3.3")
         Node node3 = createNode("group", url3, offset, FOLLOWING, [cloudURL], null, ["v":"1.0"])
 
-        URL url4= new URL("http://4.4.4.4")
+        URL url4 = new URL("http://4.4.4.4")
         Node node4 = createNode("group", url4, offset, FOLLOWING, [cloudURL], null, ["v":"1.1"])
 
         URL url5 = new URL("http://5.5.5.5")
@@ -604,7 +604,6 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registry.register(node3)
         registry.register(node4)
         registry.register(node5)
-
 
         and: "get summary"
         def followers = registry.getSummary(
@@ -639,9 +638,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[5].status == OFFLINE
 
         // version 1.0
-        followers[0].requestedToFollow == [cloudURL] // url3
-        followers[1].requestedToFollow == [url3, cloudURL] // url 5
-        followers[2].requestedToFollow == [url3, url5, cloudURL] // url 1
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [url3, cloudURL]
+        followers[2].requestedToFollow == [url3, cloudURL]
 
         // version 1.1
         followers[3].requestedToFollow == [cloudURL]
@@ -651,9 +650,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[5].requestedToFollow == [cloudURL]
     }
 
-
-
-// provided hierarchy, vs expected hierarchy
+    // provided hierarchy, vs expected hierarchy
     // update last seen date
 
     def registerNode(

@@ -124,7 +124,7 @@ class PostgresNodeGroupSpec extends Specification {
             .build()
 
         def group = new PostgresNodeGroup("test-id")
-        group.add(n1, new URL("http://cloud"))
+        group.upsert(n1, new URL("http://cloud"))
 
         when: "we insert the node group"
         group.persist(connection)

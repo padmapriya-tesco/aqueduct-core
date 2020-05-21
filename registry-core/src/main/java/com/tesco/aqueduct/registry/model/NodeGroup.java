@@ -17,9 +17,7 @@ public class NodeGroup {
     }
 
     public NodeGroup(final List<Node> nodes) {
-        nodes.forEach(node ->
-            updateExistingOrAddNewSubNodeGroupFor(node)
-        );
+        nodes.forEach(node -> updateExistingOrAddNewSubNodeGroupFor(node));
     }
 
     private Node updateExistingOrAddNewSubNodeGroupFor(Node node) {
@@ -44,12 +42,9 @@ public class NodeGroup {
     }
 
     public boolean removeByHost(final String host) {
-        return subGroups.get(0).removeByHost(host);
-    }
-
-    public Node add(final Node node, final URL cloudUrl) {
-//        return subGroups.get(0).add(node, cloudUrl);
-        return null;
+        boolean result = subGroups.stream().anyMatch(subgroup -> subgroup.removeByHost(host));
+        subGroups.removeIf(SubNodeGroup::isEmpty);
+        return result;
     }
 
     public String nodesToJson() throws IOException {
@@ -58,7 +53,7 @@ public class NodeGroup {
 
     public List<Node> getNodes() {
         return subGroups.stream()
-                .flatMap(subNodeGroup -> subNodeGroup.nodes.stream()).collect(Collectors.toList());
+            .flatMap(subNodeGroup -> subNodeGroup.nodes.stream()).collect(Collectors.toList());
     }
 
     public void updateGetFollowing(final URL cloudUrl) {
@@ -97,10 +92,7 @@ public class NodeGroup {
 
             if (!node.getPipeVersion().equals(nodeToRegister.getPipeVersion())) {
                 subgroup.removeByHost(nodeToRegister.getHost());
-
-                if (subgroup.isEmpty()) { // when last node from the subgroup has been migrated to new version
-                    subGroups.remove(subgroup);
-                }
+                subGroups.removeIf(SubNodeGroup::isEmpty);
             }
         });
     }

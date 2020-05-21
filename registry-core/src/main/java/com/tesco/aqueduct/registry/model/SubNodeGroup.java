@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.tesco.aqueduct.registry.model.Status.OFFLINE;
 
@@ -61,16 +62,16 @@ public class SubNodeGroup {
     }
 
     public void updateGetFollowing(URL cloudUrl) {
-        for (int i = 0; i < nodes.size(); i++) {
-            final List<URL> followUrls = calculateFollowerUrls(cloudUrl, i);
-            final Node updatedNode = nodes
-                .get(i)
-                .toBuilder()
-                .requestedToFollow(followUrls)
-                .build();
+        IntStream.range(0, nodes.size())
+            .forEach(i -> {
+                final Node updatedNode = nodes
+                    .get(i)
+                    .toBuilder()
+                    .requestedToFollow(calculateFollowerUrls(cloudUrl, i))
+                    .build();
 
-            this.updateNodeByIndex(updatedNode, i);
-        }
+                this.updateNodeByIndex(updatedNode, i);
+        });
     }
 
     private void updateNodeByIndex(final Node updatedNode, int index) {
@@ -78,12 +79,9 @@ public class SubNodeGroup {
     }
 
     public void markNodesOfflineIfNotSeenSince(ZonedDateTime threshold) {
-        for (int i = 0; i < nodes.size(); i++) {
-            Node node = nodes.get(i);
-            if (node.getLastSeen().compareTo(threshold) < 0) {
-                updateNodeByIndex(node.toBuilder().status(OFFLINE).build(), i);
-            }
-        }
+        IntStream.range(0, nodes.size())
+            .filter(i -> nodes.get(i).getLastSeen().compareTo(threshold) < 0)
+            .forEach(i -> updateNodeByIndex(nodes.get(i).toBuilder().status(OFFLINE).build(), i));
     }
 
     public Node getById(String nodeId) {
@@ -106,14 +104,12 @@ public class SubNodeGroup {
         return nodes.get(index);
     }
 
-    public Node update(Node updatedNode) {
-        for (int i = 0; i < nodes.size(); i++) {
-            if (nodes.get(i).getId().equals(updatedNode.getId())) {
-                return nodes.set(i, updatedNode);
-            }
-        }
-
-        throw new IllegalStateException("The node was not found " + updatedNode.getId());
+    public Node update(Node updatedNode) throws IllegalStateException {
+        return IntStream.range(0, nodes.size())
+            .filter(i -> nodes.get(i).getId().equals(updatedNode.getId()))
+            .mapToObj(i -> nodes.set(i, updatedNode))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("The node was not found " + updatedNode.getId()));
     }
 
     public void sortOfflineNodes(URL cloudUrl) {

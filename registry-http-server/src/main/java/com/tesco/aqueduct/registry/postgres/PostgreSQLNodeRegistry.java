@@ -83,7 +83,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
 
         final List<Node> followers = groups.stream()
-                .flatMap(nodeGroup -> nodeGroup.getNodes().stream()).collect(Collectors.toList());
+            .flatMap(nodeGroup -> nodeGroup.getNodes().stream()).collect(Collectors.toList());
 
         return new StateSummary(getCloudNode(offset, status), followers);
     }
@@ -146,5 +146,4 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         }
         return false;
     }
-
 }
