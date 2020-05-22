@@ -222,7 +222,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "post to registry without version is a bad request"() {
-        expect: "posting to registry without version fails with 400"
+        expect: "posting to registry without version fails with 422"
         given()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")

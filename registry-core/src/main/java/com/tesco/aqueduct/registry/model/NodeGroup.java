@@ -64,7 +64,7 @@ public class NodeGroup {
         subGroups.forEach(subGroup -> subGroup.markNodesOfflineIfNotSeenSince(threshold));
     }
 
-    public void sortOfflineNodes(final URL cloudUrl) {
+    private void sortOfflineNodes(final URL cloudUrl) {
         subGroups.forEach(subGroup -> subGroup.sortOfflineNodes(cloudUrl));
     }
 
@@ -105,5 +105,11 @@ public class NodeGroup {
         if(subNodeGroup.isEmpty()) {
             subGroups.remove(subNodeGroup);
         }
+    }
+
+    public void processOfflineNodes(ZonedDateTime threshold, URL cloudUrl) {
+        markNodesOfflineIfNotSeenSince(threshold);
+        sortOfflineNodes(cloudUrl);
+
     }
 }

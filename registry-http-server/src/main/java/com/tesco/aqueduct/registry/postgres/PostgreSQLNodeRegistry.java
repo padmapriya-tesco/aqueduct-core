@@ -44,8 +44,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
                 Node node = group.upsert(nodeToRegister, cloudUrl);
 
-                group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minus(offlineDelta));
-                group.sortOfflineNodes(cloudUrl);
+                group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
                 group.persist(connection);
 
                 return node.getRequestedToFollow();
