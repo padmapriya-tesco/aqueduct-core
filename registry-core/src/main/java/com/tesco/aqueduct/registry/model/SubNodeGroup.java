@@ -104,14 +104,6 @@ public class SubNodeGroup {
         return nodes.get(index);
     }
 
-    public Node update(Node updatedNode) throws IllegalStateException {
-        return IntStream.range(0, nodes.size())
-            .filter(i -> nodes.get(i).getId().equals(updatedNode.getId()))
-            .mapToObj(i -> nodes.set(i, updatedNode))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("The node was not found " + updatedNode.getId()));
-    }
-
     public void sortOfflineNodes(URL cloudUrl) {
         nodes.sort(this::comparingStatus);
         updateGetFollowing(cloudUrl);
@@ -127,13 +119,23 @@ public class SubNodeGroup {
         }
     }
 
-    public Node upsert(final Node node, final URL cloudUrl) {
-        return nodes.stream()
-            .filter(n -> n.getId().equals(node.getId()))
+    private Node update(Node updatedNode) throws IllegalStateException {
+        return IntStream.range(0, nodes.size())
+            .filter(i -> nodes.get(i).getId().equals(updatedNode.getId()))
+            .mapToObj(i -> nodes.set(i, updatedNode))
             .findFirst()
-            .map(n -> update(node.buildWith(n.getRequestedToFollow())))
-            .orElseGet(() -> add(node, cloudUrl));
+            .orElseThrow(() -> new IllegalStateException("The node was not found " + updatedNode.getId()));
+    }
 
+    public Node upsert(final Node node, final URL cloudUrl) {
+        for(int i=0; i<nodes.size(); i++) {
+            Node currentNode = nodes.get(i);
 
+            if(currentNode.getHost().equals(node.getHost())) {
+                return nodes.set(i, node.buildWith(currentNode.getRequestedToFollow()));
+            }
+        }
+
+        return add(node, cloudUrl);
     }
 }
