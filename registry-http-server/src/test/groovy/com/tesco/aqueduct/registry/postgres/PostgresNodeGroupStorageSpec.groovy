@@ -38,11 +38,11 @@ class PostgresNodeGroupStorageSpec extends Specification {
 			}
 		}
 
-		and: "a factory"
-		def factory = new PostgresNodeGroupStorage()
+		and: "a PostgresNodeGroupStorage"
+		def PostgresNodeGroupStorage = new PostgresNodeGroupStorage()
 
-		when: "I ask the factory to create a NodeGroup"
-		def result = factory.getNodeGroup(connection, "test-group-id")
+		when: "I ask the PostgresNodeGroupStorage to create a NodeGroup"
+		def result = PostgresNodeGroupStorage.getNodeGroup(connection, "test-group-id")
 
 		then: "then a select statement is run"
 		statement.contains("SELECT")
@@ -83,11 +83,11 @@ class PostgresNodeGroupStorageSpec extends Specification {
 			}
 		}
 
-		and: "a factory"
-		def factory = new PostgresNodeGroupStorage()
+		and: "a PostgresNodeGroupStorage"
+		def PostgresNodeGroupStorage = new PostgresNodeGroupStorage()
 
-		when: "I ask the factory to get a list of NodeGroups"
-		def result = factory.getNodeGroups(connection, ["test-group-id"])
+		when: "I ask the PostgresNodeGroupStorage to get a list of NodeGroups"
+		def result = PostgresNodeGroupStorage.getNodeGroups(connection, ["test-group-id"])
 
 		then: "then a select statement is run"
 		statement.contains("SELECT")
@@ -128,11 +128,11 @@ class PostgresNodeGroupStorageSpec extends Specification {
 			}
 		}
 
-		and: "a factory"
-		def factory = new PostgresNodeGroupStorage()
+		and: "a PostgresNodeGroupStorage"
+		def PostgresNodeGroupStorage = new PostgresNodeGroupStorage()
 
-		when: "I ask the factory to get a list of NodeGroups, providing no ids"
-		def result = factory.getNodeGroups(connection, [])
+		when: "I ask the PostgresNodeGroupStorage to get a list of NodeGroups, providing no ids"
+		def result = PostgresNodeGroupStorage.getNodeGroups(connection, [])
 
 		then: "then a select statement is run"
 		statement.contains("SELECT")

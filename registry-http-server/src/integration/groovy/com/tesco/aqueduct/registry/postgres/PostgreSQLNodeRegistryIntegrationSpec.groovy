@@ -541,9 +541,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         and: "get summary"
         def followers = registry.getSummary(
-                offset,
-                FOLLOWING,
-                []
+            offset,
+            FOLLOWING,
+            []
         ).followers
 
         then:
@@ -556,9 +556,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         and: "get summary"
         followers = registry.getSummary(
-                offset,
-                FOLLOWING,
-                []
+            offset,
+            FOLLOWING,
+            []
         ).followers
 
         then: "the hierarchy splits by version"
@@ -607,9 +607,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         and: "get summary"
         def followers = registry.getSummary(
-                offset,
-                FOLLOWING,
-                []
+            offset,
+            FOLLOWING,
+            []
         ).followers
 
         then: "nodes are marked as offline and sorted accordingly"
