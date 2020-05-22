@@ -17,11 +17,11 @@ public class NodeGroup {
     }
 
     public NodeGroup(final List<Node> nodes) {
-        nodes.forEach(node -> updateExistingOrAddNewSubNodeGroupFor(node));
+        nodes.forEach(this::updateExistingOrAddNewSubNodeGroupFor);
     }
 
-    private Node updateExistingOrAddNewSubNodeGroupFor(Node node) {
-        return subGroups.stream()
+    private void updateExistingOrAddNewSubNodeGroupFor(Node node) {
+        subGroups.stream()
             .filter(subNodeGroup -> subNodeGroup.isFor(node))
             .findFirst()
             .map(subNodeGroup -> {

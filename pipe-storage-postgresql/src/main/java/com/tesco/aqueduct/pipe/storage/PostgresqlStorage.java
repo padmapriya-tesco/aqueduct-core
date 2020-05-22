@@ -59,7 +59,6 @@ public class PostgresqlStorage implements CentralStorage {
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         try (Connection connection = dataSource.getConnection()) {
-
             return OptionalLong.of(getLatestOffsetWithConnection(connection));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset", exception);
