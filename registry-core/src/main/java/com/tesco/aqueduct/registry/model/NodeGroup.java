@@ -32,7 +32,7 @@ public class NodeGroup {
     }
 
     private Node newSubGroupNodeFor(Node node) {
-        SubNodeGroup subNodeGroup = new SubNodeGroup(node.getPipeVersion());
+        SubNodeGroup subNodeGroup = new SubNodeGroup(node.getSubGroupId());
         subGroups.add(subNodeGroup);
         return subNodeGroup.add(node);
     }
@@ -77,7 +77,7 @@ public class NodeGroup {
             .findFirst()
             .map(subGroup -> subGroup.upsert(nodeToRegister, cloudUrl))
             .orElseGet(() -> {
-                SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getPipeVersion());
+                SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getSubGroupId());
                 subGroups.add(subNodeGroup);
                 return subNodeGroup.add(nodeToRegister, cloudUrl);
             });
@@ -90,7 +90,7 @@ public class NodeGroup {
         .ifPresent(subgroup -> {
             Node node = subgroup.getById(nodeToRegister.getId());
 
-            if (!node.getPipeVersion().equals(nodeToRegister.getPipeVersion())) {
+            if (!node.getSubGroupId().equals(nodeToRegister.getSubGroupId())) {
                 subgroup.removeByHost(nodeToRegister.getHost());
                 subGroups.removeIf(SubNodeGroup::isEmpty);
             }

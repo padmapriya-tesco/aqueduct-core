@@ -26,7 +26,7 @@ public class SubNodeGroup {
     }
 
     public boolean isFor(Node node) {
-        return node.getPipeVersion().equals(subGroupId);
+        return node.getSubGroupId().equals(subGroupId);
     }
 
     public Node add(Node node, URL cloudUrl) {

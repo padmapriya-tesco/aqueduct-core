@@ -96,7 +96,12 @@ public class Node {
     }
 
     @JsonIgnore
-    public String getPipeVersion() {
+    public String getSubGroupId() {
+        return getPipeVersion();
+    }
+
+    @JsonIgnore
+    private String getPipeVersion() {
         return pipe.get("v");
     }
 }
