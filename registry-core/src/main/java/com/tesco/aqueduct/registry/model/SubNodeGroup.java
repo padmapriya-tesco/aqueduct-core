@@ -121,13 +121,20 @@ public class SubNodeGroup {
 
     public Node upsert(final Node node, final URL cloudUrl) {
         for(int i=0; i<nodes.size(); i++) {
-            Node currentNode = nodes.get(i);
-
-            if(currentNode.getHost().equals(node.getHost())) {
-                return nodes.set(i, node.buildWith(currentNode.getRequestedToFollow()));
+            if(nodes.get(i).getHost().equals(node.getHost())) {
+                return nodes.set(i, node.buildWith(nodes.get(i).getRequestedToFollow()));
             }
         }
 
         return add(node, cloudUrl);
+    }
+
+    //Spot the difference!
+    public Node newUpsert(final Node node, final URL cloudUrl) {
+        return IntStream.range(0, nodes.size())
+            .filter(i -> nodes.get(i).getHost().equals(node.getHost()))
+            .mapToObj(i -> nodes.set(i, node.buildWith(nodes.get(i).getRequestedToFollow())))
+            .findFirst()
+            .orElse(add(node, cloudUrl));
     }
 }
