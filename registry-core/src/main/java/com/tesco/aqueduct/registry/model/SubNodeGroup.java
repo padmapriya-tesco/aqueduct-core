@@ -119,14 +119,6 @@ public class SubNodeGroup {
         }
     }
 
-    private Node update(Node updatedNode) throws IllegalStateException {
-        return IntStream.range(0, nodes.size())
-            .filter(i -> nodes.get(i).getId().equals(updatedNode.getId()))
-            .mapToObj(i -> nodes.set(i, updatedNode))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("The node was not found " + updatedNode.getId()));
-    }
-
     public Node upsert(final Node node, final URL cloudUrl) {
         for(int i=0; i<nodes.size(); i++) {
             Node currentNode = nodes.get(i);
