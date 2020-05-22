@@ -7,7 +7,6 @@ import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
@@ -82,14 +81,13 @@ public class NodeGroup {
     }
 
     private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {
-        Optional<SubNodeGroup> subGroup = subGroups.stream()
-                .filter(subNodeGroup -> subNodeGroup.getByHost(nodeToRegister.getHost())
-                    .filter(node -> node.isSubGroupIdDifferent(nodeToRegister))
-                    .map(node -> subNodeGroup.removeByHost(nodeToRegister.getHost()))
-                    .orElse(false))
-                .findFirst();
-
-        subGroup.ifPresent(this::removeSubGroupIfEmpty);
+        subGroups.stream()
+            .filter(subNodeGroup -> subNodeGroup.getByHost(nodeToRegister.getHost())
+                .filter(node -> node.isSubGroupIdDifferent(nodeToRegister))
+                .map(node -> subNodeGroup.removeByHost(nodeToRegister.getHost()))
+                .orElse(false))
+            .findFirst()
+            .ifPresent(this::removeSubGroupIfEmpty);
     }
 
     private SubNodeGroup findOrCreateSubGroup(Node nodeToRegister) {
