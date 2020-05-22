@@ -128,13 +128,4 @@ public class SubNodeGroup {
 
         return add(node, cloudUrl);
     }
-
-    //Spot the difference!
-    public Node newUpsert(final Node node, final URL cloudUrl) {
-        return IntStream.range(0, nodes.size())
-            .filter(i -> nodes.get(i).getHost().equals(node.getHost()))
-            .mapToObj(i -> nodes.set(i, node.buildWith(nodes.get(i).getRequestedToFollow())))
-            .findFirst()
-            .orElse(add(node, cloudUrl));
-    }
 }
