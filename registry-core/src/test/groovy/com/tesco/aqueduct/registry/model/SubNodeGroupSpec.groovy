@@ -15,16 +15,16 @@ class SubNodeGroupSpec extends Specification {
         given: "A node with a local url"
         def nodeUrl = new URL("http://node-1-url")
         def node = Node.builder()
-                .localUrl(nodeUrl)
-                .pipe(["v":"1.0"])
-                .build()
+            .localUrl(nodeUrl)
+            .pipe(["v":"1.0"])
+            .build()
 
         and: "A node with a different id"
         def anotherUrl = new URL("http://node-2-url")
         def anotherNode = Node.builder()
-                .localUrl(anotherUrl)
-                .pipe(["v":"1.0"])
-                .build()
+            .localUrl(anotherUrl)
+            .pipe(["v":"1.0"])
+            .build()
 
         when: "nodes are added"
         def cloudUrl = new URL("http://some-cloud-url")
@@ -47,16 +47,16 @@ class SubNodeGroupSpec extends Specification {
         given: "A node with an id"
         def url = new URL("http://node-1-url")
         def node = Node.builder()
-                .localUrl(url)
-                .pipe(["v":"1.0"])
-                .build()
+            .localUrl(url)
+            .pipe(["v":"1.0"])
+            .build()
 
         and: "A node with a different id"
         def anotherUrl = new URL("http://node-2-url")
         def anotherNode = Node.builder()
-                .localUrl(anotherUrl)
-                .pipe(["v":"1.0"])
-                .build()
+            .localUrl(anotherUrl)
+            .pipe(["v":"1.0"])
+            .build()
 
         and: "a Group with these nodes"
         subNodeGroup.add(node)
