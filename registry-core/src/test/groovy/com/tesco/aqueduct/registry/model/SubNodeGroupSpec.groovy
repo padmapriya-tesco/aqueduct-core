@@ -63,13 +63,13 @@ class SubNodeGroupSpec extends Specification {
         subNodeGroup.add(anotherNode)
 
         when: "fetching a node by host"
-        def result = subNodeGroup.getByHost(node.getHost())
+        def result = subNodeGroup.getByHost(node.getHost()).get()
 
         then: "the correct node is returned"
         result == node
 
         when: "fetching the other node by host"
-        result = subNodeGroup.getByHost(anotherNode.getHost())
+        result = subNodeGroup.getByHost(anotherNode.getHost()).get()
 
         then: "the correct node is returned"
         result == anotherNode
@@ -78,6 +78,6 @@ class SubNodeGroupSpec extends Specification {
         result = subNodeGroup.getByHost("non_existent_id")
 
         then: "null is returned"
-        result == null
+        result == Optional.empty()
     }
 }

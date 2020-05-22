@@ -112,7 +112,7 @@ class NodeGroupSpec extends Specification {
         given: "an empty node group"
         def group = new NodeGroup([])
         when: "a new node is added"
-        def node = Node.builder().pipe(["v":"1.0"]).build()
+        def node = Node.builder().localUrl(new URL("http://test_node_1")).pipe(["v":"1.0"]).build()
         group.upsert(node, CLOUD_URL)
         then: "the node group is no longer empty"
         !group.isEmpty()
