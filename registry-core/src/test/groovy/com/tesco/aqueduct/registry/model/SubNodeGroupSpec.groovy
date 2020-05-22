@@ -43,15 +43,15 @@ class SubNodeGroupSpec extends Specification {
         subNodeGroup.nodes.get(1).requestedToFollow == [nodeUrl, cloudUrl]
     }
 
-    def "get node by id"() {
-        given: "A node with an id"
+    def "get node by host"() {
+        given: "A node with a host"
         def url = new URL("http://node-1-url")
         def node = Node.builder()
             .localUrl(url)
             .pipe(["v":"1.0"])
             .build()
 
-        and: "A node with a different id"
+        and: "A node with a different host"
         def anotherUrl = new URL("http://node-2-url")
         def anotherNode = Node.builder()
             .localUrl(anotherUrl)
@@ -62,20 +62,20 @@ class SubNodeGroupSpec extends Specification {
         subNodeGroup.add(node)
         subNodeGroup.add(anotherNode)
 
-        when: "fetching a node by id"
-        def result = subNodeGroup.getById(node.getId())
+        when: "fetching a node by host"
+        def result = subNodeGroup.getByHost(node.getHost())
 
         then: "the correct node is returned"
         result == node
 
-        when: "fetching the other node by id"
-        result = subNodeGroup.getById(anotherNode.getId())
+        when: "fetching the other node by host"
+        result = subNodeGroup.getByHost(anotherNode.getHost())
 
         then: "the correct node is returned"
         result == anotherNode
 
-        when: "fetching a node with an id that doesn't exist"
-        result = subNodeGroup.getById("non_existent_id")
+        when: "fetching a node with a host that doesn't exist"
+        result = subNodeGroup.getByHost("non_existent_id")
 
         then: "null is returned"
         result == null

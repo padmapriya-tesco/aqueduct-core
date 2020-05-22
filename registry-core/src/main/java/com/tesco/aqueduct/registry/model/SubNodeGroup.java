@@ -84,10 +84,10 @@ public class SubNodeGroup {
             .forEach(i -> updateNodeByIndex(nodes.get(i).toBuilder().status(OFFLINE).build(), i));
     }
 
-    public Node getById(String nodeId) {
+    public Node getByHost(String host) {
         return nodes
             .stream()
-            .filter(n -> n.getId().equals(nodeId))
+            .filter(n -> n.getHost().equals(host))
             .findAny()
             .orElse(null);
     }

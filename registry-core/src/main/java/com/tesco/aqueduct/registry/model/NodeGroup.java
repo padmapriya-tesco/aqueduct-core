@@ -85,10 +85,10 @@ public class NodeGroup {
 
     private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {
         subGroups.stream()
-        .filter(subgroup -> subgroup.getById(nodeToRegister.getId()) != null)
+        .filter(subgroup -> subgroup.getByHost(nodeToRegister.getHost()) != null)
         .findFirst()
         .ifPresent(subgroup -> {
-            Node node = subgroup.getById(nodeToRegister.getId());
+            Node node = subgroup.getByHost(nodeToRegister.getHost());
 
             if (!node.getSubGroupId().equals(nodeToRegister.getSubGroupId())) {
                 subgroup.removeByHost(nodeToRegister.getHost());
