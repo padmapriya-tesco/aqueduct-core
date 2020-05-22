@@ -69,18 +69,25 @@ public class NodeGroup {
     }
 
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
-
-        removeNodeIfSwitchingSubgroup(nodeToRegister);
-
-        return subGroups.stream()
-            .filter(subGroup -> subGroup.isFor(nodeToRegister))
+        SubNodeGroup subGroup = subGroups.stream()
+            .filter(s -> s.isFor(nodeToRegister))
             .findFirst()
-            .map(subGroup -> subGroup.upsert(nodeToRegister, cloudUrl))
             .orElseGet(() -> {
                 SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getSubGroupId());
                 subGroups.add(subNodeGroup);
-                return subNodeGroup.add(nodeToRegister, cloudUrl);
+                return subNodeGroup;
             });
+
+        Node currentNode = subGroup.getByHost(nodeToRegister.getHost());
+
+        if(currentNode != null) {
+            return subGroup.update(currentNode, nodeToRegister);
+        }
+
+        Node newNode = subGroup.add(nodeToRegister, cloudUrl);
+        removeNodeIfSwitchingSubgroup(nodeToRegister);
+
+        return newNode;
     }
 
     private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {

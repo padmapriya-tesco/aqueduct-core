@@ -119,13 +119,7 @@ public class SubNodeGroup {
         }
     }
 
-    public Node upsert(final Node node, final URL cloudUrl) {
-        for(int i=0; i<nodes.size(); i++) {
-            if(nodes.get(i).getHost().equals(node.getHost())) {
-                return nodes.set(i, node.buildWith(nodes.get(i).getRequestedToFollow()));
-            }
-        }
-
-        return add(node, cloudUrl);
+    public Node update(final Node currentNode, final Node nodeToRegister) {
+        return nodes.set(nodes.indexOf(currentNode), nodeToRegister.buildWith(currentNode.getRequestedToFollow()));
     }
 }
