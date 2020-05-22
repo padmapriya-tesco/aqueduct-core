@@ -6,6 +6,7 @@ import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -84,12 +85,11 @@ public class SubNodeGroup {
             .forEach(i -> updateNodeByIndex(nodes.get(i).toBuilder().status(OFFLINE).build(), i));
     }
 
-    public Node getByHost(String host) {
+    public Optional<Node> getByHost(String host) {
         return nodes
             .stream()
             .filter(n -> n.getHost().equals(host))
-            .findAny()
-            .orElse(null);
+            .findFirst();
     }
 
     public boolean isEmpty() {

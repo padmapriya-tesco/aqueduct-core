@@ -69,38 +69,45 @@ public class NodeGroup {
     }
 
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
-        SubNodeGroup subGroup = subGroups.stream()
-            .filter(s -> s.isFor(nodeToRegister))
+        SubNodeGroup subGroup = findOrCreateSubGroup(nodeToRegister);
+
+        return subGroup.getByHost(nodeToRegister.getHost())
+            .map(existingNode -> subGroup.update(existingNode, nodeToRegister))
+            .orElseGet(() -> {
+                Node newNode = subGroup.add(nodeToRegister, cloudUrl);
+                removeNodeIfSwitchingSubgroup(nodeToRegister);
+                return newNode;
+            });
+    }
+
+    private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {
+        subGroups.forEach(
+            subgroup -> subgroup
+                .getByHost(nodeToRegister.getHost())
+                .ifPresent(node -> {
+                    if (node.isSubGroupIdDifferent(nodeToRegister)) {
+                        subgroup.removeByHost(nodeToRegister.getHost());
+                        removeSubGroupIfEmpty(subgroup);
+                    }
+                }
+            )
+        );
+    }
+
+    private SubNodeGroup findOrCreateSubGroup(Node nodeToRegister) {
+        return subGroups.stream()
+            .filter(subGroup -> subGroup.isFor(nodeToRegister))
             .findFirst()
             .orElseGet(() -> {
                 SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getSubGroupId());
                 subGroups.add(subNodeGroup);
                 return subNodeGroup;
             });
-
-        Node currentNode = subGroup.getByHost(nodeToRegister.getHost());
-
-        if(currentNode != null) {
-            return subGroup.update(currentNode, nodeToRegister);
-        }
-
-        Node newNode = subGroup.add(nodeToRegister, cloudUrl);
-        removeNodeIfSwitchingSubgroup(nodeToRegister);
-
-        return newNode;
     }
 
-    private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {
-        subGroups.stream()
-        .filter(subgroup -> subgroup.getByHost(nodeToRegister.getHost()) != null)
-        .findFirst()
-        .ifPresent(subgroup -> {
-            Node node = subgroup.getByHost(nodeToRegister.getHost());
-
-            if (!node.getSubGroupId().equals(nodeToRegister.getSubGroupId())) {
-                subgroup.removeByHost(nodeToRegister.getHost());
-                subGroups.removeIf(SubNodeGroup::isEmpty);
-            }
-        });
+    private void removeSubGroupIfEmpty(SubNodeGroup subNodeGroup) {
+        if(subNodeGroup.isEmpty()) {
+            subGroups.remove(subNodeGroup);
+        }
     }
 }

@@ -104,4 +104,9 @@ public class Node {
     private String getPipeVersion() {
         return pipe.get("v");
     }
+
+    @JsonIgnore
+    public boolean isSubGroupIdDifferent(Node node) {
+        return !node.getSubGroupId().equals(getSubGroupId());
+    }
 }
