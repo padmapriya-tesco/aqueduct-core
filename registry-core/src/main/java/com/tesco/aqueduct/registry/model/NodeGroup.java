@@ -69,7 +69,7 @@ public class NodeGroup {
     }
 
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
-        SubNodeGroup subGroup = findOrCreateSubGroup(nodeToRegister);
+        SubNodeGroup subGroup = findOrCreateSubGroupFor(nodeToRegister);
 
         return subGroup.getByHost(nodeToRegister.getHost())
             .map(existingNode -> subGroup.update(existingNode, nodeToRegister))
@@ -90,7 +90,7 @@ public class NodeGroup {
             .ifPresent(this::removeSubGroupIfEmpty);
     }
 
-    private SubNodeGroup findOrCreateSubGroup(Node nodeToRegister) {
+    private SubNodeGroup findOrCreateSubGroupFor(Node nodeToRegister) {
         return subGroups.stream()
             .filter(subGroup -> subGroup.isFor(nodeToRegister))
             .findFirst()
