@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.registry.model;
 
+import com.tesco.aqueduct.pipe.metrics.Measure;
 import lombok.EqualsAndHashCode;
 
 import java.net.URL;
@@ -30,6 +31,7 @@ public class SubNodeGroup {
         return node.getSubGroupId().equals(subGroupId);
     }
 
+    @Measure
     public Node add(Node node, URL cloudUrl) {
         final List<URL> followUrls = calculateFollowerUrls(cloudUrl, getNodeUrls().size());
         final Node newNode = node.buildWith(followUrls);
@@ -119,6 +121,7 @@ public class SubNodeGroup {
         }
     }
 
+    @Measure
     public Node update(final Node currentNode, final Node nodeToRegister) {
         return nodes.set(nodes.indexOf(currentNode), nodeToRegister.buildWith(currentNode.getRequestedToFollow()));
     }
