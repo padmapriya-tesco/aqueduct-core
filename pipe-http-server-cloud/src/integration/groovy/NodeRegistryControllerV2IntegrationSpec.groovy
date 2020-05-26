@@ -207,7 +207,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "6735",
                 "localUrl": "http://localhost:8080",
                 "offset": "123",
-                "pipe": {"pipeState" : "$UP_TO_DATE"},
+                "pipe": {"pipeState" : "$UP_TO_DATE", "v":"1.0"},
                 "status": "$INITIALISING",
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
@@ -219,6 +219,26 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "bootstrapType", equalTo("NONE"),
                 "requestedToFollow", contains(CLOUD_PIPE_URL)
             )
+    }
+
+    def "post to registry without version is a bad request"() {
+        expect: "posting to registry without version fails with 422"
+        given()
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .contentType("application/json")
+            .body("""{
+                "group": "6735",
+                "localUrl": "http://localhost:8080",
+                "offset": "123",
+                "pipe": {"pipeState" : "$UP_TO_DATE"},
+                "status": "$INITIALISING",
+                "following": ["$CLOUD_PIPE_URL"]
+            }""")
+            .when()
+            .post("/v2/registry")
+            .then()
+            .statusCode(422)
+            .body("message", equalTo("Sub group id needs to be available for localhost"))
     }
 
     def "Can get registry summary"() {
@@ -572,7 +592,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
-                "pipe": {"pipeState" : "$UP_TO_DATE"},
+                "pipe": {"pipeState" : "$UP_TO_DATE", "v":"1.0"},
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")

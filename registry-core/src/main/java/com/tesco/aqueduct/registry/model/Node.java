@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.tesco.aqueduct.pipe.api.PipeState;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +11,8 @@ import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+
+import static com.tesco.aqueduct.registry.model.Status.OFFLINE;
 
 @Builder(toBuilder = true)
 @Data
@@ -80,5 +81,32 @@ public class Node {
     @JsonIgnore
     public String getHost() {
         return localUrl.getHost();
+    }
+
+    public Node buildWith(List<URL> followUrls) {
+        return this.toBuilder()
+            .requestedToFollow(followUrls)
+            .lastSeen(ZonedDateTime.now())
+            .build();
+    }
+
+    @JsonIgnore
+    public boolean isOffline() {
+        return getStatus() == OFFLINE;
+    }
+
+    @JsonIgnore
+    public String getSubGroupId() {
+        return getPipeVersion();
+    }
+
+    @JsonIgnore
+    private String getPipeVersion() {
+        return pipe.get("v");
+    }
+
+    @JsonIgnore
+    public boolean isSubGroupIdDifferent(Node node) {
+        return !node.getSubGroupId().equals(getSubGroupId());
     }
 }

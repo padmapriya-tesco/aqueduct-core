@@ -1,10 +1,7 @@
 package com.tesco.aqueduct.registry.postgres;
 
-import com.tesco.aqueduct.registry.model.Status;
+import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
-import com.tesco.aqueduct.registry.model.Node;
-import com.tesco.aqueduct.registry.model.NodeRegistry;
-import com.tesco.aqueduct.registry.model.StateSummary;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -45,11 +42,9 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         while (count < 10) {
             try (Connection connection = getConnection()) {
                 final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
+                Node node = group.upsert(nodeToRegister, cloudUrl);
 
-                Node node = addOrUpdateNodeToGroup(nodeToRegister, group);
-
-                group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minus(offlineDelta));
-                group.sortOfflineNodes(cloudUrl);
+                group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
                 group.persist(connection);
 
                 return node.getRequestedToFollow();
@@ -67,18 +62,6 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             }
         }
         throw new RuntimeException("Failed to register");
-    }
-
-    private Node addOrUpdateNodeToGroup(Node nodeToRegister, PostgresNodeGroup group) {
-        Node node = group.getById(nodeToRegister.getId());
-        if (node == null) {
-            node = group.add(nodeToRegister, cloudUrl);
-        } else {
-            node = updateNodeToFollow(nodeToRegister, node.getRequestedToFollow());
-            group.updateNode(node);
-        }
-
-        return node;
     }
 
     private Connection getConnection() throws SQLException {
@@ -99,9 +82,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         groups.forEach(group -> group.markNodesOfflineIfNotSeenSince(threshold));
 
         final List<Node> followers = groups.stream()
-            .map(group -> group.nodes)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+            .flatMap(nodeGroup -> nodeGroup.getNodes().stream()).collect(Collectors.toList());
 
         return new StateSummary(getCloudNode(offset, status), followers);
     }
@@ -163,12 +144,5 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             return true;
         }
         return false;
-    }
-
-    private Node updateNodeToFollow(final Node node, final List<URL> followURLs) {
-        return node.toBuilder()
-            .requestedToFollow(followURLs)
-            .lastSeen(ZonedDateTime.now())
-            .build();
     }
 }

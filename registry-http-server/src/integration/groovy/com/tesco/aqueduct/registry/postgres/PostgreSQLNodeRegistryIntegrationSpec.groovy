@@ -77,14 +77,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         long offset = 12345
 
-        Node expectedNode = Node.builder()
-            .group("group")
-            .localUrl(new URL("http://1.1.1.1"))
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .lastSeen(now)
-            .build()
+        Node expectedNode = createNode("group", new URL("http://1.1.1.1"), offset, FOLLOWING, [cloudURL], now)
 
         when: "The node is registered"
         registry.register(expectedNode)
@@ -111,58 +104,22 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset = 12345
 
         URL url1 = new URL("http://1.1.1.1")
-        Node node1 = Node.builder()
-            .group("group")
-            .localUrl(url1)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL])
 
         URL url2 = new URL("http://2.2.2.2")
-        Node node2 = Node.builder()
-            .group("group")
-            .localUrl(url2)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL])
 
         URL url3 = new URL("http://3.3.3.3")
-        Node node3 = Node.builder()
-            .group("group")
-            .localUrl(url3)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node3 = createNode("group", url3, offset, FOLLOWING, [cloudURL])
 
         URL url4= new URL("http://4.4.4.4")
-        Node node4 = Node.builder()
-            .group("group")
-            .localUrl(url4)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node4 = createNode("group", url4, offset, FOLLOWING, [cloudURL])
 
         URL url5 = new URL("http://5.5.5.5")
-        Node node5 = Node.builder()
-            .group("group")
-            .localUrl(url5)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node5 = createNode("group", url5, offset, FOLLOWING, [cloudURL])
 
         URL url6 = new URL("http://6.6.6.6")
-        Node node6 = Node.builder()
-            .group("group")
-            .localUrl(url6)
-            .offset(offset)
-            .status(FOLLOWING)
-            .following([cloudURL])
-            .build()
+        Node node6 = createNode("group", url6, offset, FOLLOWING, [cloudURL])
 
         when: "nodes are registered"
         registry.register(node1)
@@ -257,7 +214,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         follow == [new URL("http://first"), cloudURL]
     }
 
-    def "the third node in the group should be told to calls the first node and the cloud"() {
+    def "the third node in the group should be told to call the first node and the cloud"() {
         given: "We have one node registered"
         registerNode("x", "http://first")
 
@@ -300,13 +257,13 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .requestedToFollow == [ new URL("http://first"), cloudURL ]
     }
 
-    def "nodes can update state without changing hierachy"() {
+    def "nodes can update state without changing hierarchy"() {
         given: "two nodes register"
         registerNode("x", "http://first")
         registerNode("x", "http://second")
 
         when: "first node re-registers"
-        registerNode("x", "http://first", 0, PENDING, [], null)
+        registerNode("x", "http://first", 0, PENDING, [])
 
         then: "It's state is updated"
         List<Node> nodesState = registry.getSummary(0, INITIALISING, ["x"]).followers
@@ -501,14 +458,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         def offset = 100
         def now = ZonedDateTime.now()
 
-        Node theNode = Node.builder()
-            .group("x")
-            .localUrl(new URL("http://1.1.1.1"))
-            .offset(offset)
-            .status(INITIALISING)
-            .following([])
-            .lastSeen(now)
-            .build()
+        Node theNode = createNode("x", new URL("http://1.1.1.1"), offset, INITIALISING, [], now)
 
         registry.register(theNode)
 
@@ -536,6 +486,170 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodesState.get(0).id == "x|http://second"
     }
 
+    def "the second node in the group with different version to first node should get its own hierarchy"() {
+        given: "We have one node registered"
+        def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
+
+        when: "Second node registers"
+        def secondNode = registerNode("groupA", "http://a2", 123, FOLLOWING, [], ["v":"1.1"])
+
+        then: "both nodes follow cloud"
+        firstNode == [cloudURL]
+        secondNode == [cloudURL]
+    }
+
+    def "having third node in the group with different version to first and second node should make three hierarchies"() {
+        given: "We have two nodes registered with different version"
+        def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
+        def secondNode = registerNode("groupA", "http://a2", 123, FOLLOWING, [], ["v":"1.1"])
+
+        when: "third node registers with a new version"
+        def thirdNode = registerNode("groupA", "http://a3", 123, FOLLOWING, [], ["v":"2.0"])
+
+        then: "all three nodes follow cloud"
+        firstNode == [cloudURL]
+        secondNode == [cloudURL]
+        thirdNode == [cloudURL]
+    }
+
+    def "having third node switched to older version make it join old version hierarchy"() {
+        given: "We have two nodes registered with different version"
+        def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
+        def secondNode = registerNode("groupA", "http://a2", 123, FOLLOWING, [], ["v":"1.1"])
+
+        when: "second node registers with an old version"
+        secondNode = registerNode("groupA", "http://a2", 123, FOLLOWING, [], ["v":"1.0"])
+
+        then: "all three nodes follow cloud"
+        firstNode == [cloudURL]
+        secondNode == [new URL("http://a1"), cloudURL]
+    }
+
+    def "on new version appearing for an existing node, the hierarchy splits into two trees"() {
+        given: "2 nodes"
+        long offset = 12345
+
+        URL url1 = new URL("http://1.1.1.1")
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL])
+
+        URL url2 = new URL("http://2.2.2.2")
+        Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL])
+
+        when: "nodes are registered"
+        registry.register(node1)
+        registry.register(node2)
+
+        and: "get summary"
+        def followers = registry.getSummary(
+            offset,
+            FOLLOWING,
+            []
+        ).followers
+
+        then:
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [url1, cloudURL]
+
+        when: "a new version is deployed to a node"
+        node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL], null, ["v":"2.0"])
+        registry.register(node2)
+
+        and: "get summary"
+        followers = registry.getSummary(
+            offset,
+            FOLLOWING,
+            []
+        ).followers
+
+        then: "the hierarchy splits by version"
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [cloudURL]
+    }
+
+    def "registry marks nodes offline and sorts based on status within their hierarchies"() {
+        given: "a registry with a short offline delta"
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
+
+        and: "6 nodes with different versions"
+        long offset = 12345
+
+        URL url1 = new URL("http://1.1.1.1")
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL], null, ["v":"1.0"])
+
+        URL url2 = new URL("http://2.2.2.2")
+        Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL], null, ["v":"1.1"])
+
+        URL url3 = new URL("http://3.3.3.3")
+        Node node3 = createNode("group", url3, offset, FOLLOWING, [cloudURL], null, ["v":"1.0"])
+
+        URL url4 = new URL("http://4.4.4.4")
+        Node node4 = createNode("group", url4, offset, FOLLOWING, [cloudURL], null, ["v":"1.1"])
+
+        URL url5 = new URL("http://5.5.5.5")
+        Node node5 = createNode("group", url5, offset, FOLLOWING, [cloudURL], null, ["v":"1.0"])
+
+        URL url6 = new URL("http://6.6.6.6")
+        Node node6 = createNode("group", url6, offset, FOLLOWING, [cloudURL], null, ["v":"2.0"])
+
+        when: "nodes are registered"
+        registry.register(node1)
+        registry.register(node2)
+        registry.register(node3)
+        registry.register(node4)
+        registry.register(node5)
+        registry.register(node6)
+
+        and: "half fail to re-register within the offline delta"
+        sleep 5000
+        registry.register(node3)
+        registry.register(node4)
+        registry.register(node5)
+
+        and: "get summary"
+        def followers = registry.getSummary(
+            offset,
+            FOLLOWING,
+            []
+        ).followers
+
+        then: "nodes are marked as offline and sorted accordingly"
+        // version 1.0
+        followers[0].getLocalUrl() == url3
+        followers[1].getLocalUrl() == url5
+        followers[2].getLocalUrl() == url1
+
+        // version 1.1
+        followers[3].getLocalUrl() == url4
+        followers[4].getLocalUrl() == url2
+
+        // version 2.0
+        followers[5].getLocalUrl() == url6
+
+        // version 1.0
+        followers[0].status == FOLLOWING
+        followers[1].status == FOLLOWING
+        followers[2].status == OFFLINE
+
+        // version 1.1
+        followers[3].status == FOLLOWING
+        followers[4].status == OFFLINE
+
+        // version 2.0
+        followers[5].status == OFFLINE
+
+        // version 1.0
+        followers[0].requestedToFollow == [cloudURL]
+        followers[1].requestedToFollow == [url3, cloudURL]
+        followers[2].requestedToFollow == [url3, cloudURL]
+
+        // version 1.1
+        followers[3].requestedToFollow == [cloudURL]
+        followers[4].requestedToFollow == [url4, cloudURL]
+
+        // version 2.0
+        followers[5].requestedToFollow == [cloudURL]
+    }
+
     // provided hierarchy, vs expected hierarchy
     // update last seen date
 
@@ -545,6 +659,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset=0,
         Status status=INITIALISING,
         List<URL> following=[],
+        Map<String, String> pipeProperties=["v":"1.0"],
         List<URL> requestedToFollow=[],
         ZonedDateTime created=null
     ) {
@@ -556,8 +671,31 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             .following(following)
             .lastSeen(created)
             .requestedToFollow(requestedToFollow)
+            .pipe(pipeProperties)
             .build()
 
         registry.register(theNode)
+    }
+
+    def createNode(
+        String group,
+        URL url,
+        long offset=0,
+        Status status=INITIALISING,
+        List<URL> following=[],
+        ZonedDateTime created=null,
+        Map<String, String> pipeProperties=["v":"1.0"],
+        List<URL> requestedToFollow=[]
+    ) {
+        return Node.builder()
+            .localUrl(url)
+            .group(group)
+            .status(status)
+            .offset(offset)
+            .following(following)
+            .lastSeen(created)
+            .requestedToFollow(requestedToFollow)
+            .pipe(pipeProperties)
+            .build()
     }
 }

@@ -11,6 +11,57 @@ import static com.tesco.aqueduct.registry.model.Status.OFFLINE
 import static com.tesco.aqueduct.registry.model.Status.PENDING
 
 class NodeGroupSpec extends Specification {
+    private static final URL CLOUD_URL = new URL("http://some-cloud-url")
+
+    def "one subGroup is created for nodes belonging to same group"() {
+        given: "two nodes"
+        def node1 = createNode("group", new URL("http://1.1.1.1"))
+        def node2 = createNode("group", new URL("http://2.2.2.2"))
+
+        when: "a group with these nodes is created"
+        def group = new NodeGroup([node1, node2])
+
+        then: "nodegroup contains a subgroup with two nodes"
+        group.subGroups.size() == 1
+        group.subGroups.get(0).nodes == [node1, node2]
+    }
+
+    def "two subGroups are created for nodes belonging to different versions"() {
+        given: "two nodes"
+        def node1 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.0"])
+        def node2 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.1"])
+
+        when: "a group with these nodes is created"
+        def group = new NodeGroup([node1, node2])
+
+        then: "nodegroup contains a subgroup with two nodes"
+        group.subGroups.size() == 2
+        group.subGroups.get(0).nodes == [node1]
+        group.subGroups.get(1).nodes == [node2]
+    }
+
+    def createNode(
+        String group,
+        URL url,
+        long offset=0,
+        Status status=INITIALISING,
+        List<URL> following=[],
+        ZonedDateTime created=null,
+        Map<String, String> pipeProperties=["v":"1.0"],
+        List<URL> requestedToFollow=[]
+    ) {
+        return Node.builder()
+            .localUrl(url)
+            .group(group)
+            .status(status)
+            .offset(offset)
+            .following(following)
+            .lastSeen(created)
+            .requestedToFollow(requestedToFollow)
+            .pipe(pipeProperties)
+            .build()
+    }
+
     def "Group has node"() {
         given: "A Group with Nodes"
         def group = new NodeGroup([Mock(Node)])
@@ -23,150 +74,97 @@ class NodeGroupSpec extends Specification {
     def "Group does not have nodes"() {
         given: "A Group with no Nodes"
         def group = new NodeGroup([])
-        when: "checking the group has nodes"
-        def result = group.isEmpty()
-        then: "the result is true"
-        result
+
+        expect: "subgroups are empty"
+        group.subGroups.isEmpty()
     }
 
     def "A node can be removed from a node group given an host"() {
         given: "A node with a host"
-        def node = Mock Node
-        node.host >> "test_node_host"
+        def node = Node.builder()
+            .localUrl(new URL("http://node-url"))
+            .requestedToFollow([CLOUD_URL])
+            .status(OFFLINE)
+            .pipe(["v":"1.0"])
+            .build()
 
         and: "A node with a different host"
-        def anotherNode = Mock Node
-        anotherNode.host >> "another_node_host"
+        def anotherNode = Node.builder()
+            .localUrl(new URL("http://another-node-url"))
+            .requestedToFollow([CLOUD_URL])
+            .status(OFFLINE)
+            .pipe(["v":"1.1"])
+            .build()
 
         and: "a Group with these nodes"
         def group = new NodeGroup([node, anotherNode])
 
-        when: "Removing the node from the group using the host"
-        def result = group.removeByHost("test_node_host")
+        when: "Removing the node from the subgroup using the host"
+        def result = group.removeByHost(anotherNode.getHost())
 
-        then: "the result is true (the node was found and deleted)"
+        then: "The subgroup no longer contains the removed node"
         result
-
-        and: "The group no longer contains the removed node"
-        group.nodes == [anotherNode]
+        group.subGroups.size() == 1
+        group.subGroups.get(0).nodes == [node]
     }
 
     def "a node can be added to the group"() {
         given: "an empty node group"
         def group = new NodeGroup([])
         when: "a new node is added"
-        def node = Node.builder().build()
-        group.add(node, new URL("http://test-url"))
+        def node = Node.builder().localUrl(new URL("http://test_node_1")).pipe(["v":"1.0"]).build()
+        group.upsert(node, CLOUD_URL)
         then: "the node group is no longer empty"
         !group.isEmpty()
     }
 
-    def "a node can be fetched from the group by index"() {
-        given: "A node with an id"
-        def node = Mock Node
-        node.id >> "test_node_id"
-
-        and: "A node with a different id"
-        def anotherNode = Mock Node
-        anotherNode.id >> "another_node_id"
-
-        and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode])
-
-        when: "fetching the node at index 0"
-        def result = group.get(0)
-
-        then: "the correct node is returned"
-        result == node
-
-        when: "fetching the node at index 1"
-        result = group.get(1)
-
-        then: "the correct node is returned"
-        result == anotherNode
-    }
-
-    def "Fetch URLs for all nodes"() {
-        given: "A node with a local url"
-        def nodeUrl = new URL("http://test_node_1")
-        def node = Mock Node
-        node.localUrl >> nodeUrl
-
-        and: "A node with a different id"
-        def anotherNodeUrl = new URL("http://test_node_2")
-        def anotherNode = Mock Node
-        anotherNode.localUrl >> anotherNodeUrl
-
-        and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode])
-
-        when: "all Node urls have been fetched"
-        def result = group.getNodeUrls()
-
-        then: "Both URLs have been returned"
-        result == [nodeUrl, anotherNodeUrl]
-    }
-
-    def "get node by id"() {
-        given: "A node with an id"
-        def node = Mock Node
-        node.id >> "test_node_id"
-
-        and: "A node with a different id"
-        def anotherNode = Mock Node
-        anotherNode.id >> "another_node_id"
-
-        and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode])
-
-        when: "fetching a node by id"
-        def result = group.getById("test_node_id")
-
-        then: "the correct node is returned"
-        result == node
-
-        when: "fetching the other node by id"
-        result = group.getById("another_node_id")
-
-        then: "the correct node is returned"
-        result == anotherNode
-
-        when: "fetching a node with an id that doesn't exist"
-        result = group.getById("non_existent_id")
-
-        then: "null is returned"
-        result == null
-    }
-
     def "A node can be updated in the Group"() {
         given: "A node with a local url"
-        def nodeUrl = new URL("http://test_node_1")
-        def node = Mock Node
-        node.id >> "test_node_id"
-        node.localUrl >> nodeUrl
+        def node1Url = new URL("http://test_node_1")
+        def node1 = Node.builder()
+            .localUrl(node1Url)
+            .requestedToFollow([CLOUD_URL])
+            .status(OFFLINE)
+            .pipe(["v":"1.0"])
+            .build()
 
         and: "A node with a different id"
-        def anotherNode = Mock Node
-        anotherNode.id >> "another_node_id"
+        def node2Url = new URL("http://test_node_2")
+        def node2 = Node.builder()
+            .localUrl(node2Url)
+            .requestedToFollow([CLOUD_URL])
+            .status(OFFLINE)
+            .pipe(["v":"1.0"])
+            .build()
 
         and: "a Group with these nodes"
-        def group = new NodeGroup([node, anotherNode])
+        def group = new NodeGroup([node1, node2])
 
         when: "An updated node is provided to the group"
-        def updatedNode = Mock(Node)
-        updatedNode.id >> "test_node_id"
-        group.updateNode(updatedNode)
+        Node updatedNode1 = Node.builder()
+            .localUrl(node1Url)
+            .requestedToFollow([CLOUD_URL])
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .build()
+        group.upsert(updatedNode1, CLOUD_URL)
 
         then: "The group contains the updated node"
-        group.nodes == [updatedNode, anotherNode]
+        group.subGroups.get(0).nodes.get(0).getId() == updatedNode1.getId()
+        group.subGroups.get(0).nodes.get(1).getId() == node2.getId()
 
         when: "Another updated node is provided to the group"
-        def anotherUpdatedNode = Mock(Node)
-        anotherUpdatedNode.id >> "another_node_id"
-        group.updateNode(anotherUpdatedNode)
+        def updatedNode2 = Node.builder()
+            .localUrl(node2Url)
+            .requestedToFollow([CLOUD_URL])
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .build()
+        group.upsert(updatedNode2, CLOUD_URL)
 
         then: "The group contains the updated nodes"
-        group.nodes == [updatedNode, anotherUpdatedNode]
+        group.subGroups.get(0).nodes.get(0).getId() == updatedNode1.getId()
+        group.subGroups.get(0).nodes.get(1).getId() == updatedNode2.getId()
     }
 
     def "Nodes are correctly rebalanced"() {
@@ -176,22 +174,25 @@ class NodeGroupSpec extends Specification {
         URL n1Url = new URL("http://node-1")
         Node n1 = Node.builder()
             .localUrl(n1Url)
+            .pipe(["v":"1.0"])
             .build()
         URL n2Url = new URL("http://node-2")
         Node n2 = Node.builder()
             .localUrl(n2Url)
+            .pipe(["v":"1.0"])
             .build()
         URL n3Url = new URL("http://node-3")
         Node n3 = Node.builder()
             .localUrl(n3Url)
+            .pipe(["v":"2.0"])
             .build()
         NodeGroup group = new NodeGroup([n1, n2, n3])
         when: "the group is rebalanced"
         group.updateGetFollowing(cloudUrl)
         then: "the result is a balanced group"
-        group.nodes.get(0).requestedToFollow == [cloudUrl]
-        group.nodes.get(1).requestedToFollow == [n1Url, cloudUrl]
-        group.nodes.get(2).requestedToFollow == [n1Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(0).requestedToFollow == [cloudUrl]
+        group.subGroups.get(0).nodes.get(1).requestedToFollow == [n1Url, cloudUrl]
+        group.subGroups.get(1).nodes.get(0).requestedToFollow == [cloudUrl]
     }
 
     def "Nodes are sorted based on status"() {
@@ -204,36 +205,42 @@ class NodeGroupSpec extends Specification {
             .localUrl(n1Url)
             .requestedToFollow([cloudUrl])
             .status(OFFLINE)
+            .pipe(["v":"1.0"])
             .build()
         URL n2Url = new URL("http://node-2")
         Node n2 = Node.builder()
             .localUrl(n2Url)
             .requestedToFollow([n1Url, cloudUrl])
             .status(OFFLINE)
+            .pipe(["v":"1.0"])
             .build()
         URL n3Url = new URL("http://node-3")
         Node n3 = Node.builder()
             .localUrl(n3Url)
             .requestedToFollow([n1Url, cloudUrl])
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
         URL n4Url = new URL("http://node-4")
         Node n4 = Node.builder()
             .localUrl(n4Url)
             .requestedToFollow([n2Url, n1Url, cloudUrl])
             .status(PENDING)
+            .pipe(["v":"1.0"])
             .build()
         URL n5Url = new URL("http://node-5")
         Node n5 = Node.builder()
             .localUrl(n5Url)
             .requestedToFollow([n2Url, n1Url, cloudUrl])
             .status(INITIALISING)
+            .pipe(["v":"1.0"])
             .build()
         URL n6Url = new URL("http://node-6")
         Node n6 = Node.builder()
             .localUrl(n6Url)
             .requestedToFollow([n3Url, n1Url, cloudUrl])
             .status(OFFLINE)
+            .pipe(["v":"1.0"])
             .build()
 
         NodeGroup group = new NodeGroup([n1, n2, n3, n4, n5, n6])
@@ -242,14 +249,14 @@ class NodeGroupSpec extends Specification {
         group.sortOfflineNodes(cloudUrl)
 
         then: "nodes that are offline are sorted to be leaves"
-        group.nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n3Url, n4Url, n5Url, n1Url, n2Url, n6Url]
+        group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n3Url, n4Url, n5Url, n1Url, n2Url, n6Url]
 
-        group.nodes.get(0).requestedToFollow == [cloudUrl]
-        group.nodes.get(1).requestedToFollow == [n3Url, cloudUrl]
-        group.nodes.get(2).requestedToFollow == [n3Url, cloudUrl]
-        group.nodes.get(3).requestedToFollow == [n4Url, n3Url, cloudUrl]
-        group.nodes.get(4).requestedToFollow == [n4Url, n3Url, cloudUrl]
-        group.nodes.get(5).requestedToFollow == [n5Url, n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(0).requestedToFollow == [cloudUrl]
+        group.subGroups.get(0).nodes.get(1).requestedToFollow == [n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(2).requestedToFollow == [n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(3).requestedToFollow == [n4Url, n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(4).requestedToFollow == [n4Url, n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(5).requestedToFollow == [n5Url, n3Url, cloudUrl]
     }
 
     def "Nodes maintain sort order when none are offline"() {
@@ -262,36 +269,42 @@ class NodeGroupSpec extends Specification {
             .localUrl(n1Url)
             .requestedToFollow([cloudUrl])
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
         URL n2Url = new URL("http://node-2")
         Node n2 = Node.builder()
             .localUrl(n2Url)
             .requestedToFollow([n1Url, cloudUrl])
             .status(PENDING)
+            .pipe(["v":"1.0"])
             .build()
         URL n3Url = new URL("http://node-3")
         Node n3 = Node.builder()
             .localUrl(n3Url)
             .requestedToFollow([n1Url, cloudUrl])
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
         URL n4Url = new URL("http://node-4")
         Node n4 = Node.builder()
             .localUrl(n4Url)
             .requestedToFollow([n2Url, n1Url, cloudUrl])
             .status(PENDING)
+            .pipe(["v":"1.0"])
             .build()
         URL n5Url = new URL("http://node-5")
         Node n5 = Node.builder()
             .localUrl(n5Url)
             .requestedToFollow([n2Url, n1Url, cloudUrl])
             .status(INITIALISING)
+            .pipe(["v":"1.0"])
             .build()
         URL n6Url = new URL("http://node-6")
         Node n6 = Node.builder()
             .localUrl(n6Url)
             .requestedToFollow([n3Url, n1Url, cloudUrl])
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
 
         NodeGroup group = new NodeGroup([n1, n2, n3, n4, n5, n6])
@@ -300,7 +313,7 @@ class NodeGroupSpec extends Specification {
         group.sortOfflineNodes(cloudUrl)
 
         then: "the sort order is unchanged"
-        group.nodes == [n1, n2, n3, n4, n5, n6]
+        group.subGroups.get(0).nodes == [n1, n2, n3, n4, n5, n6]
     }
 
     def "NodeGroup nodes json format is correct"() {
@@ -308,12 +321,12 @@ class NodeGroupSpec extends Specification {
         URL n1Url = new URL("http://node-1")
         Node n1 = Node.builder()
             .localUrl(n1Url)
-            .pipe(["pipeState": PipeState.UP_TO_DATE.toString()])
+            .pipe(["pipeState": PipeState.UP_TO_DATE.toString(), "v":"1.0"])
             .build()
         URL n2Url = new URL("http://node-2")
         Node n2 = Node.builder()
             .localUrl(n2Url)
-            .pipe(["pipeState": PipeState.OUT_OF_DATE.toString()])
+            .pipe(["pipeState": PipeState.OUT_OF_DATE.toString(), "v":"1.0"])
             .build()
         NodeGroup group = new NodeGroup([n1, n2])
         when: "the NodeGroup nodes are output as JSON"
@@ -324,13 +337,13 @@ class NodeGroupSpec extends Specification {
                 "{" +
                     "\"localUrl\":\"http://node-1\"," +
                     "\"offset\":\"0\"," +
-                    "\"pipe\":{\"pipeState\":\"$PipeState.UP_TO_DATE\"}," +
+                    "\"pipe\":{\"pipeState\":\"$PipeState.UP_TO_DATE\",\"v\":\"1.0\"}," +
                     "\"id\":\"http://node-1\"" +
                 "}," +
                 "{" +
                     "\"localUrl\":\"http://node-2\"," +
                     "\"offset\":\"0\"," +
-                    "\"pipe\":{\"pipeState\":\"$PipeState.OUT_OF_DATE\"}," +
+                    "\"pipe\":{\"pipeState\":\"$PipeState.OUT_OF_DATE\",\"v\":\"1.0\"}," +
                     "\"id\":\"http://node-2\"" +
                 "}" +
             "]"
@@ -342,23 +355,168 @@ class NodeGroupSpec extends Specification {
             .localUrl(new URL("http://node-1"))
             .lastSeen(ZonedDateTime.now())
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
         Node n2 = Node.builder()
             .localUrl(new URL("http://node-2"))
             .lastSeen(ZonedDateTime.now().minusDays(10))
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
         Node n3 = Node.builder()
             .localUrl(new URL("http://node-3"))
             .lastSeen(ZonedDateTime.now().minusDays(3))
             .status(FOLLOWING)
+            .pipe(["v":"1.0"])
             .build()
         NodeGroup group = new NodeGroup([n1, n2, n3])
         when: "requesting nodes be marked offline"
         group.markNodesOfflineIfNotSeenSince(ZonedDateTime.now().minusDays(5))
         then: "Only nodes not seen since the threshold are marked offline"
-        group.nodes.get(0).status == FOLLOWING
-        group.nodes.get(1).status == OFFLINE
-        group.nodes.get(0).status == FOLLOWING
+        group.subGroups.get(0).nodes.get(0).status == FOLLOWING
+        group.subGroups.get(0).nodes.get(1).status == OFFLINE
+        group.subGroups.get(0).nodes.get(0).status == FOLLOWING
+    }
+
+    def "A new subgroup is created if it does not exist"(){
+        given: "a node"
+        def url1 = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(url1)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .build()
+
+        NodeGroup group = new NodeGroup([n1])
+
+        def url2 = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(url2)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"2.0"])
+            .build()
+
+        when:
+        group.upsert(n2, CLOUD_URL)
+
+        then:
+        group.subGroups.size() == 2
+        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(1).subGroupId == "2.0"
+        group.subGroups.get(0).nodes.get(0).localUrl == url1
+        group.subGroups.get(1).nodes.get(0).localUrl == url2
+    }
+
+    def "A node with a version for an already existing subgroup is added to the subgroup"() {
+        given: "a node"
+        def cloudUrl = CLOUD_URL
+        def url1 = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(url1)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .requestedToFollow([cloudUrl])
+            .build()
+
+        NodeGroup group = new NodeGroup([n1])
+
+        def url2 = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(url2)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .build()
+
+        when:
+        group.upsert(n2, cloudUrl)
+
+        then:
+        group.subGroups.size() == 1
+        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(0).nodes.get(0).localUrl == url1
+        group.subGroups.get(0).nodes.get(1).localUrl == url2
+    }
+
+    def "A node with new version is added to a new subgroup and removed from the old one"() {
+        given: "a node"
+        def cloudUrl = CLOUD_URL
+        def url1 = new URL("http://node-1")
+        Node n1 = Node.builder()
+            .localUrl(url1)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .requestedToFollow([cloudUrl])
+            .build()
+
+        def url2 = new URL("http://node-2")
+        Node n2 = Node.builder()
+            .localUrl(url2)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .requestedToFollow([cloudUrl])
+            .build()
+
+        NodeGroup group = new NodeGroup([n1, n2])
+
+        when: "a new version is deployed to node2"
+        Node node2WithNewVersion = Node.builder()
+            .localUrl(url2)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"2.0"])
+            .build()
+
+        and: "upsert is called"
+        group.upsert(node2WithNewVersion, cloudUrl)
+
+        then:
+        group.subGroups.size() == 2
+        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(1).subGroupId == "2.0"
+        group.subGroups.get(0).nodes.size() == 1
+        group.subGroups.get(1).nodes.size() == 1
+        group.subGroups.get(0).nodes.get(0).localUrl == url1
+        group.subGroups.get(1).nodes.get(0).localUrl == url2
+    }
+
+    def "Empty subgroups should be removed when nodes migrate across subgroups"() {
+        given: "a node in a nodegroup"
+        def cloudUrl = CLOUD_URL
+        def url = new URL("http://node-1")
+        Node node = Node.builder()
+            .localUrl(url)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"1.0"])
+            .requestedToFollow([cloudUrl])
+            .build()
+
+        when: "a node is added to node group"
+        NodeGroup group = new NodeGroup([node])
+
+        then:
+        group.subGroups.size() == 1
+        group.subGroups.get(0).subGroupId == "1.0"
+
+        when: "a new version is deployed to the node"
+        Node updatedNode = Node.builder()
+            .localUrl(url)
+            .lastSeen(ZonedDateTime.now())
+            .status(FOLLOWING)
+            .pipe(["v":"2.0"])
+            .build()
+
+        and: "upsert is called"
+        group.upsert(updatedNode, cloudUrl)
+
+        then:
+        group.subGroups.size() == 1
+        group.subGroups.get(0).subGroupId == "2.0"
     }
 }
