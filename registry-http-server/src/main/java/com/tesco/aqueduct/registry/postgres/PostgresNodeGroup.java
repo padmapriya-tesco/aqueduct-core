@@ -28,19 +28,16 @@ public class PostgresNodeGroup extends NodeGroup {
                     "?::JSON, " +
                     "0 " +
                     ")" +
-                    "ON CONFLICT DO NOTHING; " +
-            "COMMIT WORK;";
+                    "ON CONFLICT DO NOTHING; ";
     private static final String QUERY_UPDATE_GROUP =
             "UPDATE registry SET " +
                     "entry = ?::JSON , " +
                     "version = registry.version + 1 " +
                     "WHERE " +
                     "registry.group_id = ? " +
-                    "; " +
-            "COMMIT WORK;";
+                    "; ";
     private static final String QUERY_DELETE_GROUP =
-        "DELETE from registry where group_id = ? and version = ? ;" +
-        "COMMIT WORK;";
+        "DELETE from registry where group_id = ? and version = ? ;";
 
     public static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
         final String entry = rs.getString("entry");

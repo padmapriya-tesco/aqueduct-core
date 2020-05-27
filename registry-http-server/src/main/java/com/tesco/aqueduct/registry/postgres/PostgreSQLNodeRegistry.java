@@ -37,11 +37,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public List<URL> register(final Node nodeToRegister) {
         try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
             final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
             Node node = group.upsert(nodeToRegister, cloudUrl);
 
             group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
             group.persist(connection);
+            connection.commit();
 
             return node.getRequestedToFollow();
         } catch (SQLException | IOException exception) {
@@ -97,6 +99,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     @Override
     public boolean deleteNode(final String groupId, final String host) {
         try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
             final PostgresNodeGroup nodeGroup = nodeGroupStorage.getNodeGroup(connection, groupId);
 
             if(nodeGroup.isEmpty()) {
@@ -119,8 +122,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 group.updateGetFollowing(cloudUrl);
                 group.persist(connection);
             }
+            connection.commit();
             return true;
         }
+        connection.commit();
         return false;
     }
 }

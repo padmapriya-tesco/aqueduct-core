@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostgresNodeGroupStorage {
-    private static final String QUERY_BEGIN_WORK = "BEGIN WORK;";
     private static final String QUERY_GET_GROUP_BY_ID_FOR_UPDATE = "SELECT group_id, entry, version FROM registry where group_id = ? FOR UPDATE;";
     private static final String QUERY_READ_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ?;";
     private static final String QUERY_READ_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
@@ -17,22 +16,16 @@ public class PostgresNodeGroupStorage {
     PostgresNodeGroupStorage() { }
 
     PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException, IOException {
+        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID_FOR_UPDATE)) {
+            statement.setString(1, groupId);
 
-        try(PreparedStatement beginStatement = connection.prepareStatement(QUERY_BEGIN_WORK)) {
-            beginStatement.execute();
-
-            try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID_FOR_UPDATE)) {
-                statement.setString(1, groupId);
-
-                try (ResultSet rs = statement.executeQuery()) {
-                    if (rs.next()) {
-                        return PostgresNodeGroup.createNodeGroup(rs);
-                    } else {
-                        return new PostgresNodeGroup(groupId);
-                    }
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return PostgresNodeGroup.createNodeGroup(rs);
+                } else {
+                    return new PostgresNodeGroup(groupId);
                 }
             }
-
         }
     }
 

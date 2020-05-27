@@ -13,12 +13,6 @@ class PostgresNodeGroupStorageSpec extends Specification {
 
 		given: "a SQL connection"
 		def connection = Mock(Connection) {
-			1 * prepareStatement("BEGIN WORK;") >> {
-				return Mock(PreparedStatement) {
-					1 * execute() >> true
-				}
-			}
-
 			1 * prepareStatement(_) >> {
 				statement = it
 				return Mock(PreparedStatement) {
