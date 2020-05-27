@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostgresNodeGroupStorage {
+    private static final String QUERY_BEGIN_WORK = "BEGIN WORK;";
     private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? FOR UPDATE;";
     private static final String QUERY_GET_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
 
@@ -16,7 +17,7 @@ public class PostgresNodeGroupStorage {
 
     PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException, IOException {
 
-        try(PreparedStatement beginStatement = connection.prepareStatement("BEGIN WORK;")) {
+        try(PreparedStatement beginStatement = connection.prepareStatement(QUERY_BEGIN_WORK)) {
             beginStatement.execute();
 
             try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {

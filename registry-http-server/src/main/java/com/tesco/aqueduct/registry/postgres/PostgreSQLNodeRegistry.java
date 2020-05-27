@@ -15,8 +15,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PostgreSQLNodeRegistry implements NodeRegistry {
-    private static final long OPTIMISTIC_LOCKING_COOLDOWN_MS = 500L;
-    private static final int OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND = 500;
     private static final Random random = new Random();
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 

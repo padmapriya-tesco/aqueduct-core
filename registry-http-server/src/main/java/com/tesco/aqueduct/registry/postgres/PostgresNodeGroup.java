@@ -86,10 +86,6 @@ public class PostgresNodeGroup extends NodeGroup {
             statement.setString(2, nodesToJson());
 
             statement.executeUpdate();
-//            if (statement.executeUpdate() == 0) {
-//                //No rows updated
-//                throw new VersionChangedException();
-//            }
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("node group insert:time", Long.toString(end - start));
@@ -103,9 +99,6 @@ public class PostgresNodeGroup extends NodeGroup {
             statement.setString(2, groupId);
 
             statement.executeUpdate();
-//            if (statement.executeUpdate() == 0) {
-//                throw new VersionChangedException();
-//            }
         }finally {
             long end = System.currentTimeMillis();
             LOG.info("node group update:time", Long.toString(end - start));
