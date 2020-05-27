@@ -83,7 +83,7 @@ public class PostgresNodeGroup extends NodeGroup {
             statement.setString(2, nodesToJson());
 
             if(statement.executeUpdate() == 0) {
-                throw new RuntimeException("Locking failed on insert");
+                LOG.info("Insert new PostgresNodeGroup", "conflict on insert");
             }
         } finally {
             long end = System.currentTimeMillis();
