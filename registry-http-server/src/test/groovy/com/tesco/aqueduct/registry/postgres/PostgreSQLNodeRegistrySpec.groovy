@@ -4,12 +4,13 @@ import com.tesco.aqueduct.registry.model.Node
 import spock.lang.Specification
 
 import javax.sql.DataSource
+import java.sql.Connection
 import java.time.Duration
 
 class PostgreSQLNodeRegistrySpec extends Specification {
 
 	def "New node can register"() {
-		given: "a mock node group factory"
+		given: "a mock node group"
 		def cloudUrl = new URL("http://cloud.url")
 		def mockNodeGroup = Mock(PostgresNodeGroup)
 
@@ -17,8 +18,14 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 		def mockNodeGroupFactory = Mock(PostgresNodeGroupStorage)
 		1 * mockNodeGroupFactory.getNodeGroup(_, _) >> mockNodeGroup
 
-		and: "a node registry"
+		and: "a mock data source"
 		def dataSourceMock = Mock(DataSource)
+		def mockConnection = Mock(Connection)
+		1 * dataSourceMock.getConnection() >> mockConnection
+		1 * mockConnection.setAutoCommit(false)
+
+		and: "a node registry"
+
 		def offlineDelta = Duration.ofMinutes(5)
 		def registry = new PostgreSQLNodeRegistry(dataSourceMock, cloudUrl, offlineDelta, mockNodeGroupFactory)
 
@@ -28,7 +35,7 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 		when: "registering the node"
 		def result = registry.register(testNode)
 
-		then: "we cloud url is returned"
+		then: "the cloud url is returned"
 		result == [cloudUrl]
 	}
 }
