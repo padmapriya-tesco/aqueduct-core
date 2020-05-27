@@ -8,8 +8,8 @@ class IssueTokenResponseSpec extends Specification {
         given: "an identity token with expiry time"
         def identityToken = new IssueTokenResponse("someAccessToken", 1)
 
-        when: "one second is passed"
-        sleep(1000)
+        when: "over one second is passed"
+        sleep(1500)
 
         then: "token is expired"
         identityToken.isTokenExpired()
