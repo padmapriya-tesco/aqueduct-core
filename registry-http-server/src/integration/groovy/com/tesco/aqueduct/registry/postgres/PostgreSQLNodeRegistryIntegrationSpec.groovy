@@ -345,7 +345,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         when: "nodes register concurrently"
         ExecutorService pool = Executors.newFixedThreadPool(threads)
         PollingConditions conditions = new PollingConditions(timeout: timeout)
-        iterations.times{ i ->
+        nodes.times{ i ->
             pool.execute{
                 registerNode("x", "http://" + i, i)
             }
@@ -353,7 +353,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "summary of the registry is as expected"
         conditions.eventually {
-            assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == iterations
+            assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == nodes
         }
 
         cleanup:
@@ -361,21 +361,21 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         where:
 
-        iterations | threads | timeout | name
-        2          | 2       | 5       | "case A" // we have seen bad changes to the code that make case A and B pass/fail in a non-deterministic way, hence they're here
-        2          | 2       | 5       | "case B"
-        1          | 1       | 1       | "1 node"
-        10         | 1       | 1       | "1 node 10 calls"
-        2          | 2       | 1       | "2 nodes"
-        10         | 2       | 5       | "2 nodes 10 calls"
-        3          | 3       | 1       | "3 nodes"
-        10         | 3       | 5       | "3 nodes 10 calls"
-        100        | 3       | 5       | "3 nodes 100 calls"
-        500        | 3       | 20      | "3 nodes 500 calls"
-        10         | 10      | 3       | "10 nodes"
-        50         | 50      | 3       | "50 nodes"
-        100        | 100     | 5       | "100 nodes"
-        250        | 250     | 10      | "250 nodes"
+        nodes | threads | timeout | name
+        2     | 2       | 5       | "case A" // we have seen bad changes to the code that make case A and B pass/fail in a non-deterministic way, hence they're here
+        2     | 2       | 5       | "case B"
+        1     | 1       | 1       | "1 node with concurrency 1"
+        10    | 1       | 1       | "10 node with concurrency 1"
+        2     | 2       | 1       | "2 nodes with concurrency 1"
+        10    | 2       | 5       | "10 nodes with concurrency 2"
+        3     | 3       | 1       | "3 nodes with concurrency 3"
+        10    | 3       | 5       | "10 nodes with concurrency 3"
+        100   | 3       | 5       | "100 nodes with concurrency 3"
+        300   | 3       | 20      | "300 nodes with concurrency 3"
+        10    | 10      | 3       | "10 nodes with concurrency 10"
+        50    | 50      | 3       | "50 nodes with concurrency 50"
+        100   | 100     | 5       | "100 nodes with concurrency 100"
+        250   | 250     | 10      | "250 nodes with concurrency 250"
     }
 
     def "node registry can handle concurrent multiple group requests (10 stores with 50 nodes each)"() {
