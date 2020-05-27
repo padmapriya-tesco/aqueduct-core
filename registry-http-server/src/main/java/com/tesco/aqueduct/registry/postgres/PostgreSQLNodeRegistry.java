@@ -76,7 +76,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
         try (Connection connection = getConnection()) {
-            groups = nodeGroupStorage.getNodeGroups(connection, groupIds);
+            groups = nodeGroupStorage.readNodeGroups(connection, groupIds);
         } catch (SQLException | IOException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);

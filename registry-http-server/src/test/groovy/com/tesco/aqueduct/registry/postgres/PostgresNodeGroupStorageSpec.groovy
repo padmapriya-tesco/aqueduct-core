@@ -99,7 +99,7 @@ class PostgresNodeGroupStorageSpec extends Specification {
 		def PostgresNodeGroupStorage = new PostgresNodeGroupStorage()
 
 		when: "I ask the PostgresNodeGroupStorage to get a list of NodeGroups"
-		def result = PostgresNodeGroupStorage.getNodeGroups(connection, ["test-group-id"])
+		def result = PostgresNodeGroupStorage.readNodeGroups(connection, ["test-group-id"])
 
 		then: "then a select statement is run"
 		statement.contains("SELECT")
@@ -144,7 +144,7 @@ class PostgresNodeGroupStorageSpec extends Specification {
 		def PostgresNodeGroupStorage = new PostgresNodeGroupStorage()
 
 		when: "I ask the PostgresNodeGroupStorage to get a list of NodeGroups, providing no ids"
-		def result = PostgresNodeGroupStorage.getNodeGroups(connection, [])
+		def result = PostgresNodeGroupStorage.readNodeGroups(connection, [])
 
 		then: "then a select statement is run"
 		statement.contains("SELECT")
