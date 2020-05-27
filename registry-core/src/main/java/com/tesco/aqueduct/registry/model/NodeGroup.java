@@ -42,7 +42,6 @@ public class NodeGroup {
         return subGroups.isEmpty();
     }
 
-    @Measure
     public boolean removeByHost(final String host) {
         boolean result = subGroups.stream().anyMatch(subgroup -> subgroup.removeByHost(host));
         subGroups.removeIf(SubNodeGroup::isEmpty);
@@ -53,18 +52,15 @@ public class NodeGroup {
         return JsonHelper.toJson(getNodes());
     }
 
-    @Measure
     public List<Node> getNodes() {
         return subGroups.stream()
             .flatMap(subNodeGroup -> subNodeGroup.nodes.stream()).collect(Collectors.toList());
     }
 
-    @Measure
     public void updateGetFollowing(final URL cloudUrl) {
         subGroups.forEach(subgroup -> subgroup.updateGetFollowing(cloudUrl));
     }
 
-    @Measure
     public void markNodesOfflineIfNotSeenSince(final ZonedDateTime threshold) {
         subGroups.forEach(subGroup -> subGroup.markNodesOfflineIfNotSeenSince(threshold));
     }
@@ -73,7 +69,6 @@ public class NodeGroup {
         subGroups.forEach(subGroup -> subGroup.sortOfflineNodes(cloudUrl));
     }
 
-    @Measure
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
         SubNodeGroup subGroup = findOrCreateSubGroupFor(nodeToRegister);
 
@@ -113,7 +108,6 @@ public class NodeGroup {
         }
     }
 
-    @Measure
     public void processOfflineNodes(ZonedDateTime threshold, URL cloudUrl) {
         markNodesOfflineIfNotSeenSince(threshold);
         sortOfflineNodes(cloudUrl);

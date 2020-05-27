@@ -15,8 +15,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PostgreSQLNodeRegistry implements NodeRegistry {
-    private static final long OPTIMISTIC_LOCKING_COOLDOWN_MS = 500L;
-    private static final int OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND = 500;
     private static final Random random = new Random();
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgreSQLNodeRegistry.class));
 
@@ -38,30 +36,20 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public List<URL> register(final Node nodeToRegister) {
-        int count = 0;
-        while (count < 10) {
-            try (Connection connection = getConnection()) {
-                final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
-                Node node = group.upsert(nodeToRegister, cloudUrl);
+        try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
+            final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
+            Node node = group.upsert(nodeToRegister, cloudUrl);
 
-                group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
-                group.persist(connection);
+            group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
+            group.persist(connection);
+            connection.commit();
 
-                return node.getRequestedToFollow();
-            } catch (SQLException | IOException exception) {
-                LOG.error("Postgresql node registry", "register node", exception);
-                throw new RuntimeException(exception);
-            } catch (VersionChangedException exception) {
-                try {
-                    LOG.info("Postgresql version changed exception", Integer.toString(++count));
-                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN_MS + random.nextInt(OPTIMISTIC_LOCKING_COOLDOWN_RANDOM_BOUND));
-                } catch (InterruptedException e) {
-                    LOG.info("register", "Interrupted waiting for Version store");
-                    Thread.currentThread().interrupt();
-                }
-            }
+            return node.getRequestedToFollow();
+        } catch (SQLException | IOException exception) {
+            LOG.error("Postgresql node registry", "register node", exception);
+            throw new RuntimeException(exception);
         }
-        throw new RuntimeException("Failed to register");
     }
 
     private Connection getConnection() throws SQLException {
@@ -90,7 +78,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
         try (Connection connection = getConnection()) {
-            groups = nodeGroupStorage.getNodeGroups(connection, groupIds);
+            groups = nodeGroupStorage.readNodeGroups(connection, groupIds);
         } catch (SQLException | IOException exception) {
             LOG.error("Postgresql node registry", "get summary", exception);
             throw new RuntimeException(exception);
@@ -110,25 +98,18 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public boolean deleteNode(final String groupId, final String host) {
-        while (true) {
-            try (Connection connection = getConnection()) {
-                final PostgresNodeGroup nodeGroup = nodeGroupStorage.getNodeGroup(connection, groupId);
+        try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
+            final PostgresNodeGroup nodeGroup = nodeGroupStorage.getNodeGroup(connection, groupId);
 
-                if(nodeGroup.isEmpty()) {
-                    return false;
-                } else {
-                    return deleteExistingNode(connection, host, nodeGroup);
-                }
-            } catch (SQLException | IOException exception) {
-                LOG.error("Postgresql node registry", "deleteNode", exception);
-                throw new RuntimeException(exception);
-            } catch (VersionChangedException exception) {
-                try {
-                    Thread.sleep(OPTIMISTIC_LOCKING_COOLDOWN_MS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+            if(nodeGroup.isEmpty()) {
+                return false;
+            } else {
+                return deleteExistingNode(connection, host, nodeGroup);
             }
+        } catch (SQLException | IOException exception) {
+            LOG.error("Postgresql node registry", "deleteNode", exception);
+            throw new RuntimeException(exception);
         }
     }
 
@@ -141,8 +122,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
                 group.updateGetFollowing(cloudUrl);
                 group.persist(connection);
             }
+            connection.commit();
             return true;
         }
+        connection.commit();
         return false;
     }
 }
