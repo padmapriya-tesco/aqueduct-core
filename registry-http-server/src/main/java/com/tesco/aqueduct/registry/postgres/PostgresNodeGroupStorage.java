@@ -9,22 +9,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostgresNodeGroupStorage {
-    private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? ;";
+    private static final String QUERY_GET_GROUP_BY_ID = "SELECT group_id, entry, version FROM registry where group_id = ? FOR UPDATE;";
     private static final String QUERY_GET_ALL_GROUPS = "SELECT group_id, entry, version FROM registry ORDER BY group_id";
 
     PostgresNodeGroupStorage() { }
 
     PostgresNodeGroup getNodeGroup(final Connection connection, final String groupId) throws SQLException, IOException {
-        try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
-            statement.setString(1, groupId);
 
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return PostgresNodeGroup.createNodeGroup(rs);
-                } else {
-                    return new PostgresNodeGroup(groupId);
+        try(PreparedStatement beginStatement = connection.prepareStatement("BEGIN WORK;")) {
+            beginStatement.execute();
+
+            try (PreparedStatement statement = connection.prepareStatement(QUERY_GET_GROUP_BY_ID)) {
+                statement.setString(1, groupId);
+
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        return PostgresNodeGroup.createNodeGroup(rs);
+                    } else {
+                        return new PostgresNodeGroup(groupId);
+                    }
                 }
             }
+
         }
     }
 

@@ -28,17 +28,19 @@ public class PostgresNodeGroup extends NodeGroup {
                     "?::JSON, " +
                     "0 " +
                     ")" +
-                    "ON CONFLICT DO NOTHING ;";
+                    "ON CONFLICT DO NOTHING; " +
+            "COMMIT WORK;";
     private static final String QUERY_UPDATE_GROUP =
             "UPDATE registry SET " +
                     "entry = ?::JSON , " +
                     "version = registry.version + 1 " +
                     "WHERE " +
                     "registry.group_id = ? " +
-                    "AND " +
-                    "registry.version = ? " +
-                    ";";
-    private static final String QUERY_DELETE_GROUP = "DELETE from registry where group_id = ? and version = ? ;";
+                    "; " +
+            "COMMIT WORK;";
+    private static final String QUERY_DELETE_GROUP =
+        "DELETE from registry where group_id = ? and version = ? ;" +
+        "COMMIT WORK;";
 
     public static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
         final String entry = rs.getString("entry");
@@ -83,10 +85,11 @@ public class PostgresNodeGroup extends NodeGroup {
             statement.setString(1, groupId);
             statement.setString(2, nodesToJson());
 
-            if (statement.executeUpdate() == 0) {
-                //No rows updated
-                throw new VersionChangedException();
-            }
+            statement.executeUpdate();
+//            if (statement.executeUpdate() == 0) {
+//                //No rows updated
+//                throw new VersionChangedException();
+//            }
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("node group insert:time", Long.toString(end - start));
@@ -98,11 +101,11 @@ public class PostgresNodeGroup extends NodeGroup {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_UPDATE_GROUP)) {
             statement.setString(1, nodesToJson());
             statement.setString(2, groupId);
-            statement.setInt(3, version);
 
-            if (statement.executeUpdate() == 0) {
-                throw new VersionChangedException();
-            }
+            statement.executeUpdate();
+//            if (statement.executeUpdate() == 0) {
+//                throw new VersionChangedException();
+//            }
         }finally {
             long end = System.currentTimeMillis();
             LOG.info("node group update:time", Long.toString(end - start));
@@ -114,10 +117,8 @@ public class PostgresNodeGroup extends NodeGroup {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
             statement.setString(1, groupId);
             statement.setInt(2, version);
+            statement.executeUpdate();
 
-            if (statement.executeUpdate() == 0) {
-                throw new VersionChangedException();
-            }
         }finally {
             long end = System.currentTimeMillis();
             LOG.info("node group delete:time", Long.toString(end - start));
