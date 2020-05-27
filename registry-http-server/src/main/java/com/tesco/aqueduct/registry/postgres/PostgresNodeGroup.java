@@ -85,7 +85,9 @@ public class PostgresNodeGroup extends NodeGroup {
             statement.setString(1, groupId);
             statement.setString(2, nodesToJson());
 
-            statement.executeUpdate();
+            if(statement.executeUpdate() == 0) {
+                throw new RuntimeException("Locking failed on insert");
+            }
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("node group insert:time", Long.toString(end - start));
@@ -98,7 +100,9 @@ public class PostgresNodeGroup extends NodeGroup {
             statement.setString(1, nodesToJson());
             statement.setString(2, groupId);
 
-            statement.executeUpdate();
+            if(statement.executeUpdate() == 0) {
+                throw new RuntimeException("Locking failed on update");
+            }
         }finally {
             long end = System.currentTimeMillis();
             LOG.info("node group update:time", Long.toString(end - start));
@@ -110,7 +114,10 @@ public class PostgresNodeGroup extends NodeGroup {
         try (PreparedStatement statement = connection.prepareStatement(QUERY_DELETE_GROUP)) {
             statement.setString(1, groupId);
             statement.setInt(2, version);
-            statement.executeUpdate();
+
+            if(statement.executeUpdate() == 0) {
+                throw new RuntimeException("Locking failed on delete");
+            }
 
         }finally {
             long end = System.currentTimeMillis();
