@@ -36,36 +36,34 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public List<URL> register(final Node nodeToRegister) {
+        long start = System.currentTimeMillis();
+
         try (Connection connection = getConnection()) {
+            LOG.info("get connection", Long.toString(System.currentTimeMillis() - start));
+
             connection.setAutoCommit(false);
-            final PostgresNodeGroup group = getNodeGroup(connection, nodeToRegister.getGroup());
+            LOG.info("autocommit off", Long.toString(System.currentTimeMillis() - start));
 
-            Node node = upsert(nodeToRegister, cloudUrl, group);
+            final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
+            LOG.info("get node group", Long.toString(System.currentTimeMillis() - start));
 
-            processOfflineNodes(group, ZonedDateTime.now().minus(offlineDelta), cloudUrl);
+            Node node = group.upsert(nodeToRegister, cloudUrl);
+            LOG.info("upsert", Long.toString(System.currentTimeMillis() - start));
+
+            group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
+            LOG.info("process offline node", Long.toString(System.currentTimeMillis() - start));
+
             group.persist(connection);
+            LOG.info("persist group", Long.toString(System.currentTimeMillis() - start));
+
             connection.commit();
+            LOG.info("commit", Long.toString(System.currentTimeMillis() - start));
 
             return node.getRequestedToFollow();
         } catch (SQLException | IOException exception) {
             LOG.error("Postgresql node registry", "register node", exception);
             throw new RuntimeException(exception);
         }
-    }
-
-    @Override
-    public PostgresNodeGroup getNodeGroup(Connection connection, String groupId) throws IOException, SQLException {
-        return nodeGroupStorage.getNodeGroup(connection, groupId);
-    }
-
-    @Override
-    public Node upsert(Node node, URL cloudUrl, NodeGroup nodeGroup) {
-        return nodeGroup.upsert(node, cloudUrl);
-    }
-
-    @Override
-    public void processOfflineNodes(NodeGroup nodeGroup, ZonedDateTime threshold, URL cloudUrl) {
-        nodeGroup.processOfflineNodes(threshold, cloudUrl);
     }
 
     private Connection getConnection() throws SQLException {
