@@ -90,7 +90,7 @@ public class SubNodeGroup {
         return nodes
             .stream()
             .filter(n -> n.getHost().equals(host))
-            .findFirst();
+            .findAny();
     }
 
     public boolean isEmpty() {
