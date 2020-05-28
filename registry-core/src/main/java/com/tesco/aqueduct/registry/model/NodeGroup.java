@@ -27,7 +27,7 @@ public class NodeGroup {
     private void updateExistingOrAddNewSubNodeGroupFor(Node node) {
         subGroups.stream()
             .filter(subNodeGroup -> subNodeGroup.isFor(node))
-            .findFirst()
+            .findAny()
             .map(subNodeGroup -> {
                 subNodeGroup.add(node);
                 return node;
@@ -99,14 +99,14 @@ public class NodeGroup {
                 .filter(node -> node.isSubGroupIdDifferent(nodeToRegister))
                 .map(node -> subNodeGroup.removeByHost(nodeToRegister.getHost()))
                 .orElse(false))
-            .findFirst()
+            .findAny()
             .ifPresent(this::removeSubGroupIfEmpty);
     }
 
     private SubNodeGroup findOrCreateSubGroupFor(Node nodeToRegister) {
         return subGroups.stream()
             .filter(subGroup -> subGroup.isFor(nodeToRegister))
-            .findFirst()
+            .findAny()
             .orElseGet(() -> {
                 SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getSubGroupId());
                 subGroups.add(subNodeGroup);
