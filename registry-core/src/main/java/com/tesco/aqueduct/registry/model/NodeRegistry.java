@@ -1,10 +1,6 @@
 package com.tesco.aqueduct.registry.model;
 
-import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface NodeRegistry {
@@ -13,12 +9,6 @@ public interface NodeRegistry {
      * @return List of URL this node should currently follow
      */
     List<URL> register(Node node);
-
-    NodeGroup getNodeGroup(Connection connection, String groupId) throws IOException, SQLException;
-
-    Node upsert(Node node, URL cloudUrl, NodeGroup nodeGroup);
-
-    void processOfflineNodes(NodeGroup nodeGroup, ZonedDateTime threshold, URL cloudUrl);
 
     /**
      * @param offset Latest offset of root
