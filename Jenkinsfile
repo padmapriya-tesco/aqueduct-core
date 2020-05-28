@@ -137,7 +137,7 @@ ansiColor('xterm') {
                         checkRunscopeTests("https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c")
                     },
                     publisher: {
-                        checkRunscopeTests("https://api.runscope.com/radar/b6c232b5-61e3-46e4-bc05-cce4fca3c776/trigger?runscope_environment=33bc19df-7cd7-4f74-b9f2-c77daa59b1cb")
+                        checkRunscopeTests("https://api.runscope.com/radar/b6c232b5-61e3-46e4-bc05-cce4fca3c776/trigger?runscope_environment=2361fbfb-171f-4ffc-bf2a-bc13f6d4ec4c")
                     },
                     registry_v2: {
                         checkRunscopeTests("https://api.runscope.com/radar/0d1686a7-d1ca-481b-8cc0-88b4fcd61340/trigger?runscope_environment=1ad753b5-67d6-454a-af00-21ffbf54bd0d")
