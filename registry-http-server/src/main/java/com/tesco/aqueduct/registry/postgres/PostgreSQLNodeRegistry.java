@@ -38,10 +38,11 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
     public List<URL> register(final Node nodeToRegister) {
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
-            final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
-            Node node = group.upsert(nodeToRegister, cloudUrl);
+            final PostgresNodeGroup group = getNodeGroup(connection, nodeToRegister.getGroup());
 
-            group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
+            Node node = upsert(nodeToRegister, cloudUrl, group);
+
+            processOfflineNodes(group, ZonedDateTime.now().minus(offlineDelta), cloudUrl);
             group.persist(connection);
             connection.commit();
 
@@ -50,6 +51,21 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
             LOG.error("Postgresql node registry", "register node", exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    @Override
+    public PostgresNodeGroup getNodeGroup(Connection connection, String groupId) throws IOException, SQLException {
+        return nodeGroupStorage.getNodeGroup(connection, groupId);
+    }
+
+    @Override
+    public Node upsert(Node node, URL cloudUrl, NodeGroup nodeGroup) {
+        return nodeGroup.upsert(node, cloudUrl);
+    }
+
+    @Override
+    public void processOfflineNodes(NodeGroup nodeGroup, ZonedDateTime threshold, URL cloudUrl) {
+        nodeGroup.processOfflineNodes(threshold, cloudUrl);
     }
 
     private Connection getConnection() throws SQLException {
