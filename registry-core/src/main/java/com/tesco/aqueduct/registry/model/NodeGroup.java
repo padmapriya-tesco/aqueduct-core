@@ -1,7 +1,8 @@
 package com.tesco.aqueduct.registry.model;
 
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.registry.utils.RegistryLogger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
+
+    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeGroup.class));
     public final List<SubNodeGroup> subGroups = new ArrayList<>();
 
     public NodeGroup() {
@@ -70,15 +73,24 @@ public class NodeGroup {
     }
 
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
+        long start = System.currentTimeMillis();
         SubNodeGroup subGroup = findOrCreateSubGroupFor(nodeToRegister);
+        long end = System.currentTimeMillis();
+        LOG.info("findOrCreateSubGroupFor", Long.toString(end - start));
 
-        return subGroup.getByHost(nodeToRegister.getHost())
+        long start2 = System.currentTimeMillis();
+        Node node = subGroup.getByHost(nodeToRegister.getHost())
             .map(existingNode -> subGroup.update(existingNode, nodeToRegister))
             .orElseGet(() -> {
                 Node newNode = subGroup.add(nodeToRegister, cloudUrl);
                 removeNodeIfSwitchingSubgroup(nodeToRegister);
                 return newNode;
             });
+
+        long end2 = System.currentTimeMillis();
+        LOG.info("updateOrAdd", Long.toString(end2 - start2));
+
+        return node;
     }
 
     private void removeNodeIfSwitchingSubgroup(final Node nodeToRegister) {
