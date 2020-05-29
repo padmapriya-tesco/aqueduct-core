@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.registry.model;
 
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.pipe.metrics.Measure;
 
 import java.io.IOException;
 import java.net.URL;
@@ -24,7 +23,7 @@ public class NodeGroup {
     private void updateExistingOrAddNewSubNodeGroupFor(Node node) {
         subGroups.stream()
             .filter(subNodeGroup -> subNodeGroup.isFor(node))
-            .findFirst()
+            .findAny()
             .map(subNodeGroup -> {
                 subNodeGroup.add(node);
                 return node;
@@ -72,12 +71,11 @@ public class NodeGroup {
     public Node upsert(final Node nodeToRegister, final URL cloudUrl) {
         SubNodeGroup subGroup = findOrCreateSubGroupFor(nodeToRegister);
 
-        return subGroup.getByHost(nodeToRegister.getHost())
-            .map(existingNode -> subGroup.update(existingNode, nodeToRegister))
+        return subGroup.findAndUpdate(nodeToRegister)
             .orElseGet(() -> {
-                Node newNode = subGroup.add(nodeToRegister, cloudUrl);
+                Node node = subGroup.add(nodeToRegister, cloudUrl);
                 removeNodeIfSwitchingSubgroup(nodeToRegister);
-                return newNode;
+                return node;
             });
     }
 
@@ -87,14 +85,14 @@ public class NodeGroup {
                 .filter(node -> node.isSubGroupIdDifferent(nodeToRegister))
                 .map(node -> subNodeGroup.removeByHost(nodeToRegister.getHost()))
                 .orElse(false))
-            .findFirst()
+            .findAny()
             .ifPresent(this::removeSubGroupIfEmpty);
     }
 
     private SubNodeGroup findOrCreateSubGroupFor(Node nodeToRegister) {
         return subGroups.stream()
             .filter(subGroup -> subGroup.isFor(nodeToRegister))
-            .findFirst()
+            .findAny()
             .orElseGet(() -> {
                 SubNodeGroup subNodeGroup = new SubNodeGroup(nodeToRegister.getSubGroupId());
                 subGroups.add(subNodeGroup);

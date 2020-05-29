@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.registry.model;
 
-import com.tesco.aqueduct.pipe.metrics.Measure;
 import lombok.EqualsAndHashCode;
 
 import java.net.URL;
@@ -90,7 +89,7 @@ public class SubNodeGroup {
         return nodes
             .stream()
             .filter(n -> n.getHost().equals(host))
-            .findFirst();
+            .findAny();
     }
 
     public boolean isEmpty() {
@@ -120,7 +119,15 @@ public class SubNodeGroup {
         }
     }
 
-    public Node update(final Node currentNode, final Node nodeToRegister) {
-        return nodes.set(nodes.indexOf(currentNode), nodeToRegister.buildWith(currentNode.getRequestedToFollow()));
+    public Optional<Node> findAndUpdate(Node nodeToRegister) {
+        for (int i=0; i<nodes.size(); i++) {
+            if(nodes.get(i).getHost().equals(nodeToRegister.getHost())) {
+                Node updatedNode = nodeToRegister.buildWith(nodes.get(i).getRequestedToFollow());
+                nodes.set(i, updatedNode);
+                return Optional.ofNullable(updatedNode);
+            }
+        }
+
+        return Optional.empty();
     }
 }

@@ -36,14 +36,28 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public List<URL> register(final Node nodeToRegister) {
+        long start = System.currentTimeMillis();
+
         try (Connection connection = getConnection()) {
+            LOG.info("get connection", Long.toString(System.currentTimeMillis() - start));
+
             connection.setAutoCommit(false);
+            LOG.info("autocommit off", Long.toString(System.currentTimeMillis() - start));
+
             final PostgresNodeGroup group = nodeGroupStorage.getNodeGroup(connection, nodeToRegister.getGroup());
+            LOG.info("get node group", Long.toString(System.currentTimeMillis() - start));
+
             Node node = group.upsert(nodeToRegister, cloudUrl);
+            LOG.info("upsert", Long.toString(System.currentTimeMillis() - start));
 
             group.processOfflineNodes(ZonedDateTime.now().minus(offlineDelta), cloudUrl);
+            LOG.info("process offline node", Long.toString(System.currentTimeMillis() - start));
+
             group.persist(connection);
+            LOG.info("persist group", Long.toString(System.currentTimeMillis() - start));
+
             connection.commit();
+            LOG.info("commit", Long.toString(System.currentTimeMillis() - start));
 
             return node.getRequestedToFollow();
         } catch (SQLException | IOException exception) {
