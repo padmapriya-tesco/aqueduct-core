@@ -16,8 +16,17 @@ public class UpsertBenchmark {
     @State(Scope.Thread)
     public static class MyState {
         Node node1;
+        Node node2;
+        Node node3;
+        URL cloud;
+        NodeGroup nodeGroup;
 
-        {
+        public MyState() {
+        }
+
+        @Setup(Level.Iteration)
+        public void doSetup() {
+
             try {
                 node1 = new Node(
                     "group1",
@@ -31,15 +40,6 @@ public class UpsertBenchmark {
                     Maps.of("GLOBAL_OFFSET","1"),
                     Maps.of("LAST_ACK","1")
                 );
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        Node node2;
-
-        {
-            try {
                 node2 = new Node(
                     "group1",
                     new URL("http://abc2"),
@@ -52,15 +52,6 @@ public class UpsertBenchmark {
                     Maps.of("GLOBAL_OFFSET","1"),
                     Maps.of("LAST_ACK","1")
                 );
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        Node node3;
-
-        {
-            try {
                 node3 = new Node(
                     "group1",
                     new URL("http://abc3"),
@@ -73,28 +64,11 @@ public class UpsertBenchmark {
                     Maps.of("GLOBAL_OFFSET","1"),
                     Maps.of("LAST_ACK","1")
                 );
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        URL cloud;
-
-        {
-            try {
                 cloud = new URL("http://some.cloud.url");
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
-        }
 
-        NodeGroup nodeGroup;
-
-        public MyState() {
-        }
-
-        @Setup(Level.Iteration)
-        public void doSetup() {
             nodeGroup = new NodeGroup();
         }
 
