@@ -1,8 +1,6 @@
 package com.tesco.aqueduct.registry.model;
 
 import com.tesco.aqueduct.pipe.api.JsonHelper;
-import com.tesco.aqueduct.registry.utils.RegistryLogger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -12,8 +10,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeGroup {
-
-    private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeGroup.class));
     public final List<SubNodeGroup> subGroups = new ArrayList<>();
 
     public NodeGroup() {
