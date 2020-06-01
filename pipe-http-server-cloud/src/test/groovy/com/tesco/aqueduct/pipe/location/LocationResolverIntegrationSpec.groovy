@@ -3,7 +3,6 @@ package com.tesco.aqueduct.pipe.location
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.stehno.ersatz.junit.ErsatzServerRule
-import com.tesco.aqueduct.pipe.api.Cluster
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider
 import groovy.json.JsonOutput
@@ -18,7 +17,7 @@ import spock.lang.Specification
 class LocationResolverIntegrationSpec extends Specification {
 
     private final static String LOCATION_BASE_PATH = "/tescolocation"
-    private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
+    private final static String LOCATION_CLUSTER_PATH = "/clusters/v1/locations/{locationUuid}/clusters/ids"
     private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
     private final static String ACCESS_TOKEN = "some_encrypted_token"
     private final static String CLIENT_ID = "someClientId"
@@ -60,9 +59,6 @@ class LocationResolverIntegrationSpec extends Specification {
                     micronaut.caches.cluster-cache..expire-after-write: $CACHE_EXPIRY_HOURS
                     location:
                         url:                    $locationBasePath
-                        get: 
-                            cluster:
-                            path:               "${LOCATION_CLUSTER_PATH}"
                         attempts:               3
                         delay:                  500ms  
                     authentication:
@@ -100,10 +96,10 @@ class LocationResolverIntegrationSpec extends Specification {
         def locationResolver = context.getBean(CloudLocationResolver)
 
         when: "get clusters for a location Uuid"
-        List<Cluster> clusters = locationResolver.resolve(locationUuid)
+        List<String> clusters = locationResolver.resolve(locationUuid)
 
         then:
-        clusters == [new Cluster("cluster_A"), new Cluster("cluster_B")]
+        clusters == ["cluster_A","cluster_B"]
 
         and: "location service is called once"
         locationMockService.verify()
@@ -205,7 +201,7 @@ class LocationResolverIntegrationSpec extends Specification {
 
     private ErsatzServer locationServiceReturningError(String locationUuid, int status, int invocationCount) {
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(invocationCount)
                 responder {
@@ -252,7 +248,7 @@ class LocationResolverIntegrationSpec extends Specification {
 
     void locationServiceReturningClustersFor(String locationUuid) {
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(1)
 
@@ -261,16 +257,8 @@ class LocationResolverIntegrationSpec extends Specification {
                     body("""
                     {
                         "clusters": [
-                            {
-                                "id": "cluster_A",
-                                "name": "Cluster A",
-                                "origin": "ORIGIN1"
-                            },
-                            {
-                                "id": "cluster_B",
-                                "name": "Cluster B",
-                                "origin": "ORIGIN2"
-                            }
+                            "cluster_A",
+                            "cluster_B"
                         ],
                         "totalCount": 2
                     }
@@ -278,5 +266,9 @@ class LocationResolverIntegrationSpec extends Specification {
                 }
             }
         }
+    }
+
+    private String locationPathIncluding(String locationUuid) {
+        LOCATION_CLUSTER_PATH.replace("{locationUuid}", locationUuid)
     }
 }

@@ -1,6 +1,5 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
-import com.tesco.aqueduct.pipe.api.Cluster
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import groovy.sql.Sql
@@ -99,7 +98,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
         insert(101, "b", "contentType", "type1", time, null)
 
         and: "location to cluster resolution"
-        locationResolver.resolve("someLocation") >> [new Cluster("a_cluster_id")]
+        locationResolver.resolve("someLocation") >> ["a_cluster_id"]
 
         when:
         def request = RestAssured.get("/pipe/100?location=someLocation")

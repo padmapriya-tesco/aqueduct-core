@@ -34,7 +34,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
 
     void setup() {
         RestAssured.port = server.port
-        locationResolver.resolve(_) >> [new Cluster("cluster1")]
+        locationResolver.resolve(_) >> ["cluster1"]
         pipeStateProvider.getState(*_) >> new PipeStateResponse(true, 100)
     }
 

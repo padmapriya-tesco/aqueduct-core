@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.location;
 
-import com.tesco.aqueduct.pipe.api.Cluster;
 import com.tesco.aqueduct.pipe.api.LocationResolver;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
@@ -22,7 +21,7 @@ public class CloudLocationResolver implements LocationResolver {
     }
 
     @Override
-    public List<Cluster> resolve(@NotNull String locationId) {
+    public List<String> resolve(@NotNull String locationId) {
         final String traceId = UUID.randomUUID().toString();
         try {
             return locationServiceClient.getClusters(traceId, locationId)
