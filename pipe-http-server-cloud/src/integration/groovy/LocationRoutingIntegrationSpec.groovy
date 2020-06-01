@@ -35,7 +35,7 @@ class LocationRoutingIntegrationSpec extends Specification {
     private final static String ACCESS_TOKEN = UUID.randomUUID().toString()
 
     private final static String LOCATION_BASE_PATH = "/tescolocation"
-    private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
+    private final static String LOCATION_CLUSTER_PATH = "/clusters/v1/locations/{locationUuid}/clusters/ids"
 
     @Shared @AutoCleanup ErsatzServer identityMockService
     @Shared @AutoCleanup ErsatzServer locationMockService
@@ -372,16 +372,10 @@ class LocationRoutingIntegrationSpec extends Specification {
     private void locationServiceReturningListOfClustersForGiven(
             String locationUuid, List<String> clusters) {
 
-        def clusterString = clusters.stream().map {
-            """{
-                "id": "$it",
-                "name": "Cluster $it",
-                "origin": "ORIGIN $it"
-            }"""
-        }.collect(joining(","))
+        def clusterString = clusters.stream().map{"\"$it\""}.collect(joining(","))
 
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(1)
 
@@ -390,12 +384,16 @@ class LocationRoutingIntegrationSpec extends Specification {
                     body("""
                     {
                         "clusters": [$clusterString],
-                        "totalCount": 2
+                        "revisionId": "2"
                     }
                """)
                 }
             }
         }
+    }
+
+    private String locationPathIncluding(String locationUuid) {
+        LOCATION_CLUSTER_PATH.replace("{locationUuid}", locationUuid)
     }
 
     def issueValidTokenFromIdentity() {

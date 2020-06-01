@@ -260,7 +260,7 @@ class LocationResolverIntegrationSpec extends Specification {
                             "cluster_A",
                             "cluster_B"
                         ],
-                        "totalCount": 2
+                        "revisionId": "2"
                     }
                """)
                 }
