@@ -124,16 +124,16 @@ ansiColor('xterm') {
             stage("PPE Runscope Tests") {
                 parallel(
                     get_pipe: {
-                        checkRunscopeTests("https://api.runscope.com/radar/a611d773-cf82-4556-af26-68b5ac7469e0/trigger?runscope_environment=c8b9298d-9307-4161-902d-7c6998d0563c")
+                        completeRunscopeTests("ppe", "get_pipe")
                     },
                     publisher: {
-                        checkRunscopeTests("https://api.runscope.com/radar/b6c232b5-61e3-46e4-bc05-cce4fca3c776/trigger?runscope_environment=2361fbfb-171f-4ffc-bf2a-bc13f6d4ec4c")
+                        completeRunscopeTests("ppe", "publisher")
                     },
                     registry_v2: {
-                        checkRunscopeTests("https://api.runscope.com/radar/0d1686a7-d1ca-481b-8cc0-88b4fcd61340/trigger?runscope_environment=1ad753b5-67d6-454a-af00-21ffbf54bd0d")
+                        completeRunscopeTests("ppe", "registry_v2")
                     },
                     auth_check: {
-                        checkRunscopeTests("https://api.runscope.com/radar/24bcd68f-9d3c-412d-bb13-89ec5f1f7dd6/trigger?runscope_environment=0a0e122f-8600-4145-8481-16ebc349654f")
+                        completeRunscopeTests("ppe", "auth_check")
                     }
                 )
             }
@@ -166,16 +166,16 @@ ansiColor('xterm') {
             stage("Live Runscope Tests") {
                 parallel(
                     get_pipe: {
-                        checkRunscopeTests("https://api.runscope.com/radar/3382d06f-8d8b-4bdf-aeaa-a8ea28d5ee03/trigger?runscope_environment=067344b4-1a23-4302-8ffb-1d52aebb9f5c")
+                        completeRunscopeTests("live", "get_pipe")
                     },
                     publisher: {
-                        checkRunscopeTests("https://api.runscope.com/radar/d51b4186-a47d-4331-87c9-810ad7e0bc4a/trigger?runscope_environment=90bdcabb-c5ff-4af4-8b9e-3016280f7eff")
+                        completeRunscopeTests("live", "publisher")
                     },
                     registry_v2: {
-                        checkRunscopeTests("https://api.runscope.com/radar/0fd90e73-dc5f-48df-ab01-49ebf4c801f4/trigger?runscope_environment=27189652-3112-42e6-b5a9-f3c060585756")
+                        completeRunscopeTests("live", "registry_v2")
                     },
                     auth_check: {
-                        checkRunscopeTests("https://api.runscope.com/radar/1a7bd2da-e85d-4887-ad50-070253dd8159/trigger?runscope_environment=88ed6aee-b93b-45bd-92a7-a07ac47c854c")
+                        completeRunscopeTests("live", "auth_check")
                     }
                 )
             }
