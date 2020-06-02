@@ -160,33 +160,6 @@ class LocationResolverIntegrationSpec extends Specification {
         identityMockService.verify()
     }
 
-
-    def "Empty list of location clusters when location service fails with 404"() {
-        given: "a location Uuid"
-        def locationUuid = "locationUuid"
-
-        and: "a mocked Identity service for issue token endpoint"
-        identityIssueTokenService()
-
-        and: "location service returning list of clusters for a given Uuid"
-        locationServiceReturningNotFoundFor(locationUuid)
-
-        and: "location service bean is initialized"
-        def locationResolver = context.getBean(CloudLocationResolver)
-
-        when: "get clusters for a location Uuid"
-        def listOfClusters = locationResolver.resolve(locationUuid)
-
-        then:
-        listOfClusters.isEmpty()
-
-        and: "location service is called once"
-        locationMockService.verify()
-
-        and: "identity service is called once"
-        identityMockService.verify()
-    }
-
     def "location service error when location service return unexpected response"() {
         given: "a location Uuid"
         def locationUuid = "locationUuid"
@@ -205,10 +178,6 @@ class LocationResolverIntegrationSpec extends Specification {
 
         then:
         thrown(LocationServiceException)
-    }
-
-    private void locationServiceReturningNotFoundFor(String locationUuid) {
-        locationServiceReturningError(locationUuid, 404, 1)
     }
 
     private void locationServiceReturningBadRequestFor(String locationUuid) {
