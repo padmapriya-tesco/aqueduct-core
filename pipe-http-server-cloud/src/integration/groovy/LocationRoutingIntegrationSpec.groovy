@@ -145,6 +145,46 @@ class LocationRoutingIntegrationSpec extends Specification {
         Arrays.asList(response.getBody().as(Message[].class)) == [message1, message4, message5, message6]
     }
 
+    def "messages for default cluster are routed when no clusters are found for given location"() {
+        given: "a location UUID"
+        def locationUuid = UUID.randomUUID().toString()
+
+        and: "location service returning clusters for the location uuid"
+        locationServiceReturningListOfClustersForGiven(locationUuid, [])
+
+        and: "some clusters in the storage"
+        Long clusterA = insertCluster("Cluster_A")
+        Long clusterB = insertCluster("Cluster_B")
+
+        and: "messages in the storage for default clusters"
+        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message3 = message(3, "type3", "C", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message4 = message(4, "type2", "D", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message5 = message(5, "type1", "E", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message6 = message(6, "type3", "F", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+
+        insertWithCluster(message1, clusterA)
+        insertWithCluster(message2, clusterB)
+        insertWithoutCluster(message3)
+        insertWithoutCluster(message4)
+        insertWithCluster(message5, clusterA)
+        insertWithoutCluster(message6)
+
+        when: "read messages for the given location"
+        def response = RestAssured.given()
+            .header("Authorization", "Bearer $ACCESS_TOKEN")
+            .get("/pipe/0?location=$locationUuid")
+
+        then: "http ok response code"
+        response
+            .then()
+            .statusCode(200)
+
+        and: "response body has messages only for default cluster"
+        Arrays.asList(response.getBody().as(Message[].class)) == [message3, message4, message6]
+    }
+
     def "messages are routed for the given location's cluster and default cluster when both exists in storage"() {
         given: "a location UUID"
         def locationUuid = UUID.randomUUID().toString()
@@ -374,6 +414,8 @@ class LocationRoutingIntegrationSpec extends Specification {
 
         def clusterString = clusters.stream().map{"\"$it\""}.collect(joining(","))
 
+        def revisionId = clusters.isEmpty() ? null : "2"
+
         locationMockService.expectations {
             get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
@@ -384,7 +426,7 @@ class LocationRoutingIntegrationSpec extends Specification {
                     body("""
                     {
                         "clusters": [$clusterString],
-                        "revisionId": "2"
+                        "revisionId": "$revisionId"
                     }
                """)
                 }

@@ -11,7 +11,6 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
-import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.security.annotation.Secured;
 import org.slf4j.LoggerFactory;
 
@@ -65,11 +64,8 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        List<String> targetUuids = resolveTargetUuidsFrom(location);
 
-        LOG.debug("pipe read controller", "List of clusters from location service: " + targetUuids + " for locationUuid: " + location);
-
-        final MessageResults messageResults = reader.read(types, offset, targetUuids);
+        final MessageResults messageResults = reader.read(types, offset, locationResolver.resolve(location));
         final List<Message> list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
@@ -87,12 +83,6 @@ public class PipeReadController {
             );
 
         return response;
-    }
-
-    private List<String> resolveTargetUuidsFrom(@Nullable String location) {
-        return location == null
-            ? Collections.emptyList() // TODO -
-            : locationResolver.resolve(location);
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {

@@ -125,7 +125,7 @@ class LocationResolverIntegrationSpec extends Specification {
         locationResolver.resolve(locationUuid)
 
         then:
-        thrown(LocationServiceUnavailableException)
+        thrown(LocationServiceException)
 
         and: "location service is called once"
         locationMockService.verify()
@@ -185,6 +185,26 @@ class LocationResolverIntegrationSpec extends Specification {
 
         and: "identity service is called once"
         identityMockService.verify()
+    }
+
+    def "location service error when location service return unexpected response"() {
+        given: "a location Uuid"
+        def locationUuid = "locationUuid"
+
+        and: "a mocked Identity service for issue token endpoint"
+        identityIssueTokenService()
+
+        and: "location service returning empty body for a given Uuid"
+        locationServiceReturningClustersFor(locationUuid, "{}")
+
+        and: "location service bean is initialized"
+        def locationResolver = context.getBean(CloudLocationResolver)
+
+        when: "get clusters for a location Uuid"
+        locationResolver.resolve(locationUuid)
+
+        then:
+        thrown(LocationServiceException)
     }
 
     private void locationServiceReturningNotFoundFor(String locationUuid) {
@@ -263,6 +283,20 @@ class LocationResolverIntegrationSpec extends Specification {
                         "revisionId": "2"
                     }
                """)
+                }
+            }
+        }
+    }
+
+    void locationServiceReturningClustersFor(String locationUuid, String responseBody) {
+        locationMockService.expectations {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
+                header("Authorization", "Bearer ${ACCESS_TOKEN}")
+                called(1)
+
+                responder {
+                    header("Content-Type", "application/json")
+                    body(responseBody)
                 }
             }
         }
