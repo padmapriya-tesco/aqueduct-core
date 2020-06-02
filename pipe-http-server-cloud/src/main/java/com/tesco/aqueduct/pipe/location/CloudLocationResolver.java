@@ -27,7 +27,7 @@ public class CloudLocationResolver implements LocationResolver {
             return locationServiceClient.getClusters(traceId, locationId)
                 .getBody()
                 .map(LocationServiceClusterResponse::getClusters)
-                .orElse(Collections.emptyList());
+                .orElse(Collections.emptyList()); // TODO - Fix this, this should not be an immutable list
 
         } catch (final HttpClientResponseException exception) {
             LOG.error("resolve", "trace_id: " + traceId, exception);

@@ -87,7 +87,7 @@ public class PipeReadController {
 
     private List<String> resolveTargetUuidsFrom(@Nullable String location) {
         return location == null
-            ? Collections.emptyList()
+            ? Collections.emptyList() // TODO -
             : locationResolver.resolve(location);
     }
 
