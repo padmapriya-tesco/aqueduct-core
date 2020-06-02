@@ -65,7 +65,11 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
 
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
-        final MessageResults messageResults = reader.read(types, offset, resolveTargetUuidsFrom(location));
+        List<String> targetUuids = resolveTargetUuidsFrom(location);
+
+        LOG.debug("pipe read controller", "List of clusters from location service: " + targetUuids + " for locationUuid: " + location);
+
+        final MessageResults messageResults = reader.read(types, offset, targetUuids);
         final List<Message> list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 

@@ -118,6 +118,8 @@ public class PostgresqlStorage implements CentralStorage {
             clusterUuids.add(DEFAULT_CLUSTER);
             final String strClusters = String.join(",", clusterUuids);
 
+            LOG.debug("postgresql storage", "List of clusters to query: " + strClusters);
+
             if (types == null || types.isEmpty()) {
                 query = connection.prepareStatement(getSelectEventsWithoutTypeQuery(maxBatchSize));
                 query.setString(1, strClusters);
