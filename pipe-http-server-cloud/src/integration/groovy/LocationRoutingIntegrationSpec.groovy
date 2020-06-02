@@ -145,7 +145,7 @@ class LocationRoutingIntegrationSpec extends Specification {
         Arrays.asList(response.getBody().as(Message[].class)) == [message1, message4, message5, message6]
     }
 
-    def "messages for default cluster are routed when no clusters are found for given location"() {
+    def "messages for default cluster are routed when no clusters are found for the given location"() {
         given: "a location UUID"
         def locationUuid = UUID.randomUUID().toString()
 

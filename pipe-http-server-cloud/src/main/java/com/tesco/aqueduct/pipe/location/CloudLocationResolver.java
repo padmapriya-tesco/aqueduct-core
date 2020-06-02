@@ -27,7 +27,7 @@ public class CloudLocationResolver implements LocationResolver {
             return locationServiceClient.getClusters(traceId, locationId)
                 .getBody()
                 .map(LocationServiceClusterResponse::getClusters)
-                .orElseThrow(() -> new LocationServiceException("Unexpected response, please check location service contract for this endpoint."));
+                .orElseThrow(() -> new LocationServiceException("Unexpected response body, please check location service contract for this endpoint."));
 
         } catch (final HttpClientResponseException exception) {
             LOG.error("resolve", "trace_id: " + traceId, exception);
