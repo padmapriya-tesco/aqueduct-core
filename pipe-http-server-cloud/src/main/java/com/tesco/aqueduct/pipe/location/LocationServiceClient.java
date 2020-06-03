@@ -12,7 +12,7 @@ import io.micronaut.retry.annotation.CircuitBreaker;
 @Client("${location.url}")
 @Measure
 public interface LocationServiceClient {
-    @Get("/v4/clusters/locations/{locationUuid}")
+    @Get("/clusters/v1/locations/{locationUuid}/clusters/ids")
     @Consumes
     @Cacheable(value = "cluster-cache", parameters = "locationUuid")
     @CircuitBreaker(attempts = "${location.attempts}", delay = "${location.delay}")

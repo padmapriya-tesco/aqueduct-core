@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.location;
 
-import com.tesco.aqueduct.pipe.api.Cluster;
 import com.tesco.aqueduct.pipe.api.LocationResolver;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
@@ -22,18 +21,18 @@ public class CloudLocationResolver implements LocationResolver {
     }
 
     @Override
-    public List<Cluster> resolve(@NotNull String locationId) {
+    public List<String> resolve(@NotNull String locationId) {
         final String traceId = UUID.randomUUID().toString();
         try {
             return locationServiceClient.getClusters(traceId, locationId)
                 .getBody()
                 .map(LocationServiceClusterResponse::getClusters)
-                .orElse(Collections.emptyList());
+                .orElseThrow(() -> new LocationServiceException("Unexpected response body, please check location service contract for this endpoint."));
 
         } catch (final HttpClientResponseException exception) {
             LOG.error("resolve", "trace_id: " + traceId, exception);
             if (exception.getStatus().getCode() > 499) {
-                throw new LocationServiceUnavailableException("Unexpected error from location service with status - " + exception.getStatus());
+                throw new LocationServiceException("Unexpected error from location service with status - " + exception.getStatus());
             } else {
                 throw exception;
             }

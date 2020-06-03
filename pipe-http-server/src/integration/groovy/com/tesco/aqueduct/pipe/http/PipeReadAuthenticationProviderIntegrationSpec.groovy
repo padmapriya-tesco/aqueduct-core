@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.http
 
-import com.tesco.aqueduct.pipe.api.Cluster
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
@@ -38,7 +37,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
     @Shared LocationResolver locationResolver = Mock()
 
     void setupSpec() {
-        locationResolver.resolve(_) >> [new Cluster("cluster1")]
+        locationResolver.resolve(_) >> ["cluster1"]
 
         context = ApplicationContext
             .build()

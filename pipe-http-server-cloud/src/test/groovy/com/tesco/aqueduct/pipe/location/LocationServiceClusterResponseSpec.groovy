@@ -11,21 +11,9 @@ class LocationServiceClusterResponseSpec extends Specification {
             """
                 {
                     "clusters": [
-                        {
-                            "id": "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
-                            "name": "placeholder name",
-                            "origin": "placeholder_origin"
-                        },
-                        {
-                            "id": "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1",
-                            "name": "placeholder name",
-                            "origin": "placeholder_origin"
-                        },
-                        {
-                            "id": "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1",
-                            "name": "placeholder name",
-                            "origin": "placeholder_origin"
-                        }
+                        "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+                        "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1",
+                        "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1"
                     ],
                     "totalCount": 3
                 }
@@ -38,9 +26,9 @@ class LocationServiceClusterResponseSpec extends Specification {
         then: "it is deserialized as expected"
         locationServiceClusterResponse.clusters.size() == 3
 
-        locationServiceClusterResponse.clusters.get(0).id == "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"
-        locationServiceClusterResponse.clusters.get(1).id == "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1"
-        locationServiceClusterResponse.clusters.get(2).id == "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1"
+        locationServiceClusterResponse.clusters.get(0) == "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"
+        locationServiceClusterResponse.clusters.get(1) == "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1"
+        locationServiceClusterResponse.clusters.get(2) == "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1"
 
 
     }

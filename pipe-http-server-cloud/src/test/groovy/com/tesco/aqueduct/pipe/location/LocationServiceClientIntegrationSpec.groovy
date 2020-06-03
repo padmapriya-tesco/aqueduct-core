@@ -3,7 +3,6 @@ package com.tesco.aqueduct.pipe.location
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.stehno.ersatz.junit.ErsatzServerRule
-import com.tesco.aqueduct.pipe.api.Cluster
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -17,7 +16,7 @@ import spock.lang.Specification
 class LocationServiceClientIntegrationSpec extends Specification {
 
     private final static String LOCATION_BASE_PATH = "/tescolocation"
-    private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
+    private final static String LOCATION_CLUSTER_PATH = "/clusters/v1/locations/{locationUuid}/clusters/ids"
     private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
     private final static String ACCESS_TOKEN = "some_encrypted_token"
     private final static String CLIENT_ID = "someClientId"
@@ -59,9 +58,6 @@ class LocationServiceClientIntegrationSpec extends Specification {
                     micronaut.caches.cluster-cache..expire-after-write: $CACHE_EXPIRY_HOURS
                     location:
                         url:                    $locationBasePath
-                        get: 
-                            cluster:
-                            path:               "${LOCATION_CLUSTER_PATH}"
                         attempts:               3
                         delay:                  500ms  
                     authentication:
@@ -101,7 +97,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         def clusterResponse = locationServiceClient.getClusters("someTraceId", locationUuid)
 
         then:
-        clusterResponse.body().clusters == [new Cluster("cluster_A"), new Cluster("cluster_B")]
+        clusterResponse.body().clusters == ["cluster_A","cluster_B"]
 
         and: "location service is called once"
         locationMockService.verify()
@@ -187,7 +183,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void locationServiceReturningListOfClustersForGiven(String locationUuid) {
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(1)
 
@@ -196,16 +192,8 @@ class LocationServiceClientIntegrationSpec extends Specification {
                     body("""
                     {
                         "clusters": [
-                            {
-                                "id": "cluster_A",
-                                "name": "Cluster A",
-                                "origin": "ORIGIN1"
-                            },
-                            {
-                                "id": "cluster_B",
-                                "name": "Cluster B",
-                                "origin": "ORIGIN2"
-                            }
+                            "cluster_A",
+                            "cluster_B"
                         ],
                         "totalCount": 2
                     }
@@ -217,7 +205,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void locationServiceReturningError(String locationUuid) {
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(4)
 
@@ -231,7 +219,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
     private void locationServiceNotInvoked(String locationUuid) {
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(0)
             }
@@ -292,5 +280,9 @@ class LocationServiceClientIntegrationSpec extends Specification {
     Map<String, Object> parseYamlConfig(String str) {
         def loader = new YamlPropertySourceLoader()
         loader.read("config", str.bytes)
+    }
+
+    private String locationPathIncluding(String locationUuid) {
+        LOCATION_CLUSTER_PATH.replace("{locationUuid}", locationUuid)
     }
 }

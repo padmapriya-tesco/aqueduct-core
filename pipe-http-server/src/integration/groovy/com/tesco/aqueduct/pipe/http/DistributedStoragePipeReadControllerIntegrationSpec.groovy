@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.http
 
-import com.tesco.aqueduct.pipe.api.Cluster
 import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
@@ -49,7 +48,7 @@ class DistributedStoragePipeReadControllerIntegrationSpec extends Specification 
 
         pipeStateProvider.getState(_ ,_) >> new PipeStateResponse(true, 1000)
 
-        locationResolver.resolve(_) >> [new Cluster("clusterId")]
+        locationResolver.resolve(_) >> ["clusterId"]
 
         context.registerSingleton(pipeStateProvider)
         context.registerSingleton(locationResolver)
