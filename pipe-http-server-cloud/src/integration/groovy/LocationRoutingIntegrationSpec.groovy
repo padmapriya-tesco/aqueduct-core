@@ -35,7 +35,7 @@ class LocationRoutingIntegrationSpec extends Specification {
     private final static String ACCESS_TOKEN = UUID.randomUUID().toString()
 
     private final static String LOCATION_BASE_PATH = "/tescolocation"
-    private final static String LOCATION_CLUSTER_PATH = "/v4/clusters/locations"
+    private final static String LOCATION_CLUSTER_PATH = "/clusters/v1/locations/{locationUuid}/clusters/ids"
 
     @Shared @AutoCleanup ErsatzServer identityMockService
     @Shared @AutoCleanup ErsatzServer locationMockService
@@ -143,6 +143,46 @@ class LocationRoutingIntegrationSpec extends Specification {
 
         and: "response body has messages only for the given location"
         Arrays.asList(response.getBody().as(Message[].class)) == [message1, message4, message5, message6]
+    }
+
+    def "messages for default cluster are routed when no clusters are found for the given location"() {
+        given: "a location UUID"
+        def locationUuid = UUID.randomUUID().toString()
+
+        and: "location service returning clusters for the location uuid"
+        locationServiceReturningListOfClustersForGiven(locationUuid, [])
+
+        and: "some clusters in the storage"
+        Long clusterA = insertCluster("Cluster_A")
+        Long clusterB = insertCluster("Cluster_B")
+
+        and: "messages in the storage for default clusters"
+        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message3 = message(3, "type3", "C", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message4 = message(4, "type2", "D", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message5 = message(5, "type1", "E", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message6 = message(6, "type3", "F", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+
+        insertWithCluster(message1, clusterA)
+        insertWithCluster(message2, clusterB)
+        insertWithoutCluster(message3)
+        insertWithoutCluster(message4)
+        insertWithCluster(message5, clusterA)
+        insertWithoutCluster(message6)
+
+        when: "read messages for the given location"
+        def response = RestAssured.given()
+            .header("Authorization", "Bearer $ACCESS_TOKEN")
+            .get("/pipe/0?location=$locationUuid")
+
+        then: "http ok response code"
+        response
+            .then()
+            .statusCode(200)
+
+        and: "response body has messages only for default cluster"
+        Arrays.asList(response.getBody().as(Message[].class)) == [message3, message4, message6]
     }
 
     def "messages are routed for the given location's cluster and default cluster when both exists in storage"() {
@@ -372,16 +412,12 @@ class LocationRoutingIntegrationSpec extends Specification {
     private void locationServiceReturningListOfClustersForGiven(
             String locationUuid, List<String> clusters) {
 
-        def clusterString = clusters.stream().map {
-            """{
-                "id": "$it",
-                "name": "Cluster $it",
-                "origin": "ORIGIN $it"
-            }"""
-        }.collect(joining(","))
+        def clusterString = clusters.stream().map{"\"$it\""}.collect(joining(","))
+
+        def revisionId = clusters.isEmpty() ? null : "2"
 
         locationMockService.expectations {
-            get(LOCATION_BASE_PATH + LOCATION_CLUSTER_PATH + "/$locationUuid") {
+            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
                 header("Authorization", "Bearer ${ACCESS_TOKEN}")
                 called(1)
 
@@ -390,12 +426,16 @@ class LocationRoutingIntegrationSpec extends Specification {
                     body("""
                     {
                         "clusters": [$clusterString],
-                        "totalCount": 2
+                        "revisionId": "$revisionId"
                     }
                """)
                 }
             }
         }
+    }
+
+    private String locationPathIncluding(String locationUuid) {
+        LOCATION_CLUSTER_PATH.replace("{locationUuid}", locationUuid)
     }
 
     def issueValidTokenFromIdentity() {

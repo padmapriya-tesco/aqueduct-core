@@ -1,6 +1,5 @@
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.Cluster
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.PipeStateResponse
 import com.tesco.aqueduct.pipe.api.Reader
@@ -53,7 +52,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         }
 
         def locationResolver = Mock(LocationResolver) {
-            resolve(_) >> [new Cluster("cluster1")]
+            resolve(_) >> ["cluster1"]
         }
 
 

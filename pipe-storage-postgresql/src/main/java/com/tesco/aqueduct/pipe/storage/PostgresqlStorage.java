@@ -9,6 +9,7 @@ import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.OptionalLong;
 
@@ -111,12 +112,13 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    private PreparedStatement getMessagesStatement(final Connection connection, final List<String> types, final long startOffset, List<String> clusterUuids) {
+    private PreparedStatement getMessagesStatement(
+        final Connection connection, final List<String> types, final long startOffset, final List<String> clusterUuids) {
+
         try {
             PreparedStatement query;
 
-            clusterUuids.add(DEFAULT_CLUSTER);
-            final String strClusters = String.join(",", clusterUuids);
+            final String strClusters = String.join(",", clusterUuidsWithDefaultCluster(clusterUuids));
 
             if (types == null || types.isEmpty()) {
                 query = connection.prepareStatement(getSelectEventsWithoutTypeQuery(maxBatchSize));
@@ -138,6 +140,14 @@ public class PostgresqlStorage implements CentralStorage {
             LOG.error("postgresql storage", "get message statement", exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    private List<String> clusterUuidsWithDefaultCluster(List<String> clusterUuids) {
+        // It is not safe to assume that clusterUuids is a mutable list when its not created here, hence create a copy
+        // before adding default cluster to it
+        final List<String> clusterUuidsWithDefaultCluster = new ArrayList<>(clusterUuids);
+        clusterUuidsWithDefaultCluster.add(DEFAULT_CLUSTER);
+        return Collections.unmodifiableList(clusterUuidsWithDefaultCluster);
     }
 
     public void compactUpTo(final ZonedDateTime thresholdDate) {
