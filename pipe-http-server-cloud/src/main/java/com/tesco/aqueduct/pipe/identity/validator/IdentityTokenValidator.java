@@ -46,8 +46,6 @@ public class IdentityTokenValidator implements TokenValidator {
             return Flowable.empty();
         }
 
-        LOG.info("token validator", "attempting to validate token of length: "+ token.length());
-
         try {
             return identityTokenValidatorClient
                 .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))

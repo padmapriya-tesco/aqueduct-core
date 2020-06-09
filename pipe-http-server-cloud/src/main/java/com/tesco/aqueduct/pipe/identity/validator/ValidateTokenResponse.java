@@ -2,10 +2,13 @@ package com.tesco.aqueduct.pipe.identity.validator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
 public class ValidateTokenResponse {
+    private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(ValidateTokenResponse.class));
     private static final int SERVICE_CONFIDENCE_LEVEL = 12;
 
     private final String userId;
@@ -57,7 +60,9 @@ public class ValidateTokenResponse {
     }
 
     boolean isTokenValid() {
-        return status.equals("VALID") && confidenceLevel == SERVICE_CONFIDENCE_LEVEL;
+        boolean isValid = status.equals("VALID") && confidenceLevel == SERVICE_CONFIDENCE_LEVEL;
+        LOG.info("is token valid", String.valueOf(isValid));
+        return isValid;
     }
 
     String getClientUserID() {
