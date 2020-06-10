@@ -343,12 +343,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     @Unroll
     def "node registry can handle group level concurrent requests safely #name"() {
         when: "nodes register concurrently"
-        ExecutorService pool = Executors.newFixedThreadPool(threads)
         PollingConditions conditions = new PollingConditions(timeout: timeout)
+
         nodes.times{ i ->
-            pool.execute{
+            new Thread( {
                 registerNode("x", "http://" + i, i)
-            }
+            }).run()
         }
 
         then: "summary of the registry is as expected"
@@ -356,14 +356,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             assert registry.getSummary(0, INITIALISING, ["x"]).followers.size() == nodes
         }
 
-        cleanup:
-        pool.shutdown()
-
         where:
-
         nodes | threads | timeout | name
-        2     | 2       | 5       | "case A" // we have seen bad changes to the code that make case A and B pass/fail in a non-deterministic way, hence they're here
-        2     | 2       | 5       | "case B"
         1     | 1       | 1       | "1 node with concurrency 1"
         10    | 1       | 1       | "10 node with concurrency 1"
         2     | 2       | 1       | "2 nodes with concurrency 1"
