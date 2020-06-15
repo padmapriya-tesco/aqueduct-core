@@ -23,7 +23,9 @@ public class MetricsInterceptor implements MethodInterceptor<Object, Object> {
             MDC.put("class", context.getDeclaringType().getCanonicalName());
             MDC.put("method", context.getMethodName());
             LOG.info(null);
-            MDC.clear();
+            MDC.remove("timeMs");
+            MDC.remove("class");
+            MDC.remove("method");
         }
     }
 }
