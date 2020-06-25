@@ -104,6 +104,17 @@ class SQLiteStorageIntegrationSpec extends Specification {
         tableExists
     }
 
+    def 'visibility check works'() {
+        given: 'sqlite storage'
+        sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
+
+        when: 'visibility check is run'
+        sqliteStorage.runVisibilityCheck()
+
+        then: 'no errors are thrown'
+        noExceptionThrown()
+    }
+
     def 'global latest offset table gets created upon start up'() {
         given: 'a connection to the database is established'
         def sql = Sql.newInstance(connectionUrl)
