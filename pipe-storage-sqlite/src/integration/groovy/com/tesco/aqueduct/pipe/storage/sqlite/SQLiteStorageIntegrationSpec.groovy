@@ -104,7 +104,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         tableExists
     }
 
-    def 'visibility check works'() {
+    def 'visibility check runs successfully when there are no issues'() {
         given: 'sqlite storage'
         sqliteStorage = new SQLiteStorage(successfulDataSource(), limit, 10, batchSize)
 
