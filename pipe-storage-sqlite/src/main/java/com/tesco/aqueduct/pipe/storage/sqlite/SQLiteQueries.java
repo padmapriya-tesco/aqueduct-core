@@ -47,6 +47,9 @@ final class SQLiteQueries {
     static final String COMPACT =
         "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key);";
 
+    static final String OFFSET_CONSISTENCY_SUM =
+        "SELECT SUM(msg_offset) FROM EVENT WHERE msg_offset IN (SELECT max(msg_offset) FROM EVENT GROUP BY msg_key);";
+
     static final String DELETE_EVENTS = "DELETE FROM EVENT;";
     static final String DELETE_OFFSETS = "DELETE FROM OFFSET";
     static final String DELETE_PIPE_STATE = "DELETE FROM PIPE_STATE";
