@@ -196,6 +196,25 @@ public class SQLiteStorage implements DistributedStorage {
         );
     }
 
+    @Override
+    public void runVisibilityCheck() {
+        runIntegrityCheck();
+    }
+
+    private void runIntegrityCheck() {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INTEGRITY_CHECK)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                String result = resultSet.getString(1);
+                if (!result.equals("ok")) {
+                    LOG.error("integrity check", "integrity check failed", result);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void execute(String query, SqlConsumer consumer) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
