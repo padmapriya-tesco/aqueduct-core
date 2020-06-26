@@ -199,6 +199,7 @@ public class SQLiteStorage implements DistributedStorage {
     @Override
     public void runVisibilityCheck() {
         runIntegrityCheck();
+        LOG.info("OffsetConsistencySum: ", String.valueOf(calculateOffsetConsistencySum()));
     }
 
     private void runIntegrityCheck() {
@@ -209,6 +210,17 @@ public class SQLiteStorage implements DistributedStorage {
                 if (!result.equals("ok")) {
                     LOG.error("integrity check", "integrity check failed", result);
                 }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private long calculateOffsetConsistencySum() {
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_CONSISTENCY_SUM)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.getLong(1);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
