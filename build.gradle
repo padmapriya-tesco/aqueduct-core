@@ -40,10 +40,6 @@ buildscript {
     }
 }
 
-plugins {
-    id "org.sonarqube" version "2.7"
-}
-
 apply plugin: 'org.owasp.dependencycheck'
 apply plugin: "pl.allegro.tech.build.axion-release"
 
