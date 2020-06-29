@@ -8,10 +8,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.OptionalLong;
+import java.util.*;
 
 public class PostgresqlStorage implements CentralStorage {
 
@@ -65,6 +62,43 @@ public class PostgresqlStorage implements CentralStorage {
             LOG.error("postgresql storage", "get latest offset", exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    @Override
+    public void runVisibilityCheck() {
+        try (Connection connection = dataSource.getConnection()) {
+            Map<String, Long> messageCountByType = getMessageCountByType(connection);
+
+            messageCountByType.forEach((key, value) -> LOG.withTypes(Collections.singletonList(key))
+                    .info("count:type", String.valueOf(value)));
+        } catch (SQLException exception) {
+            LOG.error("postgres storage", "run visibility check", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private Map<String, Long> getMessageCountByType(Connection connection) throws SQLException {
+        long start = System.currentTimeMillis();
+        try (PreparedStatement statement = connection.prepareStatement(getMessageCountByTypeQuery())) {
+            return runMessageCountByTypeQuery(statement);
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("getMessageCountByType:time", Long.toString(end - start));
+        }
+    }
+
+    private Map<String, Long> runMessageCountByTypeQuery(final PreparedStatement preparedStatement) throws SQLException {
+        Map<String, Long> messageCountByType = new HashMap<>();
+
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            while(resultSet.next()) {
+                final String type = resultSet.getString("type");
+                final Long typeCount = resultSet.getLong("count");
+
+                messageCountByType.put(type, typeCount);
+            }
+        }
+        return messageCountByType;
     }
 
     private long getLatestOffsetWithConnection(Connection connection) throws SQLException {
@@ -228,5 +262,9 @@ public class PostgresqlStorage implements CentralStorage {
             "     created_utc <= ? " +
             "     AND e.msg_key = x.msg_key AND e.cluster_id = x.cluster_id AND e.msg_offset <> x.max_offset " +
             " );";
+    }
+    
+    private static String getMessageCountByTypeQuery() {
+        return "SELECT type, COUNT(type) FROM events GROUP BY type;";
     }
 }
