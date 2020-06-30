@@ -492,6 +492,33 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.globalLatestOffset == OptionalLong.of(9)
     }
 
+    def "getMessageCountByType should return the count of messages by type"() {
+        given: "there is postgres storage"
+        def limit = 3
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize)
+
+        and: 'an existing data store with two different types of messages'
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type2", "D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type2", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(6, "type2", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(7, "type1", "G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(8, "type1", "H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(9, "type1", "I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: "getMessageCountByType is called"
+        storage.runVisibilityCheck()
+        Map<String, Long> result = storage.getMessageCountByType(dataSource.connection)
+
+        then: "the correct count is returned"
+        result.get("type1") == 6
+        result.get("type2") == 3
+
+        noExceptionThrown()
+    }
+
     @Override
     void insert(Message msg, int maxMessageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime()) ) {
 
