@@ -70,7 +70,7 @@ public class PostgresqlStorage implements CentralStorage {
             Map<String, Long> messageCountByType = getMessageCountByType(connection);
 
             messageCountByType.forEach((key, value) ->
-                LOG.withTypes(Collections.singletonList(key)).info("count:type", String.valueOf(value))
+                LOG.info("count:type:" + key, String.valueOf(value))
             );
         } catch (SQLException exception) {
             LOG.error("postgres storage", "run visibility check", exception);
