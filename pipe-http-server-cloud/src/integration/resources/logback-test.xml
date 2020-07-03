@@ -1,6 +1,17 @@
 <configuration>
+    <appender name="test-appender" class="TestAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <mdc/>
+            </providers>
+        </encoder>
+    </appender>
+
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <providers>
+                <mdc/>
+            </providers>
             <layout class="com.tesco.aqueduct.pipe.http.JsonLayoutWithVersion">
                 <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter"/>
                 <appendLineSeparator>true</appendLineSeparator>
@@ -9,6 +20,7 @@
     </appender>
 
     <root level="${LOG_LEVEL:-info}">
+        <appender-ref ref="test-appender"/>
         <appender-ref ref="stdout"/>
     </root>
 </configuration>

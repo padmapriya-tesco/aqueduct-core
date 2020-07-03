@@ -76,6 +76,9 @@ allprojects {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url "https://nexus.dev.global.tesco.org/nexus/content/repositories/packages.tesco.com/"
+        }
     }
 
     apply plugin: 'jacoco'
@@ -129,6 +132,7 @@ subprojects {
                 compile 'io.micronaut:micronaut-security-jwt'
                 compile "io.micronaut:micronaut-management"
                 compile 'io.micronaut.configuration:micronaut-micrometer-core'
+                implementation 'io.micronaut:micronaut-tracing'
 
                 implementation 'io.micronaut:micronaut-inject'
                 implementation 'io.micronaut:micronaut-runtime'

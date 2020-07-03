@@ -1,7 +1,8 @@
 dependencies {
     compile project(":pipe-api")
     compile project(":pipe-logger")
-    
+    compile project(":tesco-telemetry")
+
     addMicronautDependencies()
 
     compile 'io.micronaut:micronaut-http-server-netty'

@@ -1,6 +1,7 @@
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.logger.PipeLogger
 import org.slf4j.Logger
+import org.slf4j.MDC
 import spock.lang.Specification
 
 import java.time.ZoneOffset
@@ -80,5 +81,25 @@ class PipeLoggerSpec extends Specification {
         then:
         true
         1 * logger.error("testWhat", "testWhy")
+    }
+    def "Logging preserves MDC state as before log invocation and clears MDC state generated for this log"() {
+        given:
+        Logger logger = Mock()
+        logger.isInfoEnabled() >> true
+
+        PipeLogger LOG = new PipeLogger(logger)
+        Message message = new Message("type", "key", "contentType",0, time, "data")
+
+        and: "MDC has a state before logging"
+        MDC.put("trace_id", "someTraceId")
+
+        when:
+        LOG.withMessage(message).info("testWhere", "testWhat")
+
+        then: "MDC state is preserved as before"
+        MDC.getCopyOfContextMap() == ["trace_id" : "someTraceId"]
+
+        and: "info logging invoked"
+        1 * logger.info("testWhat")
     }
 }

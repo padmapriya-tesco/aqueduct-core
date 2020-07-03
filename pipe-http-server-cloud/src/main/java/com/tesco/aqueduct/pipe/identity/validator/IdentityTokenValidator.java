@@ -48,7 +48,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         try {
             return identityTokenValidatorClient
-                .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
+                .validateToken(new ValidateTokenRequest(token))
                 .filter(ValidateTokenResponse::isTokenValid)
                 .map(ValidateTokenResponse::getClientUserID)
                 .map(this::toUserDetailsAdapter);

@@ -21,7 +21,7 @@ class IdentityTokenValidatorSpec extends Specification {
         tokenUser.clientId = clientUid
         def tokenValidator = new IdentityTokenValidator([tokenUser])
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
-            validateToken(_ as String, _ as ValidateTokenRequest) >> Flowable.just(identityResponse)
+            validateToken(_ as ValidateTokenRequest) >> Flowable.just(identityResponse)
         }
 
         tokenValidator.identityTokenValidatorClient = identityTokenValidatorClient

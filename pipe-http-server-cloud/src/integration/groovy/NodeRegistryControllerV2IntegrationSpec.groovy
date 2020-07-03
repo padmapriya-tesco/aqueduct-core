@@ -175,6 +175,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             time += SERVER_SLEEP_TIME_MS
         }
         println("Test setup complete")
+        TestAppender.clearEvents()
     }
 
     void cleanupSpec() {
@@ -526,6 +527,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         when: "We can get info from registry with an identity token"
         given()
             .header("Authorization", "Bearer $identityToken")
+            .header("TraceId", "someTraceId")
         .when()
             .get("/v2/registry")
         .then()
@@ -538,6 +540,37 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         then: 'identity was called'
         identityMock.verify()
+    }
+
+    def "logs have trace_ids in them and are using telemetry logs"() {
+        given: 'A valid identity token'
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+
+        when: "We can get info from registry with an identity token"
+        given()
+                .header("Authorization", "Bearer $identityToken")
+                .header("TraceId", "someTraceId")
+                .when()
+                .get("/v2/registry")
+                .then()
+                .statusCode(200)
+                .body(
+                        "root.offset", notNullValue(),
+                        "root.localUrl", notNullValue(),
+                        "root.status", equalTo(OK.toString())
+                )
+
+        then: "logs contain trace_id in them"
+        TestAppender.getEvents().stream()
+                .filter { it.loggerName.contains("com.tesco.aqueduct") }
+                .allMatch() { it.MDCPropertyMap.get("trace_id") == "someTraceId" }
+
+        and: "and telemetry logs are also logged"
+        TestAppender.getEvents().stream()
+                .anyMatch {
+                    it.loggerName.contains("telemetry")
+                }
     }
 
     def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
