@@ -153,13 +153,13 @@ class RegistryLoggerSpec extends Specification {
 
         RegistryLogger LOG = new RegistryLogger(logger)
         def myNode = Node.builder()
-                .group("1234")
-                .localUrl(url)
-                .offset(0)
-                .pipe(["pipeState": UP_TO_DATE] as Map<String, String>)
-                .status(INITIALISING)
-                .lastSeen(ZonedDateTime.now())
-                .build()
+            .group("1234")
+            .localUrl(url)
+            .offset(0)
+            .pipe(["pipeState": UP_TO_DATE] as Map<String, String>)
+            .status(INITIALISING)
+            .lastSeen(ZonedDateTime.now())
+            .build()
 
         and: "MDC has some state"
         MDC.put("trace_id", "someTraceId")
