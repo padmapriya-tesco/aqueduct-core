@@ -2,6 +2,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.TestAppender
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
@@ -290,9 +291,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         when: "we get summary"
         def request = given()
-                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
-                .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
-                .when().get("/v2/registry$query")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
+            .when().get("/v2/registry$query")
 
         then:
         request.then()
@@ -357,8 +358,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         then: "registry has been rebalanced"
         def request = given()
-                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
-                .when().get("/v2/registry")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when().get("/v2/registry")
 
         request.then().body(
             "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
@@ -556,21 +557,21 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 .then()
                 .statusCode(200)
                 .body(
-                        "root.offset", notNullValue(),
-                        "root.localUrl", notNullValue(),
-                        "root.status", equalTo(OK.toString())
+                    "root.offset", notNullValue(),
+                    "root.localUrl", notNullValue(),
+                    "root.status", equalTo(OK.toString())
                 )
 
         then: "logs contain trace_id in them"
         TestAppender.getEvents().stream()
-                .filter { it.loggerName.contains("com.tesco.aqueduct") }
-                .allMatch() { it.MDCPropertyMap.get("trace_id") == "someTraceId" }
+            .filter { it.loggerName.contains("com.tesco.aqueduct") }
+            .allMatch() { it.MDCPropertyMap.get("trace_id") == "someTraceId" }
 
         and: "and telemetry logs are also logged"
         TestAppender.getEvents().stream()
-                .anyMatch {
-                    it.loggerName.contains("telemetry")
-                }
+            .anyMatch {
+                it.loggerName.contains("telemetry")
+            }
     }
 
     def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {

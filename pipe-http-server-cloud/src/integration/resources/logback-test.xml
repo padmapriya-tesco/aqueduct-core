@@ -1,5 +1,5 @@
 <configuration>
-    <appender name="test-appender" class="TestAppender">
+    <appender name="test-appender" class="com.tesco.aqueduct.pipe.TestAppender">
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
                 <mdc/>
