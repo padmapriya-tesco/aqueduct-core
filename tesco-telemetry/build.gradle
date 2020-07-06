@@ -1,16 +1,3 @@
-repositories {
-    maven {
-        name = 'nexus-tesco-dev'
-        url  = "https://nexus.dev.global.tesco.org/nexus/content/repositories/packages.tesco.com/"
-        if (project.hasProperty('mavenUser')) {
-            credentials {
-                username "$mavenUser"
-                password "$mavenPassword"
-            }
-        }
-    }
-}
-
 addMicronautDependencies()
 
 dependencies {

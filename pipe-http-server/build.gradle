@@ -1,7 +1,6 @@
 dependencies {
     compile project(":pipe-api")
     compile project(":pipe-logger")
-    compile project(":tesco-telemetry")
 
     addMicronautDependencies()
 
