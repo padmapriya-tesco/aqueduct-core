@@ -34,10 +34,7 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         }
         try {
             identityToken = identityIssueTokenClient.retrieveIdentityToken(
-                new IssueTokenRequest(
-                    identityClientId,
-                    identityClientSecret
-                )
+                new IssueTokenRequest(identityClientId, identityClientSecret)
             );
         } catch(HttpClientResponseException exception) {
             LOG.error("retrieveIdentityToken", "Identity response error: ", exception);
