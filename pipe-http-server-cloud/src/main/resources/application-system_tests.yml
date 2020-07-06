@@ -15,7 +15,7 @@ authentication:
         - BOOTSTRAP_NODE
   identity:
     url: "${IDENTITY_URL}"
-    validate.token.path: "${IDENTITY_VALIDATE_TOKEN_PATH}"
+    validate.token.path: "${IDENTITY_VALIDATE_PATH}"
     issue.token.path: "${IDENTITY_ISSUE_TOKEN_PATH}"
     client:
       id: "${IDENTITY_CLIENT_ID}"

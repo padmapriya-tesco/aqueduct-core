@@ -29,14 +29,14 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
 
     static final String clientId = UUID.randomUUID().toString()
     static final String secret = UUID.randomUUID().toString()
-    static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
+    static final String clientIdAndSecret = "${clientId}:${secret}"
 
     static final String userUIDA = UUID.randomUUID()
     static final String clientUserUIDA = "trn:tesco:uid:uuid:${userUIDA}"
     static final String userUIDB = UUID.randomUUID()
     static final String clientUserUIDB = "trn:tesco:uid:uuid:${userUIDB}"
 
-    static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
+    static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id={clientIdAndSecret}"
 
     @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup ApplicationContext context
@@ -78,8 +78,8 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
                     client:
-                        id: "someClientId"
-                        secret: "someClientSecret"
+                        id: $clientId
+                        secret: $secret
                     users:
                       userA:
                         clientId: $clientUserUIDA

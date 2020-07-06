@@ -32,18 +32,15 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         if (identityToken != null && !identityToken.isTokenExpired()) {
             return identityToken;
         }
-        final String traceId = UUID.randomUUID().toString();
-
         try {
             identityToken = identityIssueTokenClient.retrieveIdentityToken(
-                    traceId,
-                    new IssueTokenRequest(
-                            identityClientId,
-                            identityClientSecret
-                    )
+                new IssueTokenRequest(
+                    identityClientId,
+                    identityClientSecret
+                )
             );
         } catch(HttpClientResponseException exception) {
-            LOG.error("retrieveIdentityToken", "trace_id: " + traceId, exception);
+            LOG.error("retrieveIdentityToken", "Identity response error: ", exception);
             if (exception.getStatus().getCode() > 499) {
                 throw new IdentityServiceUnavailableException("Unexpected error from Identity with status - " + exception.getStatus());
             } else {

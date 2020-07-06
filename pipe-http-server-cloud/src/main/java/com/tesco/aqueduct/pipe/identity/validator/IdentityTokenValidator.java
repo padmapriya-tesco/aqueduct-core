@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.identity.validator;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.async.annotation.SingleResult;
 import io.micronaut.core.order.Ordered;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
@@ -18,7 +19,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 @Singleton
 @Requires(property = "authentication.identity.url")
@@ -27,12 +27,18 @@ public class IdentityTokenValidator implements TokenValidator {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(IdentityTokenValidator.class));
     private final List<TokenUser> users;
+    private final String clientIdAndSecret;
+    private final IdentityTokenValidatorClient identityTokenValidatorClient;
 
     @Inject
-    private IdentityTokenValidatorClient identityTokenValidatorClient;
+    public IdentityTokenValidator(
+        final IdentityTokenValidatorClient identityTokenValidatorClient,
+        @Value("${authentication.identity.client.id}") final String clientId,
+        @Value("${authentication.identity.client.secret}") final String clientSecret,
+        final List<TokenUser> users) {
 
-    @Inject
-    public IdentityTokenValidator(final List<TokenUser> users) {
+        this.identityTokenValidatorClient = identityTokenValidatorClient;
+        this.clientIdAndSecret = clientId + ":" + clientSecret;
         this.users = users;
     }
 
@@ -48,7 +54,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         try {
             return identityTokenValidatorClient
-                .validateToken(new ValidateTokenRequest(token))
+                .validateToken(new ValidateTokenRequest(token), clientIdAndSecret)
                 .filter(ValidateTokenResponse::isTokenValid)
                 .map(ValidateTokenResponse::getClientUserID)
                 .map(this::toUserDetailsAdapter);
