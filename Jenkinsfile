@@ -137,7 +137,7 @@ ansiColor('xterm') {
 
             stage("Publish") {
                 withCredentials([usernamePassword(credentialsId: 'nexus', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
-                    sh "#!/bin/sh -e\n./gradlew publish -PmavenUser=${NEXUS_USERNAME} -PmavenPassword=${NEXUS_PASSWORD}"
+                    sh "#!/bin/sh -e\n./gradlew publish -PmavenUser=$NEXUS_USERNAME -PmavenPassword='$NEXUS_PASSWORD'"
                 }
             }
 
