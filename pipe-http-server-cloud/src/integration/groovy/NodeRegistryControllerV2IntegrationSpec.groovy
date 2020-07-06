@@ -51,11 +51,11 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     private static final String clientId = UUID.randomUUID().toString()
     private static final String secret = UUID.randomUUID().toString()
-    private static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
+    private static final String clientIdAndSecret = "${clientId}:${secret}"
 
     private static final String userUIDA = UUID.randomUUID()
     private static final String clientUserUIDA = "trn:tesco:uid:uuid:${userUIDA}"
-    private static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
+    private static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id={clientIdAndSecret}"
 
     @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup("stop") ApplicationContext context
@@ -146,8 +146,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                         url: ${identityMock.getHttpUrl()}
                         validate.token.path: $validateTokenPath
                         client:
-                            id: "someClientId"
-                            secret: "someClientSecret"
+                            id: $clientId
+                            secret: $secret
                         users:
                           nodeA:
                             clientId: "${NODE_A_CLIENT_UID}"
