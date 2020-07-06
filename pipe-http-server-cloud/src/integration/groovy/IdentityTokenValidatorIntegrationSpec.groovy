@@ -21,7 +21,7 @@ import spock.lang.Unroll
 class IdentityTokenValidatorIntegrationSpec extends Specification {
 
     static final int CACHE_EXPIRY_SECONDS = 1
-    static final String VALIDATE_TOKEN_BASE_PATH = '/v4/access-token/auth/validate'
+    static final String VALIDATE_TOKEN_BASE_PATH = '/some/access-token/validate/path'
     static final String USERNAME = "username"
     static final String PASSWORD = "password"
     static final String encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
