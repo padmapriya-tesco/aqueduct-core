@@ -33,7 +33,7 @@ abstract class StorageSpec extends Specification {
         List<Message> messages = storage.read(null, 0, []).messages
 
         then:
-        messages*.offset == [1,2]
+        messages*.offset == [1000001,1000002]
     }
 
     // test for the test insert method
