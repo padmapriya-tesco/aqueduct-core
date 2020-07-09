@@ -190,7 +190,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([], 1000004, ["clusterId"])
+        MessageResults result = storage.read([], 4, ["clusterId"])
 
         then:
         result.retryAfterSeconds > 0
