@@ -42,7 +42,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IdentityToken identityToken = identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "issue token client is called, and token is provided"
-        1 * identityIssueTokenClient.retrieveIdentityToken(issueTokenRequest) >> issueTokenResponse
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> issueTokenResponse
 
         and: "token is as expected"
         identityToken.accessToken == "accessToken"
@@ -63,7 +63,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "issue token client is called, and token is provided"
-        1 * identityIssueTokenClient.retrieveIdentityToken(issueTokenRequest) >> issueTokenResponse
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> issueTokenResponse
 
         and: "token is as expected"
         firstIdentityToken.accessToken == "accessToken"
@@ -73,7 +73,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IdentityToken secondIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "issue token client is not called again"
-        0 * identityIssueTokenClient.retrieveIdentityToken(issueTokenRequest)
+        0 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest)
 
         and: "previously fetched token is provided again"
         secondIdentityToken == firstIdentityToken
@@ -93,7 +93,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "issue token client is called, and token is provided"
-        1 * identityIssueTokenClient.retrieveIdentityToken(issueTokenRequest) >> issueTokenResponse
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> issueTokenResponse
 
         and: "token is expired"
         firstIdentityToken.accessToken == "accessToken"
@@ -103,7 +103,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "a new token is issued"
-        1 * identityIssueTokenClient.retrieveIdentityToken(issueTokenRequest)
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest)
     }
 
     def "IdentityServiceUnavailable error thrown when identity client returns 5xx status code"() {
@@ -117,7 +117,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "issue token client is invoked throwing http client response error with 5xx status code"
-        1 * identityIssueTokenClient.retrieveIdentityToken( issueTokenRequest) >> {
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
             throw httpResponseWithStatus(HttpStatus.INTERNAL_SERVER_ERROR)
         }
 
@@ -136,7 +136,7 @@ class IdentityIssueTokenProviderSpec extends Specification {
         identityIssueTokenProvider.retrieveIdentityToken()
 
         then: "issue token client is invoked throwing http client response error with 5xx status code"
-        1 * identityIssueTokenClient.retrieveIdentityToken(issueTokenRequest) >> {
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
             throw httpResponseWithStatus(HttpStatus.BAD_REQUEST)
         }
 

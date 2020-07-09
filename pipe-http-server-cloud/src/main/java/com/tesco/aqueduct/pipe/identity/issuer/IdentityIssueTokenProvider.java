@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.UUID;
 
@@ -34,6 +35,7 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         }
         try {
             identityToken = identityIssueTokenClient.retrieveIdentityToken(
+                traceId(),
                 new IssueTokenRequest(identityClientId, identityClientSecret)
             );
         } catch(HttpClientResponseException exception) {
@@ -46,5 +48,9 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         }
 
         return identityToken;
+    }
+
+    private String traceId() {
+        return MDC.get("trace_id") == null ? UUID.randomUUID().toString() : MDC.get("trace_id");
     }
 }

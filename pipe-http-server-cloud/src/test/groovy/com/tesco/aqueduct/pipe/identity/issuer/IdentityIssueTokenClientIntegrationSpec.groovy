@@ -104,7 +104,7 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         when: "get issued token through Identity client"
         def identityToken = identityIssueTokenClient.retrieveIdentityToken(
-            new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+            "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
         )
 
         then: "received expected identity token back"
@@ -141,7 +141,7 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         when: "get issued token through Identity client"
         identityIssueTokenClient.retrieveIdentityToken(
-            new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+            "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
         )
 
         then: "identity service is retried 4 times"
@@ -152,7 +152,7 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
 
         when:
         identityIssueTokenClient.retrieveIdentityToken(
-            new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
+            "someTraceId", new IssueTokenRequest(CLIENT_ID, CLIENT_SECRET)
         )
 
         then:
