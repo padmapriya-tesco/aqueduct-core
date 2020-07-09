@@ -59,8 +59,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
             cluster_id BIGINT NOT NULL DEFAULT 1
         );
         
-        SELECT setval('events_msg_offset_seq', 1000000, true);
-        
         CREATE TABLE CLUSTERS(
             cluster_id BIGSERIAL PRIMARY KEY NOT NULL,
             cluster_uuid VARCHAR NOT NULL
