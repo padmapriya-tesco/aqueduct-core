@@ -17,6 +17,7 @@ import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.HttpStatus
 import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
+import org.hamcrest.Matcher
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -523,7 +524,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     def "registry endpoint called by the UI accepts identity tokens"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA, equalTo("someTraceId"))
 
         when: "We can get info from registry with an identity token"
         given()
@@ -546,7 +547,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     def "logs have trace_ids in them"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA, equalTo("someTraceId"))
 
         when: "We can get info from registry with an identity token"
         given()
@@ -571,7 +572,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     def "when no trace id is provided logs have a generated trace_id in them with the correct prefix"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA, startsWith("aq-"))
 
         when: "We can get info from registry with an identity token"
         given()
@@ -592,13 +593,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 .allMatch() { it.MDCPropertyMap.get("trace_id").startsWith("aq-") }
     }
 
-    def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
+    def acceptSingleIdentityTokenValidationRequest(
+            String clientIdAndSecret, String identityToken, String clientUserUID, Matcher<String> traceIdMatcher) {
         def json = JsonOutput.toJson([access_token: identityToken])
 
         identityMock.expectations {
             post(VALIDATE_TOKEN_BASE_PATH) {
                 queries("client_id": [clientIdAndSecret])
                 body(json, "application/json")
+                .header("TraceId", everyItem(traceIdMatcher))
                 called(1)
 
                 responder {

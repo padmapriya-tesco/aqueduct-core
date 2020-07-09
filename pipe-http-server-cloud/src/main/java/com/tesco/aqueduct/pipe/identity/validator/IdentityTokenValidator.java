@@ -14,11 +14,13 @@ import io.micronaut.security.token.validator.TokenValidator;
 import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Singleton
 @Requires(property = "authentication.identity.url")
@@ -54,7 +56,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         try {
             return identityTokenValidatorClient
-                .validateToken(new ValidateTokenRequest(token), clientIdAndSecret)
+                .validateToken(traceId(), new ValidateTokenRequest(token), clientIdAndSecret)
                 .filter(ValidateTokenResponse::isTokenValid)
                 .map(ValidateTokenResponse::getClientUserID)
                 .map(this::toUserDetailsAdapter);
@@ -62,6 +64,10 @@ public class IdentityTokenValidator implements TokenValidator {
             LOG.error("token validator", "validate token", e.getStatus().toString() + " " + e.getResponse().reason());
             return Flowable.empty();
         }
+    }
+
+    private String traceId() {
+        return MDC.get("trace_id") == null ? UUID.randomUUID().toString() : MDC.get("trace_id");
     }
 
     private AuthenticationUserDetailsAdapter toUserDetailsAdapter(String clientId) {
