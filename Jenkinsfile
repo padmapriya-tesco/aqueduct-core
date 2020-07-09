@@ -24,13 +24,10 @@ ansiColor('xterm') {
         }
 
         stage("Gradle Build") {
-            withCredentials([usernamePassword(credentialsId: 'nexus', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
-                if(scmVars.GIT_BRANCH == "master") {
-                    sh "#!/bin/sh -e\n./gradlew createRelease -Prelease.disableChecks -PmavenUser=$NEXUS_USERNAME -PmavenPassword='$NEXUS_PASSWORD'"
-                }
-                sh "#!/bin/sh -e\n./gradlew assemble -PmavenUser=${NEXUS_USERNAME} -PmavenPassword='${NEXUS_PASSWORD}'"
+            if(scmVars.GIT_BRANCH == "master") {
+                sh "./gradlew createRelease -Prelease.disableChecks"
             }
-
+            sh "./gradlew assemble"
         }
 
         String integrationImage = "$registry/aqueduct-pipe:integration-${scmVars.GIT_COMMIT}"
