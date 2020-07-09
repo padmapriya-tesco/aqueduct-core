@@ -110,7 +110,6 @@ public class ReadEventsQueryBenchmark {
                 "    content_type varchar NOT NULL," +
                 "    type varchar NOT NULL," +
                 "    created_utc timestamp NOT NULL," +
-                "    tags JSONB NULL," +
                 "    data text NULL," +
                 "    event_size int NOT NULL," +
                 "    cluster_id BIGINT NOT NULL DEFAULT 1" +

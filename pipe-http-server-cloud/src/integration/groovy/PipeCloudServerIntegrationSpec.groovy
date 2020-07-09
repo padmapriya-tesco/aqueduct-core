@@ -41,7 +41,6 @@ class PipeCloudServerIntegrationSpec extends Specification {
         ]
         locationResolver.resolve(_) >> []
 
-        //TODO: remove "tags" once they are removed from SCHEMA
         sql.execute("""
         DROP TABLE IF EXISTS EVENTS;
         DROP TABLE IF EXISTS CLUSTERS;
@@ -51,8 +50,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
             msg_key varchar NOT NULL, 
             content_type varchar NOT NULL, 
             type varchar NOT NULL, 
-            created_utc timestamp NOT NULL,
-            tags JSONB NULL, 
+            created_utc timestamp NOT NULL, 
             data text NULL,
             event_size int NOT NULL,
             cluster_id BIGINT NOT NULL DEFAULT 1
