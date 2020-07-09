@@ -5,7 +5,7 @@ import io.micronaut.core.bind.annotation.Bindable;
 
 @ConfigurationProperties(com.tesco.telemetry.micronaut.CopyTraceIdToMdcConfig.CONFIGURATION_PREFIX)
 public interface CopyTraceIdToMdcConfig {
-    String CONFIGURATION_PREFIX = "tesco.telemetry.trace-id-to-mdc";
+    String CONFIGURATION_PREFIX = "telemetry.trace-id-to-mdc";
 
     @Bindable(defaultValue = "trace_id")
     String getMdcKey();

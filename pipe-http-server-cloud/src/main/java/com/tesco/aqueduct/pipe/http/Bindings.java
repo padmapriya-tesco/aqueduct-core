@@ -9,10 +9,10 @@ import com.tesco.aqueduct.pipe.location.LocationServiceClient;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
+import com.tesco.aqueduct.registry.model.NodeRequestStorage;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRequestStorage;
-import com.tesco.aqueduct.registry.model.NodeRequestStorage;
-import com.tesco.telemetry.tracer.TescoTracerBuilder;
+import io.jaegertracing.Configuration;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Value;
@@ -76,6 +76,6 @@ public class Bindings {
 
     @Singleton
     public Tracer tracer() {
-        return TescoTracerBuilder.builder("Aqueduct Core", Version.getImplementationVersion()).build();
+        return new Configuration("Aqueduct Core").getTracer();
     }
 }

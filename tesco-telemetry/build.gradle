@@ -1,7 +1,0 @@
-addMicronautDependencies()
-
-dependencies {
-    compile "com.tesco.telemetry.opentracing:tesco-telemetry-micronaut:0.2.0"
-}
-
-addPublish()

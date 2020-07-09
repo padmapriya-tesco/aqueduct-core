@@ -543,7 +543,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         identityMock.verify()
     }
 
-    def "logs have trace_ids in them and are using telemetry logs"() {
+    def "logs have trace_ids in them"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
         acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
@@ -566,12 +566,30 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         TestAppender.getEvents().stream()
             .filter { it.loggerName.contains("com.tesco.aqueduct") }
             .allMatch() { it.MDCPropertyMap.get("trace_id") == "someTraceId" }
+    }
 
-        and: "and telemetry logs are also logged"
+    def "when no trace id is provided logs have a generated trace_id in them with the correct prefix"() {
+        given: 'A valid identity token'
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+
+        when: "We can get info from registry with an identity token"
+        given()
+                .header("Authorization", "Bearer $identityToken")
+                .when()
+                .get("/v2/registry")
+                .then()
+                .statusCode(200)
+                .body(
+                        "root.offset", notNullValue(),
+                        "root.localUrl", notNullValue(),
+                        "root.status", equalTo(OK.toString())
+                )
+
+        then: "logs contain trace_id in them with the correct prefix"
         TestAppender.getEvents().stream()
-            .anyMatch {
-                it.loggerName.contains("telemetry")
-            }
+                .filter { it.loggerName.contains("com.tesco.aqueduct") }
+                .allMatch() { it.MDCPropertyMap.get("trace_id").startsWith("aq-") }
     }
 
     def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
