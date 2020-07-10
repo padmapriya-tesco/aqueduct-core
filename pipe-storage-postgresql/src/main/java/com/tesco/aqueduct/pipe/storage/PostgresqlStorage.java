@@ -209,7 +209,7 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
                   withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND events.msg_offset < txid_snapshot_xmin(txid_current_snapshot()) " +
+            "   AND created_utc < CURRENT_TIMESTAMP - interval '10 seconds' " +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
             " ) unused " +
@@ -227,7 +227,7 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
                   withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND events.msg_offset < txid_snapshot_xmin(txid_current_snapshot()) " +
+            "   AND created_utc < CURRENT_TIMESTAMP - interval '10 seconds' " +
             "   AND type = ANY (string_to_array(?, ','))" +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
@@ -243,7 +243,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getSelectLatestOffsetQuery() {
-        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE msg_offset < txid_snapshot_xmin(txid_current_snapshot());";
+        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE created_utc < CURRENT_TIMESTAMP - interval '10 seconds';";
     }
 
     private static String getCompactionQuery() {
