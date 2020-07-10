@@ -19,11 +19,19 @@ public class PostgresqlStorage implements CentralStorage {
     private final DataSource dataSource;
     private final long maxBatchSize;
     private final long retryAfter;
+    private final int readDelaySeconds;
 
-    public PostgresqlStorage(final DataSource dataSource, final int limit, final long retryAfter, final long maxBatchSize) {
+    public PostgresqlStorage(
+        final DataSource dataSource,
+        final int limit,
+        final long retryAfter,
+        final long maxBatchSize,
+        final int readDelaySeconds
+    ) {
         this.retryAfter = retryAfter;
         this.limit = limit;
         this.dataSource = dataSource;
+        this.readDelaySeconds = readDelaySeconds;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
     }
 
@@ -140,7 +148,9 @@ public class PostgresqlStorage implements CentralStorage {
 
     private PreparedStatement getLatestOffsetStatement(final Connection connection) {
         try {
-            return connection.prepareStatement(getSelectLatestOffsetQuery());
+            PreparedStatement query = connection.prepareStatement(getSelectLatestOffsetQuery());
+            query.setInt(1, readDelaySeconds);
+            return query;
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset statement", exception);
             throw new RuntimeException(exception);
@@ -159,14 +169,16 @@ public class PostgresqlStorage implements CentralStorage {
                 query = connection.prepareStatement(getSelectEventsWithoutTypeQuery(maxBatchSize));
                 query.setString(1, strClusters);
                 query.setLong(2, startOffset);
-                query.setLong(3, limit);
+                query.setInt(3, readDelaySeconds);
+                query.setLong(4, limit);
             } else {
                 final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectEventsWithTypeQuery(maxBatchSize));
                 query.setString(1, strClusters);
                 query.setLong(2, startOffset);
                 query.setString(3, strTypes);
-                query.setLong(4, limit);
+                query.setInt(4, readDelaySeconds);
+                query.setLong(5, limit);
             }
 
             return query;
@@ -209,7 +221,7 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
                   withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND created_utc < CURRENT_TIMESTAMP - interval '10 seconds' " +
+            "   AND created_utc < CURRENT_TIMESTAMP - interval '? seconds' " +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
             " ) unused " +
@@ -227,7 +239,7 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
                   withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND created_utc < CURRENT_TIMESTAMP - interval '10 seconds' " +
+            "   AND created_utc < CURRENT_TIMESTAMP - interval '? seconds' " +
             "   AND type = ANY (string_to_array(?, ','))" +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
@@ -243,7 +255,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getSelectLatestOffsetQuery() {
-        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE created_utc < CURRENT_TIMESTAMP - interval '10 seconds';";
+        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE created_utc < CURRENT_TIMESTAMP - interval '? seconds';";
     }
 
     private static String getCompactionQuery() {

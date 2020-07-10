@@ -31,9 +31,10 @@ public class Bindings {
         @Property(name = "persistence.read.limit") final int limit,
         @Property(name = "persistence.read.retry-after") final int retryAfter,
         @Property(name = "persistence.read.max-batch-size") final int maxBatchSize,
+        @Property(name = "persistence.read.read-delay-seconds") final int readDelaySeconds,
         @Named("postgres") final DataSource dataSource
     ) {
-        return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize);
+        return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize, readDelaySeconds);
     }
 
     @Singleton
