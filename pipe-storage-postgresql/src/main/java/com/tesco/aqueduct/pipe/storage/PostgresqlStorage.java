@@ -243,7 +243,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getSelectLatestOffsetQuery() {
-        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events where msg_offset < txid_snapshot_xmin(txid_current_snapshot());";
+        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE msg_offset < txid_snapshot_xmin(txid_current_snapshot());";
     }
 
     private static String getCompactionQuery() {
