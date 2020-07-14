@@ -1,11 +1,6 @@
 package com.tesco.aqueduct.pipe.http
 
-import com.tesco.aqueduct.pipe.api.LocationResolver
-import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.PipeStateResponse
-import com.tesco.aqueduct.pipe.api.Reader
-import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
-import com.tesco.aqueduct.pipe.storage.InMemoryStorage
+import com.tesco.aqueduct.pipe.api.*
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.HttpStatus
@@ -17,8 +12,6 @@ import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static org.hamcrest.Matchers.equalTo
-
 @Newify(Message)
 @MicronautTest
 class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
@@ -29,8 +22,6 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
 
     static final String RUNSCOPE_USERNAME = "runscope-username"
     static final String RUNSCOPE_PASSWORD = "runscope-password"
-
-    static InMemoryStorage storage = new CentralInMemoryStorage(10, RETRY_AFTER_SECONDS)
 
     @Shared @AutoCleanup("stop") ApplicationContext context
     @Shared @AutoCleanup("stop") EmbeddedServer server
@@ -61,7 +52,10 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
             .mainClass(PipeReadController)
             .build()
 
-        context.registerSingleton(Reader, storage, Qualifiers.byName("local"))
+        CentralStorage centralStorageMock = Mock(CentralStorage)
+        centralStorageMock.read(_, _, _) >> new MessageResults([], 0, OptionalLong.of(1), PipeState.UP_TO_DATE)
+
+        context.registerSingleton(Reader, centralStorageMock, Qualifiers.byName("local"))
         def pipeStateProvider = Mock(PipeStateProvider) {
             getState(_ as List, _ as Reader) >> new PipeStateResponse(true, 100)
         }
@@ -73,10 +67,6 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
         server.start()
 
         RestAssured.port = server.port
-    }
-
-    void setup() {
-        storage.clear()
     }
 
     void cleanupSpec() {
@@ -91,9 +81,6 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
     }
 
     def 'username and password authentication allows access to the data on the pipe'(){
-        given: "a message on the pipe"
-        storage.write(Message("type", "a", "ct", 100, null, null), "cluster1")
-
         expect: "to receive the message when authorized"
         def encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
         RestAssured.given()
@@ -101,13 +88,9 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
             .get("/pipe/0?location=someLocation")
             .then()
             .statusCode(HttpStatus.OK.code)
-            .content(equalTo('[{"type":"type","key":"a","contentType":"ct","offset":"100"}]'))
     }
 
     def 'runscope username and password authentication allows access to the data on the pipe'(){
-        given: "a message on the pipe"
-        storage.write(Message("type", "a", "ct", 100, null, null), "cluster1")
-
         expect: "to receive the message when authorized"
         def encodedCredentials = "${RUNSCOPE_USERNAME}:${RUNSCOPE_PASSWORD}".bytes.encodeBase64().toString()
         RestAssured.given()
@@ -115,7 +98,6 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
             .get("/pipe/0?location=someLocation")
             .then()
             .statusCode(HttpStatus.OK.code)
-            .content(equalTo('[{"type":"type","key":"a","contentType":"ct","offset":"100"}]'))
     }
 
     Map<String, Object> parseYamlConfig(String str) {
