@@ -34,6 +34,13 @@ public class PostgresqlStorage implements CentralStorage {
         this.dataSource = dataSource;
         this.readDelay = new PGInterval(0, 0, 0, 0, 0, readDelaySeconds);
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
+
+        //initialise connection pool eagerly
+        try (Connection connection = this.dataSource.getConnection()) {
+            LOG.info("postgresql storage", "initialised connection pool");
+        } catch (SQLException e) {
+            LOG.error("postgresql storage", "Error initializing connection pool", e);
+        }
     }
 
     @Override

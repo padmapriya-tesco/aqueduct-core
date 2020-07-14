@@ -37,10 +37,11 @@ persistence:
 
 datasources:
   postgres:
-    url: "jdbc:postgresql://${POSTGRE_SERVER}/${POSTGRE_DATABASE}"
+    jdbc-url: "jdbc:postgresql://${POSTGRE_SERVER}/${POSTGRE_DATABASE}"
     username: "${POSTGRE_USERNAME}"
     password: "${POSTGRE_PASSWORD}"
-    driverClassName: org.postgresql.Driver
+    driver-class-name: org.postgresql.Driver
+    maximum-pool-size: 20
 
 authentication:
   identity:
