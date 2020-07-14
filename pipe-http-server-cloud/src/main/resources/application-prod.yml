@@ -37,3 +37,5 @@ location:
 pipe:
   server:
     url: "https://api.tesco.com/messaging/v1"
+
+persistence.read.read-delay-seconds: 10

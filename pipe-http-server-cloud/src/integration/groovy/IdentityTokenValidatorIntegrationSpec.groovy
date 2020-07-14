@@ -1,11 +1,7 @@
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.LocationResolver
-import com.tesco.aqueduct.pipe.api.PipeStateResponse
-import com.tesco.aqueduct.pipe.api.Reader
+import com.tesco.aqueduct.pipe.api.*
 import com.tesco.aqueduct.pipe.http.PipeStateProvider
-import com.tesco.aqueduct.pipe.storage.CentralInMemoryStorage
-import com.tesco.aqueduct.pipe.storage.InMemoryStorage
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -25,7 +21,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     static final String USERNAME = "username"
     static final String PASSWORD = "password"
     static final String encodedCredentials = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
-    static final InMemoryStorage storage = new CentralInMemoryStorage(10, 600)
 
     static final String clientId = UUID.randomUUID().toString()
     static final String secret = UUID.randomUUID().toString()
@@ -94,8 +89,11 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             )
             .build()
 
+        CentralStorage centralStorageMock = Mock(CentralStorage)
+        centralStorageMock.read(_, _, _) >> new MessageResults([], 0, OptionalLong.of(1), PipeState.UP_TO_DATE)
+
         context
-            .registerSingleton(Reader, storage, Qualifiers.byName("local"))
+            .registerSingleton(Reader, centralStorageMock, Qualifiers.byName("local"))
             .registerSingleton(pipeStateProvider)
             .registerSingleton(locationResolver)
             .start()
