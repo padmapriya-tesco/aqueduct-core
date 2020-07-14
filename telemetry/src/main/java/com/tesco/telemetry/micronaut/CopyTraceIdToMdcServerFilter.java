@@ -16,37 +16,37 @@ import java.util.UUID;
 @Requires(classes = MDC.class)
 public class CopyTraceIdToMdcServerFilter implements HttpServerFilter {
 
-    private final com.tesco.telemetry.micronaut.CopyTraceIdToMdcConfig config;
+    private final CopyTraceIdToMdcConfig config;
     private final TradeIdGeneratorConfig traceIdGeneratorConfig;
 
     public CopyTraceIdToMdcServerFilter(
-            com.tesco.telemetry.micronaut.CopyTraceIdToMdcConfig copyTraceIdToMdcConfig,
-            TradeIdGeneratorConfig traceIdGeneratorConfig
-        ) {
-            this.config = copyTraceIdToMdcConfig;
-            this.traceIdGeneratorConfig = traceIdGeneratorConfig;
+        CopyTraceIdToMdcConfig copyTraceIdToMdcConfig,
+        TradeIdGeneratorConfig traceIdGeneratorConfig
+    ) {
+        this.config = copyTraceIdToMdcConfig;
+        this.traceIdGeneratorConfig = traceIdGeneratorConfig;
     }
 
     @Override
     public Publisher<MutableHttpResponse<?>> doFilter(
-            HttpRequest<?> request,
-            ServerFilterChain chain
-        ) {
-            if (!config.isEnabled()) {
-                return chain.proceed(request);
-            }
+        HttpRequest<?> request,
+        ServerFilterChain chain
+    ) {
+        if (!config.isEnabled()) {
+            return chain.proceed(request);
+        }
 
-            if (request.getHeaders().contains("TraceId")) {
-                return addTraceIdToMdc(request, chain, request.getHeaders().get("TraceId"));
-            } else {
-                return addTraceIdToMdc(request, chain, getGeneratedTraceId());
-            }
+        if (request.getHeaders().contains("TraceId")) {
+            return addTraceIdToMdc(request, chain, request.getHeaders().get("TraceId"));
+        } else {
+            return addTraceIdToMdc(request, chain, getGeneratedTraceId());
+        }
     }
 
     private Publisher<MutableHttpResponse<?>> addTraceIdToMdc(
-            HttpRequest<?> request,
-            ServerFilterChain chain,
-            String traceId
+        HttpRequest<?> request,
+        ServerFilterChain chain,
+        String traceId
     ) {
         final String mdcKey = config.getMdcKey();
         MDC.put(mdcKey, traceId);

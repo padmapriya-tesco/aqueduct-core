@@ -123,40 +123,40 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         }
 
         context = ApplicationContext
-                .build()
-                .properties(
-                // enabling security to prove that registry is accessible anyway
-                parseYamlConfig(
-                        """
-                    micronaut.security.enabled: true
-                    micronaut.server.port: -1
-                    micronaut.caches.identity-cache.expire-after-write: 1m
-                    micronaut.security.token.jwt.enabled: true
-                    micronaut.security.token.jwt.bearer.enabled: true
-                    authentication:
-                      users:
-                        $USERNAME:
-                          password: $PASSWORD
-                          roles:
-                            - REGISTRY_DELETE
-                            - BOOTSTRAP_NODE
-                            - REGISTRY_WRITE
-                        $USERNAME_TWO:
-                          password: $PASSWORD_TWO
-                      identity:
-                        url: ${identityMock.getHttpUrl()}
-                        validate.token.path: $validateTokenPath
-                        client:
-                            id: $clientId
-                            secret: $secret
-                        users:
-                          nodeA:
-                            clientId: "${NODE_A_CLIENT_UID}"
-                            roles:
-                              - PIPE_READ
-                              - REGISTRY_WRITE
+            .build()
+            .properties(
+            // enabling security to prove that registry is accessible anyway
+            parseYamlConfig(
                     """
-                )
+                micronaut.security.enabled: true
+                micronaut.server.port: -1
+                micronaut.caches.identity-cache.expire-after-write: 1m
+                micronaut.security.token.jwt.enabled: true
+                micronaut.security.token.jwt.bearer.enabled: true
+                authentication:
+                  users:
+                    $USERNAME:
+                      password: $PASSWORD
+                      roles:
+                        - REGISTRY_DELETE
+                        - BOOTSTRAP_NODE
+                        - REGISTRY_WRITE
+                    $USERNAME_TWO:
+                      password: $PASSWORD_TWO
+                  identity:
+                    url: ${identityMock.getHttpUrl()}
+                    validate.token.path: $validateTokenPath
+                    client:
+                        id: $clientId
+                        secret: $secret
+                    users:
+                      nodeA:
+                        clientId: "${NODE_A_CLIENT_UID}"
+                        roles:
+                          - PIPE_READ
+                          - REGISTRY_WRITE
+                """
+            )
             )
             .build()
             .registerSingleton(NodeRegistry, registry)
@@ -576,21 +576,21 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         when: "We can get info from registry with an identity token"
         given()
-                .header("Authorization", "Bearer $identityToken")
-                .when()
-                .get("/v2/registry")
-                .then()
-                .statusCode(200)
-                .body(
-                        "root.offset", notNullValue(),
-                        "root.localUrl", notNullValue(),
-                        "root.status", equalTo(OK.toString())
-                )
+            .header("Authorization", "Bearer $identityToken")
+            .when()
+            .get("/v2/registry")
+            .then()
+            .statusCode(200)
+            .body(
+                "root.offset", notNullValue(),
+                "root.localUrl", notNullValue(),
+                "root.status", equalTo(OK.toString())
+            )
 
         then: "logs contain trace_id in them with the correct prefix"
         TestAppender.getEvents().stream()
-                .filter { it.loggerName.contains("com.tesco.aqueduct") }
-                .allMatch() { it.MDCPropertyMap.get("trace_id").startsWith("aq-") }
+            .filter { it.loggerName.contains("com.tesco.aqueduct") }
+            .allMatch() { it.MDCPropertyMap.get("trace_id").startsWith("aq-") }
     }
 
     def acceptSingleIdentityTokenValidationRequest(
