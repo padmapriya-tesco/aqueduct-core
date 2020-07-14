@@ -57,18 +57,8 @@ public class PostgresqlStorage implements CentralStorage {
             final long globalLatestOffset = getLatestOffsetWithConnection(connection);
             final long retry = startOffset >= globalLatestOffset ? retryAfter : 0;
 
-            LOG.info("getGlobalLatestOffset:time", Long.toString(System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
-
             try( PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids) ) {
-                LOG.info("getMessagesStatement:time", Long.toString(System.currentTimeMillis() - start));
-                start = System.currentTimeMillis();
-
                 final List<Message> messages = runMessagesQuery(messagesQuery);
-
-                LOG.info("runMessagesQuery:time", Long.toString(System.currentTimeMillis() - start));
-                start = System.currentTimeMillis();
-
                 return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
             }
         } catch (SQLException exception) {
