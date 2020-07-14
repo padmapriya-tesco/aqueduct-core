@@ -83,22 +83,29 @@ public class PipeLogger {
     }
 
     private void log(final String where, final String what, final Consumer<String> loggerFunc) {
-        try {
-            fields.put("method", where);
-            MDC.setContextMap(fields);
-            loggerFunc.accept(what);
-        } finally {
-            MDC.clear();
-        }
+        log(where, () -> loggerFunc.accept(what));
     }
 
     private void log(final String where, final String what, final Object why, final BiConsumer<String, Object> loggerFunc) {
+        log(where, () -> loggerFunc.accept(what, why));
+    }
+
+    private void log(String where, Runnable logger) {
+        final Map<String, String> previousContextMap = MDC.getCopyOfContextMap();
         try {
+            if (previousContextMap != null) {
+                fields.putAll(previousContextMap);
+            }
             fields.put("method", where);
             MDC.setContextMap(fields);
-            loggerFunc.accept(what, why);
+            logger.run();
         } finally {
-            MDC.clear();
+            // recover MDC state as before
+            if (previousContextMap != null) {
+                MDC.setContextMap(previousContextMap);
+            } else {
+                MDC.clear();
+            }
         }
     }
 

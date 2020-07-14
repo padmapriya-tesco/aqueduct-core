@@ -9,12 +9,15 @@ import com.tesco.aqueduct.pipe.location.LocationServiceClient;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
+import com.tesco.aqueduct.registry.model.NodeRequestStorage;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRequestStorage;
-import com.tesco.aqueduct.registry.model.NodeRequestStorage;
+import io.jaegertracing.Configuration;
 import io.micronaut.context.annotation.Factory;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Value;
+import io.opentracing.Tracer;
+
 import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.sql.DataSource;
@@ -70,5 +73,10 @@ public class Bindings {
     @Singleton
     LocationResolver bindLocationResolver(final LocationServiceClient locationServiceClient) {
         return new CloudLocationResolver(locationServiceClient);
+    }
+
+    @Singleton
+    public Tracer tracer() {
+        return new Configuration("Aqueduct Core").getTracer();
     }
 }
