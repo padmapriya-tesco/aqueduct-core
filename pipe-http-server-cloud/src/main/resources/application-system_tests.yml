@@ -33,3 +33,5 @@ location:
 pipe:
   server:
     url: "${PIPE_URL}"
+
+persistence.read.read-delay-seconds: 1

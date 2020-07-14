@@ -87,8 +87,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                             "key": "x$offset",
                             "contentType": "application/json",
                             "offset": $offset,
-                            "created": "2018-10-01T13:45:00Z", 
-                            "tags": { "example":"value"}, 
+                            "created": "2018-10-01T13:45:00Z",
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
                     ]""")
@@ -119,8 +118,7 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                             "key": "x$offset",
                             "contentType": "application/json",
                             "offset": $offset,
-                            "created": "2018-10-01T13:45:00Z", 
-                            "tags": { "example":"value"}, 
+                            "created": "2018-10-01T13:45:00Z",
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
                     ]""")
@@ -169,7 +167,6 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                             "contentType": "application/json",
                             "offset": $offset,
                             "created": "2018-10-01T13:45:00Z", 
-                            "tags": { "example":"value"}, 
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
                     ]""")
