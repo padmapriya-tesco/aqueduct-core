@@ -1,6 +1,9 @@
 <configuration>
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <providers>
+                <mdc/>
+            </providers>
             <layout class="com.tesco.aqueduct.pipe.http.JsonLayoutWithVersion">
                 <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter"/>
                 <appendLineSeparator>true</appendLineSeparator>

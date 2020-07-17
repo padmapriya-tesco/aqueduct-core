@@ -129,6 +129,7 @@ subprojects {
                 compile 'io.micronaut:micronaut-security-jwt'
                 compile "io.micronaut:micronaut-management"
                 compile 'io.micronaut.configuration:micronaut-micrometer-core'
+                implementation 'io.micronaut:micronaut-tracing'
 
                 implementation 'io.micronaut:micronaut-inject'
                 implementation 'io.micronaut:micronaut-runtime'

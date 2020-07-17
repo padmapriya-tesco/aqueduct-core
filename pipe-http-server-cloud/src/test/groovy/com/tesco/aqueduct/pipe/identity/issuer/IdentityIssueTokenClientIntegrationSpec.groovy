@@ -82,7 +82,6 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
             post(ISSUE_TOKEN_PATH) {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
-                header("TraceId", "someTraceId")
                 header("Content-Type", "application/json")
                 called(1)
 
@@ -130,7 +129,6 @@ class IdentityIssueTokenClientIntegrationSpec extends Specification {
             post(ISSUE_TOKEN_PATH) {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
-                header("TraceId", "someTraceId")
                 called(4)
                 responder {
                     code(500)

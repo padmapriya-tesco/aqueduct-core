@@ -2,6 +2,7 @@ package com.tesco.aqueduct.registry.utils
 
 import com.tesco.aqueduct.registry.model.Node
 import org.slf4j.Logger
+import org.slf4j.MDC
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
@@ -78,7 +79,7 @@ class RegistryLoggerSpec extends Specification {
             .following([url])
             .requestedToFollow([url])
             .offset(0)
-            .pipe(["pipeState" : UP_TO_DATE])
+            .pipe(["pipeState": UP_TO_DATE] as Map<String, String>)
             .status(INITIALISING)
             .lastSeen(ZonedDateTime.now())
             .build()
@@ -105,7 +106,7 @@ class RegistryLoggerSpec extends Specification {
             .following([url])
             .requestedToFollow([url])
             .offset(0)
-            .pipe(["pipeState" : UP_TO_DATE])
+            .pipe(["pipeState": UP_TO_DATE] as Map<String, String>)
             .status(INITIALISING)
             .lastSeen(ZonedDateTime.now())
             .build()
@@ -130,7 +131,7 @@ class RegistryLoggerSpec extends Specification {
             .group("1234")
             .localUrl(url)
             .offset(0)
-            .pipe(["pipeState" : UP_TO_DATE])
+            .pipe(["pipeState": UP_TO_DATE] as Map<String, String>)
             .status(INITIALISING)
             .lastSeen(ZonedDateTime.now())
             .build()
@@ -140,6 +141,36 @@ class RegistryLoggerSpec extends Specification {
 
         then:
         true
+        1 * logger.info("testWhat")
+    }
+
+    def "Logging preserves MDC state as before log invocation and clears MDC state generated for this log"() {
+        given:
+        Logger logger = Mock()
+        logger.isInfoEnabled() >> true
+
+        URL url = new URL("http://localhost")
+
+        RegistryLogger LOG = new RegistryLogger(logger)
+        def myNode = Node.builder()
+            .group("1234")
+            .localUrl(url)
+            .offset(0)
+            .pipe(["pipeState": UP_TO_DATE] as Map<String, String>)
+            .status(INITIALISING)
+            .lastSeen(ZonedDateTime.now())
+            .build()
+
+        and: "MDC has some state"
+        MDC.put("trace_id", "someTraceId")
+
+        when:
+        LOG.withNode(myNode).info("testWhere", "testWhat")
+
+        then: "MDC state is preserved as before"
+        MDC.getCopyOfContextMap() == ["trace_id":"someTraceId"]
+
+        and: "log info is invoked"
         1 * logger.info("testWhat")
     }
 }

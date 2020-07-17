@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.identity.validator;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.core.async.annotation.SingleResult;
 import io.micronaut.core.order.Ordered;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
@@ -13,6 +14,7 @@ import io.micronaut.security.token.validator.TokenValidator;
 import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -27,12 +29,18 @@ public class IdentityTokenValidator implements TokenValidator {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(IdentityTokenValidator.class));
     private final List<TokenUser> users;
+    private final String clientIdAndSecret;
+    private final IdentityTokenValidatorClient identityTokenValidatorClient;
 
     @Inject
-    private IdentityTokenValidatorClient identityTokenValidatorClient;
+    public IdentityTokenValidator(
+        final IdentityTokenValidatorClient identityTokenValidatorClient,
+        @Value("${authentication.identity.client.id}") final String clientId,
+        @Value("${authentication.identity.client.secret}") final String clientSecret,
+        final List<TokenUser> users) {
 
-    @Inject
-    public IdentityTokenValidator(final List<TokenUser> users) {
+        this.identityTokenValidatorClient = identityTokenValidatorClient;
+        this.clientIdAndSecret = clientId + ":" + clientSecret;
         this.users = users;
     }
 
@@ -48,7 +56,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         try {
             return identityTokenValidatorClient
-                .validateToken(UUID.randomUUID().toString(), new ValidateTokenRequest(token))
+                .validateToken(traceId(), new ValidateTokenRequest(token), clientIdAndSecret)
                 .filter(ValidateTokenResponse::isTokenValid)
                 .map(ValidateTokenResponse::getClientUserID)
                 .map(this::toUserDetailsAdapter);
@@ -56,6 +64,10 @@ public class IdentityTokenValidator implements TokenValidator {
             LOG.error("token validator", "validate token", e.getStatus().toString() + " " + e.getResponse().reason());
             return Flowable.empty();
         }
+    }
+
+    private String traceId() {
+        return MDC.get("trace_id") == null ? UUID.randomUUID().toString() : MDC.get("trace_id");
     }
 
     private AuthenticationUserDetailsAdapter toUserDetailsAdapter(String clientId) {

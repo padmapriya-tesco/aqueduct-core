@@ -2,6 +2,7 @@ import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
+import com.tesco.aqueduct.pipe.TestAppender
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.Reader
 import com.tesco.aqueduct.registry.model.NodeRegistry
@@ -16,6 +17,7 @@ import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.HttpStatus
 import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
+import org.hamcrest.Matcher
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -50,11 +52,11 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     private static final String clientId = UUID.randomUUID().toString()
     private static final String secret = UUID.randomUUID().toString()
-    private static final String clientIdAndSecret = "trn:tesco:cid:${clientId}:${secret}"
+    private static final String clientIdAndSecret = "${clientId}:${secret}"
 
     private static final String userUIDA = UUID.randomUUID()
     private static final String clientUserUIDA = "trn:tesco:uid:uuid:${userUIDA}"
-    private static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${clientIdAndSecret}"
+    private static final String validateTokenPath = "${VALIDATE_TOKEN_BASE_PATH}?client_id={clientIdAndSecret}"
 
     @Shared @AutoCleanup ErsatzServer identityMock
     @Shared @AutoCleanup("stop") ApplicationContext context
@@ -121,40 +123,40 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         }
 
         context = ApplicationContext
-                .build()
-                .properties(
-                // enabling security to prove that registry is accessible anyway
-                parseYamlConfig(
-                        """
-                    micronaut.security.enabled: true
-                    micronaut.server.port: -1
-                    micronaut.caches.identity-cache.expire-after-write: 1m
-                    micronaut.security.token.jwt.enabled: true
-                    micronaut.security.token.jwt.bearer.enabled: true
-                    authentication:
-                      users:
-                        $USERNAME:
-                          password: $PASSWORD
-                          roles:
-                            - REGISTRY_DELETE
-                            - BOOTSTRAP_NODE
-                            - REGISTRY_WRITE
-                        $USERNAME_TWO:
-                          password: $PASSWORD_TWO
-                      identity:
-                        url: ${identityMock.getHttpUrl()}
-                        validate.token.path: $validateTokenPath
-                        client:
-                            id: "someClientId"
-                            secret: "someClientSecret"
-                        users:
-                          nodeA:
-                            clientId: "${NODE_A_CLIENT_UID}"
-                            roles:
-                              - PIPE_READ
-                              - REGISTRY_WRITE
+            .build()
+            .properties(
+            // enabling security to prove that registry is accessible anyway
+            parseYamlConfig(
                     """
-                )
+                micronaut.security.enabled: true
+                micronaut.server.port: -1
+                micronaut.caches.identity-cache.expire-after-write: 1m
+                micronaut.security.token.jwt.enabled: true
+                micronaut.security.token.jwt.bearer.enabled: true
+                authentication:
+                  users:
+                    $USERNAME:
+                      password: $PASSWORD
+                      roles:
+                        - REGISTRY_DELETE
+                        - BOOTSTRAP_NODE
+                        - REGISTRY_WRITE
+                    $USERNAME_TWO:
+                      password: $PASSWORD_TWO
+                  identity:
+                    url: ${identityMock.getHttpUrl()}
+                    validate.token.path: $validateTokenPath
+                    client:
+                        id: $clientId
+                        secret: $secret
+                    users:
+                      nodeA:
+                        clientId: "${NODE_A_CLIENT_UID}"
+                        roles:
+                          - PIPE_READ
+                          - REGISTRY_WRITE
+                """
+            )
             )
             .build()
             .registerSingleton(NodeRegistry, registry)
@@ -175,6 +177,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             time += SERVER_SLEEP_TIME_MS
         }
         println("Test setup complete")
+        TestAppender.clearEvents()
     }
 
     void cleanupSpec() {
@@ -289,9 +292,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         when: "we get summary"
         def request = given()
-                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
-                .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
-                .when().get("/v2/registry$query")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
+            .when().get("/v2/registry$query")
 
         then:
         request.then()
@@ -356,8 +359,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         then: "registry has been rebalanced"
         def request = given()
-                .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
-                .when().get("/v2/registry")
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when().get("/v2/registry")
 
         request.then().body(
             "followers[0].localUrl", equalTo("http://1.1.1.2:0002"),
@@ -521,11 +524,12 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     def "registry endpoint called by the UI accepts identity tokens"() {
         given: 'A valid identity token'
         def identityToken = UUID.randomUUID().toString()
-        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA)
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA, equalTo("someTraceId"))
 
         when: "We can get info from registry with an identity token"
         given()
             .header("Authorization", "Bearer $identityToken")
+            .header("TraceId", "someTraceId")
         .when()
             .get("/v2/registry")
         .then()
@@ -540,13 +544,64 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         identityMock.verify()
     }
 
-    def acceptSingleIdentityTokenValidationRequest(String clientIdAndSecret, String identityToken, String clientUserUID) {
+    def "logs have trace_ids in them"() {
+        given: 'A valid identity token'
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA, equalTo("someTraceId"))
+
+        when: "We can get info from registry with an identity token"
+        given()
+            .header("Authorization", "Bearer $identityToken")
+            .header("TraceId", "someTraceId")
+            .when()
+            .get("/v2/registry")
+            .then()
+            .statusCode(200)
+            .body(
+                "root.offset", notNullValue(),
+                "root.localUrl", notNullValue(),
+                "root.status", equalTo(OK.toString())
+            )
+
+        then: "logs contain trace_id in them"
+        TestAppender.getEvents().stream()
+            .filter { it.loggerName.contains("com.tesco.aqueduct") }
+            .allMatch() { it.MDCPropertyMap.get("trace_id") == "someTraceId" }
+    }
+
+    def "when no trace id is provided logs have a generated trace_id in them with the correct prefix"() {
+        given: 'A valid identity token'
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, clientUserUIDA, startsWith("aq-"))
+
+        when: "We can get info from registry with an identity token"
+        given()
+            .header("Authorization", "Bearer $identityToken")
+            .when()
+            .get("/v2/registry")
+            .then()
+            .statusCode(200)
+            .body(
+                "root.offset", notNullValue(),
+                "root.localUrl", notNullValue(),
+                "root.status", equalTo(OK.toString())
+            )
+
+        then: "logs contain trace_id in them with the correct prefix"
+        TestAppender.getEvents().stream()
+            .filter { it.loggerName.contains("com.tesco.aqueduct") }
+            .allMatch() { it.MDCPropertyMap.get("trace_id").startsWith("aq-") }
+    }
+
+    def acceptSingleIdentityTokenValidationRequest(
+            String clientIdAndSecret, String identityToken, String clientUserUID, Matcher<String> traceIdMatcher) {
         def json = JsonOutput.toJson([access_token: identityToken])
 
         identityMock.expectations {
             post(VALIDATE_TOKEN_BASE_PATH) {
                 queries("client_id": [clientIdAndSecret])
                 body(json, "application/json")
+                .header("TraceId", everyItem(traceIdMatcher))
                 called(1)
 
                 responder {

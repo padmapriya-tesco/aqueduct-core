@@ -64,6 +64,6 @@ public class DumpMetrics {
 
         LOG.info(metricName);
 
-        MDC.clear();
-    }
+        MDC.remove("statistic");
+        MDC.remove("value");    }
 }

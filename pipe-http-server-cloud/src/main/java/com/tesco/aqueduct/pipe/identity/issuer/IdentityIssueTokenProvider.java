@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.UUID;
 
@@ -32,18 +33,13 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         if (identityToken != null && !identityToken.isTokenExpired()) {
             return identityToken;
         }
-        final String traceId = UUID.randomUUID().toString();
-
         try {
             identityToken = identityIssueTokenClient.retrieveIdentityToken(
-                    traceId,
-                    new IssueTokenRequest(
-                            identityClientId,
-                            identityClientSecret
-                    )
+                traceId(),
+                new IssueTokenRequest(identityClientId, identityClientSecret)
             );
         } catch(HttpClientResponseException exception) {
-            LOG.error("retrieveIdentityToken", "trace_id: " + traceId, exception);
+            LOG.error("retrieveIdentityToken", "Identity response error: ", exception);
             if (exception.getStatus().getCode() > 499) {
                 throw new IdentityServiceUnavailableException("Unexpected error from Identity with status - " + exception.getStatus());
             } else {
@@ -52,5 +48,9 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         }
 
         return identityToken;
+    }
+
+    private String traceId() {
+        return MDC.get("trace_id") == null ? UUID.randomUUID().toString() : MDC.get("trace_id");
     }
 }
