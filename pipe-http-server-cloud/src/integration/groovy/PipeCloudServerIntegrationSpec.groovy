@@ -37,6 +37,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
 
         dataSource.connection >>> [
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
+            new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection
         ]
         locationResolver.resolve(_) >> []
