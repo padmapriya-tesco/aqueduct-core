@@ -34,26 +34,33 @@ public class PostgresqlStorage implements CentralStorage {
         this.dataSource = dataSource;
         this.readDelay = new PGInterval(0, 0, 0, 0, 0, readDelaySeconds);
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
+
+        //initialise connection pool eagerly
+        try (Connection connection = this.dataSource.getConnection()) {
+            LOG.debug("postgresql storage", "initialised connection pool");
+        } catch (SQLException e) {
+            LOG.error("postgresql storage", "Error initializing connection pool", e);
+        }
     }
 
     @Override
     public MessageResults read(
         final List<String> types,
         final long startOffset,
-        final List<String> clusterUuids) {
-
+        final List<String> clusterUuids
+    ) {
         long start = System.currentTimeMillis();
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids)) {
+        try (Connection connection = dataSource.getConnection()) {
+            LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
+            start = System.currentTimeMillis();
 
             final long globalLatestOffset = getLatestOffsetWithConnection(connection);
             final long retry = startOffset >= globalLatestOffset ? retryAfter : 0;
 
-            LOG.withTypes(types).debug("postgresql storage", "reading with types");
-
-            final List<Message> messages = runMessagesQuery(messagesQuery);
-
-            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
+            try(PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids)) {
+                final List<Message> messages = runMessagesQuery(messagesQuery);
+                return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
+            }
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);

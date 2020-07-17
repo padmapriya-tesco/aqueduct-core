@@ -58,6 +58,7 @@ public class PipeReadController {
         if(offset < 0 || StringUtils.isEmpty(location)) {
             return HttpResponse.badRequest();
         }
+
         logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
         final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");

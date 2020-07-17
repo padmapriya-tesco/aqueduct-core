@@ -32,6 +32,13 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         this.offlineDelta = offlineDelta;
         this.dataSource = dataSource;
         this.nodeGroupStorage = nodeGroupStorage;
+
+        //initialise connection pool eagerly
+        try (Connection connection = this.dataSource.getConnection()) {
+            LOG.debug("postgresql storage", "initialised connection pool");
+        } catch (SQLException e) {
+            LOG.error("postgresql storage", "Error initializing connection pool", e);
+        }
     }
 
     @Override
