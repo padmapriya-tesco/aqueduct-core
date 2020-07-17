@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe.api;
 
+import io.reactivex.Single;
+
 public interface TokenProvider {
-    IdentityToken retrieveIdentityToken();
+    Single<IdentityToken> retrieveIdentityToken();
 }

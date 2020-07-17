@@ -8,6 +8,8 @@ import io.reactivex.Flowable
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.util.concurrent.Executors
+
 class IdentityTokenValidatorSpec extends Specification {
 
     private static final ValidateTokenResponse VALID_RESPONSE = new ValidateTokenResponse(ValidateTokenResponseSpec.USER_ID, ValidateTokenResponseSpec.VALID, ValidateTokenResponseSpec.VALID_CLAIMS)
@@ -27,7 +29,7 @@ class IdentityTokenValidatorSpec extends Specification {
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
             validateToken(_ as String, _ as ValidateTokenRequest, clientId + ":" + clientSecret) >> Flowable.just(identityResponse)
         }
-        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, clientId, clientSecret, [tokenUser])
+        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, clientId, clientSecret, [tokenUser], Executors.newCachedThreadPool())
 
         when:
         def result = tokenValidator.validateToken("token") as Flowable

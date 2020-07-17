@@ -4,10 +4,12 @@ import com.tesco.aqueduct.pipe.api.IdentityToken;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
+import io.reactivex.Single;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class IdentityIssueTokenProvider implements TokenProvider {
 
@@ -16,7 +18,8 @@ public class IdentityIssueTokenProvider implements TokenProvider {
     private final IdentityIssueTokenClient identityIssueTokenClient;
     private final String identityClientId;
     private final String identityClientSecret;
-    private IdentityToken identityToken;
+    // identityToken is a mutable value shared across different threads, hence why we are using an AtomicReference
+    private AtomicReference<IssueTokenResponse> identityToken;
 
     public IdentityIssueTokenProvider(
         IdentityIssueTokenClient identityIssueTokenClient,
@@ -26,19 +29,29 @@ public class IdentityIssueTokenProvider implements TokenProvider {
         this.identityIssueTokenClient = identityIssueTokenClient;
         this.identityClientId = identityClientId;
         this.identityClientSecret = identityClientSecret;
+        identityToken = new AtomicReference<IssueTokenResponse>();
     }
 
     @Override
-    public IdentityToken retrieveIdentityToken() {
-        if (identityToken != null && !identityToken.isTokenExpired()) {
-            return identityToken;
-        }
-        try {
-            identityToken = identityIssueTokenClient.retrieveIdentityToken(
-                traceId(),
-                new IssueTokenRequest(identityClientId, identityClientSecret)
-            );
-        } catch(HttpClientResponseException exception) {
+    public Single<IdentityToken> retrieveIdentityToken() {
+
+        return Single.defer(() -> {
+            IssueTokenResponse identityTokenIssueResponse = identityToken.get();
+
+            if (identityTokenIssueResponse != null && !identityTokenIssueResponse.isTokenExpired()) {
+                return Single.just(identityTokenIssueResponse);
+            }
+
+            return identityIssueTokenClient
+                    .retrieveIdentityToken(traceId(), new IssueTokenRequest(identityClientId, identityClientSecret))
+                    .doOnSuccess(issueResponse -> identityToken.set(issueResponse))
+                    .doOnError(this::handleError);
+        });
+    }
+
+    private void handleError(Throwable error) {
+        if (error instanceof HttpClientResponseException) {
+            HttpClientResponseException exception = (HttpClientResponseException) error;
             LOG.error("retrieveIdentityToken", "Identity response error: ", exception);
             if (exception.getStatus().getCode() > 499) {
                 throw new IdentityServiceUnavailableException("Unexpected error from Identity with status - " + exception.getStatus());
@@ -46,8 +59,6 @@ public class IdentityIssueTokenProvider implements TokenProvider {
                 throw exception;
             }
         }
-
-        return identityToken;
     }
 
     private String traceId() {

@@ -8,6 +8,7 @@ import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.annotation.Filter;
 import io.micronaut.http.filter.ClientFilterChain;
 import io.micronaut.http.filter.HttpClientFilter;
+import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 
 @Filter(serviceId = "pipe")
@@ -34,10 +35,16 @@ public class AuthenticatePipeReadFilter implements HttpClientFilter {
     }
 
     @Override
-    public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
-        if (request.getUri().toString().contains(pipeCloudUri)) {
-            return chain.proceed(request.bearerAuth(tokenProvider.retrieveIdentityToken().getAccessToken()));
-        }
-        return chain.proceed(request.basicAuth(username, password));
+    public Publisher<? extends HttpResponse<?>> doFilter(
+        final MutableHttpRequest<?> request, final ClientFilterChain chain
+    ) {
+        return Flowable.defer( () -> {
+            if (request.getUri().toString().contains(pipeCloudUri)) {
+                return tokenProvider.retrieveIdentityToken()
+                    .map(tokenResponse -> request.bearerAuth(tokenResponse.getAccessToken()))
+                    .flatMapPublisher(chain::proceed);
+            }
+            return chain.proceed(request.basicAuth(username, password));
+        });
     }
 }

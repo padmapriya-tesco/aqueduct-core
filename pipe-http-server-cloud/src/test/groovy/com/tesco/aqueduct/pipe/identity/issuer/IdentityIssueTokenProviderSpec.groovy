@@ -8,6 +8,8 @@ import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.simple.SimpleHttpHeaders
+import io.reactivex.Single
+import io.reactivex.exceptions.CompositeException
 import spock.lang.Specification
 
 class IdentityIssueTokenProviderSpec extends Specification {
@@ -39,10 +41,10 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IssueTokenResponse issueTokenResponse = new IssueTokenResponse("accessToken", 10)
 
         when: "A call is made to retrieve an Identity token"
-        IdentityToken identityToken = identityIssueTokenProvider.retrieveIdentityToken()
+        IdentityToken identityToken = identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "issue token client is called, and token is provided"
-        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> issueTokenResponse
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> Single.just(issueTokenResponse)
 
         and: "token is as expected"
         identityToken.accessToken == "accessToken"
@@ -60,17 +62,17 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IssueTokenResponse issueTokenResponse = new IssueTokenResponse("accessToken", 10)
 
         when: "a call is made to retrieve an Identity token"
-        IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
+        IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "issue token client is called, and token is provided"
-        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> issueTokenResponse
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> Single.just(issueTokenResponse)
 
         and: "token is as expected"
         firstIdentityToken.accessToken == "accessToken"
         !firstIdentityToken.isTokenExpired()
 
         when: "we fetch the token again"
-        IdentityToken secondIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
+        IdentityToken secondIdentityToken = identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "issue token client is not called again"
         0 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest)
@@ -90,20 +92,20 @@ class IdentityIssueTokenProviderSpec extends Specification {
         IssueTokenResponse issueTokenResponse = new IssueTokenResponse("accessToken", -1)
 
         when: "a call is made to retrieve an Identity token"
-        IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken()
+        IdentityToken firstIdentityToken = identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "issue token client is called, and token is provided"
-        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> issueTokenResponse
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> Single.just(issueTokenResponse)
 
         and: "token is expired"
         firstIdentityToken.accessToken == "accessToken"
         firstIdentityToken.isTokenExpired()
 
         when: "we fetch the token again"
-        identityIssueTokenProvider.retrieveIdentityToken()
+        identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "a new token is issued"
-        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest)
+        1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> Single.just(issueTokenResponse)
     }
 
     def "IdentityServiceUnavailable error thrown when identity client returns 5xx status code"() {
@@ -114,15 +116,16 @@ class IdentityIssueTokenProviderSpec extends Specification {
         )
 
         when: "a call is made to retrieve an Identity token"
-        identityIssueTokenProvider.retrieveIdentityToken()
+        identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "issue token client is invoked throwing http client response error with 5xx status code"
         1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
-            throw httpResponseWithStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            Single.error(httpResponseWithStatus(HttpStatus.INTERNAL_SERVER_ERROR))
         }
 
         and: "IdentityServiceUnavailable error is thrown"
-        thrown(IdentityServiceUnavailableException)
+        CompositeException exception = thrown()
+        exception.getExceptions().last().class == IdentityServiceUnavailableException
     }
 
     def "Http client response error is propagated when identity client returns 4xx status code"() {
@@ -133,15 +136,16 @@ class IdentityIssueTokenProviderSpec extends Specification {
         )
 
         when: "a call is made to retrieve an Identity token"
-        identityIssueTokenProvider.retrieveIdentityToken()
+        identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
         then: "issue token client is invoked throwing http client response error with 5xx status code"
         1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
-            throw httpResponseWithStatus(HttpStatus.BAD_REQUEST)
+            Single.error(httpResponseWithStatus(HttpStatus.BAD_REQUEST))
         }
 
         and: "IdentityServiceUnavailable error is thrown"
-        thrown(HttpClientResponseException)
+        CompositeException exception = thrown()
+        exception.getExceptions().last().class == HttpClientResponseException
     }
 
     private HttpClientResponseException httpResponseWithStatus(HttpStatus httpStatus) {

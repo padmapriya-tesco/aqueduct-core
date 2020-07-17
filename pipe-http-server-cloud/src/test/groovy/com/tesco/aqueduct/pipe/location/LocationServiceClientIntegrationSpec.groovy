@@ -6,9 +6,9 @@ import com.stehno.ersatz.junit.ErsatzServerRule
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
-import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.server.EmbeddedServer
+import io.reactivex.exceptions.CompositeException
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -178,7 +178,8 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
 
         and: "an exception is thrown"
-        thrown(HttpClientException)
+        CompositeException compositeException = thrown()
+        compositeException.exceptions.last().class == HttpClientResponseException
     }
 
     private void locationServiceReturningListOfClustersForGiven(String locationUuid) {

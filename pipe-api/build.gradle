@@ -5,6 +5,10 @@ dependencies {
     compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.8'
     // Optionals, streams etc.
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.8'
+
+    // TODO - this should be resolved through Micronaut dependencies instead of explicit declaration here
+    compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.2.10'
+
 }
 
 addPublish()

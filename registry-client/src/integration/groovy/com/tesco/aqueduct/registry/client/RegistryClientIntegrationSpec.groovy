@@ -8,6 +8,7 @@ import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
 import io.micronaut.inject.qualifiers.Qualifiers
+import io.reactivex.Single
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -24,12 +25,13 @@ class RegistryClientIntegrationSpec extends Specification {
     String host2 = "http://host2"
 
     def tokenProvider = Mock(TokenProvider) {
-        retrieveIdentityToken() >> Mock(IdentityToken)
+        retrieveIdentityToken() >> Single.just(Mock(IdentityToken))
     }
 
     @Shared @AutoCleanup ErsatzServer server
 
     SummarySupplier selfSummarySupplier = Mock()
+
     Supplier<Map<String, Object>> providerMetricsSupplier = Mock()
     def setupSpec() {
         server = new ErsatzServer()
@@ -50,7 +52,7 @@ class RegistryClientIntegrationSpec extends Specification {
             )
             .build()
             .registerSingleton(tokenProvider)
-            .registerSingleton(Supplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
+            .registerSingleton(SummarySupplier.class, selfSummarySupplier, Qualifiers.byName("selfSummarySupplier"))
             .registerSingleton(Supplier.class, providerMetricsSupplier, Qualifiers.byName("providerMetricsSupplier"))
             .registerSingleton(Bootstrapable.class, Mock(Bootstrapable), Qualifiers.byName("provider"))
             .registerSingleton(Bootstrapable.class, Mock(Bootstrapable), Qualifiers.byName("pipe"))
@@ -92,7 +94,7 @@ class RegistryClientIntegrationSpec extends Specification {
             .lastSeen(ZonedDateTime.now())
             .build()
 
-        selfSummarySupplier.get() >> {
+        selfSummarySupplier.getSelfNode() >> {
             myNode
         }
 

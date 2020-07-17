@@ -309,10 +309,4 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             .then()
             .statusCode(HttpStatus.OK.code)
     }
-
-    def acceptSingleIdentityTokenValidationRequestPerToken(String clientIdAndSecret, String... identityTokens) {
-        identityTokens.each { token ->
-            acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, token)
-        }
-    }
 }
