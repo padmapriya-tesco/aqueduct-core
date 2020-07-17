@@ -35,7 +35,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
         //initialise connection pool eagerly
         try (Connection connection = this.dataSource.getConnection()) {
-            LOG.info("postgresql storage", "initialised connection pool");
+            LOG.debug("postgresql storage", "initialised connection pool");
         } catch (SQLException e) {
             LOG.error("postgresql storage", "Error initializing connection pool", e);
         }

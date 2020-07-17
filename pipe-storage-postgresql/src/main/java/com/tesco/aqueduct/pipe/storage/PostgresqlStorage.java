@@ -37,7 +37,7 @@ public class PostgresqlStorage implements CentralStorage {
 
         //initialise connection pool eagerly
         try (Connection connection = this.dataSource.getConnection()) {
-            LOG.info("postgresql storage", "initialised connection pool");
+            LOG.debug("postgresql storage", "initialised connection pool");
         } catch (SQLException e) {
             LOG.error("postgresql storage", "Error initializing connection pool", e);
         }
@@ -57,7 +57,7 @@ public class PostgresqlStorage implements CentralStorage {
             final long globalLatestOffset = getLatestOffsetWithConnection(connection);
             final long retry = startOffset >= globalLatestOffset ? retryAfter : 0;
 
-            try( PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids) ) {
+            try(PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids)) {
                 final List<Message> messages = runMessagesQuery(messagesQuery);
                 return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
             }
