@@ -7,6 +7,7 @@ import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
+import io.reactivex.Single
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -25,7 +26,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         getAccessToken() >> "someToken"
     }
     def tokenProvider = Mock(TokenProvider) {
-        retrieveIdentityToken() >> identityToken
+        retrieveIdentityToken() >> Single.just(identityToken)
     }
 
     def "identity token is used when settings are provided calling the cloud"() {

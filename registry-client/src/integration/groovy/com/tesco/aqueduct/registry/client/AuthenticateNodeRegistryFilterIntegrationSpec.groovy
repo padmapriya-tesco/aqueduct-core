@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.api.IdentityToken
 import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.registry.model.Node
 import io.micronaut.context.ApplicationContext
+import io.reactivex.Single
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
@@ -21,7 +22,7 @@ class AuthenticateNodeRegistryFilterIntegrationSpec extends Specification {
         getAccessToken() >> "someToken"
     }
     def tokenProvider = Mock(TokenProvider) {
-        retrieveIdentityToken() >> identityToken
+        retrieveIdentityToken() >> Single.just(identityToken)
     }
 
     def "Bearer auth is used for authorization"() {

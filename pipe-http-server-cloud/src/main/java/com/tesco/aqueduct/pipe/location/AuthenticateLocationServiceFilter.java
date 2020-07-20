@@ -20,6 +20,8 @@ public class AuthenticateLocationServiceFilter implements HttpClientFilter {
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(
         final MutableHttpRequest<?> request, final ClientFilterChain chain) {
-        return chain.proceed(request.bearerAuth(identityTokenProvider.retrieveIdentityToken().getAccessToken()));
+        return identityTokenProvider.retrieveIdentityToken()
+            .map(tokenResponse -> request.bearerAuth(tokenResponse.getAccessToken()))
+            .flatMapPublisher(chain::proceed);
     }
 }

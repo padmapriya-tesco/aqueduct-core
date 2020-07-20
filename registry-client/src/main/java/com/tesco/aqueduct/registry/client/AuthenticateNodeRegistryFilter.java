@@ -21,6 +21,8 @@ public class AuthenticateNodeRegistryFilter implements HttpClientFilter {
 
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(final MutableHttpRequest<?> request, final ClientFilterChain chain) {
-        return chain.proceed(request.bearerAuth(tokenProvider.retrieveIdentityToken().getAccessToken()));
+        return tokenProvider.retrieveIdentityToken()
+            .map(tokenResponse -> request.bearerAuth(tokenResponse.getAccessToken()))
+            .flatMapPublisher(chain::proceed);
     }
 }

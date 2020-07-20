@@ -19,6 +19,10 @@ micronaut:
       swagger:
         paths: classpath:META-INF/swagger
         mapping: /swagger/**
+  executors:
+    io:
+      type: fixed
+      nThreads: 20
 
 endpoints:
   all:
