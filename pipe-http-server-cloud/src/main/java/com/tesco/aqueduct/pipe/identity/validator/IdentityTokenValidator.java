@@ -39,12 +39,12 @@ public class IdentityTokenValidator implements TokenValidator {
 
     @Inject
     public IdentityTokenValidator(
-            final IdentityTokenValidatorClient identityTokenValidatorClient,
-            @Value("${authentication.identity.client.id}") final String clientId,
-            @Value("${authentication.identity.client.secret}") final String clientSecret,
-            final List<TokenUser> users,
-            @Named(TaskExecutors.IO) ExecutorService requestThreadPool
-        ) {
+        final IdentityTokenValidatorClient identityTokenValidatorClient,
+        @Value("${authentication.identity.client.id}") final String clientId,
+        @Value("${authentication.identity.client.secret}") final String clientSecret,
+        final List<TokenUser> users,
+        @Named(TaskExecutors.IO) ExecutorService requestThreadPool
+    ) {
 
         this.identityTokenValidatorClient = identityTokenValidatorClient;
         this.requestThreadPool = requestThreadPool;
