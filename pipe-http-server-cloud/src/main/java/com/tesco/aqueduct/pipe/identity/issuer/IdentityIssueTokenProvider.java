@@ -43,9 +43,9 @@ public class IdentityIssueTokenProvider implements TokenProvider {
             }
 
             return identityIssueTokenClient
-                    .retrieveIdentityToken(traceId(), new IssueTokenRequest(identityClientId, identityClientSecret))
-                    .doOnSuccess(issueResponse -> identityToken.set(issueResponse))
-                    .doOnError(this::handleError);
+                .retrieveIdentityToken(traceId(), new IssueTokenRequest(identityClientId, identityClientSecret))
+                .doOnSuccess(issueResponse -> identityToken.set(issueResponse))
+                .doOnError(this::handleError);
         });
     }
 
