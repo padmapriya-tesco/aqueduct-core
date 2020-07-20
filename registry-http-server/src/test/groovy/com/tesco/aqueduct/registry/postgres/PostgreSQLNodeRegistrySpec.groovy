@@ -21,7 +21,7 @@ class PostgreSQLNodeRegistrySpec extends Specification {
 		and: "a mock data source"
 		def dataSourceMock = Mock(DataSource)
 		def mockConnection = Mock(Connection)
-		1 * dataSourceMock.getConnection() >> mockConnection
+		2 * dataSourceMock.getConnection() >> mockConnection
 		1 * mockConnection.setAutoCommit(false)
 
 		and: "a node registry"

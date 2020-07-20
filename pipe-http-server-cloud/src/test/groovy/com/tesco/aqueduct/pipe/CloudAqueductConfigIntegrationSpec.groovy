@@ -1,15 +1,23 @@
 package com.tesco.aqueduct.pipe
 
+import com.opentable.db.postgres.junit.EmbeddedPostgresRules
+import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import io.micronaut.context.ApplicationContext
 import io.micronaut.inject.BeanDefinition
 import io.micronaut.inject.qualifiers.Qualifiers
+import org.junit.ClassRule
+import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.inject.Named
+import javax.sql.DataSource
 
 class CloudAqueductConfigIntegrationSpec extends Specification {
 
     private static final String AQUEDUCT_PACKAGE = "com.tesco.aqueduct"
+
+    @Shared @ClassRule SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
+    DataSource dataSource
 
     def "Cloud aqueduct application is configured correctly so it starts up successfully"() {
         given: "required externalized environment properties"
@@ -32,6 +40,8 @@ class CloudAqueductConfigIntegrationSpec extends Specification {
             .build()
             .environments("integration")
             .build()
+            .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("postgres"))
+
 
         when: "the application is started"
         applicationContext.start()
