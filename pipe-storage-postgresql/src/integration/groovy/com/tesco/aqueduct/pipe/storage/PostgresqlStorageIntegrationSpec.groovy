@@ -178,7 +178,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         MessageResults result = storage.read([], 0, ["clusterId"])
 
         then:
-        result.retryAfterSeconds == 0
+        result.retryAfterSeconds == 10
         result.messages.size() == 3
     }
 
