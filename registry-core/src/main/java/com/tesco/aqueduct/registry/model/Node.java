@@ -98,11 +98,11 @@ public class Node {
     // All nodes for a store will be in the same subgroup
     @JsonIgnore
     public String getSubGroupId() {
-        return "noFilterByVersion";
+        return "subGroupId";
     }
 
     @JsonIgnore
-    private String getPipeVersion() {
+    public String getPipeVersion() {
         return pipe.get("v");
     }
 

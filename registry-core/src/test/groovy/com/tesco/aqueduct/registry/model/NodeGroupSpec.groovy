@@ -563,7 +563,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "noFilterByVersion"
+        group.subGroups.get(0).subGroupId == "subGroupId"
         group.subGroups.get(0).nodes.size() == 2
         group.subGroups.get(0).nodes.get(0).localUrl == url1
         group.subGroups.get(0).nodes.get(1).localUrl == url2

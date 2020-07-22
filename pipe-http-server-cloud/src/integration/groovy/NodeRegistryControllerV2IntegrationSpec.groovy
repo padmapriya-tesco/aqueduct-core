@@ -237,11 +237,11 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "status": "$INITIALISING",
                 "following": ["$CLOUD_PIPE_URL"]
             }""")
-            .when()
+        .when()
             .post("/v2/registry")
-            .then()
+        .then()
             .statusCode(422)
-            .body("message", equalTo("Sub group id needs to be available for localhost"))
+            .body("message", equalTo("Node version needs to be available for localhost"))
     }
 
     def "Can get registry summary"() {

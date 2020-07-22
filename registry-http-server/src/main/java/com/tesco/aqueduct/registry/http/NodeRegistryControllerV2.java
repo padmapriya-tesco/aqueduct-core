@@ -19,7 +19,6 @@ import javax.annotation.Nullable;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Measure
 @Controller("/v2/registry")
@@ -47,10 +46,10 @@ public class NodeRegistryControllerV2 {
 
     @Secured(REGISTRY_WRITE)
     @Post
-    public RegistryResponse registerNode(@Body final Node node) throws SQLException, SubGroupIdNotAvailableException {
-        if (node.getSubGroupId() == null) {
-            throw new SubGroupIdNotAvailableException(
-                String.format("Sub group id needs to be available for %s", node.getHost())
+    public RegistryResponse registerNode(@Body final Node node) throws SQLException, NodeVersionNotAvailableException {
+        if (node.getPipeVersion() == null) {
+            throw new NodeVersionNotAvailableException(
+                String.format("Node version needs to be available for %s", node.getHost())
             );
         }
         LOG.withNode(node).info("register node: ", "node registered");
@@ -78,8 +77,8 @@ public class NodeRegistryControllerV2 {
         return HttpResponse.status(HttpStatus.OK);
     }
 
-    @Error(exception = SubGroupIdNotAvailableException.class)
-    public HttpResponse<JsonError> subGroupIdNotAvailableError(SubGroupIdNotAvailableException exception) {
+    @Error(exception = NodeVersionNotAvailableException.class)
+    public HttpResponse<JsonError> nodeVersionNotAvailableError(NodeVersionNotAvailableException exception) {
         JsonError error = new JsonError(exception.getMessage());
         LOG.error("NodeRegistryControllerV2", "Failed to register", exception);
         return HttpResponse.<JsonError>status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
