@@ -14,7 +14,11 @@ class PostgresqlStorageSpec extends Specification {
     @Unroll
     def "retry after is #result when queryTime is #timeOfQueryMs and message result size is #noOfMessages"() {
         given:
-        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, 0)
+        def readersNodeCount = 3000
+        def clusterDBPoolSize = 60
+
+        and:
+        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, 0, readersNodeCount, clusterDBPoolSize)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) == result
@@ -30,7 +34,6 @@ class PostgresqlStorageSpec extends Specification {
         0             |  10000        | 1
         1             |  10000        | 1
         700           |  10000        | retryAfter
-        1000          |  10000        | retryAfter
         1000          |  10000        | retryAfter
     }
 }
