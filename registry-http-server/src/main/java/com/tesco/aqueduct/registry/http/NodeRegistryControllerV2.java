@@ -3,13 +3,13 @@ package com.tesco.aqueduct.registry.http;
 import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.Reader;
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.model.Status;
+import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
-import io.micronaut.http.annotation.*;
 import io.micronaut.http.annotation.Error;
+import io.micronaut.http.annotation.*;
 import io.micronaut.http.hateoas.JsonError;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
@@ -46,10 +46,10 @@ public class NodeRegistryControllerV2 {
 
     @Secured(REGISTRY_WRITE)
     @Post
-    public RegistryResponse registerNode(@Body final Node node) throws SQLException, NodeVersionNotAvailableException {
-        if (node.getPipeVersion() == null) {
-            throw new NodeVersionNotAvailableException(
-                String.format("Node version needs to be available for %s", node.getHost())
+    public RegistryResponse registerNode(@Body final Node node) throws SQLException, SubGroupIdNotAvailableException {
+        if (node.getSubGroupId() == null) {
+            throw new SubGroupIdNotAvailableException(
+                String.format("Sub group id needs to be available for %s", node.getHost())
             );
         }
         LOG.withNode(node).info("register node: ", "node registered");
@@ -77,8 +77,8 @@ public class NodeRegistryControllerV2 {
         return HttpResponse.status(HttpStatus.OK);
     }
 
-    @Error(exception = NodeVersionNotAvailableException.class)
-    public HttpResponse<JsonError> nodeVersionNotAvailableError(NodeVersionNotAvailableException exception) {
+    @Error(exception = SubGroupIdNotAvailableException.class)
+    public HttpResponse<JsonError> subGroupIdNotAvailableError(SubGroupIdNotAvailableException exception) {
         JsonError error = new JsonError(exception.getMessage());
         LOG.error("NodeRegistryControllerV2", "Failed to register", exception);
         return HttpResponse.<JsonError>status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
