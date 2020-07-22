@@ -15,6 +15,8 @@ public class PostgresqlStorage implements CentralStorage {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
     public static final String DEFAULT_CLUSTER = "NONE";
+    private static final int NODE_COUNT = 3000;
+    private static final long DB_CONNECTION_POOL_SIZE = 60;
 
     private final int limit;
     private final DataSource dataSource;
@@ -55,10 +57,16 @@ public class PostgresqlStorage implements CentralStorage {
             start = System.currentTimeMillis();
 
             final long globalLatestOffset = getLatestOffsetWithConnection(connection);
-            final long retry = startOffset >= globalLatestOffset ? retryAfter : 10;
 
-            try(PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids)) {
+            try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, clusterUuids)) {
+
+                long queryStart = System.currentTimeMillis();
                 final List<Message> messages = runMessagesQuery(messagesQuery);
+                long queryEnd = System.currentTimeMillis();
+
+                final long retry = calculateRetryAfter(queryEnd - queryStart, messages.size());
+
+                LOG.info("PostgresSqlStorage:retry", String.valueOf(retry));
                 return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
             }
         } catch (SQLException exception) {
@@ -68,6 +76,24 @@ public class PostgresqlStorage implements CentralStorage {
             long end = System.currentTimeMillis();
             LOG.info("read:time", Long.toString(end - start));
         }
+    }
+
+    private long calculateRetryAfter(long queryTimeMs, int messagesCount) {
+        if (messagesCount == 0) {
+            return retryAfter;
+        }
+
+        if (queryTimeMs == 0) {
+            return 1;
+        }
+
+//      retry after = readers / (connections / query time) OR readers * query time / connections
+
+        final double dbThreshold = (DB_CONNECTION_POOL_SIZE * 1000) / queryTimeMs;
+        final double retryAfterSecs = NODE_COUNT / dbThreshold;
+        final long calculatedRetryAfter = (long) Math.ceil(retryAfterSecs);
+
+        return Math.min(calculatedRetryAfter, retryAfter);
     }
 
     @Override

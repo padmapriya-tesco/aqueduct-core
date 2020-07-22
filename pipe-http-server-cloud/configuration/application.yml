@@ -37,7 +37,7 @@ persistence:
   read:
     limit: 20000
     max-batch-size: 2000000
-    retry-after: 10
+    retry-after: 30
 
 datasources:
   postgres:
