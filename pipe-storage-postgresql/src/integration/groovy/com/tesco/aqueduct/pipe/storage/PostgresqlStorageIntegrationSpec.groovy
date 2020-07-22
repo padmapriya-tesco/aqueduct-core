@@ -168,20 +168,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         result.messages.size() == 2
     }
 
-    def "retry-after is zero if the pipe is not empty"() {
-        given: "I have some records in the integrated database"
-        insert(message(key: "z"))
-        insert(message(key: "y"))
-        insert(message(key: "x"))
-
-        when:
-        MessageResults result = storage.read([], 0, ["clusterId"])
-
-        then:
-        result.retryAfterSeconds == 10
-        result.messages.size() == 3
-    }
-
     def "retry-after is non-zero if the pipe has no more data at specified offset"() {
         given: "I have some records in the integrated database"
         insert(message(key: "z"))
