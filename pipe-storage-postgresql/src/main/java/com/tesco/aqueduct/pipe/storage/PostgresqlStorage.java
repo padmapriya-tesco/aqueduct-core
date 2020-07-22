@@ -16,7 +16,7 @@ public class PostgresqlStorage implements CentralStorage {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
     public static final String DEFAULT_CLUSTER = "NONE";
     private static final int NODE_COUNT = 3000;
-    private static final long DB_CONNECTION_POOL_SIZE = 60;
+    private static final int DB_CONNECTION_POOL_SIZE = 60;
 
     private final int limit;
     private final DataSource dataSource;
@@ -89,7 +89,7 @@ public class PostgresqlStorage implements CentralStorage {
 
 //      retry after = readers / (connections / query time) OR readers * query time / connections
 
-        final double dbThreshold = (DB_CONNECTION_POOL_SIZE * 1000) / queryTimeMs;
+        final double dbThreshold = DB_CONNECTION_POOL_SIZE * 1000 / queryTimeMs;
         final double retryAfterSecs = NODE_COUNT / dbThreshold;
         final long calculatedRetryAfter = (long) Math.ceil(retryAfterSecs);
 
