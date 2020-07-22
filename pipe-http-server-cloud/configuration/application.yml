@@ -37,9 +37,7 @@ persistence:
   read:
     limit: 20000
     max-batch-size: 2000000
-    retry-after: 30
-    expected-node-count: 3000
-    cluster-db-pool-size: 60
+    retry-after: 10
 
 datasources:
   postgres:
