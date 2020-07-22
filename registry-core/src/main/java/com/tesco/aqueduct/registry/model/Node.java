@@ -95,9 +95,10 @@ public class Node {
         return getStatus() == OFFLINE;
     }
 
+    // All nodes for a store will be in the same subgroup
     @JsonIgnore
     public String getSubGroupId() {
-        return getPipeVersion();
+        return "noFilterByVersion";
     }
 
     @JsonIgnore
