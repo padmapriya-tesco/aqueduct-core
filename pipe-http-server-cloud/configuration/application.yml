@@ -57,3 +57,6 @@ authentication:
 location:
   delay: 500ms
   attempts: 3
+
+registry:
+  mark-offline-after: 25m
