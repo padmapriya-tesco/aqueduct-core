@@ -35,9 +35,13 @@ public class Bindings {
         @Property(name = "persistence.read.retry-after") final int retryAfter,
         @Property(name = "persistence.read.max-batch-size") final int maxBatchSize,
         @Value("${persistence.read.read-delay-seconds:0}") final int readDelaySeconds,
+        @Value("${persistence.read.expected-node-count}") final int expectedNodeCount,
+        @Value("${persistence.read.cluster-db-pool-size}") final long clusterDBPoolSize,
         @Named("postgres") final DataSource dataSource
-    ) {
-        return new PostgresqlStorage(dataSource, limit, retryAfter, maxBatchSize, readDelaySeconds);
+        ) {
+        return new PostgresqlStorage(
+            dataSource, limit, retryAfter, maxBatchSize, readDelaySeconds, expectedNodeCount, clusterDBPoolSize
+        );
     }
 
     @Singleton

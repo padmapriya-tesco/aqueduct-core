@@ -66,7 +66,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
         """)
 
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1)
     }
 
     @Unroll
@@ -106,7 +106,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "there is postgres storage"
         def limit = 1
         def dataSourceWithMockedConnection = Mock(DataSource)
-        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, 0)
+        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, 0, 1, 1)
 
         and: "a mock connection is provided when requested"
         def connection = Mock(Connection)
@@ -166,20 +166,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
-    }
-
-    def "retry-after is zero if the pipe is not empty"() {
-        given: "I have some records in the integrated database"
-        insert(message(key: "z"))
-        insert(message(key: "y"))
-        insert(message(key: "x"))
-
-        when:
-        MessageResults result = storage.read([], 0, ["clusterId"])
-
-        then:
-        result.retryAfterSeconds == 10
-        result.messages.size() == 3
     }
 
     def "retry-after is non-zero if the pipe has no more data at specified offset"() {
@@ -455,7 +441,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "pipe should return messages if available from the given offset instead of empty set"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -490,7 +476,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "getMessageCountByType should return the count of messages by type"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))

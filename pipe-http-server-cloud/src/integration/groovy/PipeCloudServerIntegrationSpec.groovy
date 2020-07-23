@@ -71,7 +71,10 @@ class PipeCloudServerIntegrationSpec extends Specification {
                 "pipe.server.url": "http://cloud.pipe",
                 "persistence.read.limit": 1000,
                 "persistence.read.retry-after": 10000,
-                "persistence.read.max-batch-size": "10485760"
+                "persistence.read.max-batch-size": "10485760",
+                "persistence.read.expected-node-count": 2,
+                "persistence.read.cluster-db-pool-size": 10
+
             )
             .mainClass(EmbeddedServer)
             .build()
