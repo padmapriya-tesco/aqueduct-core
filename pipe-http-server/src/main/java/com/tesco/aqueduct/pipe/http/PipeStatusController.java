@@ -5,6 +5,7 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.security.annotation.Secured;
 import io.micronaut.security.rules.SecurityRule;
+import io.reactivex.Single;
 import lombok.Data;
 
 @Secured(SecurityRule.IS_ANONYMOUS)
@@ -13,8 +14,8 @@ import lombok.Data;
 public class PipeStatusController {
 
     @Get("/pipe/_status")
-    Status status() {
-        return new Status("ok", Version.getImplementationVersion());
+    Single<Status> status() {
+        return Single.just(new Status("ok", Version.getImplementationVersion()));
     }
 
     @Data
