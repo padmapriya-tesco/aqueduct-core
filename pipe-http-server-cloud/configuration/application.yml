@@ -22,7 +22,7 @@ micronaut:
   executors:
     io:
       type: fixed
-      nThreads: 20
+      nThreads: 8
   server:
     netty:
       worker:
@@ -41,9 +41,9 @@ persistence:
   read:
     limit: 20000
     max-batch-size: 2000000
-    retry-after: 30
+    retry-after: 120
     expected-node-count: 3000
-    cluster-db-pool-size: 60
+    cluster-db-pool-size: 72
 
 datasources:
   postgres:
@@ -51,7 +51,7 @@ datasources:
     username: "${POSTGRE_USERNAME}"
     password: "${POSTGRE_PASSWORD}"
     driver-class-name: org.postgresql.Driver
-    maximum-pool-size: 20
+    maximum-pool-size: 8
 
 authentication:
   identity:
