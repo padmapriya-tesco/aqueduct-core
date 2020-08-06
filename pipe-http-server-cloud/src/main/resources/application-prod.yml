@@ -38,4 +38,14 @@ pipe:
   server:
     url: "https://api.tesco.com/messaging/v1"
 
-persistence.read.read-delay-seconds: 10
+persistence:
+  compact:
+    threshold: 3d
+    schedule.cron: "0 14 2 1/1 * ?"
+  read:
+    limit: 20000
+    max-batch-size: 2000000
+    retry-after: 120
+    expected-node-count: 3000
+    cluster-db-pool-size: 72
+    read-delay-seconds: 10
