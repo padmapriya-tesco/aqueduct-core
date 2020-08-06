@@ -185,7 +185,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         RestAssured.port = RestAssured.DEFAULT_PORT
     }
 
-    def 'expect unauthorized when not providing username and password to registry'() {
+    def 'expect unauthorized when not providing authentication on registry'() {
         expect:
         given()
             .contentType("application/json")
@@ -203,9 +203,14 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "Can post to registry"() {
+        given: "Identity accepting requests"
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, NODE_A_CLIENT_UID, equalTo("someTraceId"))
+
         expect: "We can post info to the registry"
         given()
-            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .header("Authorization", "Bearer $identityToken")
+            .header("TraceId", "someTraceId")
             .contentType("application/json")
             .body("""{
                 "group": "6735",
@@ -227,9 +232,14 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     @Ignore
     def "post to registry without version is a bad request"() {
+        given: "Identity accepting requests"
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, NODE_A_CLIENT_UID, equalTo("someTraceId"))
+
         expect: "posting to registry without version fails with 422"
         given()
-            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .header("Authorization", "Bearer $identityToken")
+            .header("TraceId", "someTraceId")
             .contentType("application/json")
             .body("""{
                 "group": "6735",
@@ -248,6 +258,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     def "Can get registry summary"() {
         expect: "We can get info from registry"
+        denySingleIdentityTokenValidationRequest()
         given()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
         .when()
@@ -293,6 +304,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode("c", "http://c")
 
         when: "we get summary"
+        denySingleIdentityTokenValidationRequest()
         def request = given()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .urlEncodingEnabled(false) // to disable changing ',' to %2Cc as this ',' is special character here, not part of the value
@@ -321,6 +333,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(4321, "http://1.1.1.1:4321", 123, INITIALISING, ["http://y"])
 
         when: "node is deleted"
+        denySingleIdentityTokenValidationRequest()
         given()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")
@@ -351,6 +364,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(1234, "http://1.1.1.5:0005", 123, FOLLOWING)
 
         when: "first node is deleted"
+        denySingleIdentityTokenValidationRequest()
         given()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .contentType("application/json")
@@ -389,6 +403,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(1234, "http://1.1.1.6:0006", 123, OFFLINE)
 
         when: "We get the hierarchy"
+        denySingleIdentityTokenValidationRequest()
         def request = given()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .when().get("/v2/registry")
@@ -417,6 +432,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         registerNode(4321, "http://1.1.1.1:4321", 123, FOLLOWING, ["http://y"])
 
         when: "node is deleted"
+        denySingleIdentityTokenValidationRequest()
         def encodedCredentials = "${USERNAME_TWO}:${PASSWORD_TWO}".bytes.encodeBase64().toString()
         given()
             .header("Authorization", "Basic $encodedCredentials")
@@ -427,6 +443,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(403)
 
         then: "registry is unaffected by request"
+        denySingleIdentityTokenValidationRequest()
         def request =
             given()
                 .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
@@ -439,7 +456,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         request.then().statusCode(200)
     }
 
-    def "anonymous user without deletion role cannot delete from the database"() {
+    def "anonymous user without deletion role cannot delete"() {
         given: "We register two nodes"
         registerNode(1234, "http://1.1.1.1:1234", 123, FOLLOWING, ["http://x"])
         registerNode(4321, "http://1.1.1.1:4321", 123, FOLLOWING, ["http://y"])
@@ -453,6 +470,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(401)
 
         then: "registry is unaffected by request"
+        denySingleIdentityTokenValidationRequest()
         def request =
             given()
                 .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
@@ -467,6 +485,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     @Unroll
     def "when a bootstrap is requested, a bootstrap request is saved for that node"() {
+        given: "identity rejecting requests"
+        denySingleIdentityTokenValidationRequest()
+
         when: "bootstrap is called"
         given()
             .contentType("application/json")
@@ -505,6 +526,9 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
+        given: "identity rejecting requests"
+        denySingleIdentityTokenValidationRequest()
+
         when: "bootstrap is called"
         given()
             .contentType("application/json")
@@ -641,10 +665,30 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         }
     }
 
-    private static void registerNode(group, url, offset = 0, status = INITIALISING.toString(), following = [CLOUD_PIPE_URL]) {
+    def denySingleIdentityTokenValidationRequest() {
+        identityMock.expectations {
+            post(VALIDATE_TOKEN_BASE_PATH) {
+                called(1)
+                responder {
+                    header("Content-Type", "application/json;charset=UTF-8")
+                    body("""
+                        {
+                          "Status": "INVALID"
+                        }
+                    """)
+                }
+            }
+        }
+    }
+
+    private void registerNode(group, url, offset = 0, status = INITIALISING.toString(), following = [CLOUD_PIPE_URL]) {
+        def identityToken = UUID.randomUUID().toString()
+        acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, NODE_A_CLIENT_UID, equalTo("someTraceId"))
+
         given()
             .contentType("application/json")
-            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .header("Authorization", "Bearer $identityToken")
+            .header("TraceId", "someTraceId")
             .body("""{
                 "group": "$group",
                 "localUrl": "$url",
