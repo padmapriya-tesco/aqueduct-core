@@ -34,4 +34,14 @@ pipe:
   server:
     url: "${PIPE_URL}"
 
-persistence.read.read-delay-seconds: 1
+persistence:
+  compact:
+    threshold: 3d
+    schedule.cron: "0 14 2 1/1 * ?"
+  read:
+    limit: 20000
+    max-batch-size: 2000000
+    retry-after: 1
+    expected-node-count: 3
+    cluster-db-pool-size: 72
+    read-delay-seconds: 1
