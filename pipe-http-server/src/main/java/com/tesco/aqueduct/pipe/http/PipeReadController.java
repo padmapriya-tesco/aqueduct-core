@@ -59,7 +59,6 @@ public class PipeReadController {
             return HttpResponse.badRequest();
         }
 
-        logOffsetRequestFromRemoteHost(offset, request.getRemoteAddress().getHostName());
         final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
@@ -81,15 +80,6 @@ public class PipeReadController {
             );
 
         return response;
-    }
-
-    private void logOffsetRequestFromRemoteHost(final long offset, final String hostName) {
-        if(LOG.isDebugEnabled()) {
-            LOG.debug(
-                "pipe read controller",
-                String.format("reading from offset %d, requested by %s", offset, hostName)
-            );
-        }
     }
 
     private List<String> flattenRequestParams(final List<String> strings) {
