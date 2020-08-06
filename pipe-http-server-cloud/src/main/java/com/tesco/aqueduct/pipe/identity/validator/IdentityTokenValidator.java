@@ -45,7 +45,6 @@ public class IdentityTokenValidator implements TokenValidator {
         final List<TokenUser> users,
         @Named(TaskExecutors.IO) ExecutorService requestThreadPool
     ) {
-
         this.identityTokenValidatorClient = identityTokenValidatorClient;
         this.requestThreadPool = requestThreadPool;
         this.clientIdAndSecret = clientId + ":" + clientSecret;
@@ -99,6 +98,6 @@ public class IdentityTokenValidator implements TokenValidator {
     //lowest precedence chosen so it is used after others
     @Override
     public int getOrder() {
-        return Ordered.LOWEST_PRECEDENCE;
+        return Ordered.HIGHEST_PRECEDENCE;
     }
 }
