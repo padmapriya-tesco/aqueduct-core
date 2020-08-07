@@ -25,6 +25,7 @@ micronaut:
       nThreads: 8
   server:
     netty:
+      compression-threshold: 10024000000
       worker:
         threads: 100
 
