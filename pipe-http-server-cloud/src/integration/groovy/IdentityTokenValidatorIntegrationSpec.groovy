@@ -145,6 +145,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
     }
 
     def 'Http status OK when using valid basic auth credentials'() {
+        denySingleIdentityTokenValidationRequest()
         expect: 'A secured URL is accessed with the basic auth'
         RestAssured.given()
             .header("Authorization", "Basic $encodedCredentials")
