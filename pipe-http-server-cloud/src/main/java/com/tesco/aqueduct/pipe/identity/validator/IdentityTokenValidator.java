@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.identity.validator;
 
+import com.tesco.aqueduct.pipe.identity.issuer.IdentityServiceUnavailableException;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.context.annotation.Requires;
@@ -61,20 +62,26 @@ public class IdentityTokenValidator implements TokenValidator {
             return Flowable.empty();
         }
 
-        try {
-            return identityTokenValidatorClient
-                .validateToken(traceId(), new ValidateTokenRequest(token), clientIdAndSecret)
-                // Need to observe on configured thread pool so our blocking controller continues on this thread pool too.
-                // @executeOn annotation supported by Micronaut 2.0 doesn't seem to work in conjunction with Micronaut TokenValidator
-                // we raised an issue to Micronaut: https://github.com/micronaut-projects/micronaut-security/issues/313
-                // we are keen to remove the RX code once a fix is released
-                .observeOn(Schedulers.from(this.requestThreadPool))
-                .filter(ValidateTokenResponse::isTokenValid)
-                .map(ValidateTokenResponse::getClientUserID)
-                .map(this::toUserDetailsAdapter);
-        } catch (HttpClientResponseException e) {
-            LOG.error("token validator", "validate token", e.getStatus().toString() + " " + e.getResponse().reason());
-            return Flowable.empty();
+        return identityTokenValidatorClient
+            .validateToken(traceId(), new ValidateTokenRequest(token), clientIdAndSecret)
+            .doOnError(this::handleError)
+            // Need to observe on configured thread pool so our blocking controller continues on this thread pool too.
+            // @executeOn annotation supported by Micronaut 2.0 doesn't seem to work in conjunction with Micronaut TokenValidator
+            // we raised an issue to Micronaut: https://github.com/micronaut-projects/micronaut-security/issues/313
+            // we are keen to remove the RX code once a fix is released
+            .observeOn(Schedulers.from(this.requestThreadPool))
+            .filter(ValidateTokenResponse::isTokenValid)
+            .map(ValidateTokenResponse::getClientUserID)
+            .map(this::toUserDetailsAdapter);
+    }
+
+    private void handleError(Throwable error) {
+        if (error instanceof HttpClientResponseException) {
+            HttpClientResponseException exception = (HttpClientResponseException) error;
+            LOG.error("retrieveIdentityToken", "Identity response error: ", exception);
+            if (exception.getStatus().getCode() > 499) {
+                throw new IdentityServiceUnavailableException("Unexpected error from Identity with status - " + exception.getStatus());
+            }
         }
     }
 
