@@ -138,14 +138,13 @@ class IdentityIssueTokenProviderSpec extends Specification {
         when: "a call is made to retrieve an Identity token"
         identityIssueTokenProvider.retrieveIdentityToken().blockingGet()
 
-        then: "issue token client is invoked throwing http client response error with 5xx status code"
+        then: "issue token client is invoked throwing http client response error with 4xx status code"
         1 * identityIssueTokenClient.retrieveIdentityToken(_ as String, issueTokenRequest) >> {
             Single.error(httpResponseWithStatus(HttpStatus.BAD_REQUEST))
         }
 
         and: "IdentityServiceUnavailable error is thrown"
-        CompositeException exception = thrown()
-        exception.getExceptions().last().class == HttpClientResponseException
+        thrown(HttpClientResponseException)
     }
 
     private HttpClientResponseException httpResponseWithStatus(HttpStatus httpStatus) {

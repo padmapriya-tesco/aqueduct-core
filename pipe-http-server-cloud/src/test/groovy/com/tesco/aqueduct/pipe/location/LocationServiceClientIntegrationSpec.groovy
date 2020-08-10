@@ -178,8 +178,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
         locationMockService.verify()
 
         and: "an exception is thrown"
-        CompositeException compositeException = thrown()
-        compositeException.exceptions.last().class == HttpClientResponseException
+        thrown(HttpClientResponseException)
     }
 
     private void locationServiceReturningListOfClustersForGiven(String locationUuid) {
