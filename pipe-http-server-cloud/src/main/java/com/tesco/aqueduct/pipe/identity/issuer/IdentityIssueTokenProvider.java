@@ -56,6 +56,8 @@ public class IdentityIssueTokenProvider implements TokenProvider {
             if (exception.getStatus().getCode() > 499) {
                 throw new IdentityServiceUnavailableException("Unexpected error from Identity with status - " + exception.getStatus());
             }
+        } else {
+            LOG.error("retrieveIdentityToken", "Unexpected error from Identity", error);
         }
     }
 
