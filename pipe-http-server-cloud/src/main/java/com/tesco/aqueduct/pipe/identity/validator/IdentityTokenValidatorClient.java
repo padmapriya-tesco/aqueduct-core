@@ -6,6 +6,7 @@ import io.micronaut.http.annotation.Header;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.client.annotation.Client;
+import io.micronaut.retry.annotation.CircuitBreaker;
 import io.reactivex.Flowable;
 
 @Client("${authentication.identity.url}")
@@ -13,6 +14,7 @@ import io.reactivex.Flowable;
 public interface IdentityTokenValidatorClient {
 
     @Post("${authentication.identity.validate.token.path}")
+    @CircuitBreaker(delay = "${authentication.identity.delay}", attempts = "${authentication.identity.attempts}")
     Flowable<ValidateTokenResponse> validateToken(
         @Header("TraceId") String traceId,
         @Body ValidateTokenRequest identityRequest,
