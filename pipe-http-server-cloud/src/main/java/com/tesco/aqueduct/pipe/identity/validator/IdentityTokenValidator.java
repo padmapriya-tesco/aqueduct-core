@@ -78,10 +78,12 @@ public class IdentityTokenValidator implements TokenValidator {
     private void handleError(Throwable error) {
         if (error instanceof HttpClientResponseException) {
             HttpClientResponseException exception = (HttpClientResponseException) error;
-            LOG.error("validateToken", "Identity response error: ", exception);
+            LOG.error("validateToken", "Identity response error", exception);
             if (exception.getStatus().getCode() > 499) {
                 throw new IdentityServiceUnavailableException("Unexpected error from Identity with status - " + exception.getStatus());
             }
+        } else {
+            LOG.error("validateToken", "Unexpected error from Identity", error);
         }
     }
 
