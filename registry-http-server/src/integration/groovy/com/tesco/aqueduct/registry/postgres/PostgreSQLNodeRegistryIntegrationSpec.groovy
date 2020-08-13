@@ -105,7 +105,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         long offset = 12345
 
         URL url1 = new URL("http://1.1.1.1")
-        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"OUT_OF_DATE"])
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"UNKNOWN"])
 
         URL url2 = new URL("http://2.2.2.2")
         Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"UP_TO_DATE"])
@@ -149,8 +149,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[1].getLocalUrl() == url5
         followers[2].getLocalUrl() == url4
         followers[3].getLocalUrl() == url2
-        followers[4].getLocalUrl() == url1
-        followers[5].getLocalUrl() == url6
+        followers[4].getLocalUrl() == url6
+        followers[5].getLocalUrl() == url1
 
         followers[0].status == FOLLOWING
         followers[1].status == FOLLOWING
