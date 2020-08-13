@@ -106,12 +106,12 @@ public class SubNodeGroup {
     }
 
     public void sortNodes(URL cloudUrl) {
-        nodes.sort(Comparator.comparingLong(Node::getOffset).reversed());
-        nodes.sort(this::comparingStatus);
+        nodes.sort(Comparator.comparing(Node::getPipeState));
+        nodes.sort(this::comparingOfflineStatus);
         updateGetFollowing(cloudUrl);
     }
 
-    private int comparingStatus(Node node1, Node node2) {
+    private int comparingOfflineStatus(Node node1, Node node2) {
         if (node1.isOffline() && !node2.isOffline()) {
             return 1;
         } else if (!node1.isOffline() && node2.isOffline()) {
