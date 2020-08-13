@@ -113,6 +113,7 @@ public class Node {
         return !node.getSubGroupId().equals(getSubGroupId());
     }
 
+    @JsonIgnore
     public PipeState getPipeState() {
         if (!pipe.containsKey("pipeState")) {
             return PipeState.UNKNOWN;
