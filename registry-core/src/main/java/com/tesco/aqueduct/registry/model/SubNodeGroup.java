@@ -5,13 +5,13 @@ import lombok.EqualsAndHashCode;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.tesco.aqueduct.registry.model.Status.OFFLINE;
+import static java.util.Comparator.comparing;
 
 @EqualsAndHashCode
 public class SubNodeGroup {
@@ -106,7 +106,7 @@ public class SubNodeGroup {
     }
 
     public void sortNodes(URL cloudUrl) {
-        nodes.sort(Comparator.comparing(Node::getPipeState));
+        nodes.sort(comparing(Node::getPipeState));
         nodes.sort(this::comparingOfflineStatus);
         updateGetFollowing(cloudUrl);
     }
