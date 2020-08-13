@@ -5,11 +5,7 @@ import io.micronaut.http.server.netty.SmartHttpContentCompressor;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.compression.ZlibEncoder;
-import io.netty.handler.codec.compression.ZlibWrapper;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
 
 @ChannelHandler.Sharable
@@ -49,6 +45,7 @@ public class DefaultHttpContentCompressor extends HttpContentCompressor {
 
     @Override
     protected Result beginEncode(HttpResponse httpResponse, String acceptEncoding) throws Exception {
+/*
         if (this.contentSizeThreshold > 0) {
             if (httpResponse instanceof HttpContent &&
                     ((HttpContent) httpResponse).content().readableBytes() < contentSizeThreshold) {
@@ -81,10 +78,11 @@ public class DefaultHttpContentCompressor extends HttpContentCompressor {
         }
 
         final ZlibEncoder zlibEncoder = new CustomJdkZlibEncoder(wrapper, compressionLevel, windowBits, memLevel);
+*/
 
         return new Result(
-            targetContentEncoding,
+            "brotli",
             new EmbeddedChannel(ctx.channel().id(), ctx.channel().metadata().hasDisconnect(),
-                ctx.channel().config(), zlibEncoder));
+                ctx.channel().config(), new BrotliEncoder()));
     }
 }

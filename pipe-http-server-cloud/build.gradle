@@ -15,6 +15,9 @@ dependencies {
 
     addMicronautDependencies()
 
+    compile group: 'com.nixxcode.jvmbrotli', name: 'jvmbrotli', version: '0.2.0'
+    compile group: 'com.nixxcode.jvmbrotli', name: 'jvmbrotli-darwin-x86-amd64', version: '0.2.0'
+
     compile 'io.micronaut:micronaut-http-client'
     compile 'com.sun.activation:javax.activation:1.2.0'
     testCompile 'com.opentable.components:otj-pg-embedded:0.13.0'
