@@ -114,11 +114,11 @@ public class Node {
     }
 
     public PipeState getPipeState() {
-        if(!pipe.containsKey("pipeState")) {
+        if (!pipe.containsKey("pipeState")) {
             return PipeState.UNKNOWN;
         }
 
-        if(Arrays.stream(PipeState.class.getEnumConstants()).noneMatch(e -> e.name().equals(pipe.get("pipeState")))) {
+        if (Arrays.stream(PipeState.class.getEnumConstants()).noneMatch(e -> e.name().equals(pipe.get("pipeState")))) {
             return PipeState.UNKNOWN;
         }
 
