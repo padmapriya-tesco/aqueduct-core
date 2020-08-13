@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.http;
 
 import io.micronaut.context.annotation.Replaces;
 import io.micronaut.http.server.netty.SmartHttpContentCompressor;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.compression.ZlibEncoder;
@@ -11,6 +12,7 @@ import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
 
+@ChannelHandler.Sharable
 @Replaces(SmartHttpContentCompressor.class)
 public class DefaultHttpContentCompressor extends HttpContentCompressor {
 
