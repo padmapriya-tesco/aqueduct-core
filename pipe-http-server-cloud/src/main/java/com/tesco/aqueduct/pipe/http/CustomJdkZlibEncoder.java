@@ -12,9 +12,11 @@ import org.slf4j.LoggerFactory;
 public class CustomJdkZlibEncoder extends JdkZlibEncoder {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(CustomJdkZlibEncoder.class));
+    private int compressionLevel;
 
     public CustomJdkZlibEncoder(ZlibWrapper wrapper, int compressionLevel, int windowBits, int memLevel) {
         super(wrapper, compressionLevel);
+        this.compressionLevel = compressionLevel;
     }
 
     @Override
@@ -34,11 +36,16 @@ public class CustomJdkZlibEncoder extends JdkZlibEncoder {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
+        LOG.info("encode", "Compression level: " + compressionLevel);
+
         long startTime = System.currentTimeMillis();
+        long startTimeNano = System.nanoTime();
         super.encode(ctx, msg, out);
         long endTime = System.currentTimeMillis();
+        long endTimeNano = System.nanoTime();
 
-        LOG.info("encode", "Time taken to encode: " + (endTime - startTime));
+        LOG.info("encode", "Time taken to encode in milliseconds: " + (endTime - startTime));
+        LOG.info("encode", "Time taken to encode in nanoseconds: " + (endTimeNano - startTimeNano));
         LOG.info("encode", "UnCompressed size: " + msg.array().length);
         LOG.info("encode", "Compressed size: " + out.readableBytes());
         LOG.info("encode", "Compression ratio: " +
