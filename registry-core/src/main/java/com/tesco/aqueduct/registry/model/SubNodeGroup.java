@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import java.net.URL;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -104,7 +105,8 @@ public class SubNodeGroup {
         return nodes.get(index);
     }
 
-    public void sortOfflineNodes(URL cloudUrl) {
+    public void sortNodes(URL cloudUrl) {
+        nodes.sort(Comparator.comparingLong(Node::getOffset).reversed());
         nodes.sort(this::comparingStatus);
         updateGetFollowing(cloudUrl);
     }
