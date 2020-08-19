@@ -1,6 +1,7 @@
 dependencies {
     compile project(":pipe-api")
     compile project(":pipe-logger")
+    compile 'com.github.java-json-tools:json-patch:1.13'
     testCompile project(":pipe-storage-test")
 }
 
