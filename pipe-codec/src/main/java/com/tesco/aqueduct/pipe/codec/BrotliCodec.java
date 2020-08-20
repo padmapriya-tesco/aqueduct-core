@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.http.codec;
+package com.tesco.aqueduct.pipe.codec;
 
 import com.nixxcode.jvmbrotli.common.BrotliLoader;
 import com.nixxcode.jvmbrotli.dec.BrotliInputStream;
@@ -22,29 +22,17 @@ public class BrotliCodec implements Codec {
 
     @Override
     public byte[] encode(byte[] input) {
-
-        Encoder.Parameters params = new Encoder.Parameters().setQuality(4);
-
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        long startTimeNano = System.nanoTime();
-        try (BrotliOutputStream brotliOutputStream = new BrotliOutputStream(outputStream, params)) {
+        try (BrotliOutputStream brotliOutputStream =
+                 new BrotliOutputStream(outputStream, new Encoder.Parameters().setQuality(4))) {
             brotliOutputStream.write(input);
-
         } catch (IOException ioException) {
             LOG.error("Codec", "Error encoding response.", ioException);
-            throw new RuntimeException("Error encoding response.", ioException); // TODO bit more specific
+            throw new PipeCodecException("Error encoding response.", ioException);
         }
-        long endTimeNano = System.nanoTime();
-
         final byte[] encodedBytes = outputStream.toByteArray();
-
-        // TODO remove them if not required
-        LOG.info("Codec", "Time taken to encode in nanoseconds: " + (endTimeNano - startTimeNano));
-        LOG.info("Codec", "UnCompressed size: " + input.length);
-        LOG.info("Codec", "Compressed size: " + encodedBytes.length);
+        // TODO probably not required for production
         LOG.info("Codec", "Compression ratio: " + ((double)input.length)/((double)encodedBytes.length));
-
         return encodedBytes;
     }
 
@@ -61,7 +49,7 @@ public class BrotliCodec implements Codec {
             return byteArrayOutputStream.toByteArray();
         } catch (IOException ioException) {
             LOG.error("Codec", "Error decoding bytes.", ioException);
-            throw new RuntimeException("Error decoding bytes.", ioException); // TODO bit more specific
+            throw new PipeCodecException("Error decoding bytes.", ioException);
         }
     }
 

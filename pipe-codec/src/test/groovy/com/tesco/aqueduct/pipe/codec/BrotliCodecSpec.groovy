@@ -1,11 +1,10 @@
-package com.tesco.aqueduct.pipe.http.codec
+package com.tesco.aqueduct.pipe.codec
 
 import spock.lang.Specification
 
 class BrotliCodecSpec extends Specification {
 
     def "Encoded data is decoded correctly"() {
-
         given:
         def brotliCodec = new BrotliCodec()
 
@@ -17,6 +16,25 @@ class BrotliCodecSpec extends Specification {
 
         then:
         new String(brotliCodec.decode(encodedBytes)) == inputData
+    }
+
+    def "Pipe codec exception thrown when compression format is not Brotli"() {
+        given:
+        def brotliCodec = new BrotliCodec()
+
+        and:
+        def inputData = "Som non brotli codec data"
+
+        when:
+        brotliCodec.decode(inputData.bytes)
+
+        then:
+        thrown(PipeCodecException)
+    }
+
+    def "Codec type is Brotli"() {
+        expect:
+        new BrotliCodec().getType() == CodecType.BROTLI
     }
 
     String someRichJson() {
