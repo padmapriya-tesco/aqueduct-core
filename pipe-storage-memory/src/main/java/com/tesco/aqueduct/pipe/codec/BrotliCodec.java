@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.repository;
+package com.tesco.aqueduct.pipe.codec;
 
 import com.nixxcode.jvmbrotli.common.BrotliLoader;
 import com.nixxcode.jvmbrotli.dec.BrotliInputStream;

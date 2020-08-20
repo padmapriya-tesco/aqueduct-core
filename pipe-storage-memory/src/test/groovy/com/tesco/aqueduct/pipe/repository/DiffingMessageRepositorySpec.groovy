@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.repository
 
+import com.tesco.aqueduct.pipe.codec.CodecType
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import spock.lang.IgnoreIf
@@ -12,7 +13,7 @@ class DiffingMessageRepositorySpec extends Specification {
 
     def "data with the same key existing before returns patch if smaller than data"(){
         given: "json patching repository"
-        def repository = new DiffingMessageRepository(true, new BrotliCodec())
+        def repository = new DiffingMessageRepository(true, CodecType.BROTLI)
         and: "boring long json, with one having extra element in array"
         def events = 20
         def firstJson = [ events:
@@ -59,7 +60,7 @@ class DiffingMessageRepositorySpec extends Specification {
         given:
         def file = "../events.json" as File
         def slurper = new JsonSlurper()
-        def repository = new DiffingMessageRepository(true, new BrotliCodec())
+        def repository = new DiffingMessageRepository(true, CodecType.BROTLI)
 
         when:
         int i = 0

@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.repository;
 
 
+import com.tesco.aqueduct.pipe.codec.CodecType;
 import lombok.Value;
 import lombok.With;
 
@@ -8,7 +9,8 @@ import lombok.With;
 public class BinaryPatch {
     long source;
     @With byte[] patch;
-    @With CodecType codecType;
+    @With
+    CodecType codecType;
 
     /**
      * Size of the patch without compression

@@ -2,7 +2,7 @@ package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.repository.BinaryMessageWithPatch;
-import com.tesco.aqueduct.pipe.repository.CodecType;
+import com.tesco.aqueduct.pipe.codec.CodecType;
 import com.tesco.aqueduct.pipe.repository.MessageRepository;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 

@@ -1,5 +1,8 @@
 package com.tesco.aqueduct.pipe.repository
 
+import com.tesco.aqueduct.pipe.codec.BrotliCodec
+import com.tesco.aqueduct.pipe.codec.Codec
+import com.tesco.aqueduct.pipe.codec.GzipCodec
 import spock.lang.Shared
 import spock.lang.Specification
 

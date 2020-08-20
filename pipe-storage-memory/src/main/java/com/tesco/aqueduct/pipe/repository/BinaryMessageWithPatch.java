@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.repository;
 
 
+import com.tesco.aqueduct.pipe.codec.CodecType;
 import lombok.Value;
 import lombok.With;
 
@@ -23,7 +24,8 @@ public class BinaryMessageWithPatch {
     /**
      * Compression used on data;
      */
-    @With @Nullable CodecType dataCodecType;
+    @With @Nullable
+    CodecType dataCodecType;
 
     /**
      * Original size of the data
@@ -34,6 +36,7 @@ public class BinaryMessageWithPatch {
      * Patch is optional, it might not be available either because we have nothing to patch from,
      * or it is bigger than the data itself.
      */
-    @With @Nullable BinaryPatch patch;
+    @With @Nullable
+    BinaryPatch patch;
 }
 

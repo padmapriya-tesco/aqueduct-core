@@ -1,4 +1,4 @@
-package com.tesco.aqueduct.pipe.repository;
+package com.tesco.aqueduct.pipe.codec;
 
 import lombok.SneakyThrows;
 
