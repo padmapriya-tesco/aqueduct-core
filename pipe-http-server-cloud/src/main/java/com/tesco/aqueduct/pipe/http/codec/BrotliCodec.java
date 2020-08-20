@@ -50,10 +50,8 @@ public class BrotliCodec implements Codec {
 
     @Override
     public byte[] decode(byte[] input) {
-
-        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-        try (BrotliInputStream brotliInputStream = new BrotliInputStream(new ByteArrayInputStream(input))) {
+        try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             final BrotliInputStream brotliInputStream = new BrotliInputStream(new ByteArrayInputStream(input))) {
             int decodedByte=brotliInputStream.read();
 
             while (decodedByte != -1) {
