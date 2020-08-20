@@ -52,15 +52,13 @@ public class BrotliCodec implements Codec {
     public byte[] decode(byte[] input) {
         try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              final BrotliInputStream brotliInputStream = new BrotliInputStream(new ByteArrayInputStream(input))) {
-            int decodedByte=brotliInputStream.read();
 
+            int decodedByte=brotliInputStream.read();
             while (decodedByte != -1) {
                 byteArrayOutputStream.write(decodedByte);
                 decodedByte = brotliInputStream.read();
             }
-
             return byteArrayOutputStream.toByteArray();
-
         } catch (IOException ioException) {
             LOG.error("Codec", "Error decoding bytes.", ioException);
             throw new RuntimeException("Error decoding bytes.", ioException); // TODO bit more specific
@@ -71,6 +69,5 @@ public class BrotliCodec implements Codec {
     public CodecType getType() {
         return CodecType.BROTLI;
     }
-
 }
 
