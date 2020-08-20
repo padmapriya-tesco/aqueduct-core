@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.codec.http;
 
 import com.tesco.aqueduct.pipe.codec.BrotliCodec;
+import com.tesco.aqueduct.pipe.codec.CodecType;
 import com.tesco.aqueduct.pipe.codec.GzipCodec;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
@@ -36,10 +37,10 @@ public class HttpCodecServerFilter implements HttpServerFilter {
                 ) {
                     byte[] encodedResponse = null;
 
-                    if (contentEncoding.contains("gzip")) {
+                    if (contentEncoding.contains(CodecType.GZIP.name().toLowerCase())) {
                         encodedResponse = gzipCodec.encode(((String) response.body()).getBytes());
 
-                    } else if (contentEncoding.contains("brotli")) {
+                    } else if (contentEncoding.contains(CodecType.BROTLI.name().toLowerCase())) {
                         encodedResponse = brotliCodec.encode(((String) response.body()).getBytes());
                     }
                     if (encodedResponse != null) {
