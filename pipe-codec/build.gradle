@@ -1,6 +1,8 @@
 dependencies {
     compile project (":pipe-logger")
 
+    addMicronautDependencies()
+
     compile group: 'com.nixxcode.jvmbrotli', name: 'jvmbrotli', version: '0.2.0'
     compile group: 'com.nixxcode.jvmbrotli', name: 'jvmbrotli-darwin-x86-amd64', version: '0.2.0'
 }

@@ -5,12 +5,15 @@ import com.nixxcode.jvmbrotli.dec.BrotliInputStream;
 import com.nixxcode.jvmbrotli.enc.BrotliOutputStream;
 import com.nixxcode.jvmbrotli.enc.Encoder;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import io.micronaut.context.annotation.Value;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+@Singleton
 public class BrotliCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
@@ -22,7 +25,7 @@ public class BrotliCodec implements Codec {
      *
      * @param qualityLevel Compression level
      */
-    public BrotliCodec(int qualityLevel) {
+    public BrotliCodec(@Value("${http.codec.brotli.level:4}") int qualityLevel) {
         loadBrotli();
         this.parameters = new Encoder.Parameters().setQuality(qualityLevel);
     }

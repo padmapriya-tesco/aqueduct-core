@@ -12,6 +12,7 @@ dependencies {
     compile project (":pipe-storage-postgresql")
     compile project (":registry-http-server")
     compile project (":telemetry")
+    compile project (":pipe-codec")
 
     addMicronautDependencies()
 
