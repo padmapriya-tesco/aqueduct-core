@@ -15,9 +15,25 @@ public class BrotliCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
 
+    private final Encoder.Parameters parameters;
+
+    /**
+     * Allow to set compression level. It has not been tested yet on real data.
+     *
+     * @param qualityLevel Compression level
+     */
+    public BrotliCodec(int qualityLevel) {
+        loadBrotli();
+        this.parameters = new Encoder.Parameters().setQuality(qualityLevel);
+    }
+
     public BrotliCodec() {
-        final boolean isBrotliAvailable = BrotliLoader.isBrotliAvailable();
-        LOG.info("Codec", "Load Brotli: " + isBrotliAvailable);
+        loadBrotli();
+        this.parameters = new Encoder.Parameters().setQuality(4);
+    }
+
+    private void loadBrotli() {
+        LOG.info("Codec", "Load Brotli: " + BrotliLoader.isBrotliAvailable());
     }
 
     @Override
@@ -27,8 +43,8 @@ public class BrotliCodec implements Codec {
                  new BrotliOutputStream(outputStream, new Encoder.Parameters().setQuality(4))) {
             brotliOutputStream.write(input);
         } catch (IOException ioException) {
-            LOG.error("Codec", "Error encoding response.", ioException);
-            throw new PipeCodecException("Error encoding response.", ioException);
+            LOG.error("Codec", "Error encoding content", ioException);
+            throw new PipeCodecException("Error encoding content", ioException);
         }
         final byte[] encodedBytes = outputStream.toByteArray();
         // TODO probably not required for production

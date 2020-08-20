@@ -55,6 +55,14 @@ class BrotliCodecSpec extends Specification {
                 "offset": "4",
                 "created": "2000-12-01T10:00:00Z",
                 "data": "{\"id\":\"someId\",\"arraykey\":[\"2231bb94-05c9-4914-a37e-55ce1907fd02\"],\"number\":\"8899\",\"arrayNum\":[\"13\",\"6\"],\"dateTime1\":\"2020-06-08T00:00:00+01:00\",\"dateTime2\":\"2020-08-25T23:59:59Z\",\"name\":\"someName\",\"description\":\"someDescription\",\"description1\":\"SomeMoreDescription\",\"description2\":\"someBigDescription\",\"num2\":223456,\"object\":{\"type\":\"someObjectType\",\"id\":\"someObjectId\",\"subObject\":[{\"type\":\"someSubObjectType\",\"id\":\"9\",\"subObjectKey\":{\"type\":\"someSubObjectKeyType\",\"size\":0098,\"arrayNum\":[22345,556778,0,0,9,324,24,55435,55534534,34543634634534634]}}]}}"
+              },
+              {
+                "type": "type2",
+                "key": "D",
+                "contentType": "content-type",
+                "offset": "5",
+                "created": "2000-12-01T10:00:00Z",
+                "data": "łąś»«·§≠²³€²≠³½ßśćąż"
               }
             ]
         """
