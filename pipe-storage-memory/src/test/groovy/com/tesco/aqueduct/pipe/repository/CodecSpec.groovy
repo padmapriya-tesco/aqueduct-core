@@ -1,9 +1,14 @@
 package com.tesco.aqueduct.pipe.repository
 
+import spock.lang.Shared
 import spock.lang.Specification
 
-class GzipCodecSpec extends Specification {
-    Codec codec = new GzipCodec()
+import java.nio.charset.Charset
+
+class CodecSpec extends Specification {
+
+    static Charset UTF8 = Charset.forName("UTF-8")
+    @Shared List<Codec> codecs = [new GzipCodec(), new BrotliCodec()]
 
     def input = """
         Some example text that will be encoded by codec
@@ -18,17 +23,24 @@ class GzipCodecSpec extends Specification {
 
     def "Encoded input is smaller than original"() {
         when:
-        def encoded = codec.encode(input.bytes)
+        def encoded = codec.encode(input.getBytes(UTF8))
 
         then:
         encoded.size() * 2 < input.bytes.size()
+        println("Codec: $codec.type ratio: ${encoded.size() / input.bytes.size()}")
+
+        where:
+        codec << codecs
     }
 
     def "Encoded string can be decoded to equal string "() {
         when:
-        def encoded = codec.encode(input.bytes)
+        def encoded = codec.encode(input.getBytes(UTF8))
 
         then:
-        input == new String(codec.decode(encoded))
+        input == new String(codec.decode(encoded), UTF8)
+
+        where:
+        codec << codecs
     }
 }

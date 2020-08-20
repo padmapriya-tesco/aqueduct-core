@@ -12,7 +12,7 @@ class DiffingMessageRepositorySpec extends Specification {
 
     def "data with the same key existing before returns patch if smaller than data"(){
         given: "json patching repository"
-        def repository = new DiffingMessageRepository(true, new GzipCodec())
+        def repository = new DiffingMessageRepository(true, new BrotliCodec())
         and: "boring long json, with one having extra element in array"
         def events = 20
         def firstJson = [ events:
@@ -59,7 +59,7 @@ class DiffingMessageRepositorySpec extends Specification {
         given:
         def file = "../events.json" as File
         def slurper = new JsonSlurper()
-        def repository = new DiffingMessageRepository(true, new GzipCodec())
+        def repository = new DiffingMessageRepository(true, new BrotliCodec())
 
         when:
         int i = 0

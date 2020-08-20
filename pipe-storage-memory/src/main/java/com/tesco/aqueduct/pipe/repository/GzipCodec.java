@@ -54,15 +54,7 @@ public class GzipCodec implements Codec {
             return null;
         }
 
-        GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(input));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        int b;
-
-        while ((b = in.read()) != -1) {
-            out.write(b);
-        }
-
-        return out.toByteArray();
+        GZIPInputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(input));
+        return getBytes(inputStream);
     }
 }
