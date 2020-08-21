@@ -28,6 +28,7 @@ public class HttpCodecServerFilter implements HttpServerFilter {
 
     @Override
     public Publisher<MutableHttpResponse<?>> doFilter(HttpRequest<?> request, ServerFilterChain chain) {
+        // TODO if payload is small do not encode
         return Flowable.fromPublisher(chain.proceed(request))
             .map(response -> {
                 final String contentEncoding = request.getHeaders().get(HttpHeaders.CONTENT_ENCODING);
