@@ -1,14 +1,16 @@
 apply plugin: "me.champeau.gradle.jmh"
 
 dependencies {
-    compile project(":pipe-api")
-    compile project(":pipe-logger")
-    
-    compile 'org.postgresql:postgresql:42.2.5'
+    implementation project(":pipe-api")
+    implementation project(":pipe-logger")
 
-    runtime 'io.micronaut.configuration:micronaut-jdbc-hikari'
+    implementation 'org.slf4j:slf4j-api'
 
-    testCompile project(":pipe-storage-test")
-    testCompile 'com.opentable.components:otj-pg-embedded:0.13.0'
+    implementation 'org.postgresql:postgresql:42.2.5'
+
+    runtimeOnly 'io.micronaut.sql:micronaut-jdbc-hikari'
+
+    testImplementation project(":pipe-storage-test")
+    testImplementation 'com.opentable.components:otj-pg-embedded:0.13.0'
 }
 addPublish()

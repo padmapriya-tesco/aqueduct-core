@@ -1,12 +1,15 @@
 dependencies {
-    compile project(":pipe-api")
-    compile project(":pipe-logger")
-    compile project(":registry-client")
+    implementation project(":pipe-api")
+    implementation project(":pipe-logger")
+    implementation project(":registry-client")
 
     addMicronautDependencies()
-    compile 'io.micronaut:micronaut-http-client'
+    implementation 'io.micronaut:micronaut-http-client'
+    implementation 'org.codehaus.groovy:groovy-all:3.0.0'
+    implementation 'org.spockframework:spock-core:2.0-M3-groovy-3.0'
 
-    compile "org.slf4j:slf4j-api:1.7.25"
+
+    implementation "org.slf4j:slf4j-api:1.7.25"
 }
 
 addPublish()

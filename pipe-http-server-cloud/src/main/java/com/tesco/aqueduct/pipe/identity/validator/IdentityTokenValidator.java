@@ -101,7 +101,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         UserDetails userDetails = new UserDetails(clientId, roles);
 
-        return new AuthenticationUserDetailsAdapter(userDetails, "roles");
+        return new AuthenticationUserDetailsAdapter(userDetails, "roles", "user");
     }
 
     //lowest precedence chosen so it is used after others
