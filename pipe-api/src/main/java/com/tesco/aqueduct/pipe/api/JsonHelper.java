@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.pipe.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +9,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,7 +52,8 @@ public class JsonHelper {
         return MAPPER.writeValueAsString(msg);
     }
 
-    public static String toJson(final List<?> msg) throws IOException {
+    @SneakyThrows
+    public static String toJson(final List<?> msg) {
         return MAPPER.writeValueAsString(msg);
     }
 }

@@ -49,7 +49,7 @@ public class PipeReadController {
     private int maxPayloadSizeBytes;
 
     @Get("/pipe/{offset}{?type,location}")
-    public HttpResponse<List<Message>> readMessages(
+    public HttpResponse<String> readMessages(
         final long offset,
         final HttpRequest<?> request,
         @Nullable final List<String> type,
@@ -68,7 +68,7 @@ public class PipeReadController {
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
-        MutableHttpResponse<List<Message>> response = HttpResponse.ok(list)
+        MutableHttpResponse<String> response = HttpResponse.ok(JsonHelper.toJson(list))
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
             .header(
                 HttpHeaders.PIPE_STATE,
