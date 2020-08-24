@@ -64,7 +64,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
         return identityTokenValidatorClient
             .validateToken(traceId(), new ValidateTokenRequest(token), clientIdAndSecret)
-            .doOnError(this::handleError)
+            .doOnError(error -> handleError(error))
             // Need to observe on configured thread pool so our blocking controller continues on this thread pool too.
             // @executeOn annotation supported by Micronaut 2.0 doesn't seem to work in conjunction with Micronaut TokenValidator
             // we raised an issue to Micronaut: https://github.com/micronaut-projects/micronaut-security/issues/313
