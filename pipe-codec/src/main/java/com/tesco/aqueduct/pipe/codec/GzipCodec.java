@@ -4,7 +4,6 @@ import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.context.annotation.Value;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,7 +11,6 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-@Singleton
 public class GzipCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
@@ -27,10 +25,6 @@ public class GzipCodec implements Codec {
      */
     public GzipCodec(@Value("${http.codec.gzip.level:-1}") int level){
         this.level = level;
-    }
-
-    public GzipCodec(){
-        this.level = Deflater.DEFAULT_COMPRESSION;
     }
 
     @Override

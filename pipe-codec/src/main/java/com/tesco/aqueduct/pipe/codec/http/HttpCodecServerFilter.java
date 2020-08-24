@@ -6,16 +6,14 @@ import com.tesco.aqueduct.pipe.codec.GzipCodec;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.MutableHttpResponse;
-import io.micronaut.http.annotation.Filter;
-import io.micronaut.http.filter.HttpServerFilter;
 import io.micronaut.http.filter.ServerFilterChain;
 import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 
 import javax.inject.Inject;
 
-@Filter("/pipe/**")
-public class HttpCodecServerFilter implements HttpServerFilter {
+//@Filter("/pipe/**")
+public class HttpCodecServerFilter  {
 
     private final GzipCodec gzipCodec;
     private final BrotliCodec brotliCodec;
@@ -26,7 +24,7 @@ public class HttpCodecServerFilter implements HttpServerFilter {
         this.brotliCodec = brotliCodec;
     }
 
-    @Override
+//    @Override
     public Publisher<MutableHttpResponse<?>> doFilter(HttpRequest<?> request, ServerFilterChain chain) {
         // TODO if payload is small do not encode
         return Flowable.fromPublisher(chain.proceed(request))

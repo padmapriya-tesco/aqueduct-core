@@ -10,8 +10,10 @@ import io.micronaut.http.filter.ClientFilterChain
 import io.micronaut.http.simple.SimpleHttpRequest
 import io.micronaut.http.simple.SimpleHttpResponse
 import io.reactivex.Flowable
+import spock.lang.Ignore
 import spock.lang.Specification
 
+@Ignore
 class HttpCodecClientFilterSpec extends Specification {
 
     def "response bytes are decoded if response accept-encoding is Brotli"() {

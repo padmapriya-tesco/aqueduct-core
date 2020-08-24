@@ -2,11 +2,13 @@ package com.tesco.aqueduct.pipe.identity.validator;
 
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityServiceUnavailableException;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.async.annotation.SingleResult;
 import io.micronaut.core.order.Ordered;
+import io.micronaut.http.HttpRequest;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.security.authentication.Authentication;
@@ -52,10 +54,15 @@ public class IdentityTokenValidator implements TokenValidator {
         this.users = users;
     }
 
+    @Override // Deprecated, hence remove at some point
+    public Publisher<Authentication> validateToken(String token) {
+        return null;
+    }
+
     @Override
     @SingleResult
-    @Cacheable("identity-cache")
-    public Publisher<Authentication> validateToken(String token) {
+    @Cacheable(value="identity-cache", parameters = "token")
+    public Publisher<Authentication> validateToken(String token, @Nullable HttpRequest<?> request) {
 
         if (token == null) {
             LOG.error("token validator", "null token", "");
