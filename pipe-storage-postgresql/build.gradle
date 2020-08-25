@@ -5,7 +5,7 @@ dependencies {
     implementation project(":pipe-api")
     implementation project(":pipe-logger")
 
-    implementation 'org.slf4j:slf4j-api'
+    addSlf4jDependencies()
     implementation 'org.postgresql:postgresql:42.2.5'
 
     runtimeOnly 'io.micronaut.sql:micronaut-jdbc-hikari'

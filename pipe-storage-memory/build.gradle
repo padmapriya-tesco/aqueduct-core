@@ -3,7 +3,7 @@ dependencies {
     implementation project(":pipe-logger")
     testImplementation project(":pipe-storage-test")
 
-    implementation 'org.slf4j:slf4j-api'
+    addSlf4jDependencies()
 }
 
 addPublish()

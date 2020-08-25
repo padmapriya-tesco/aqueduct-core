@@ -130,6 +130,12 @@ subprojects {
             }
         }
 
+        addSlf4jDependencies = {
+            project.dependencies {
+                implementation 'org.slf4j:slf4j-api'
+            }
+        }
+
         addPublish = {
             project.apply plugin: "maven-publish"
 
@@ -212,7 +218,6 @@ subprojects {
     }
 
     dependencies {
-
         // Groovy and Spock dependencies
         testImplementation 'org.codehaus.groovy:groovy-all:3.0.5'
         testImplementation 'org.spockframework:spock-core:2.0-M3-groovy-3.0'
