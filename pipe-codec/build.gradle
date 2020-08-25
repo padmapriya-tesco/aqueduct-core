@@ -1,9 +1,28 @@
+plugins {
+    id "com.google.osdetector" version "1.6.2"
+}
 dependencies {
     implementation project (":pipe-logger")
 
     addMicronautDependencies()
 
-    implementation group: 'com.nixxcode.jvmbrotli', name: 'jvmbrotli', version: '0.2.0'
-    implementation group: 'com.nixxcode.jvmbrotli', name: 'jvmbrotli-darwin-x86-amd64', version: '0.2.0'
+    implementation('com.nixxcode.jvmbrotli:jvmbrotli:0.2.0') {
+        switch (osdetector.os) {
+            case "osx":
+                implementation('com.nixxcode.jvmbrotli:jvmbrotli-darwin-x86-amd64:0.2.0')
+                break
+            case "linux":
+                if (osdetector.arch == 'x86_64')
+                    implementation('com.nixxcode.jvmbrotli:jvmbrotli-linux-x86-amd64:0.2.0')
+                if (osdetector.arch == 'arm_32')
+                    implementation('com.nixxcode.jvmbrotli:jvmbrotli-linux-arm32-vfp-hflt:0.2.0')
+                break
+            case "windows":
+                if (osdetector.arch == 'x86_64')
+                    implementation('com.nixxcode.jvmbrotli:jvmbrotli-win32-x86-amd64:0.2.0')
+                if (osdetector.arch == 'x86_32')
+                    implementation('com.nixxcode.jvmbrotli:jvmbrotli-win32-x86:0.2.0')
+        }
+    }
 }
 addPublish()

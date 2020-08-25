@@ -27,6 +27,10 @@ public class GzipCodec implements Codec {
         this.level = level;
     }
 
+    public GzipCodec() {
+        this.level = Deflater.DEFAULT_COMPRESSION;
+    }
+
     @Override
     public CodecType getType() {
         return CodecType.GZIP;
