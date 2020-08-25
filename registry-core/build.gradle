@@ -3,12 +3,13 @@ apply plugin: "me.champeau.gradle.jmh"
 dependencies {
     addMicronautDependencies()
     implementation project (":pipe-api")
-    implementation 'org.slf4j:slf4j-api:1.7.25'
+
+    addSlf4jDependencies()
     implementation 'ch.qos.logback:logback-classic:1.2.3'
     implementation 'ch.qos.logback.contrib:logback-json-classic:0.1.5'
     implementation 'ch.qos.logback.contrib:logback-jackson:0.1.5'
     implementation 'com.google.code.gson:gson:2.8.5'
-    testImplementation group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.17.4'
+    testImplementation 'org.openjdk.jmh:jmh-generator-annprocess:1.17.4'
 }
 
 addPublish()
