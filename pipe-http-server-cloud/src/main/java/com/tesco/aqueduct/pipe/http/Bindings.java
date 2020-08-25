@@ -2,8 +2,6 @@ package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.api.LocationResolver;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
-import com.tesco.aqueduct.pipe.codec.BrotliCodec;
-import com.tesco.aqueduct.pipe.codec.GzipCodec;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
 import com.tesco.aqueduct.pipe.location.CloudLocationResolver;
@@ -85,15 +83,5 @@ public class Bindings {
     @Singleton
     public Tracer tracer() {
         return new Configuration("Aqueduct Core").getTracer();
-    }
-
-    @Singleton
-    public GzipCodec gzipCodec() {
-        return new GzipCodec(-1);
-    }
-
-    @Singleton
-    public BrotliCodec brotliCodec() {
-        return new BrotliCodec(4);
     }
 }

@@ -2,12 +2,10 @@ package com.tesco.aqueduct.pipe.codec.http;
 
 import com.tesco.aqueduct.pipe.codec.BrotliCodec;
 import com.tesco.aqueduct.pipe.codec.CodecType;
-import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.MutableHttpResponse;
-import io.micronaut.http.annotation.Filter;
 import io.micronaut.http.filter.ClientFilterChain;
 import io.micronaut.http.filter.HttpClientFilter;
 import io.reactivex.Flowable;
@@ -15,8 +13,8 @@ import org.reactivestreams.Publisher;
 
 import javax.inject.Inject;
 
-@Filter(serviceId = "pipe")
-@Requires(property = "pipe.http.client.url")
+//@Filter(serviceId = "pipe")
+//@Requires(property = "pipe.http.client.url")
 public class HttpCodecClientFilter implements HttpClientFilter {
 
     private final BrotliCodec brotliCodec;

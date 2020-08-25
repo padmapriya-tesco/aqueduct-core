@@ -1,11 +1,14 @@
-package com.tesco.aqueduct.pipe.codec.http;
+package com.tesco.aqueduct.pipe.codec.netty;
 
 import com.tesco.aqueduct.pipe.codec.BrotliCodec;
 import com.tesco.aqueduct.pipe.codec.GzipCodec;
+import com.tesco.aqueduct.pipe.codec.netty.handler.CodecClientHandler;
+import com.tesco.aqueduct.pipe.codec.netty.handler.CodecServerHandler;
 import io.micronaut.context.event.BeanCreatedEvent;
 import io.micronaut.context.event.BeanCreatedEventListener;
 import io.micronaut.http.netty.channel.ChannelPipelineCustomizer;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
@@ -14,6 +17,7 @@ public class CodecPipelineCustomizer implements BeanCreatedEventListener<Channel
     private final BrotliCodec brotliCodec;
     private final GzipCodec gzipCodec;
 
+    @Inject
     public CodecPipelineCustomizer(BrotliCodec brotliCodec, GzipCodec gzipCodec) {
         this.brotliCodec = brotliCodec;
         this.gzipCodec = gzipCodec;
