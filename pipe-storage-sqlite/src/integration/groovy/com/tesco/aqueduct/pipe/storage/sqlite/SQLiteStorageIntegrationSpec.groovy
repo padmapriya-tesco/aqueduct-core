@@ -1,12 +1,9 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
-import com.tesco.aqueduct.pipe.api.JsonHelper
-import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.MessageResults
-import com.tesco.aqueduct.pipe.api.OffsetEntity
-import com.tesco.aqueduct.pipe.api.PipeState
+import com.tesco.aqueduct.pipe.api.*
 import groovy.sql.Sql
 import org.sqlite.SQLiteDataSource
+import org.sqlite.SQLiteException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -180,6 +177,103 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
 
         size == 2
+    }
+
+    def 'offsets are not written to database when message write fails'() {
+        given: 'multiple messages to be stored'
+        def messages = [message(1), message(2)]
+
+        and: 'pipe and local offsets'
+        def pipeOffset = new OffsetEntity(PIPE_OFFSET, OptionalLong.of(10))
+        def localLatestOffset = new OffsetEntity(LOCAL_LATEST_OFFSET, OptionalLong.of(6))
+
+        and: 'a database table exists to be written to'
+        def sql = Sql.newInstance(connectionUrl)
+
+        and: 'obtain lock on the database'
+        sql.execute("PRAGMA locking_mode = EXCLUSIVE;")
+        sql.execute("BEGIN EXCLUSIVE;")
+
+        when: 'these messages written with offsets'
+        sqliteStorage.write(new PipeEntity(messages, [pipeOffset, localLatestOffset]))
+
+        then: 'fail with error and offsets are not written to the database'
+        def exception = thrown(RuntimeException)
+        exception.cause instanceof SQLiteException
+        exception.message.contains("[SQLITE_BUSY]")
+
+        and:
+        def size = -1
+        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${pipeOffset.name.name()}", {
+            it.next()
+            size = it.getInt(1)
+        })
+        size == 0
+
+        and:
+        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${localLatestOffset.name.name()}", {
+            it.next()
+            size = it.getInt(1)
+        })
+        size == 0
+
+        cleanup:
+        sql.execute("COMMIT;")
+    }
+
+    def 'messages are not written to database when offset write fails'() {
+        given: 'multiple messages to be stored'
+        def messages = [message(1), message(2)]
+
+        and: "pipe and local offsets"
+        def pipeOffset = new OffsetEntity(PIPE_OFFSET, OptionalLong.of(10))
+        def localLatestOffset = new OffsetEntity(LOCAL_LATEST_OFFSET, OptionalLong.of(6))
+
+        and: 'a database table exists to be written to'
+        def sql = Sql.newInstance(connectionUrl)
+
+        and: 'obtain lock on the database'
+        sql.execute("PRAGMA locking_mode = EXCLUSIVE;")
+        sql.execute("BEGIN EXCLUSIVE;")
+
+        when: 'messages written with offsets'
+        sqliteStorage.write(new PipeEntity(messages, [pipeOffset, localLatestOffset]))
+
+        then: 'fail with error and offsets are not written to the database'
+        def exception = thrown(RuntimeException)
+        exception.cause instanceof SQLiteException
+        exception.message.contains("[SQLITE_BUSY]")
+
+        and:
+        def size = -1
+        sql.query("SELECT COUNT(*) FROM EVENT", {
+            it.next()
+            size = it.getInt(1)
+        })
+        size == 0
+
+        cleanup:
+        sql.execute("COMMIT;")
+    }
+
+    private String insertQuery(Message message) {
+        "INSERT INTO EVENT VALUES (" +
+            "${message.offset}, " +
+            "'${message.key}', " +
+            "'${message.contentType}', " +
+            "'${message.type}', " +
+            "'${message.created}', " +
+            "'${message.data}', " +
+            "${message.size} " +
+        ")"
+    }
+
+    private String insertOffset(OffsetEntity offset, int id) {
+        "INSERT INTO OFFSET VALUES (" +
+            "$id, " +
+            "'${offset.name.name()}', " +
+            "${offset.value.getAsLong()}" +
+        ")"
     }
 
     def 'pipe state is successfully written to the database'() {

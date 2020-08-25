@@ -148,15 +148,52 @@ public class SQLiteStorage implements DistributedStorage {
         execute(SQLiteQueries.INSERT_EVENT,
             (connection, statement) -> {
                 connection.setAutoCommit(false);
-
-                for (final Message message : messages) {
-                    setStatementParametersForInsertMessageQuery(statement, message);
-                    statement.addBatch();
-                }
-
-                statement.executeBatch();
+                InsertMessagesAsBatch(statement, messages);
                 connection.commit();
             });
+    }
+
+    @Override
+    public void write(final PipeEntity pipeEntity) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement insertMessageStmt = connection.prepareStatement(SQLiteQueries.INSERT_EVENT);
+             PreparedStatement insertOffsetStmt = connection.prepareStatement(SQLiteQueries.UPSERT_OFFSET);
+        ) {
+            connection.setAutoCommit(false);
+
+            // Insert messages
+            InsertMessagesAsBatch(insertMessageStmt, pipeEntity.getMessages());
+
+            // Insert offsets
+            InsertOffsetsAsBatch(insertOffsetStmt, pipeEntity.getOffsets());
+
+            connection.commit();
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+
+    }
+
+    private void InsertOffsetsAsBatch(PreparedStatement insertOffsetStmt, List<OffsetEntity> offsets) throws SQLException {
+        for (final OffsetEntity offset : offsets) {
+            setStatementParametersForOffsetQuery(insertOffsetStmt, offset);
+            insertOffsetStmt.addBatch();
+        }
+        insertOffsetStmt.executeBatch();
+    }
+
+    private void InsertMessagesAsBatch(PreparedStatement insertMessageStmt, Iterable<Message> messages) throws SQLException {
+        for (final Message message : messages) {
+            setStatementParametersForInsertMessageQuery(insertMessageStmt, message);
+            insertMessageStmt.addBatch();
+        }
+        insertMessageStmt.executeBatch();
+    }
+
+    private void setStatementParametersForOffsetQuery(PreparedStatement insertOffsetStmt, OffsetEntity offset) throws SQLException {
+        insertOffsetStmt.setString(1, offset.getName().toString());
+        insertOffsetStmt.setLong(2, offset.getValue().getAsLong());
+        insertOffsetStmt.setLong(3, offset.getValue().getAsLong());
     }
 
     @Override
@@ -175,9 +212,7 @@ public class SQLiteStorage implements DistributedStorage {
         execute(
             SQLiteQueries.UPSERT_OFFSET,
             (connection, statement) -> {
-                statement.setString(1, offset.getName().toString());
-                statement.setLong(2, offset.getValue().getAsLong());
-                statement.setLong(3, offset.getValue().getAsLong());
+                setStatementParametersForOffsetQuery(statement, offset);
                 statement.execute();
             }
         );
