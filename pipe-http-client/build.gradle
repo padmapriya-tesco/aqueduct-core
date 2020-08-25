@@ -5,11 +5,6 @@ dependencies {
 
     addMicronautDependencies()
     implementation 'io.micronaut:micronaut-http-client'
-    implementation 'org.codehaus.groovy:groovy-all:3.0.0'
-    implementation 'org.spockframework:spock-core:2.0-M3-groovy-3.0'
-
-
-    implementation "org.slf4j:slf4j-api:1.7.25"
 }
 
 addPublish()

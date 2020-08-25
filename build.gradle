@@ -27,21 +27,21 @@ buildscript {
         }
     }
     dependencies {
-        classpath "org.projectlombok:lombok:1.18.2"
-        classpath "io.franzbecker:gradle-lombok:1.14"
-        classpath "com.github.jengelman.gradle.plugins:shadow:5.0.0"
-        classpath "gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.5"
+        classpath 'org.projectlombok:lombok:1.18.2'
+        classpath 'io.franzbecker:gradle-lombok:1.14'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.0.0'
+        classpath 'gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.5'
         classpath 'io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE'
-        classpath "pl.allegro.tech.build:axion-release-plugin:1.10.0"
-        classpath "com.adarshr:gradle-test-logger-plugin:1.6.0"
-        classpath "gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.5.0"
+        classpath 'pl.allegro.tech.build:axion-release-plugin:1.10.0'
+        classpath 'com.adarshr:gradle-test-logger-plugin:1.6.0'
+        classpath 'gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.5.0'
         classpath 'org.owasp:dependency-check-gradle:5.0.0-M3.1'
-        classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.5"
+        classpath 'me.champeau.gradle:jmh-gradle-plugin:0.4.5'
     }
 }
 
 apply plugin: 'org.owasp.dependencycheck'
-apply plugin: "pl.allegro.tech.build.axion-release"
+apply plugin: 'pl.allegro.tech.build.axion-release'
 
 dependencyCheck {
 
@@ -110,12 +110,12 @@ subprojects {
                 implementation 'io.micronaut:micronaut-inject-java'
                 annotationProcessor 'io.micronaut:micronaut-inject-java'
 
-                annotationProcessor "io.micronaut.configuration:micronaut-openapi"
-                implementation "io.swagger.core.v3:swagger-annotations"
+                annotationProcessor 'io.micronaut.configuration:micronaut-openapi'
+                implementation 'io.swagger.core.v3:swagger-annotations'
 
                 implementation 'io.micronaut.security:micronaut-security-annotations'
                 implementation 'io.micronaut.security:micronaut-security-jwt'
-                implementation "io.micronaut:micronaut-management"
+                implementation 'io.micronaut:micronaut-management'
                 implementation 'io.micronaut.micrometer:micronaut-micrometer-core'
                 implementation 'io.micronaut:micronaut-tracing'
 
@@ -214,9 +214,9 @@ subprojects {
     dependencies {
 
         // Groovy and Spock dependencies
-        testImplementation 'org.codehaus.groovy:groovy-all:3.0.0'
+        testImplementation 'org.codehaus.groovy:groovy-all:3.0.5'
         testImplementation 'org.spockframework:spock-core:2.0-M3-groovy-3.0'
-        testImplementation "io.rest-assured:rest-assured:3.1.1"
+        testImplementation 'io.rest-assured:rest-assured:3.1.1'
 
         testImplementation 'com.stehno.ersatz:ersatz:1.9.0:safe@jar'
 
@@ -227,9 +227,9 @@ subprojects {
         testImplementation 'net.bytebuddy:byte-buddy:1.9.6' // allows mocking of classes (in addition to interfaces)
         testImplementation 'org.objenesis:objenesis:2.6'    // allows mocking of classes without default constructor (together with CGLIB)
 
-        testImplementation "io.micronaut:micronaut-inject-groovy"
-        testAnnotationProcessor "io.micronaut:micronaut-inject-groovy" // allows testing using MicronautTest framework
-        testImplementation "io.micronaut.test:micronaut-test-spock"
+        testImplementation 'io.micronaut:micronaut-inject-groovy'
+        testAnnotationProcessor 'io.micronaut:micronaut-inject-groovy' // allows testing using MicronautTest framework
+        testImplementation 'io.micronaut.test:micronaut-test-spock'
     }
 
     // add -parameters to java compile have Jackson happy

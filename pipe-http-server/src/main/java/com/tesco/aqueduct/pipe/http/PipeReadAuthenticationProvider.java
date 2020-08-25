@@ -40,7 +40,7 @@ public class PipeReadAuthenticationProvider implements AuthenticationProvider {
         final Object identity  = authenticationRequest.getIdentity();
         final Object secret = authenticationRequest.getSecret();
         return Flowable.just(
-                authenticate(identity, secret)
+            authenticate(identity, secret)
         );
     }
 }

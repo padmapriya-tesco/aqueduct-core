@@ -1,10 +1,12 @@
 dependencies {
+    addMicronautDependencies()
+
     implementation project(":pipe-api")
     implementation project(":pipe-logger")
 
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.xerial:sqlite-jdbc:3.27.2.1'
-    implementation 'io.micrometer:micrometer-core:1.0.6'
+    implementation 'io.micronaut.micrometer:micronaut-micrometer-core'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
 }
 
