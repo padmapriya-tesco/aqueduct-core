@@ -56,7 +56,7 @@ public class IdentityTokenValidator implements TokenValidator {
 
     @Override // Deprecated, hence remove at some point
     public Publisher<Authentication> validateToken(String token) {
-        return null;
+        return validateToken(token, null);
     }
 
     @Override

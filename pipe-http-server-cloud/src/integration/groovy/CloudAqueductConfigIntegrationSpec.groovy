@@ -63,7 +63,7 @@ class CloudAqueductConfigIntegrationSpec extends Specification {
                 if (beanDefinition.getAnnotation(Named) != null) {
                     loadNamed(beanDefinition, context)
                 } else {
-                    context.getBean(beanDefinition.beanType)
+                    context.getBeansOfType(beanDefinition.beanType)
                 }
             }
     }
