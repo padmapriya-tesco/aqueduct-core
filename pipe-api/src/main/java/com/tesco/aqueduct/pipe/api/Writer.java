@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe.api;
 
+import java.util.Arrays;
+
 public interface Writer {
 
     /**
@@ -8,6 +10,11 @@ public interface Writer {
      */
     default void write(Iterable<Message> messages) {
         messages.forEach(this::write);
+    }
+
+    default void write(Iterable<Message> messages, OffsetEntity... offsets) {
+        messages.forEach(this::write);
+        Arrays.asList(offsets).forEach(this::write);
     }
 
     void write(Message message);
