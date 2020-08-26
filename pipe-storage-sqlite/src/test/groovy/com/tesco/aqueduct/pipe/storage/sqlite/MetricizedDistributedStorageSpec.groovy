@@ -34,7 +34,6 @@ class MetricizedDistributedStorageSpec extends Specification {
         "pipe.offset.pipeOffset"            | OffsetName.PIPE_OFFSET            | 54465L
     }
 
-    @Unroll
     def "write offset is recorded as gauge metric when pipe entity is written"() {
         given: "a metricized distributed storage and an offset entity"
         metricizedDistributedStorage = new MetricizedDistributedStorage(timedDistributedStorage, meterRegistry)
