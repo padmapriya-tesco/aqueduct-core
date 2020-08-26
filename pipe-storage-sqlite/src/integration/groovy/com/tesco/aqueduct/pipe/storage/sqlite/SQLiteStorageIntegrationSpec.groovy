@@ -579,10 +579,12 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
     def 'read all messages of multiple specified types after the given offset'() {
         given: 'multiple messages to be stored'
-        def messages = [message(1),
-                        message(2, 'type-1'),
-                        message(3, 'type-2'),
-                        message(4)]
+        def messages = [
+            message(1),
+            message(2, 'type-1'),
+            message(3, 'type-2'),
+            message(4)
+        ]
 
         and: 'these messages are stored'
         sqliteStorage.write(messages)
@@ -648,9 +650,9 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'All duplicate messages are compacted for whole data store'() {
         given: 'an existing data store with duplicate messages for the same key'
         def messages = [
-                message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(3, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z"))
+            message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(3, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z"))
         ]
         sqliteStorage.write(messages)
 
@@ -672,10 +674,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'All duplicate messages are compacted to a given offset with 3 duplicates'() {
         given: 'an existing data store with duplicate messages for the same key'
         def messages = [
-                message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(2, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(3, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(4, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
+            message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(2, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(3, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(4, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
         ]
         sqliteStorage.write(messages)
 
@@ -694,14 +696,14 @@ class SQLiteStorageIntegrationSpec extends Specification {
     def 'All duplicate messages are compacted to a given offset, complex case'() {
         given: 'an existing data store with duplicate messages for the same key'
         def messages = [
-                message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(3, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(4, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(5, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(6, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(7, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-                message(8, "D", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
+            message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(3, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(4, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(5, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(6, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(7, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(8, "D", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
         ]
         sqliteStorage.write(messages)
 
@@ -839,7 +841,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: "the offset entity exists in the offset table"
         def sql = Sql.newInstance(connectionUrl)
         sql.execute("INSERT INTO OFFSET (name, value) VALUES (${offsetName.toString()}, ${offsetValue.asLong})" +
-                " ON CONFLICT(name) DO UPDATE SET VALUE = ${offsetValue.asLong};")
+            " ON CONFLICT(name) DO UPDATE SET VALUE = ${offsetValue.asLong};")
 
         when: "we retrieve the offset"
         def result = sqliteStorage.getOffset(offsetName)
@@ -859,7 +861,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: "the pipeState entity exists in the offset table"
         def sql = Sql.newInstance(connectionUrl)
         sql.execute("INSERT INTO PIPE_STATE (name, value) VALUES ('pipe_state', ${pipeState.toString()})" +
-                " ON CONFLICT(name) DO UPDATE SET VALUE = ${pipeState.toString()};")
+            " ON CONFLICT(name) DO UPDATE SET VALUE = ${pipeState.toString()};")
 
         when: "we retrieve the pipe state"
         def result = sqliteStorage.getPipeState()

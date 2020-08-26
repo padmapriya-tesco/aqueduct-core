@@ -222,19 +222,6 @@ public class SQLiteStorage implements DistributedStorage {
         upsertPipeStateStmt.execute();
     }
 
-    private void revertAutoCommitToTrue(Connection connection) {
-        if (connection != null) {
-            try {
-                if (!connection.getAutoCommit()) {
-                    connection.setAutoCommit(true);
-                }
-            } catch (SQLException sqlException) {
-                LOG.error("write", "Could not set auto commit to true.", sqlException);
-                throw new RuntimeException(sqlException);
-            }
-        }
-    }
-
     private void rollback(Connection connection) {
         if (connection != null) {
             try {
