@@ -194,7 +194,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         and: 'obtain lock on the database'
         sql.execute("BEGIN IMMEDIATE TRANSACTION;")
 
-        when: 'these messages written with offsets'
+        when: 'messages written with offsets'
         sqliteStorage.write(new PipeEntity(messages, [pipeOffset, localLatestOffset], PipeState.UP_TO_DATE))
 
         then: 'fail with error and offsets are not written to the database'
@@ -202,7 +202,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         exception.cause instanceof SQLException
         exception.message.contains("[SQLITE_BUSY]")
 
-        and:
+        and: 'no record exists for pipe offset'
         def size = -1
         sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${pipeOffset.name.name()}", {
             it.next()
@@ -210,14 +210,14 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
         size == 0
 
-        and:
+        and: 'no record exists for local latest offset'
         sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${localLatestOffset.name.name()}", {
             it.next()
             size = it.getInt(1)
         })
         size == 0
 
-        and:
+        and: 'no messages are written'
         sql.query("SELECT COUNT(*) FROM EVENT", {
             it.next()
             size = it.getInt(1)
@@ -239,14 +239,14 @@ class SQLiteStorageIntegrationSpec extends Specification {
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
 
-        and: 'obtain lock on the database'
+        and: 'messages exists already for the given offsets'
         sql.execute(insertQuery(messages[0]))
         sql.execute(insertQuery(messages[1]))
 
-        when: 'these messages written with offsets'
+        when: 'messages written with offsets'
         sqliteStorage.write(new PipeEntity(messages, [pipeOffset, localLatestOffset], PipeState.UP_TO_DATE))
 
-        then: 'fail with error and offsets are not written to the database'
+        then: 'failure with primay key constraint error'
         def exception = thrown(RuntimeException)
         exception.cause instanceof SQLiteException
         exception.message.contains("[SQLITE_CONSTRAINT_PRIMARYKEY]")
@@ -285,10 +285,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
 
-        when: 'these messages written with offsets'
+        when: 'messages written with offsets'
         sqliteStorage.write(new PipeEntity(messages, [pipeOffset, localLatestOffset], PipeState.UP_TO_DATE))
 
-        then: 'fail with error and offsets are not written to the database'
+        then: 'fail with error'
         thrown(RuntimeException)
 
         and: "Pipe offset is not written"
@@ -312,40 +312,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
             size = it.getInt(1)
         })
         size == 0
-    }
-
-    def 'messages are not written to database when offset write fails'() {
-        given: 'multiple messages to be stored'
-        def messages = [message(1), message(2)]
-
-        and: "pipe and local offsets"
-        def pipeOffset = new OffsetEntity(PIPE_OFFSET, OptionalLong.of(10))
-        def localLatestOffset = new OffsetEntity(LOCAL_LATEST_OFFSET, OptionalLong.of(6))
-
-        and: 'a database table exists to be written to'
-        def sql = Sql.newInstance(connectionUrl)
-
-        and: 'obtain lock on the database'
-        sql.execute("BEGIN IMMEDIATE TRANSACTION;")
-
-        when: 'messages written with offsets'
-        sqliteStorage.write(new PipeEntity(messages, [pipeOffset, localLatestOffset], PipeState.UP_TO_DATE))
-
-        then: 'fail with error and offsets are not written to the database'
-        def exception = thrown(RuntimeException)
-        exception.cause instanceof SQLiteException
-        exception.message.contains("[SQLITE_BUSY]")
-
-        and:
-        def size = -1
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
-
-        cleanup:
-        sql.execute("ROLLBACK;")
     }
 
     def 'messages are not written when empty but offset and pipeState are written when present'() {
