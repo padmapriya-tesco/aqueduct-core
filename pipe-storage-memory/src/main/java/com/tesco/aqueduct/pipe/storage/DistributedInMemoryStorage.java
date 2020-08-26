@@ -21,9 +21,17 @@ public class DistributedInMemoryStorage extends InMemoryStorage implements Distr
 
     @Override
     public void write(PipeEntity pipeEntity) {
-        pipeEntity.getMessages().forEach(this::write);
-        pipeEntity.getOffsets().forEach(this::write);
-        write(pipeEntity.getPipeState());
+        if (pipeEntity != null) {
+            if (pipeEntity.getMessages() != null) {
+                pipeEntity.getMessages().forEach(this::write);
+            }
+            if (pipeEntity.getOffsets() != null) {
+                pipeEntity.getOffsets().forEach(this::write);
+            }
+            if (pipeEntity.getPipeState() != null) {
+                write(pipeEntity.getPipeState());
+            }
+        }
     }
 
     @Override
