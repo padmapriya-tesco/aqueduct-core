@@ -20,6 +20,13 @@ public class DistributedInMemoryStorage extends InMemoryStorage implements Distr
     }
 
     @Override
+    public void write(PipeEntity pipeEntity) {
+        pipeEntity.getMessages().forEach(this::write);
+        pipeEntity.getOffsets().forEach(this::write);
+        write(pipeEntity.getPipeState());
+    }
+
+    @Override
     public void write(OffsetEntity offset) {
         final val lock = rwl.writeLock();
 
