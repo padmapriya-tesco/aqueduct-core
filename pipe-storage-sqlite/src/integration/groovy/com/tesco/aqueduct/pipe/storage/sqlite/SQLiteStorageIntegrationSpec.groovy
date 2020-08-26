@@ -171,13 +171,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         then: 'all messages are written to the data store'
-        def size = 0
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-
-        size == 2
+        readMessagesCount(sql) == 2
     }
 
     def 'offsets are not written to database when message write fails due to file lock'() {
@@ -191,7 +185,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         and: 'a database table exists to be written to'
         def sql = Sql.newInstance(connectionUrl)
 
-        and: 'obtain lock on the database'
+        and: 'obtains write lock on the database by starting a transaction so no other writes can be made until this finishes'
         sql.execute("BEGIN IMMEDIATE TRANSACTION;")
 
         when: 'messages written with offsets'
@@ -203,29 +197,16 @@ class SQLiteStorageIntegrationSpec extends Specification {
         exception.message.contains("[SQLITE_BUSY]")
 
         and: 'no record exists for pipe offset'
-        def size = -1
-        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${pipeOffset.name.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCountFor(pipeOffset.name.name(), sql) == 0
 
         and: 'no record exists for local latest offset'
-        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${localLatestOffset.name.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCountFor(localLatestOffset.name.name(), sql) == 0
 
         and: 'no messages are written'
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        readMessagesCount(sql) == 0
 
         cleanup:
-        sql.execute("ROLLBACK;")
+        sql.execute("COMMIT;")
     }
 
     def 'offsets are not written to database when message write fails due to primary key constraint'() {
@@ -252,26 +233,13 @@ class SQLiteStorageIntegrationSpec extends Specification {
         exception.message.contains("[SQLITE_CONSTRAINT_PRIMARYKEY]")
 
         and: 'pipe offset is not written'
-        def size = -1
-        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${pipeOffset.name.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCountFor(pipeOffset.name.name(), sql) == 0
 
         and: 'local latest offset is not written'
-        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${localLatestOffset.name.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCountFor(localLatestOffset.name.name(), sql) == 0
 
         and: 'pre-written messages exists and no new messages written'
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 2
+        readMessagesCount(sql) == 2
     }
 
     def 'messages are not written to database when message write works but offset write fails'() {
@@ -292,26 +260,22 @@ class SQLiteStorageIntegrationSpec extends Specification {
         thrown(RuntimeException)
 
         and: "Pipe offset is not written"
-        def size = -1
-        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${pipeOffset.name.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCountFor(pipeOffset.name.name(), sql) == 0
 
         and: "local latest offset is not written"
-        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=${LOCAL_LATEST_OFFSET.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCountFor(LOCAL_LATEST_OFFSET.name(), sql) == 0
 
         and: "messages are not written to database"
-        sql.query("SELECT COUNT(*) FROM EVENT", {
+        readMessagesCount(sql) == 0
+    }
+
+    private Object getOffsetCountFor(String offsetName, Sql sql) {
+        def size = -1
+        sql.query("SELECT COUNT(*) FROM OFFSET WHERE NAME=$offsetName", {
             it.next()
             size = it.getInt(1)
         })
-        size == 0
+        size
     }
 
     def 'messages are not written when empty but offset and pipeState are written when present'() {
@@ -329,12 +293,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(new PipeEntity(messages, [pipeOffset], pipeState))
 
         then: "One Pipe offset entry exists"
-        def size = -1
-        sql.query("SELECT count(*) FROM OFFSET WHERE NAME=${pipeOffset.name.name()}", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 1
+        getOffsetCountFor(pipeOffset.name.name(), sql) == 1
 
         and: "Pipe offset value as expected"
         def value = -1
@@ -361,11 +320,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         pipeStateEntry == pipeState.name()
 
         and: "no messages written to database"
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        readMessagesCount(sql) == 0
     }
 
     def 'Only pipeState is written when present'() {
@@ -385,12 +340,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(new PipeEntity(messages, [], pipeState))
 
         then: "No Pipe offset entry exists"
-        def size = -1
-        sql.query("SELECT count(*) FROM OFFSET", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        getOffsetCount(sql) == 0
 
         and: "One Pipe state entry exists"
         def pipeStateSize = -1
@@ -409,11 +359,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         pipeStateEntry == pipeState.name()
 
         and: "no messages written to database"
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        readMessagesCount(sql) == 0
     }
 
     def 'Only offset is written when present'() {
@@ -433,12 +379,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(new PipeEntity(messages, [pipeOffset], null))
 
         then: "One Pipe offset entry exists"
-        def size = -1
-        sql.query("SELECT count(*) FROM OFFSET", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 1
+        getOffsetCount(sql) == 1
 
         and: "Pipe offset value as expected"
         def value = -1
@@ -457,11 +398,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         pipeStateSize == 0
 
         and: "no messages written to database"
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            size = it.getInt(1)
-        })
-        size == 0
+        readMessagesCount(sql) == 0
     }
 
     private String insertQuery(Message message) {
@@ -793,22 +730,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         this.sqliteStorage.write(messages)
 
         and: 'all messages are written to the data store'
-        def messagesFirstSize = 0
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            messagesFirstSize = it.getInt(1)
-        })
-
-        assert messagesFirstSize == 2
+        assert readMessagesCount(sql) == 2
 
         and: 'offset exists in the OFFSET table'
-        def offsetFirstSize = 0
-        sql.query("SELECT COUNT(*) FROM OFFSET", {
-            it.next()
-            offsetFirstSize = it.getInt(1)
-        })
-
-        assert offsetFirstSize == 1
+        assert getOffsetCount(sql) == 1
 
         and: 'pipe state exists in PIPE_STATE table'
         this.sqliteStorage.write(PipeState.UP_TO_DATE)
@@ -824,22 +749,10 @@ class SQLiteStorageIntegrationSpec extends Specification {
         this.sqliteStorage.deleteAll()
 
         then: 'no messages exists in EVENT'
-        def messagesSecondSize = 0
-        sql.query("SELECT COUNT(*) FROM EVENT", {
-            it.next()
-            messagesSecondSize = it.getInt(1)
-        })
-
-        messagesSecondSize == 0
+        readMessagesCount(sql) == 0
 
         and: 'no offset exists in the table'
-        def offsetSecondSize = 0
-        sql.query("SELECT COUNT(*) FROM OFFSET", {
-            it.next()
-            offsetSecondSize = it.getInt(1)
-        })
-
-        offsetSecondSize == 0
+        getOffsetCount(sql) == 0
 
         and: 'no pipe state exists in table'
         def pipeStateSecondSize = 0
@@ -849,6 +762,24 @@ class SQLiteStorageIntegrationSpec extends Specification {
         })
 
         pipeStateSecondSize == 0
+    }
+
+    private int getOffsetCount(Sql sql) {
+        def offsetSecondSize = 0
+        sql.query("SELECT COUNT(*) FROM OFFSET", {
+            it.next()
+            offsetSecondSize = it.getInt(1)
+        })
+        offsetSecondSize
+    }
+
+    private int readMessagesCount(Sql sql) {
+        def messagesFirstSize = 0
+        sql.query("SELECT COUNT(*) FROM EVENT", {
+            it.next()
+            messagesFirstSize = it.getInt(1)
+        })
+        messagesFirstSize
     }
 
     @Unroll

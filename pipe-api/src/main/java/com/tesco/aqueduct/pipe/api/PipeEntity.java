@@ -1,12 +1,12 @@
 package com.tesco.aqueduct.pipe.api;
 
-import lombok.Data;
+import lombok.Value;
 
 import java.util.List;
 
-@Data
+@Value
 public class PipeEntity {
-    private final List<Message> messages;
-    private final List<OffsetEntity> offsets;
-    private final PipeState pipeState;
+    List<Message> messages;
+    List<OffsetEntity> offsets;
+    PipeState pipeState;
 }

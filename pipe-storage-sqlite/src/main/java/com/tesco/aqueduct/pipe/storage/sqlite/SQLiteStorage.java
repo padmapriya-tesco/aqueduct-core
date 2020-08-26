@@ -188,12 +188,9 @@ public class SQLiteStorage implements DistributedStorage {
 
                 // commit transaction
                 connection.commit();
-                // revert auto commit only after transaction is committed or rolled back
-                revertAutoCommitToTrue(connection);
             }
         } catch (final Exception exception) { // Catch all exceptions so that data is rolled back and connection's mode is reset
             rollback(connection);
-            revertAutoCommitToTrue(connection); // This should always be after roll back, else inserted/updated data will be committed.
             throw new RuntimeException(exception);
 
         } finally {
