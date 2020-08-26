@@ -8,4 +8,5 @@ import java.util.List;
 public class PipeEntity {
     private final List<Message> messages;
     private final List<OffsetEntity> offsets;
+    private final PipeState pipeState;
 }
