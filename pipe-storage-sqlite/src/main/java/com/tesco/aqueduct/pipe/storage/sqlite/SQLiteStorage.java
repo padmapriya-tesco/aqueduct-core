@@ -148,7 +148,7 @@ public class SQLiteStorage implements DistributedStorage {
         execute(SQLiteQueries.INSERT_EVENT,
             (connection, statement) -> {
                 connection.setAutoCommit(false);
-                InsertMessagesAsBatch(statement, messages);
+                insertMessagesAsBatch(statement, messages);
                 connection.commit();
             });
     }
@@ -168,16 +168,17 @@ public class SQLiteStorage implements DistributedStorage {
                  final PreparedStatement upsertOffsetStmt = connection.prepareStatement(SQLiteQueries.UPSERT_OFFSET);
                  final PreparedStatement upsertPipeStateStmt = connection.prepareStatement(SQLiteQueries.UPSERT_PIPE_STATE)
             ) {
+                // Start transaction
                 connection.setAutoCommit(false);
 
                 // Insert messages
                 if (pipeEntity.getMessages() != null && !pipeEntity.getMessages().isEmpty()) {
-                    InsertMessagesAsBatch(insertMessageStmt, pipeEntity.getMessages());
+                    insertMessagesAsBatch(insertMessageStmt, pipeEntity.getMessages());
                 }
 
                 // Insert offsets
                 if (pipeEntity.getOffsets() != null && !pipeEntity.getOffsets().isEmpty()) {
-                    InsertOffsetsAsBatch(upsertOffsetStmt, pipeEntity.getOffsets());
+                    upsertOffsetsAsBatch(upsertOffsetStmt, pipeEntity.getOffsets());
                 }
 
                 // Insert pipe state
@@ -185,8 +186,10 @@ public class SQLiteStorage implements DistributedStorage {
                     upsertPipeState(upsertPipeStateStmt, pipeEntity.getPipeState());
                 }
 
+                // commit transaction
                 connection.commit();
-                revertAutoCommitToTrue(connection); // revert auto commit only after transaction is committed or rolled back
+                // revert auto commit only after transaction is committed or rolled back
+                revertAutoCommitToTrue(connection);
             }
         } catch (final Exception exception) { // Catch all exceptions so that data is rolled back and connection's mode is reset
             rollback(connection);
@@ -248,7 +251,7 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    private void InsertOffsetsAsBatch(PreparedStatement insertOffsetStmt, List<OffsetEntity> offsets) throws SQLException {
+    private void upsertOffsetsAsBatch(PreparedStatement insertOffsetStmt, List<OffsetEntity> offsets) throws SQLException {
         for (final OffsetEntity offset : offsets) {
             setStatementParametersForOffsetQuery(insertOffsetStmt, offset);
             insertOffsetStmt.addBatch();
@@ -256,7 +259,7 @@ public class SQLiteStorage implements DistributedStorage {
         insertOffsetStmt.executeBatch();
     }
 
-    private void InsertMessagesAsBatch(PreparedStatement insertMessageStmt, Iterable<Message> messages) throws SQLException {
+    private void insertMessagesAsBatch(PreparedStatement insertMessageStmt, Iterable<Message> messages) throws SQLException {
         for (final Message message : messages) {
             setStatementParametersForInsertMessageQuery(insertMessageStmt, message);
             insertMessageStmt.addBatch();
