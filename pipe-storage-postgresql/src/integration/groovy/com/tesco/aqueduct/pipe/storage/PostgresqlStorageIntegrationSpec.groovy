@@ -500,6 +500,31 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         noExceptionThrown()
     }
 
+    def "when messages have interleaved created_utc, we read up to the message with minimum offset and XXX"() {
+        given:
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 1, 1, 1)
+        storage.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:02', 'YYYY-MM-DD HH:MI:SS' )"
+
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(4, "type1", "D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(5, "type1", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
+        insert(message(6, "type1", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
+        insert(message(7, "type1", "G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
+        insert(message(8, "type1", "H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(9, "type1", "I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read(["type1"], 1, [])
+
+        then: 'messages are provided for the given type'
+        messageResults.messages.size() == 4
+        messageResults.messages*.key == ["A", "B", "C", "D"]
+        messageResults.messages*.offset*.intValue() == [1, 2, 3, 4]
+        messageResults.globalLatestOffset == OptionalLong.of(4)
+    }
+
     @Override
     void insert(Message msg, int maxMessageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime()) ) {
 

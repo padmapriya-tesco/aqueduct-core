@@ -23,6 +23,7 @@ public class PostgresqlStorage implements CentralStorage {
     private final PGInterval readDelay;
     private final int nodeCount;
     private final long clusterDBPoolSize;
+    private String currentTimestamp = "CURRENT_TIMESTAMP";
 
     public PostgresqlStorage(
         final DataSource dataSource,
@@ -191,6 +192,7 @@ public class PostgresqlStorage implements CentralStorage {
         try {
             PreparedStatement query = connection.prepareStatement(getSelectLatestOffsetQuery());
             query.setObject(1, readDelay);
+            query.setObject(2, readDelay);
             return query;
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset statement", exception);
@@ -218,8 +220,9 @@ public class PostgresqlStorage implements CentralStorage {
                 query.setString(1, strClusters);
                 query.setLong(2, startOffset);
                 query.setObject(3, readDelay);
-                query.setString(4, strTypes);
-                query.setLong(5, limit);
+                query.setObject(4, readDelay);
+                query.setString(5, strTypes);
+                query.setLong(6, limit);
             }
 
             return query;
@@ -278,9 +281,10 @@ public class PostgresqlStorage implements CentralStorage {
             "     type, msg_key, content_type, msg_offset, created_utc, data, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
-                  withInnerJoinToClusters() +
+            withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND created_utc < CURRENT_TIMESTAMP - ? " +
+            "   AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )" +
+            "   AND created_utc < " + currentTimestamp +" - ? " +
             "   AND type = ANY (string_to_array(?, ','))" +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
@@ -295,8 +299,10 @@ public class PostgresqlStorage implements CentralStorage {
             " clusters.cluster_uuid = ANY (string_to_array(?, ',')) ";
     }
 
-    private static String getSelectLatestOffsetQuery() {
-        return " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE created_utc < CURRENT_TIMESTAMP - ?;";
+    private String getSelectLatestOffsetQuery() {
+        return
+            " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE created_utc < CURRENT_TIMESTAMP - ? " +
+            " AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? );";
     }
 
     private static String getCompactionQuery() {
