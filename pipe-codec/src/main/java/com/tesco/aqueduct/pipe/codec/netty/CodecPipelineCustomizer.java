@@ -33,7 +33,7 @@ public class CodecPipelineCustomizer implements BeanCreatedEventListener<Channel
                 pipeline.addAfter(
                         ChannelPipelineCustomizer.HANDLER_HTTP_SERVER_CODEC,
                         "codec",
-                        new CodecServerHandler()
+                        new CodecServerHandler(brotliCodec, gzipCodec)
                 );
                 return pipeline;
             });
