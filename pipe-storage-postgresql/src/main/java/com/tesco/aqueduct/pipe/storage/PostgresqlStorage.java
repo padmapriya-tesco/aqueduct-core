@@ -213,7 +213,8 @@ public class PostgresqlStorage implements CentralStorage {
                 query.setString(1, strClusters);
                 query.setLong(2, startOffset);
                 query.setObject(3, readDelay);
-                query.setLong(4, limit);
+                query.setObject(4, readDelay);
+                query.setLong(5, limit);
             } else {
                 final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectEventsWithTypeQuery(maxBatchSize));
@@ -265,6 +266,7 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
                   withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
+            "   AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )" +
             "   AND created_utc < CURRENT_TIMESTAMP - ? " +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
@@ -284,7 +286,7 @@ public class PostgresqlStorage implements CentralStorage {
             withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
             "   AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )" +
-            "   AND created_utc < " + currentTimestamp +" - ? " +
+            "   AND created_utc < " + currentTimestamp + " - ? " +
             "   AND type = ANY (string_to_array(?, ','))" +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
