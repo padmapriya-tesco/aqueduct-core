@@ -55,10 +55,6 @@ ansiColor('xterm') {
             }
         }
 
-        stage('Publish Test Report') {
-            junit '**/build/test-results/test/*.xml'
-        }
-
         stage('Docker build and Scan') {
             container('docker') {
                 sh "#!/bin/sh -e\ndocker login $registry -u 00000000-0000-0000-0000-000000000000 -p $acrLoginToken"
