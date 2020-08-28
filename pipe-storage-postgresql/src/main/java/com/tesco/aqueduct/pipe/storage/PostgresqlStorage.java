@@ -191,7 +191,7 @@ public class PostgresqlStorage implements CentralStorage {
     private PreparedStatement getLatestOffsetStatement(final Connection connection) {
         try {
             PreparedStatement query = connection.prepareStatement(getSelectLatestOffsetQuery());
-            query.setObject(1, readDelay);
+//            query.setObject(1, readDelay);
             return query;
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset statement", exception);
