@@ -528,6 +528,42 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         types << [ [], ["type1"] ]
     }
 
+    def "read up to the last message"(){
+        given:
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1)
+        storage.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
+
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read([], 1, [])
+
+        then: 'messages are provided for the given type'
+        messageResults.messages.size() == 1
+        messageResults.messages*.key == ["A"]
+        messageResults.messages*.offset*.intValue() == [1]
+        messageResults.globalLatestOffset == OptionalLong.of(1)
+    }
+
+    def "read up to the last message 2"(){
+        given:
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1)
+        storage.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
+
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+        insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
+        insert(message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        when: 'reading all messages'
+        def messageResults = storage.read([], 1, [])
+
+        then: 'messages are provided for the given type'
+        messageResults.messages.size() == 1
+        messageResults.messages*.key == ["A"]
+        messageResults.messages*.offset*.intValue() == [1]
+//        messageResults.globalLatestOffset == OptionalLong.of(1)
+    }
+
     @Override
     void insert(Message msg, int maxMessageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime()) ) {
 

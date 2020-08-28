@@ -266,7 +266,10 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
                   withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )" +
+            "   AND events.msg_offset < coalesce(" +
+                " (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )," +
+                " (SELECT max(msg_offset) + 1 FROM events)" +
+                " ) " +
             "   AND created_utc < CURRENT_TIMESTAMP - ? " +
             " ORDER BY msg_offset " +
             " LIMIT ?" +
@@ -285,7 +288,10 @@ public class PostgresqlStorage implements CentralStorage {
             "   FROM events " +
             withInnerJoinToClusters() +
             "   AND events.msg_offset >= ? " +
-            "   AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )" +
+            "   AND events.msg_offset < coalesce(" +
+                    " (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )," +
+                    " (SELECT max(msg_offset) + 1 FROM events)" +
+                    " ) " +
             "   AND created_utc < " + currentTimestamp + " - ? " +
             "   AND type = ANY (string_to_array(?, ','))" +
             " ORDER BY msg_offset " +
@@ -303,8 +309,13 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getSelectLatestOffsetQuery() {
         return
-            " SELECT coalesce(max(msg_offset),0) as last_offset FROM events WHERE created_utc < CURRENT_TIMESTAMP - ? " +
-            " AND events.msg_offset < (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? );";
+            " SELECT coalesce(max(msg_offset),0) as last_offset FROM events " +
+                    " WHERE created_utc < CURRENT_TIMESTAMP - ? " +
+                    " AND events.msg_offset < " +
+                        " coalesce(" +
+                            " (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? ), " +
+                            " (SELECT max(msg_offset) + 1 FROM events) " +
+                        ");";
     }
 
     private static String getCompactionQuery() {
