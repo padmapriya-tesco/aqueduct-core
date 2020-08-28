@@ -54,24 +54,24 @@ ansiColor('xterm') {
                 publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/reports', reportFiles: 'dependency-check-report.html', reportName: 'Dependency Check', reportTitles: 'Dependency Check Report'])
             }
         }
-
-        stage('Unit Test') {
-            try {
-                sh "./gradlew test"
-            } catch (err) {
-                junit '**/build/test-results/test/*.xml'
-                throw err
-            }
-        }
-
-        stage('Integration Test') {
-            try {
-                sh "./gradlew integration"
-            } catch (err) {
-                junit '**/build/test-results/test/*.xml'
-                throw err
-            }
-        }
+#
+#        stage('Unit Test') {
+#            try {
+#                sh "./gradlew test"
+#            } catch (err) {
+#                junit '**/build/test-results/test/*.xml'
+#                throw err
+#            }
+#        }
+#
+#        stage('Integration Test') {
+#            try {
+#                sh "./gradlew integration"
+#            } catch (err) {
+#                junit '**/build/test-results/test/*.xml'
+#                throw err
+#            }
+#        }
 
         stage('Publish Test Report') {
             junit '**/build/test-results/test/*.xml'
