@@ -61,9 +61,6 @@ public class PostgresqlStorage implements CentralStorage {
             LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
             start = System.currentTimeMillis();
 
-            connection.setAutoCommit(false);
-            connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
-
             final long globalLatestOffset = getLatestOffsetWithConnection(connection);
 
             try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterUuids)) {
@@ -316,9 +313,7 @@ public class PostgresqlStorage implements CentralStorage {
     private String getSelectLatestOffsetQuery() {
         return
             " SELECT coalesce(max(msg_offset),0) as last_offset FROM events " +
-                " WHERE " + protectAgainstWriteRaceCondition() +
-                " AND " + protectAgainstOutOfOrderCreatedUtc() +
-                ";";
+            " WHERE " + protectAgainstWriteRaceCondition() + " AND " + protectAgainstOutOfOrderCreatedUtc() + ";";
     }
 
     private static String getCompactionQuery() {
