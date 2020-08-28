@@ -192,7 +192,6 @@ public class PostgresqlStorage implements CentralStorage {
         try {
             PreparedStatement query = connection.prepareStatement(getSelectLatestOffsetQuery());
             query.setObject(1, readDelay);
-            query.setObject(2, readDelay);
             return query;
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset statement", exception);
@@ -312,8 +311,11 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getSelectLatestOffsetQuery() {
         return
-            " SELECT coalesce(max(msg_offset),0) as last_offset FROM events " +
-            " WHERE " + protectAgainstWriteRaceCondition() + " AND " + protectAgainstOutOfOrderCreatedUtc() + ";";
+            "SELECT coalesce (" +
+                " (SELECT min(msg_offset) - 1 FROM events WHERE created_utc >= " + currentTimestamp + " - ? ), " +
+                " (SELECT max(msg_offset) FROM events), " +
+                " 0 " +
+            ") as last_offset;";
     }
 
     private static String getCompactionQuery() {
