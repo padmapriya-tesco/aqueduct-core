@@ -311,8 +311,8 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getSelectLatestOffsetQuery() {
         return
-            "SELECT coalesce(" +
-                " (SELECT max(msg_offset) FROM events), " +
+            "SELECT coalesce (" +
+                " (SELECT min(msg_offset) - 1 FROM events WHERE created_utc >= CURRENT_TIMESTAMP - INTERVAL '60 SECONDS'), " +
                 " (SELECT max(msg_offset) FROM events), " +
                 " 0 " +
             ") as last_offset;";
