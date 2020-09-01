@@ -64,7 +64,7 @@ public class PostgresqlStorage implements CentralStorage {
 
             try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterUuids)) {
 
-                long queryStart = System.currentTimeMillis();
+                long queryStart = System.currentTimeMillis(); //move this to include getting the global latest offset, to defend for this query also being slow
                 final List<Message> messages = runMessagesQuery(messagesQuery);
                 long queryEnd = System.currentTimeMillis();
 
@@ -97,6 +97,7 @@ public class PostgresqlStorage implements CentralStorage {
         final double retryAfterSecs = this.nodeCount / dbThreshold;
         final long calculatedRetryAfter = (long) Math.ceil(retryAfterSecs);
 
+        LOG.info("PostgresSqlStorage:calculateRetryAfter:messagesCount", String.valueOf(messagesCount));
         LOG.info("PostgresSqlStorage:calculateRetryAfter:calculatedRetryAfter", String.valueOf(calculatedRetryAfter));
         LOG.info("PostgresSqlStorage:calculateRetryAfter:retryAfter", String.valueOf(retryAfter));
 
