@@ -503,6 +503,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        // messages out of order
         insert(message(4, "type1", "D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
         insert(message(5, "type1", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(6, "type1", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -523,7 +525,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     }
 
     @Unroll
-    def "read up to the last message"(){
+    def "read up to the last message in the pipe when all are in the visibility window"() {
         given:
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
