@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
-import org.postgresql.util.PGInterval;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -20,7 +19,7 @@ public class PostgresqlStorage implements CentralStorage {
     private final DataSource dataSource;
     private final long maxBatchSize;
     private final long retryAfter;
-    private final PGInterval readDelay;
+    private final int readDelaySeconds;
     private final int nodeCount;
     private final long clusterDBPoolSize;
     private String currentTimestamp = "CURRENT_TIMESTAMP";
@@ -37,7 +36,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.retryAfter = retryAfter;
         this.limit = limit;
         this.dataSource = dataSource;
-        this.readDelay = new PGInterval(0, 0, 0, 0, 0, readDelaySeconds);
+        this.readDelaySeconds = readDelaySeconds;
         this.nodeCount = nodeCount;
         this.clusterDBPoolSize = clusterDBPoolSize;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
@@ -190,9 +189,7 @@ public class PostgresqlStorage implements CentralStorage {
 
     private PreparedStatement getLatestOffsetStatement(final Connection connection) {
         try {
-            PreparedStatement query = connection.prepareStatement(getSelectLatestOffsetQuery());
-//            query.setObject(1, readDelay);
-            return query;
+            return connection.prepareStatement(getSelectLatestOffsetQuery());
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset statement", exception);
             throw new RuntimeException(exception);
@@ -203,7 +200,7 @@ public class PostgresqlStorage implements CentralStorage {
             final Connection connection,
             final List<String> types,
             final long startOffset,
-            long globalLatestOffset,
+            long endOffset,
             final List<String> clusterUuids) {
         try {
             PreparedStatement query;
@@ -214,14 +211,14 @@ public class PostgresqlStorage implements CentralStorage {
                 query = connection.prepareStatement(getSelectEventsWithoutTypeQuery(maxBatchSize));
                 query.setString(1, strClusters);
                 query.setLong(2, startOffset);
-                query.setLong(3, globalLatestOffset);
+                query.setLong(3, endOffset);
                 query.setLong(4, limit);
             } else {
                 final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectEventsWithTypeQuery(maxBatchSize));
                 query.setString(1, strClusters);
                 query.setLong(2, startOffset);
-                query.setLong(3, globalLatestOffset);
+                query.setLong(3, endOffset);
                 query.setString(4, strTypes);
                 query.setLong(5, limit);
             }
@@ -292,16 +289,6 @@ public class PostgresqlStorage implements CentralStorage {
             " WHERE running_size <= " + maxBatchSize;
     }
 
-    private String protectAgainstOutOfOrderCreatedUtc() {
-        return " events.msg_offset < coalesce( " +
-                " (SELECT min(msg_offset) FROM events WHERE created_utc >= " + currentTimestamp + " - ? )," +
-                " (SELECT max(msg_offset) + 1 FROM events))";
-    }
-
-    private String protectAgainstWriteRaceCondition() {
-        return " created_utc < " + currentTimestamp + " - ? ";
-    }
-
     private String withInnerJoinToClusters() {
         return
             " INNER JOIN clusters ON (events.cluster_id = clusters.cluster_id)" +
@@ -310,9 +297,10 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private String getSelectLatestOffsetQuery() {
+        String filterCondition = "WHERE created_utc >= %s - INTERVAL '%s SECONDS'";
         return
             "SELECT coalesce (" +
-                " (SELECT min(msg_offset) - 1 FROM events WHERE created_utc >= CURRENT_TIMESTAMP - INTERVAL '60 SECONDS'), " +
+                " (SELECT min(msg_offset) - 1 FROM events " + String.format(filterCondition, currentTimestamp, readDelaySeconds) + "), " +
                 " (SELECT max(msg_offset) FROM events), " +
                 " 0 " +
             ") as last_offset;";
