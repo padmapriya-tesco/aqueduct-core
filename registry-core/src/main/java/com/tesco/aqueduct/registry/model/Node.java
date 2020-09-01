@@ -100,7 +100,7 @@ public class Node {
     // All nodes for a location will be in the same subgroup
     @JsonIgnore
     public String getSubGroupId() {
-        return "subGroupId";
+        return getPipeVersion();
     }
 
     @JsonIgnore

@@ -27,7 +27,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(0).nodes == [node1, node2]
     }
 
-    @Ignore
     def "two subGroups are created for nodes belonging to different versions"() {
         given: "two nodes"
         def node1 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.0"])
@@ -169,7 +168,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(0).nodes.get(1).getId() == updatedNode2.getId()
     }
 
-    @Ignore
     def "Nodes are correctly rebalanced"() {
         given: "a cloud url"
         URL cloudUrl = new URL("http://cloud")
@@ -381,7 +379,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(0).nodes.get(0).status == FOLLOWING
     }
 
-    @Ignore
     def "A new subgroup is created if it does not exist"(){
         given: "a node"
         def url1 = new URL("http://node-1")
@@ -413,7 +410,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(1).nodes.get(0).localUrl == url2
     }
 
-    @Ignore
     def "A node with a version for an already existing subgroup is added to the subgroup"() {
         given: "a node"
         def cloudUrl = CLOUD_URL
@@ -446,7 +442,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(0).nodes.get(1).localUrl == url2
     }
 
-    @Ignore
     def "A node with new version is added to a new subgroup and removed from the old one"() {
         given: "a node"
         def cloudUrl = CLOUD_URL
@@ -491,7 +486,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(1).nodes.get(0).localUrl == url2
     }
 
-    @Ignore
     def "Empty subgroups should be removed when nodes migrate across subgroups"() {
         given: "a node in a nodegroup"
         def cloudUrl = CLOUD_URL
@@ -527,6 +521,7 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(0).subGroupId == "2.0"
     }
 
+    @Ignore
     def "Only one subgroup should exist per store regardless of node version"() {
         given: "a node"
         def cloudUrl = CLOUD_URL
