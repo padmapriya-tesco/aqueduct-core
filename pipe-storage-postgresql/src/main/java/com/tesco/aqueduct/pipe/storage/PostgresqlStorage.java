@@ -64,9 +64,9 @@ public class PostgresqlStorage implements CentralStorage {
             try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterUuids)) {
 
                 final List<Message> messages = runMessagesQuery(messagesQuery);
-                long readEnd = System.currentTimeMillis();
+                long end = System.currentTimeMillis();
 
-                final long retry = calculateRetryAfter(readEnd - start, messages.size());
+                final long retry = calculateRetryAfter(end - start, messages.size());
 
                 LOG.info("PostgresSqlStorage:retry", String.valueOf(retry));
                 LOG.info("PostgresSqlStorage:retryAfter", String.valueOf(retryAfter));
