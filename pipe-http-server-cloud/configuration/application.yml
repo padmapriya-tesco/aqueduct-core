@@ -55,3 +55,4 @@ location:
 
 registry:
   mark-offline-after: 25m
+  target.version: "0.5.420"

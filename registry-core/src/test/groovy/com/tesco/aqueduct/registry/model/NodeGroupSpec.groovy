@@ -41,6 +41,21 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(1).nodes == [node2]
     }
 
+    def "nodes in target version go to one subgroup, all others to another"() {
+        given: "two nodes"
+        def node1 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.0.1"])
+        def node2 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.1.1"])
+        def node3 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"2.1.0"])
+
+        when: "a group with these nodes is created"
+        def group = new NodeGroup([node1, node2, node3])
+
+        then: "nodegroup contains a subgroup with two nodes"
+        group.subGroups.size() == 2
+        group.subGroups.get(0).nodes == [node1]
+        group.subGroups.get(1).nodes == [node2, node3]
+    }
+
     def createNode(
         String group,
         URL url,

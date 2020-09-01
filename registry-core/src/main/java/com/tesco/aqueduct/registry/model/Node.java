@@ -97,14 +97,36 @@ public class Node {
         return getStatus() == OFFLINE;
     }
 
-    // All nodes for a location will be in the same subgroup
     @JsonIgnore
     public String getSubGroupId() {
-        return getPipeVersion();
+        ComparableVersion nodeVersion = new ComparableVersion(getPipeVersion());
+        ComparableVersion targetVersion = getSemanticTargetVersion();
+
+        if (nodeVersion.equals(targetVersion)) {
+            return "A";
+        } else {
+            return "B";
+        }
+    }
+
+    @JsonIgnore
+    public String semanticTargetVersion;
+
+    @JsonIgnore
+    private ComparableVersion getSemanticTargetVersion() {
+        if (semanticTargetVersion != null) {
+            return new ComparableVersion(semanticTargetVersion);
+        }
+
+        return new ComparableVersion("0.0.0");
     }
 
     @JsonIgnore
     public String getPipeVersion() {
+        if (pipe.get("v") == null) {
+            return "0.0.0";
+        }
+
         return pipe.get("v");
     }
 
