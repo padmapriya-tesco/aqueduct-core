@@ -37,7 +37,8 @@ public class PostgresNodeGroup extends NodeGroup {
         "DELETE from registry where group_id = ? and version = ? ;";
 
     private static List<Node> readGroupEntry(final String entry) throws IOException {
-        return NodeFactory.getNodesFromJson(entry);
+        NodeFactory nodeFactory = new NodeFactory();
+        return nodeFactory.getNodesFromJson(entry);
     }
 
     private final String groupId;
