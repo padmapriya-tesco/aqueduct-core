@@ -1,9 +1,6 @@
 package com.tesco.aqueduct.registry.postgres;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tesco.aqueduct.pipe.api.JsonHelper;
+import com.tesco.aqueduct.registry.model.NodeFactory;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.NodeGroup;
@@ -22,39 +19,35 @@ public class PostgresNodeGroup extends NodeGroup {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PostgresNodeGroup.class));
 
     private static final String QUERY_INSERT_GROUP =
-            "INSERT INTO registry (group_id, entry, version)" +
-                    "VALUES (" +
-                    "?, " +
-                    "?::JSON, " +
-                    "0 " +
-                    ")" +
-                    "ON CONFLICT DO NOTHING; ";
+        "INSERT INTO registry (group_id, entry, version)" +
+                "VALUES (" +
+                "?, " +
+                "?::JSON, " +
+                "0 " +
+                ")" +
+                "ON CONFLICT DO NOTHING; ";
     private static final String QUERY_UPDATE_GROUP =
-            "UPDATE registry SET " +
-                    "entry = ?::JSON , " +
-                    "version = registry.version + 1 " +
-                    "WHERE " +
-                    "registry.group_id = ? " +
-                    "; ";
+        "UPDATE registry SET " +
+                "entry = ?::JSON , " +
+                "version = registry.version + 1 " +
+                "WHERE " +
+                "registry.group_id = ? " +
+                "; ";
     private static final String QUERY_DELETE_GROUP =
         "DELETE from registry where group_id = ? and version = ? ;";
 
-    public static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
-        final String entry = rs.getString("entry");
-        final int version = rs.getInt("version");
-        final String groupId = rs.getString("group_id");
-        final List<Node> nodes = readGroupEntry(entry);
-        return new PostgresNodeGroup(groupId, version, nodes);
-    }
-
     private static List<Node> readGroupEntry(final String entry) throws IOException {
-        ObjectMapper jsonMapper = JsonHelper.MAPPER;
-        final JavaType type = jsonMapper.getTypeFactory().constructCollectionType(List.class, Node.class);
-        return jsonMapper.readValue(entry, type);
+        return NodeFactory.getNodesFromJson(entry);
     }
 
     private final String groupId;
     private final int version;
+
+    public PostgresNodeGroup(final ResultSet rs) throws SQLException, IOException {
+        super(readGroupEntry(rs.getString("entry")));
+        this.version = rs.getInt("version");
+        this.groupId = rs.getString("group_id");
+    }
 
     public PostgresNodeGroup(final String groupId) {
         super();

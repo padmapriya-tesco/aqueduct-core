@@ -192,16 +192,19 @@ class NodeGroupSpec extends Specification {
             .localUrl(n1Url)
             .pipe(["v":"1.0"])
             .build()
+
         URL n2Url = new URL("http://node-2")
         Node n2 = Node.builder()
             .localUrl(n2Url)
             .pipe(["v":"1.0"])
             .build()
+
         URL n3Url = new URL("http://node-3")
         Node n3 = Node.builder()
             .localUrl(n3Url)
             .pipe(["v":"2.0"])
             .build()
+
         NodeGroup group = new NodeGroup([n1, n2, n3])
         when: "the group is rebalanced"
         group.updateGetFollowing(cloudUrl)
@@ -419,8 +422,8 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 2
-        group.subGroups.get(0).subGroupId == "1.0"
-        group.subGroups.get(1).subGroupId == "2.0"
+        group.subGroups.get(0).subGroupId == "A"
+        group.subGroups.get(1).subGroupId == "B"
         group.subGroups.get(0).nodes.get(0).localUrl == url1
         group.subGroups.get(1).nodes.get(0).localUrl == url2
     }
@@ -452,7 +455,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(0).subGroupId == "B"
         group.subGroups.get(0).nodes.get(0).localUrl == url1
         group.subGroups.get(0).nodes.get(1).localUrl == url2
     }
@@ -493,8 +496,8 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 2
-        group.subGroups.get(0).subGroupId == "1.0"
-        group.subGroups.get(1).subGroupId == "2.0"
+        group.subGroups.get(0).subGroupId == "A"
+        group.subGroups.get(1).subGroupId == "B"
         group.subGroups.get(0).nodes.size() == 1
         group.subGroups.get(1).nodes.size() == 1
         group.subGroups.get(0).nodes.get(0).localUrl == url1
@@ -518,7 +521,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(0).subGroupId == "A"
 
         when: "a new version is deployed to the node"
         Node updatedNode = Node.builder()
@@ -533,7 +536,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "2.0"
+        group.subGroups.get(0).subGroupId == "B"
     }
 
     @Ignore
