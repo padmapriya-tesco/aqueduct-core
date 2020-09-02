@@ -21,7 +21,7 @@ public class PostgresNodeGroupStorage {
 
             try (ResultSet rs = statement.executeQuery()) {
                 if (rs.next()) {
-                    return new PostgresNodeGroup(rs);
+                    return PostgresNodeGroup.createNodeGroup(rs);
                 } else {
                     return new PostgresNodeGroup(groupId);
                 }
@@ -35,7 +35,7 @@ public class PostgresNodeGroupStorage {
 
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
-                        return new PostgresNodeGroup(rs);
+                        return PostgresNodeGroup.createNodeGroup(rs);
                     } else {
                         return new PostgresNodeGroup(groupId);
                     }
@@ -61,7 +61,7 @@ public class PostgresNodeGroupStorage {
             groups = new ArrayList<>();
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    groups.add(new PostgresNodeGroup(rs));
+                    groups.add(PostgresNodeGroup.createNodeGroup(rs));
                 }
             }
         }

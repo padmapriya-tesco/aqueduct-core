@@ -99,26 +99,7 @@ public class Node {
 
     @JsonIgnore
     public String getSubGroupId() {
-        ComparableVersion nodeVersion = new ComparableVersion(getPipeVersion());
-        ComparableVersion targetVersion = getSemanticTargetVersion();
-
-        if (nodeVersion.equals(targetVersion)) {
-            return "A";
-        } else {
-            return "B";
-        }
-    }
-
-    @JsonIgnore
-    public String semanticTargetVersion;
-
-    @JsonIgnore
-    private ComparableVersion getSemanticTargetVersion() {
-        if (semanticTargetVersion != null) {
-            return new ComparableVersion(semanticTargetVersion);
-        }
-
-        return new ComparableVersion("0.0.0");
+        return getPipeVersion();
     }
 
     @JsonIgnore

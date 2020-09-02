@@ -41,21 +41,6 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(1).nodes == [node2]
     }
 
-    def "nodes in target version go to one subgroup, all others to another"() {
-        given: "two nodes"
-        def node1 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.0.1"])
-        def node2 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"1.1.1"])
-        def node3 = createNode("group", new URL("http://1.1.1.1"), 0, INITIALISING, [], null, ["v":"2.1.0"])
-
-        when: "a group with these nodes is created"
-        def group = new NodeGroup([node1, node2, node3])
-
-        then: "nodegroup contains a subgroup with two nodes"
-        group.subGroups.size() == 2
-        group.subGroups.get(0).nodes == [node1]
-        group.subGroups.get(1).nodes == [node2, node3]
-    }
-
     def createNode(
         String group,
         URL url,
@@ -422,8 +407,8 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 2
-        group.subGroups.get(0).subGroupId == "A"
-        group.subGroups.get(1).subGroupId == "B"
+        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(1).subGroupId == "2.0"
         group.subGroups.get(0).nodes.get(0).localUrl == url1
         group.subGroups.get(1).nodes.get(0).localUrl == url2
     }
@@ -455,7 +440,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "B"
+        group.subGroups.get(0).subGroupId == "1.0"
         group.subGroups.get(0).nodes.get(0).localUrl == url1
         group.subGroups.get(0).nodes.get(1).localUrl == url2
     }
@@ -496,8 +481,8 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 2
-        group.subGroups.get(0).subGroupId == "A"
-        group.subGroups.get(1).subGroupId == "B"
+        group.subGroups.get(0).subGroupId == "1.0"
+        group.subGroups.get(1).subGroupId == "2.0"
         group.subGroups.get(0).nodes.size() == 1
         group.subGroups.get(1).nodes.size() == 1
         group.subGroups.get(0).nodes.get(0).localUrl == url1
@@ -521,7 +506,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "A"
+        group.subGroups.get(0).subGroupId == "1.0"
 
         when: "a new version is deployed to the node"
         Node updatedNode = Node.builder()
@@ -536,7 +521,7 @@ class NodeGroupSpec extends Specification {
 
         then:
         group.subGroups.size() == 1
-        group.subGroups.get(0).subGroupId == "B"
+        group.subGroups.get(0).subGroupId == "2.0"
     }
 
     @Ignore

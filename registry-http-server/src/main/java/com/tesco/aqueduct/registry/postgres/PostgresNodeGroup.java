@@ -1,6 +1,9 @@
 package com.tesco.aqueduct.registry.postgres;
 
-import com.tesco.aqueduct.registry.model.NodeFactory;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.NodeGroup;
@@ -36,19 +39,22 @@ public class PostgresNodeGroup extends NodeGroup {
     private static final String QUERY_DELETE_GROUP =
         "DELETE from registry where group_id = ? and version = ? ;";
 
+    public static PostgresNodeGroup createNodeGroup(final ResultSet rs) throws SQLException, IOException {
+        final String entry = rs.getString("entry");
+        final int version = rs.getInt("version");
+        final String groupId = rs.getString("group_id");
+        final List<Node> nodes = readGroupEntry(entry);
+        return new PostgresNodeGroup(groupId, version, nodes);
+    }
+
     private static List<Node> readGroupEntry(final String entry) throws IOException {
-        NodeFactory nodeFactory = new NodeFactory();
-        return nodeFactory.getNodesFromJson(entry);
+        ObjectMapper jsonMapper = JsonHelper.MAPPER;
+        final JavaType type = jsonMapper.getTypeFactory().constructCollectionType(List.class, Node.class);
+        return jsonMapper.readValue(entry, type);
     }
 
     private final String groupId;
     private final int version;
-
-    public PostgresNodeGroup(final ResultSet rs) throws SQLException, IOException {
-        super(readGroupEntry(rs.getString("entry")));
-        this.version = rs.getInt("version");
-        this.groupId = rs.getString("group_id");
-    }
 
     public PostgresNodeGroup(final String groupId) {
         super();
