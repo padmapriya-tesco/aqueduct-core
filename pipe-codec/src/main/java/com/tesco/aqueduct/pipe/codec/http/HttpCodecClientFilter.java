@@ -11,18 +11,17 @@ import io.micronaut.http.filter.HttpClientFilter;
 import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 
-import javax.inject.Inject;
-
 //@Filter(serviceId = "pipe")
 //@Requires(property = "pipe.http.client.url")
 public class HttpCodecClientFilter implements HttpClientFilter {
 
+/*
     private final BrotliCodec brotliCodec;
 
-    @Inject
     public HttpCodecClientFilter(BrotliCodec brotliCodec) {
         this.brotliCodec = brotliCodec;
     }
+*/
 
     @Override
     public Publisher<? extends HttpResponse<?>> doFilter(MutableHttpRequest<?> request, ClientFilterChain chain) {
@@ -31,7 +30,7 @@ public class HttpCodecClientFilter implements HttpClientFilter {
 
                 if (isResponseBrotliEncoded(httpResponse) && isResponseOfTypeByteArray(httpResponse)) {
                     byte[] encodedResponse = (byte[]) httpResponse.body();
-                    final byte[] decodedResponse = brotliCodec.decode(encodedResponse);
+                    final byte[] decodedResponse = new BrotliCodec().decode(encodedResponse);
 
                     if (decodedResponse != null) {
                         ((MutableHttpResponse) httpResponse).body(decodedResponse);

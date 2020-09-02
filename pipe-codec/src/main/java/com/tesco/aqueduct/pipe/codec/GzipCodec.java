@@ -2,9 +2,12 @@ package com.tesco.aqueduct.pipe.codec;
 
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.context.annotation.Value;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToByteEncoder;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,8 +15,9 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-@Singleton
-public class GzipCodec implements Codec {
+
+@ChannelHandler.Sharable
+public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
 
@@ -31,6 +35,11 @@ public class GzipCodec implements Codec {
 
     public GzipCodec() {
         this.level = Deflater.DEFAULT_COMPRESSION;
+    }
+
+    @Override
+    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
+        out.writeBytes(encode(msg.array()));
     }
 
     @Override
@@ -61,7 +70,7 @@ public class GzipCodec implements Codec {
             return null;
         }
         try (GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(input));
-            ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             int b;
             while ((b = in.read()) != -1) {
                 out.write(b);

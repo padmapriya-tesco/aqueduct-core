@@ -110,7 +110,7 @@ class CodecIntegrationSpec extends Specification {
         context.close()
     }
 
-    def "messages can be read from pipe in codec format requested"() {
+    def "messages can be read from pipe in gzip codec format as specified in the request header"() {
         given: "a location UUID"
         def locationUuid = UUID.randomUUID().toString()
 
@@ -140,12 +140,89 @@ class CodecIntegrationSpec extends Specification {
         and: "response content encoding is gzip"
         response
             .then()
-            .header("Content-Encoding", Matchers.contains("gzip"))
-
+            .header("content-encoding", Matchers.is("gzip"))
 
         and: "response body correctly decoded messages"
         Arrays.asList(response.getBody().as(Message[].class)) == [message1, message2]
     }
+
+    def "messages can be read from pipe in brotli codec format as specified in the request header"() {
+        given: "a location UUID"
+        def locationUuid = UUID.randomUUID().toString()
+
+        and: "location service returning clusters for the location uuid"
+        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
+
+        and: "clusters in the storage"
+        Long clusterA = insertCluster("Cluster_A")
+
+        and: "some messages in the storage"
+        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        insertWithCluster(message1, clusterA)
+        insertWithCluster(message2, clusterA)
+
+        when: "read messages for the given location with codec gzip"
+        def response = RestAssured.given()
+                .header("Authorization", "Bearer $ACCESS_TOKEN")
+                .header("Accept-Encoding", "brotli")
+                .get("/pipe/0?location=$locationUuid")
+
+        then: "http ok response code"
+        response
+            .then()
+            .statusCode(200)
+
+        and: "response content encoding is gzip"
+        response
+                .then()
+                .header("content-encoding", Matchers.is("brotli"))
+
+        and: "response body correctly decoded messages"
+        Arrays.asList(response.getBody().as(Message[].class)) == [message1, message2]
+    }
+
+
+
+    def "messages can be read from pipe in requested codec format"() {
+        given: "a location UUID"
+        def locationUuid = UUID.randomUUID().toString()
+
+        and: "location service returning clusters for the location uuid"
+        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
+
+        and: "clusters in the storage"
+        Long clusterA = insertCluster("Cluster_A")
+
+        and: "some messages in the storage"
+        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        insertWithCluster(message1, clusterA)
+        insertWithCluster(message2, clusterA)
+
+        when: "read messages for the given location with codec gzip"
+        def response = RestAssured.given()
+                .header("Authorization", "Bearer $ACCESS_TOKEN")
+                .header("Accept-Encoding", "gzip")
+                .get("/pipe/0?location=$locationUuid")
+
+        then: "http ok response code"
+        response
+            .then()
+            .statusCode(200)
+
+        when: "read messages for the given location with codec gzip"
+        response = RestAssured.given()
+                .header("Authorization", "Bearer $ACCESS_TOKEN")
+                .header("Accept-Encoding", "brotli")
+                .get("/pipe/0?location=$locationUuid")
+
+        then: "http ok response code"
+        response
+            .then()
+            .statusCode(200)
+    }
+
 
     private ZonedDateTime utcZoned(String dateTimeFormat) {
         ZonedDateTime.parse(dateTimeFormat).withZoneSameLocal(ZoneId.of("UTC"))

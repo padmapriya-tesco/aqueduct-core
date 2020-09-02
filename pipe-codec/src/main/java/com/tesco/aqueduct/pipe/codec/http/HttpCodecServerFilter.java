@@ -10,11 +10,10 @@ import io.micronaut.http.filter.ServerFilterChain;
 import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 
-import javax.inject.Inject;
-
 //@Filter("/pipe/**")
 public class HttpCodecServerFilter  {
 
+/*
     private final GzipCodec gzipCodec;
     private final BrotliCodec brotliCodec;
 
@@ -23,6 +22,7 @@ public class HttpCodecServerFilter  {
         this.gzipCodec = gzipCodec;
         this.brotliCodec = brotliCodec;
     }
+*/
 
 //    @Override
     public Publisher<MutableHttpResponse<?>> doFilter(HttpRequest<?> request, ServerFilterChain chain) {
@@ -37,10 +37,10 @@ public class HttpCodecServerFilter  {
                     byte[] encodedResponse = null;
 
                     if (contentEncoding.contains(CodecType.GZIP.name().toLowerCase())) {
-                        encodedResponse = gzipCodec.encode(((String) response.body()).getBytes());
+                        encodedResponse = new GzipCodec().encode(((String) response.body()).getBytes());
 
                     } else if (contentEncoding.contains(CodecType.BROTLI.name().toLowerCase())) {
-                        encodedResponse = brotliCodec.encode(((String) response.body()).getBytes());
+                        encodedResponse = new BrotliCodec().encode(((String) response.body()).getBytes());
                     }
                     if (encodedResponse != null) {
                         ((MutableHttpResponse) response).body(encodedResponse);
