@@ -58,6 +58,9 @@ public class SelfRegistrationTask {
                 pipe.reset();
                 pipe.start();
                 provider.start();
+            } else if (registryResponse.getBootstrapType() == BootstrapType.PIPE) {
+                pipe.reset();
+                pipe.start();
             }
         } catch (HttpClientResponseException hcre) {
             LOG.error("SelfRegistrationTask.register", "Register error [HttpClientResponseException]: %s", hcre.getMessage());

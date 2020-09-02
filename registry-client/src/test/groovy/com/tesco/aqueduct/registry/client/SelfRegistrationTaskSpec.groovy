@@ -116,5 +116,6 @@ class SelfRegistrationTaskSpec extends Specification {
         BootstrapType.PROVIDER          | 1                         | 0
         BootstrapType.PIPE_AND_PROVIDER | 1                         | 1
         BootstrapType.NONE              | 0                         | 0
+        BootstrapType.PIPE              | 0                         | 1
     }
 }

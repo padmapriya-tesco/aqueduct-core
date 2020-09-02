@@ -523,6 +523,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         bootstrapString     | statusCode | bootstrapType
         "PROVIDER"          | 200        | BootstrapType.PROVIDER.toString()
         "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER.toString()
+        "PIPE"              | 200        | BootstrapType.PIPE.toString()
     }
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
