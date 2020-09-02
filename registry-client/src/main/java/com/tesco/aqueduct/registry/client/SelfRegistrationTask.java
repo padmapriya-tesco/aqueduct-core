@@ -6,6 +6,7 @@ import com.tesco.aqueduct.registry.model.Node;
 import com.tesco.aqueduct.registry.model.RegistryResponse;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Context;
+import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.scheduling.annotation.Scheduled;
@@ -16,6 +17,7 @@ import javax.inject.Named;
 
 @Context
 @Requires(property = "pipe.http.registration.interval")
+@Requires(property = "pipe.bootstrap.delay.ms")
 public class SelfRegistrationTask {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(SelfRegistrationTask.class));
 
@@ -24,6 +26,7 @@ public class SelfRegistrationTask {
     private final ServiceList services;
     private final Bootstrapable provider;
     private final Bootstrapable pipe;
+    private final int bootstrapDelayMs;
 
     @Inject
     public SelfRegistrationTask(
@@ -31,13 +34,15 @@ public class SelfRegistrationTask {
         final SummarySupplier selfSummary,
         final ServiceList services,
         @Named("provider") final Bootstrapable provider,
-        @Named("pipe") final Bootstrapable pipe
+        @Named("pipe") final Bootstrapable pipe,
+        @Property(name = "pipe.bootstrap.delay.ms") int bootstrapDelayMs
     ) {
         this.client = client;
         this.selfSummary = selfSummary;
         this.services = services;
         this.provider = provider;
         this.pipe = pipe;
+        this.bootstrapDelayMs = bootstrapDelayMs;
     }
 
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
@@ -60,6 +65,10 @@ public class SelfRegistrationTask {
                 provider.start();
             } else if (registryResponse.getBootstrapType() == BootstrapType.PIPE) {
                 pipe.reset();
+                pipe.start();
+            } else if (registryResponse.getBootstrapType() == BootstrapType.PIPE_WITH_DELAY) {
+                pipe.reset();
+                Thread.sleep(bootstrapDelayMs);
                 pipe.start();
             }
         } catch (HttpClientResponseException hcre) {
