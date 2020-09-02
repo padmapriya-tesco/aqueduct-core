@@ -8,16 +8,17 @@ import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import io.micronaut.scheduling.annotation.Scheduled;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.time.Duration;
 
 @Context
 @Requires(property = "pipe.http.registration.interval")
-@Requires(property = "pipe.bootstrap.delay.ms")
 public class SelfRegistrationTask {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(SelfRegistrationTask.class));
 
@@ -26,7 +27,7 @@ public class SelfRegistrationTask {
     private final ServiceList services;
     private final Bootstrapable provider;
     private final Bootstrapable pipe;
-    private final int bootstrapDelayMs;
+    private final long bootstrapDelayMs;
 
     @Inject
     public SelfRegistrationTask(
@@ -35,14 +36,15 @@ public class SelfRegistrationTask {
         final ServiceList services,
         @Named("provider") final Bootstrapable provider,
         @Named("pipe") final Bootstrapable pipe,
-        @Property(name = "pipe.bootstrap.delay.ms") int bootstrapDelayMs
+        @Property(name = "pipe.http.registration.interval") String retryInterval,
+        @Value("${pipe.bootstrap.delay:300000}") final int additionalDelay // 5 minutes extra to allow all nodes to reset
     ) {
         this.client = client;
         this.selfSummary = selfSummary;
         this.services = services;
         this.provider = provider;
         this.pipe = pipe;
-        this.bootstrapDelayMs = bootstrapDelayMs;
+        this.bootstrapDelayMs = Duration.parse("PT" + retryInterval).toMillis() + additionalDelay;
     }
 
     @Scheduled(fixedRate = "${pipe.http.registration.interval}")
