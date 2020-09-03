@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-@Measure
 @Singleton
 @Requires(property = "authentication.identity.url")
 @Requires(property = "authentication.identity.users")

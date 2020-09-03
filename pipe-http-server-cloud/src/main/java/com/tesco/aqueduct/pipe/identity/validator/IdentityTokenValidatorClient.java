@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.identity.validator;
 
+import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Header;
@@ -9,6 +10,7 @@ import io.micronaut.http.client.annotation.Client;
 import io.micronaut.retry.annotation.CircuitBreaker;
 import io.reactivex.Flowable;
 
+@Measure
 @Client("${authentication.identity.url}")
 @Requires(property = "authentication.identity.url")
 public interface IdentityTokenValidatorClient {
