@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.identity.validator;
 
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityServiceUnavailableException;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import com.tesco.aqueduct.pipe.metrics.Measure;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.context.annotation.Requires;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
+@Measure
 @Singleton
 @Requires(property = "authentication.identity.url")
 @Requires(property = "authentication.identity.users")
