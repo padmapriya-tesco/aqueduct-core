@@ -10,6 +10,7 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.inject.qualifiers.Qualifiers
 import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
+import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStream
 import org.hamcrest.Matchers
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
@@ -22,6 +23,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
+import static com.tesco.aqueduct.pipe.api.JsonHelper.messageFromJsonArray
 import static java.util.stream.Collectors.joining
 
 class CodecIntegrationSpec extends Specification {
@@ -121,8 +123,8 @@ class CodecIntegrationSpec extends Specification {
         Long clusterA = insertCluster("Cluster_A")
 
         and: "some messages in the storage"
-        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
-        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message1 = message(1, "type1", "A", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
+        def message2 = message(2, "type2", "B", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
         insertWithCluster(message1, clusterA)
         insertWithCluster(message2, clusterA)
 
@@ -143,7 +145,7 @@ class CodecIntegrationSpec extends Specification {
             .header("content-encoding", Matchers.is("gzip"))
 
         and: "response body correctly decoded messages"
-        Arrays.asList(response.getBody().as(Message[].class)) == [message1, message2]
+        messageFromJsonArray(response.getBody().asString()) == [message1, message2]
     }
 
     def "messages can be read from pipe in brotli codec format as specified in the request header"() {
@@ -157,8 +159,8 @@ class CodecIntegrationSpec extends Specification {
         Long clusterA = insertCluster("Cluster_A")
 
         and: "some messages in the storage"
-        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
-        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
+        def message1 = message(1, "type1", "A", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
+        def message2 = message(2, "type2", "B", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
         insertWithCluster(message1, clusterA)
         insertWithCluster(message2, clusterA)
 
@@ -175,57 +177,19 @@ class CodecIntegrationSpec extends Specification {
 
         and: "response content encoding is gzip"
         response
-                .then()
-                .header("content-encoding", Matchers.is("brotli"))
+            .then()
+            .header("content-encoding", Matchers.is("brotli"))
 
         and: "response body correctly decoded messages"
-        Arrays.asList(response.getBody().as(Message[].class)) == [message1, message2]
+        messageFromJsonArray(decodedString(response.getBody().asByteArray())) == [message1, message2]
     }
 
-
-
-    def "messages can be read from pipe in requested codec format"() {
-        given: "a location UUID"
-        def locationUuid = UUID.randomUUID().toString()
-
-        and: "location service returning clusters for the location uuid"
-        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
-
-        and: "clusters in the storage"
-        Long clusterA = insertCluster("Cluster_A")
-
-        and: "some messages in the storage"
-        def message1 = message(1, "type1", "A", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
-        def message2 = message(2, "type2", "B", "content-type", utcZoned("2000-12-01T10:00:00Z"), "data")
-        insertWithCluster(message1, clusterA)
-        insertWithCluster(message2, clusterA)
-
-        when: "read messages for the given location with codec gzip"
-        def response = RestAssured.given()
-                .header("Authorization", "Bearer $ACCESS_TOKEN")
-                .header("Accept-Encoding", "gzip")
-                .get("/pipe/0?location=$locationUuid")
-
-        then: "http ok response code"
-        response
-            .then()
-            .statusCode(200)
-
-        when: "read messages for the given location with codec gzip"
-        response = RestAssured.given()
-                .header("Authorization", "Bearer $ACCESS_TOKEN")
-                .header("Accept-Encoding", "brotli")
-                .get("/pipe/0?location=$locationUuid")
-
-        then: "http ok response code"
-        response
-            .then()
-            .statusCode(200)
+    private String decodedString(byte[] bytes) {
+        new BrotliCompressorInputStream(new ByteArrayInputStream(bytes)).text
     }
 
-
-    private ZonedDateTime utcZoned(String dateTimeFormat) {
-        ZonedDateTime.parse(dateTimeFormat).withZoneSameLocal(ZoneId.of("UTC"))
+    private ZonedDateTime zoned(String dateTimeFormat) {
+        ZonedDateTime.parse(dateTimeFormat)
     }
 
     static ZonedDateTime time = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
@@ -239,13 +203,6 @@ class CodecIntegrationSpec extends Specification {
             offset,
             created ?: time,
             data ?: "data"
-        )
-    }
-
-    void insertWithoutCluster(Message msg, int maxMessageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime()) ) {
-        sql.execute(
-                "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size) VALUES(?,?,?,?,?,?,?);",
-                msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize
         )
     }
 

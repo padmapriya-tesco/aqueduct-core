@@ -26,6 +26,7 @@ dependencies {
     implementation 'io.micronaut:micronaut-http-client'
     implementation 'com.sun.activation:javax.activation:1.2.0'
     testImplementation 'com.opentable.components:otj-pg-embedded:0.13.0'
+    testImplementation 'org.brotli:dec:0.1.2'
     testImplementation project(":pipe-storage-memory")
 }
 

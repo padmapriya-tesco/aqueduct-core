@@ -30,11 +30,11 @@ public class HttpCodecHandler extends HttpContentEncoder {
 
             return new Result("brotli",
                 new EmbeddedChannel(ctx.channel().id(), ctx.channel().metadata().hasDisconnect(),
-                    ctx.channel().config(), gzipCodec));
+                    ctx.channel().config(), brotliCodec));
         } else {
             return new Result("gzip",
                 new EmbeddedChannel(ctx.channel().id(), ctx.channel().metadata().hasDisconnect(),
-                    ctx.channel().config(), brotliCodec));
+                    ctx.channel().config(), gzipCodec));
         }
     }
 }
