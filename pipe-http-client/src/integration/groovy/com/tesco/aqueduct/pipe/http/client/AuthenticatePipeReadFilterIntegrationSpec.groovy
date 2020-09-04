@@ -49,7 +49,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
                             "created": "2018-10-01T13:45:00Z", 
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
-                    ]""")
+                    ]""".bytes)
                     }
                 }
             }
@@ -80,11 +80,10 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         client = context.getBean(InternalHttpPipeClient)
 
         when:
-        def body = client.httpRead([type], offset, location).body()
+        client.httpRead([type], offset, location).body()
 
         then:
         server.verify()
-        body.offset.first() == offset
     }
 
     def "basic auth is used when settings are provided calling another node"() {
@@ -109,7 +108,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
                             "created": "2018-10-01T13:45:00Z", 
                             "data": "{ \\"valid\\": \\"json\\" }"
                         }
-                    ]""")
+                    ]""".bytes)
                     }
                 }
             }
@@ -140,10 +139,9 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         client = context.getBean(InternalHttpPipeClient)
 
         when:
-        def body = client.httpRead([type], offset, location).body()
+        client.httpRead([type], offset, location).body()
 
         then:
         server.verify()
-        body.offset.first() == offset
     }
 }

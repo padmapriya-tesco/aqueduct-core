@@ -51,6 +51,9 @@ public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec 
 
     @Override
     public byte[] encode(byte[] input) {
+        if (input == null) {
+            return null;
+        }
         LOG.info("pre-encode:size", String.valueOf(input.length));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (BrotliOutputStream brotliOutputStream =
@@ -68,6 +71,9 @@ public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec 
 
     @Override
     public byte[] decode(byte[] input) {
+        if (input == null) {
+            return null;
+        }
         try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              final BrotliInputStream brotliInputStream = new BrotliInputStream(new ByteArrayInputStream(input))) {
 

@@ -51,10 +51,11 @@ public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
 
     @Override
     public byte[] encode(byte[] input) {
-        LOG.info("pre-encode:size", String.valueOf(input.length));
         if (input == null) {
             return null;
         }
+        LOG.info("pre-encode:size", String.valueOf(input.length));
+
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream) {{
             def.setLevel(level);

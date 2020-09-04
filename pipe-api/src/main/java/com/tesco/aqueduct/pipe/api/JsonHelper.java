@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -9,7 +10,6 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,17 +48,19 @@ public class JsonHelper {
         return MAPPER.readValue(json, messageListType);
     }
 
-    @SneakyThrows
-    public static List<Message> messageFromJsonArrayBytes(final byte[] json) {
-        return MAPPER.readValue(json, messageListType);
+    public static List<Message> messageFromJsonArray(final byte[] json) {
+        try {
+            return MAPPER.readValue(json, messageListType);
+        } catch (final IOException ioException) {
+            throw new RuntimeException("IO Error while mapping bytes to Messages", ioException);
+        }
     }
 
     public static String toJson(final Object msg) throws IOException {
         return MAPPER.writeValueAsString(msg);
     }
 
-    @SneakyThrows
-    public static String toJson(final List<?> msg) {
+    public static String toJson(final List<?> msg) throws JsonProcessingException {
         return MAPPER.writeValueAsString(msg);
     }
 }

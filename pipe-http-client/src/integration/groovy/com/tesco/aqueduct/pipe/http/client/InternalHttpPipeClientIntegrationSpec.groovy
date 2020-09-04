@@ -1,8 +1,6 @@
 package com.tesco.aqueduct.pipe.http.client
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule
-import com.tesco.aqueduct.pipe.api.JsonHelper
-import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.TokenProvider
 import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
@@ -15,8 +13,6 @@ import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import java.time.ZonedDateTime
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*
 
@@ -52,33 +48,26 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         client = context.getBean(InternalHttpPipeClient)
     }
 
-    @Unroll
-    def "Client is calling correct link with proper parameters"() {
+    def "Client is calling correct link with proper parameters with Brotli encoding"() {
         given:
         def responseString = """[
             {
-                "type": "$type",
+                "type": "type1",
                 "key": "x",
-                "contentType": "$ct",
-                "offset": $offset,
+                "contentType": "ct",
+                "offset": 100,
                 "created": "2018-10-01T13:45:00Z", 
                 "data": "{ \\"valid\\": \\"json\\" }"
             }
         ]"""
         def brotliCodec = new BrotliCodec()
         def encodedBytes = brotliCodec.encode(responseString.bytes)
-        println new String(brotliCodec.decode(encodedBytes))
-
-        println encodedBytes
-        println encodedBytes.length
 
         and:
         stubFor(
-            get(urlEqualTo("/pipe/$offset?type=$type&location=$location"))
+            get(urlEqualTo("/pipe/0?type=type1&location=location1"))
                 .withHeader('Accept', equalTo('application/json'))
                 .withHeader('Accept-Encoding', equalTo('brotli'))
-                .withQueryParam("type", equalTo(type))
-                .withQueryParam("location", equalTo(location))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
                 .withHeader("Content-Encoding", "brotli")
@@ -87,20 +76,50 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             )
         )
         when:
-        byte[] responseBytes = client.httpRead([type], offset, location).body()
+        byte[] responseBytes = client.httpRead(["type1"], 0, "location1").body()
 
         then:
-        def messages = JsonHelper.messageFromJsonArrayBytes(responseBytes)
+        responseBytes == encodedBytes
+    }
 
-        def expectedMessage = new Message(
-                type,
-                "x",
-                ct,
-                offset,
-                ZonedDateTime.parse("2018-10-01T13:45:00Z"),
-                '{ "valid": "json" }'
+    @Unroll
+    def "Client is calling correct link with proper parameters"() {
+        given:
+        def responseString = """[
+            {
+                "type": "type1",
+                "key": "x",
+                "contentType": "ct",
+                "offset": 100,
+                "created": "2018-10-01T13:45:00Z", 
+                "data": "{ \\"valid\\": \\"json\\" }"
+            }
+        ]"""
+        def brotliCodec = new BrotliCodec()
+        def encodedBytes = brotliCodec.encode(responseString.bytes)
+
+        and:
+        stubFor(
+            get(urlEqualTo("/pipe/$offset?type=$type&location=$location"))
+                .withHeader('Accept', equalTo('application/json'))
+                .withHeader('Accept-Encoding', equalTo('brotli'))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withHeader("Content-Encoding", "brotli")
+                    .withStatus(200)
+                    .withBody(encodedBytes)
+                )
         )
-        messages[0] == expectedMessage
+
+        when:
+        client.httpRead([type], offset, location).body()
+
+        then:
+        verify(
+            getRequestedFor(urlEqualTo("/pipe/$offset?type=$type&location=$location"))
+                .withHeader('Accept', equalTo('application/json'))
+                .withHeader('Accept-Encoding', equalTo('brotli'))
+        )
 
         where:
         type    | location    | ct             | offset
