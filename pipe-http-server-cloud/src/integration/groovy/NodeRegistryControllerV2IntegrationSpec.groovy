@@ -145,6 +145,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                     $USERNAME_TWO:
                       password: $PASSWORD_TWO
                   identity:
+                    attempts: 3
+                    delay: 500ms
                     url: ${identityMock.getHttpUrl()}
                     validate.token.path: $validateTokenPath
                     client:
@@ -523,6 +525,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         bootstrapString     | statusCode | bootstrapType
         "PROVIDER"          | 200        | BootstrapType.PROVIDER.toString()
         "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER.toString()
+        "PIPE"              | 200        | BootstrapType.PIPE.toString()
+        "PIPE_WITH_DELAY"   | 200        | BootstrapType.PIPE_WITH_DELAY.toString()
     }
 
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
