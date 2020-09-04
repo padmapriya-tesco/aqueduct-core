@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.codec.http
 
-
 import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import io.micronaut.http.HttpHeaders
 import io.micronaut.http.HttpMethod
@@ -10,10 +9,8 @@ import io.micronaut.http.filter.ClientFilterChain
 import io.micronaut.http.simple.SimpleHttpRequest
 import io.micronaut.http.simple.SimpleHttpResponse
 import io.reactivex.Flowable
-import spock.lang.Ignore
 import spock.lang.Specification
 
-@Ignore
 class HttpCodecClientFilterSpec extends Specification {
 
     def "response bytes are decoded if response accept-encoding is Brotli"() {
@@ -42,9 +39,8 @@ class HttpCodecClientFilterSpec extends Specification {
         def response = Flowable.fromPublisher(clientFilter.doFilter(httpRequest, filterChain)).blockingFirst()
 
         then:
-        response.body() instanceof String
-
-        response.body() as String == responseJson
+        response.body() instanceof byte[]
+        new String(response.body().asType(byte[])) == responseJson
     }
 
     def "response bytes are untouched when content-encoding is not brotli"() {

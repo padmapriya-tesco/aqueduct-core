@@ -1,14 +1,16 @@
 package com.tesco.aqueduct.pipe.http.client
 
-import com.stehno.ersatz.ErsatzServer
-import com.tesco.aqueduct.pipe.api.HttpHeaders
+import com.github.tomakehurst.wiremock.junit.WireMockRule
+import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.TokenProvider
+import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import com.tesco.aqueduct.registry.client.PipeServiceInstance
 import com.tesco.aqueduct.registry.client.SelfRegistrationTask
 import com.tesco.aqueduct.registry.client.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
+import org.junit.Rule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -16,24 +18,25 @@ import spock.lang.Unroll
 
 import java.time.ZonedDateTime
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*
+
 class InternalHttpPipeClientIntegrationSpec extends Specification {
 
-    @Shared @AutoCleanup ErsatzServer server
     @Shared @AutoCleanup("stop") ApplicationContext context
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(8089)
 
     InternalHttpPipeClient client
 
-    def setupSpec() {
-        server = new ErsatzServer()
-        server.start()
-
+    def setup() {
         context = ApplicationContext
             .build()
             .properties(
                 "pipe.http.latest-offset.attempts": 1,
                 "pipe.http.latest-offset.delay": "1s",
-                "pipe.http.client.url": server.getHttpUrl(),
-                "registry.http.client.url": server.getHttpUrl() + "/v2",
+                "pipe.http.client.url": wireMockRule.baseUrl(),
+                "registry.http.client.url": wireMockRule.baseUrl() + "/v2",
                 "micronaut.caches.health-check.maximum-size": 20,
                 "micronaut.caches.health-check.expire-after-write": "5s"
             )
@@ -42,60 +45,61 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
             .registerSingleton(Mock(TokenProvider))
             .registerSingleton(new ServiceList(
                 new DefaultHttpClientConfiguration(),
-                new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(server.getHttpUrl())),
+                new PipeServiceInstance(new DefaultHttpClientConfiguration(), new URL(wireMockRule.baseUrl())),
                 File.createTempFile("provider", "properties")
             ))
             .start()
-    }
-
-    def setup() {
         client = context.getBean(InternalHttpPipeClient)
-    }
-
-    def cleanup() {
-        server.clearExpectations()
     }
 
     @Unroll
     def "Client is calling correct link with proper parameters"() {
         given:
-        server.expectations {
-            get("/pipe/$offset") {
-                header('Accept', 'application/json')
-                header('Accept-Encoding', 'gzip, deflate')
-                queries(type: type, location: location)
-                called(1)
-
-                responder {
-                    header(HttpHeaders.RETRY_AFTER, "1")
-                    contentType('application/json')
-                    body("""[
-                        {
-                            "type": "$type",
-                            "key": "x",
-                            "contentType": "$ct",
-                            "offset": $offset,
-                            "created": "2018-10-01T13:45:00Z", 
-                            "data": "{ \\"valid\\": \\"json\\" }"
-                        }
-                    ]""")
-                }
+        def responseString = """[
+            {
+                "type": "$type",
+                "key": "x",
+                "contentType": "$ct",
+                "offset": $offset,
+                "created": "2018-10-01T13:45:00Z", 
+                "data": "{ \\"valid\\": \\"json\\" }"
             }
-        }
+        ]"""
+        def brotliCodec = new BrotliCodec()
+        def encodedBytes = brotliCodec.encode(responseString.bytes)
+        println new String(brotliCodec.decode(encodedBytes))
 
+        println encodedBytes
+        println encodedBytes.length
+
+        and:
+        stubFor(
+            get(urlEqualTo("/pipe/$offset?type=$type&location=$location"))
+                .withHeader('Accept', equalTo('application/json'))
+                .withHeader('Accept-Encoding', equalTo('brotli'))
+                .withQueryParam("type", equalTo(type))
+                .withQueryParam("location", equalTo(location))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withHeader("Content-Encoding", "brotli")
+                .withStatus(200)
+                .withBody(encodedBytes)
+            )
+        )
         when:
-        def messages = client.httpRead([type], offset, location).body()
+        byte[] responseBytes = client.httpRead([type], offset, location).body()
+
+        then:
+        def messages = JsonHelper.messageFromJsonArrayBytes(responseBytes)
 
         def expectedMessage = new Message(
-            type,
-            "x",
-            ct,
-            offset,
-            ZonedDateTime.parse("2018-10-01T13:45:00Z"),
-            '{ "valid": "json" }'
+                type,
+                "x",
+                ct,
+                offset,
+                ZonedDateTime.parse("2018-10-01T13:45:00Z"),
+                '{ "valid": "json" }'
         )
-        then:
-        server.verify()
         messages[0] == expectedMessage
 
         where:

@@ -27,7 +27,7 @@ public class HttpPipeClient implements Reader {
             throw new IllegalArgumentException("Multiple location uuid's not supported in the http pipe client");
         }
 
-        final HttpResponse<List<Message>> response = client.httpRead(types, offset, locationUuids.get(0));
+        final HttpResponse<byte[]> response = client.httpRead(types, offset, locationUuids.get(0));
 
         final long retryAfter = Optional
             .ofNullable(response.header(HttpHeaders.RETRY_AFTER))
@@ -42,7 +42,7 @@ public class HttpPipeClient implements Reader {
             .orElse(0L);
 
         return new MessageResults(
-            response.body(),
+            JsonHelper.messageFromJsonArrayBytes(response.body()),
             retryAfter,
             OptionalLong.of(getGlobalOffsetHeader(response)),
             getPipeState(response)
@@ -59,11 +59,11 @@ public class HttpPipeClient implements Reader {
         throw new UnsupportedOperationException("HttpPipeClient does not support this operation.");
     }
 
-    private Long getGlobalOffsetHeader(HttpResponse<List<Message>> response) {
+    private Long getGlobalOffsetHeader(HttpResponse<?> response) {
         return Long.parseLong(response.header(HttpHeaders.GLOBAL_LATEST_OFFSET));
     }
 
-    private PipeState getPipeState(HttpResponse<List<Message>> response) {
+    private PipeState getPipeState(HttpResponse<?> response) {
         return PipeState.valueOf(response.header(HttpHeaders.PIPE_STATE));
     }
 }

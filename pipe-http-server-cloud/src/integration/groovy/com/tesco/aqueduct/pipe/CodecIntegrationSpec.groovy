@@ -1,8 +1,12 @@
+package com.tesco.aqueduct.pipe
+
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.codec.BrotliCodec
+import com.tesco.aqueduct.pipe.codec.PipeCodecException
 import groovy.json.JsonOutput
 import groovy.sql.Sql
 import groovy.transform.NamedVariant
@@ -23,7 +27,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
-import static com.tesco.aqueduct.pipe.api.JsonHelper.messageFromJsonArray
 import static java.util.stream.Collectors.joining
 
 class CodecIntegrationSpec extends Specification {
@@ -87,6 +90,7 @@ class CodecIntegrationSpec extends Specification {
             .mainClass(EmbeddedServer)
             .build()
             .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("postgres"))
+            .registerSingleton(BrotliCodec, new ErrorProneCodec())
 
         context.start()
 
@@ -95,6 +99,22 @@ class CodecIntegrationSpec extends Specification {
 
         RestAssured.port = server.port
     }
+
+    private static class ErrorProneCodec extends BrotliCodec {
+
+        ErrorProneCodec() {
+            super()
+        }
+
+        @Override
+        byte[] encode(byte[] input) {
+            if ( new String(input).containsIgnoreCase("error")) {
+                throw new PipeCodecException("some error", new Exception())
+            }
+            return super.encode(input)
+        }
+    }
+
 
     void setup() {
         setupPostgres(pg.embeddedPostgres.postgresDatabase)
@@ -182,6 +202,35 @@ class CodecIntegrationSpec extends Specification {
 
         and: "response body correctly decoded messages"
         messageFromJsonArray(decodedString(response.getBody().asByteArray())) == [message1, message2]
+    }
+
+    def "Pipe fails with Internal server error when brotli codec errors out"() {
+        given: "a location UUID"
+        def locationUuid = UUID.randomUUID().toString()
+
+        and: "location service returning clusters for the location uuid"
+        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
+
+        and: "clusters in the storage"
+        Long clusterA = insertCluster("Cluster_A")
+
+        and: "some messages in the storage"
+        def message1 = message(1, "error", "A", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
+        insertWithCluster(message1, clusterA)
+
+        when: "read messages for the given location with codec gzip"
+        def response = RestAssured.given()
+            .header("Authorization", "Bearer $ACCESS_TOKEN")
+            .header("Accept-Encoding", "brotli")
+            .get("/pipe/0?location=$locationUuid")
+
+        then: "http ok response code"
+        response
+            .then()
+            .statusCode(200)
+
+        and:
+        response.getBody().asString() != "[]"
     }
 
     private String decodedString(byte[] bytes) {

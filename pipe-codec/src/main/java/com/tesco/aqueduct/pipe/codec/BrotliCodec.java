@@ -12,11 +12,13 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 @ChannelHandler.Sharable
+@Singleton
 public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));

@@ -48,6 +48,11 @@ public class JsonHelper {
         return MAPPER.readValue(json, messageListType);
     }
 
+    @SneakyThrows
+    public static List<Message> messageFromJsonArrayBytes(final byte[] json) {
+        return MAPPER.readValue(json, messageListType);
+    }
+
     public static String toJson(final Object msg) throws IOException {
         return MAPPER.writeValueAsString(msg);
     }
