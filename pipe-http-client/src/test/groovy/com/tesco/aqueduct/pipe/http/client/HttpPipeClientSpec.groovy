@@ -142,7 +142,7 @@ class HttpPipeClientSpec extends Specification {
 
         where:
         responseBytes                                | content_encoding
-        new BrotliCodec().encode(responseBody.bytes) | "brotli"
+        new BrotliCodec().encode(responseBody.bytes) | "br"
         responseBody.bytes                           | "gzip"
     }
 

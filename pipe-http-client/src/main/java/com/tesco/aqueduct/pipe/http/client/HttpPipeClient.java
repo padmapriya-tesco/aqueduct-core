@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.http.client;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.codec.BrotliCodec;
-import com.tesco.aqueduct.pipe.codec.CodecType;
 import io.micronaut.http.HttpResponse;
 
 import javax.annotation.Nullable;
@@ -39,7 +38,7 @@ public class HttpPipeClient implements Reader {
         final byte[] responseBody;
 
         if (response.getHeaders().contains(CONTENT_ENCODING) &&
-                response.getHeaders().get(CONTENT_ENCODING).toUpperCase().contains(CodecType.BROTLI.name())) {
+                response.getHeaders().get(CONTENT_ENCODING).contains("br")) {
             responseBody = brotliCodec.decode(response.body());
         } else {
             responseBody = response.body();

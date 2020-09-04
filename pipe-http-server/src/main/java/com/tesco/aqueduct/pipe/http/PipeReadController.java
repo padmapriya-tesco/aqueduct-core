@@ -76,9 +76,9 @@ public class PipeReadController {
         String contentEncoding = null;
 
         if (request.getHeaders().contains(io.micronaut.http.HttpHeaders.ACCEPT_ENCODING) &&
-                request.getHeaders().get(io.micronaut.http.HttpHeaders.ACCEPT_ENCODING).contains("brotli")) {
+                request.getHeaders().get(io.micronaut.http.HttpHeaders.ACCEPT_ENCODING).contains("br")) {
             responseBytes = brotliCodec.encode(responseBytes);
-            contentEncoding = "brotli";
+            contentEncoding = "br";
         }
 
         MutableHttpResponse<byte[]> response = HttpResponse.ok(responseBytes)

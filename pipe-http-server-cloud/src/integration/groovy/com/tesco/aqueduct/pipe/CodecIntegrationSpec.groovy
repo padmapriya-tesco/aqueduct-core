@@ -19,7 +19,6 @@ import org.apache.commons.compress.compressors.brotli.BrotliCompressorInputStrea
 import org.hamcrest.Matchers
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
-import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -184,7 +183,7 @@ class CodecIntegrationSpec extends Specification {
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
             .header("Authorization", "Bearer $ACCESS_TOKEN")
-            .header("Accept-Encoding", "brotli")
+            .header("Accept-Encoding", "br")
             .get("/pipe/0?location=$locationUuid")
 
         then: "http ok response code"
@@ -195,14 +194,12 @@ class CodecIntegrationSpec extends Specification {
         and: "response content encoding is gzip"
         response
             .then()
-            .header("content-encoding", Matchers.is("brotli"))
+            .header("content-encoding", Matchers.is("br"))
 
         and: "response body correctly decoded messages"
         JsonHelper.messageFromJsonArray(decodedString(response.getBody().asByteArray())) == [message1, message2]
     }
 
-    // Error handling not working as expected from within Customizer, something to look more into.
-    @Ignore
     def "Pipe fails with Internal server error when brotli codec errors out"() {
         given: "a location UUID"
         def locationUuid = UUID.randomUUID().toString()
@@ -220,16 +217,13 @@ class CodecIntegrationSpec extends Specification {
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
             .header("Authorization", "Bearer $ACCESS_TOKEN")
-            .header("Accept-Encoding", "brotli")
+            .header("Accept-Encoding", "br")
             .get("/pipe/0?location=$locationUuid")
 
         then: "http ok response code"
         response
             .then()
-            .statusCode(200)
-
-        and:
-        response.getBody().asString() != "[]"
+            .statusCode(500)
     }
 
     private String decodedString(byte[] bytes) {
