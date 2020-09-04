@@ -60,7 +60,11 @@ public class JsonHelper {
         return MAPPER.writeValueAsString(msg);
     }
 
-    public static String toJson(final List<?> msg) throws JsonProcessingException {
-        return MAPPER.writeValueAsString(msg);
+    public static String toJson(final List<?> msg) {
+        try {
+            return MAPPER.writeValueAsString(msg);
+        } catch (final JsonProcessingException jsonProcessingException) {
+            throw new RuntimeException("Json processing error while mapping messages", jsonProcessingException);
+        }
     }
 }

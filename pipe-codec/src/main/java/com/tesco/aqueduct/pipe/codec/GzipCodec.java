@@ -2,10 +2,6 @@ package com.tesco.aqueduct.pipe.codec;
 
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.context.annotation.Value;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
@@ -17,9 +13,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 
-@ChannelHandler.Sharable
 @Singleton
-public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
+public class GzipCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(GzipCodec.class));
 
@@ -37,11 +32,6 @@ public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
 
     public GzipCodec() {
         this.level = Deflater.DEFAULT_COMPRESSION;
-    }
-
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        out.writeBytes(encode(msg.array()));
     }
 
     @Override

@@ -161,11 +161,6 @@ class CodecIntegrationSpec extends Specification {
             .then()
             .statusCode(200)
 
-        and: "response content encoding is gzip"
-        response
-            .then()
-            .header("content-encoding", Matchers.is("gzip"))
-
         and: "response body correctly decoded messages"
         JsonHelper.messageFromJsonArray(response.getBody().asString()) == [message1, message2]
     }

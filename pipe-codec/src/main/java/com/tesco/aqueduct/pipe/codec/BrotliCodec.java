@@ -6,10 +6,6 @@ import com.nixxcode.jvmbrotli.enc.BrotliOutputStream;
 import com.nixxcode.jvmbrotli.enc.Encoder;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import io.micronaut.context.annotation.Value;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
@@ -17,9 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-@ChannelHandler.Sharable
 @Singleton
-public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
+public class BrotliCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
 
@@ -38,11 +33,6 @@ public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec 
     public BrotliCodec() {
         loadBrotli();
         this.parameters = new Encoder.Parameters().setQuality(4);
-    }
-
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
-        out.writeBytes(encode(msg.array()));
     }
 
     private void loadBrotli() {

@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.api.*;
+import com.tesco.aqueduct.pipe.codec.BrotliCodec;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.context.annotation.Value;
@@ -48,8 +49,11 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
+    @Inject
+    private BrotliCodec brotliCodec;
+
     @Get("/pipe/{offset}{?type,location}")
-    public HttpResponse<List<Message>> readMessages(
+    public HttpResponse<byte[]> readMessages(
         final long offset,
         final HttpRequest<?> request,
         @Nullable final List<String> type,
@@ -68,12 +72,25 @@ public class PipeReadController {
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
-        MutableHttpResponse<List<Message>> response = HttpResponse.ok(list)
+        byte[] responseBytes = JsonHelper.toJson(list).getBytes();
+        String contentEncoding = null;
+
+        if (request.getHeaders().contains(io.micronaut.http.HttpHeaders.ACCEPT_ENCODING) &&
+                request.getHeaders().get(io.micronaut.http.HttpHeaders.ACCEPT_ENCODING).contains("brotli")) {
+            responseBytes = brotliCodec.encode(responseBytes);
+            contentEncoding = "brotli";
+        }
+
+        MutableHttpResponse<byte[]> response = HttpResponse.ok(responseBytes)
             .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
             .header(
                 HttpHeaders.PIPE_STATE,
                 pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
             );
+
+        if (contentEncoding != null) {
+            response.header(io.micronaut.http.HttpHeaders.CONTENT_ENCODING, contentEncoding);
+        }
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(

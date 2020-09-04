@@ -11,6 +11,6 @@ import io.netty.handler.codec.http.HttpResponse;
 public class HttpNoFrameworkCompressionStrategy implements HttpCompressionStrategy {
     @Override
     public boolean shouldCompress(HttpResponse response) {
-        return false;
+        return true;
     }
 }
