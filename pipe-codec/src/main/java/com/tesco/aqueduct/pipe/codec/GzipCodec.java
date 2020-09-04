@@ -21,7 +21,7 @@ import java.util.zip.GZIPOutputStream;
 @Singleton
 public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
 
-    private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
+    private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(GzipCodec.class));
 
     private int level;
 
@@ -51,6 +51,7 @@ public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
 
     @Override
     public byte[] encode(byte[] input) {
+        LOG.info("pre-encode:size", String.valueOf(input.length));
         if (input == null) {
             return null;
         }
@@ -63,7 +64,11 @@ public class GzipCodec extends MessageToByteEncoder<ByteBuf> implements Codec {
             LOG.error("Codec", "Error encoding content", ioException);
             throw new PipeCodecException("Error encoding content", ioException);
         }
-        return outputStream.toByteArray();
+        final byte[] encodedBytes = outputStream.toByteArray();
+        LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
+        LOG.info("encode:ratio", String.valueOf(((double) input.length) / ((double) encodedBytes.length)));
+
+        return encodedBytes;
     }
 
     @Override

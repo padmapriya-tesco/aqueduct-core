@@ -51,6 +51,7 @@ public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec 
 
     @Override
     public byte[] encode(byte[] input) {
+        LOG.info("pre-encode:size", String.valueOf(input.length));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (BrotliOutputStream brotliOutputStream =
                  new BrotliOutputStream(outputStream, new Encoder.Parameters().setQuality(4))) {
@@ -60,8 +61,8 @@ public class BrotliCodec extends MessageToByteEncoder<ByteBuf> implements Codec 
             throw new PipeCodecException("Error encoding content", ioException);
         }
         final byte[] encodedBytes = outputStream.toByteArray();
-        // TODO probably not required for production
-        LOG.info("Codec", "Compression ratio: " + ((double)input.length)/((double)encodedBytes.length));
+        LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
+        LOG.info("encode:ratio", String.valueOf(((double) input.length) / ((double) encodedBytes.length)));
         return encodedBytes;
     }
 

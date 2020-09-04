@@ -28,9 +28,9 @@ public class CodecPipelineCustomizer implements BeanCreatedEventListener<Channel
         if (customizer.isServerChannel()) {
             customizer.doOnConnect(pipeline -> {
                 pipeline.addAfter(
-                        ChannelPipelineCustomizer.HANDLER_HTTP_SERVER_CODEC, // TODO - check the correct handler to use before codechandler injection
-                        "codec",
-                        new HttpCodecHandler(gzipCodec, brotliCodec)
+                    ChannelPipelineCustomizer.HANDLER_HTTP_SERVER_CODEC, // TODO - check the correct handler to use before codechandler injection
+                    "codec",
+                    new HttpCodecHandler(gzipCodec, brotliCodec)
                 );
                 return pipeline;
             });

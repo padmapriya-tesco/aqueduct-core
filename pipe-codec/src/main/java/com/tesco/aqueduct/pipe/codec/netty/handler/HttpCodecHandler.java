@@ -25,7 +25,6 @@ public class HttpCodecHandler extends HttpContentEncoder {
 
     @Override
     protected Result beginEncode(HttpResponse httpResponse, String acceptEncoding) {
-        // TODO add some logging
         if (acceptEncoding.contains("brotli")) {
             return new Result("brotli",
                 new EmbeddedChannel(ctx.channel().id(), ctx.channel().metadata().hasDisconnect(),
