@@ -1,11 +1,17 @@
 package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.*
+import com.tesco.aqueduct.pipe.codec.BrotliCodec
+import com.tesco.aqueduct.pipe.codec.Codec
+import com.tesco.aqueduct.pipe.codec.GzipCodec
 import io.micronaut.context.annotation.Property
+import io.micronaut.http.MutableHttpRequest
 import io.micronaut.runtime.server.EmbeddedServer
 import io.micronaut.test.annotation.MicronautTest
 import io.micronaut.test.annotation.MockBean
 import io.restassured.RestAssured
+import io.restassured.config.DecoderConfig
+import io.restassured.config.RestAssuredConfig
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -33,10 +39,17 @@ class PipeReadControllerIntegrationSpec extends Specification {
     PipeStateProvider pipeStateProvider
 
     @Inject
+    BrotliCodec brotliCodec
+
+    @Inject
+    GzipCodec gzipCodec
+
+    @Inject
     EmbeddedServer server
 
     static int RETRY_AFTER_SECONDS = 600
     static String type = "type1"
+    private RestAssuredConfig config = RestAssured.config().decoderConfig(DecoderConfig.decoderConfig().contentDecoders(DecoderConfig.ContentDecoder.DEFLATE))
 
     void setup() {
         RestAssured.port = server.port
@@ -44,13 +57,14 @@ class PipeReadControllerIntegrationSpec extends Specification {
         locationResolver.resolve(_) >> ["cluster1"]
         pipeStateProvider.getState(*_) >> new PipeStateResponse(true, 0)
     }
+
     @Unroll
     void "Test empty responses has Retry-After of #retryAfter seconds - #requestPath"() {
         given: "empty storage"
         reader.read(*_) >> new MessageResults([], retryAfter, of(0), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get(requestPath)
+        def response = RestAssured.given().config(config).get(requestPath)
 
         then:
         response
@@ -71,7 +85,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         reader.read(*_) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get(requestPath)
+        def response = RestAssured.given().config(config).get(requestPath)
 
         then:
         response
@@ -99,7 +113,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             [Message(type, "a", "ct", 100, null, null)], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get(requestPath)
+        def response = RestAssured.given().config(config).get(requestPath)
 
         then:
         String expectedResponseBody = """[{"type":"$type","key":"a","contentType":"ct","offset":"100"}]"""
@@ -127,7 +141,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         reader.read(_ as List, 101, _ as List) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get(requestPath)
+        def response = RestAssured.given().config(config).get(requestPath)
 
         then:
         response
@@ -150,7 +164,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         reader.read(typeList, 0, _ as List) >> new MessageResults(messages, 0, offset, PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/0?type=$types&location=someLocation")
+        def response = RestAssured.given().config(config).get("/pipe/0?type=$types&location=someLocation")
 
         then:
         response
@@ -174,7 +188,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             [Message("type1", "a", "ct", 100, null, null)], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/0$query")
+        def response = RestAssured.given().config(config).get("/pipe/0$query")
 
         then:
         response
@@ -200,7 +214,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             [Message("type2", "b", "ct", headerValue, null, null)], 0, of(headerValue), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/0?type=$type&location=someLocation")
+        def response = RestAssured.given().config(config).get("/pipe/0?type=$type&location=someLocation")
 
         then:
         response
@@ -220,7 +234,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         reader.read(["type1"], 0, _ as List) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/0?type=type1&location=someLocation")
+        def response = RestAssured.given().config(config).get("/pipe/0?type=type1&location=someLocation")
 
         then:
         response
@@ -235,7 +249,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         reader.read(["type1"], 0, _ as List) >> new MessageResults([], 0, OptionalLong.empty(), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/0?type=type1&location=someLocation")
+        def response = RestAssured.given().config(config).get("/pipe/0?type=type1&location=someLocation")
 
         then:
         response
@@ -256,7 +270,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/100?location=someLocation")
+        def response = RestAssured.given().config(config).get("/pipe/100?location=someLocation")
 
         then:
         response
@@ -277,7 +291,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
                 0, OptionalLong.empty(), PipeState.UP_TO_DATE)
 
         when:
-        def response = RestAssured.get("/pipe/100?location=someLocation")
+        def response = RestAssured.given().config(config).get("/pipe/100?location=someLocation")
 
         then:
         response
@@ -288,6 +302,38 @@ class PipeReadControllerIntegrationSpec extends Specification {
                     {"type":"type1","key":"b","offset":"101"}
                 ]
             """.replaceAll("\\s", "")))
+    }
+
+    def "messages should be encoded if Accept-Content header set to #codec"() {
+        given: 'a read request'
+        def typeList = []
+        def offset = 0L
+        reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
+
+        when: "we read from the pipe"
+        RestAssured
+            .given()
+            .header("Accept-Encoding", "br")
+            .get("/pipe/0?location=someLocation")
+
+        then: "the response is encoded"
+        1 * brotliCodec.encode(_)
+    }
+
+    def "messages should be encoded if Accept-Content header set to gzip"() {
+        given: 'a read request'
+        def typeList = []
+        def offset = 0L
+        reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
+
+        when: "we read from the pipe"
+        RestAssured
+            .given()
+            .header("Accept-Encoding", "gzip")
+            .get("/pipe/0?location=someLocation")
+
+        then: "the response is encoded"
+        1 * gzipCodec.encode(_)
     }
 
     @MockBean(Reader)
@@ -304,5 +350,15 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @MockBean(LocationResolver)
     LocationResolver locationResolver() {
         Mock(LocationResolver)
+    }
+
+    @MockBean(BrotliCodec)
+    BrotliCodec brotliCodec() {
+        Mock(BrotliCodec)
+    }
+
+    @MockBean(GzipCodec)
+    GzipCodec gzipCodec() {
+        Mock(GzipCodec)
     }
 }
