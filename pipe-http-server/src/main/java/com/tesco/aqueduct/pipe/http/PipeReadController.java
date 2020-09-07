@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_ACCEPT_ENCODING;
 import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_CONTENT_ENCODING;
 import static com.tesco.aqueduct.pipe.api.PipeState.OUT_OF_DATE;
 import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE;
@@ -78,8 +77,8 @@ public class PipeReadController {
         byte[] responseBytes = JsonHelper.toJson(list).getBytes();
         String contentEncoding = null;
 
-        if (request.getHeaders().contains(X_ACCEPT_ENCODING) &&
-                request.getHeaders().get(X_ACCEPT_ENCODING).contains("br")) {
+        if (request.getHeaders().contains(ACCEPT_ENCODING) &&
+                request.getHeaders().get(ACCEPT_ENCODING).contains("br")) {
             responseBytes = brotliCodec.encode(responseBytes);
             contentEncoding = "br";
         }
@@ -92,7 +91,6 @@ public class PipeReadController {
             );
 
         if (contentEncoding != null) {
-            response.header(CONTENT_ENCODING, "*");
             response.header(X_CONTENT_ENCODING, contentEncoding);
         }
 
