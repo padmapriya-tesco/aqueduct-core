@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.simple.SimpleHttpResponse
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.time.ZonedDateTime
 
@@ -122,14 +123,15 @@ class HttpPipeClientSpec extends Specification {
 
     }
 
-    def "response is decoded correctly as per given content encoding header"() {
+    @Unroll
+    def "response is decoded correctly as per given content encoding header #content_encoding"() {
         given: "call returns a http encoded response"
         HttpResponse<byte[]> httpResponse = new SimpleHttpResponse()
         httpResponse.body(responseBytes)
         httpResponse.headers.set(HttpHeaders.RETRY_AFTER, "1")
         httpResponse.headers.set(HttpHeaders.GLOBAL_LATEST_OFFSET, "100")
         httpResponse.headers.set(HttpHeaders.PIPE_STATE, PipeState.UP_TO_DATE.name())
-        httpResponse.headers.set(io.micronaut.http.HttpHeaders.CONTENT_ENCODING, content_encoding)
+        httpResponse.headers.set(HttpHeaders.X_CONTENT_ENCODING, content_encoding)
 
         internalClient.httpRead(_ as List, _ as Long, _ as String) >> httpResponse
 
