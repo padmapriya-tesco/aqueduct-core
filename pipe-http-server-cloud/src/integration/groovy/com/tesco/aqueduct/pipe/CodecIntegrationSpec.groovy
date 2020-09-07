@@ -183,7 +183,7 @@ class CodecIntegrationSpec extends Specification {
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
             .header("Authorization", "Bearer $ACCESS_TOKEN")
-            .header("Accept-Encoding", "br")
+            .header("X-Accept-Encoding", "br")
             .get("/pipe/0?location=$locationUuid")
 
         then: "http ok response code"
@@ -217,7 +217,7 @@ class CodecIntegrationSpec extends Specification {
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
             .header("Authorization", "Bearer $ACCESS_TOKEN")
-            .header("Accept-Encoding", "br")
+            .header("X-Accept-Encoding", "br")
             .get("/pipe/0?location=$locationUuid")
 
         then: "http ok response code"
