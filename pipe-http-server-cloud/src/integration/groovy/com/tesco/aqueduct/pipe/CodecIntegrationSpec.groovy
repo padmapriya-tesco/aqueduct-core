@@ -180,10 +180,10 @@ class CodecIntegrationSpec extends Specification {
         insertWithCluster(message1, clusterA)
         insertWithCluster(message2, clusterA)
 
-        when: "read messages for the given location with codec gzip"
+        when: "read messages for the given location with codec brotli"
         def response = RestAssured.given()
             .header("Authorization", "Bearer $ACCESS_TOKEN")
-            .header("X-Accept-Encoding", "br")
+            .header("Accept-Encoding", "br")
             .get("/pipe/0?location=$locationUuid")
 
         then: "http ok response code"
@@ -194,7 +194,7 @@ class CodecIntegrationSpec extends Specification {
         and: "response content encoding is gzip"
         response
             .then()
-            .header("content-encoding", Matchers.is("br"))
+            .header("X-Content-Encoding", Matchers.is("br"))
 
         and: "response body correctly decoded messages"
         JsonHelper.messageFromJsonArray(decodedString(response.getBody().asByteArray())) == [message1, message2]
@@ -217,7 +217,7 @@ class CodecIntegrationSpec extends Specification {
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
             .header("Authorization", "Bearer $ACCESS_TOKEN")
-            .header("X-Accept-Encoding", "br")
+            .header("Accept-Encoding", "br")
             .get("/pipe/0?location=$locationUuid")
 
         then: "http ok response code"

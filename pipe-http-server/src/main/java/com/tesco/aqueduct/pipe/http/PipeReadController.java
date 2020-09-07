@@ -69,6 +69,7 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
+
         final MessageResults messageResults = reader.read(types, offset, locationResolver.resolve(location));
         final List<Message> list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();

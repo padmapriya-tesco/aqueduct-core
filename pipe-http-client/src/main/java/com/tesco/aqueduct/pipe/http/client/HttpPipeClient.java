@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_CONTENT_ENCODING;
 import static io.micronaut.http.HttpHeaders.CONTENT_ENCODING;
 
 @Named("remote")
@@ -37,8 +38,8 @@ public class HttpPipeClient implements Reader {
 
         final byte[] responseBody;
 
-        if (response.getHeaders().contains(CONTENT_ENCODING) &&
-                response.getHeaders().get(CONTENT_ENCODING).contains("br")) {
+        if (response.getHeaders().contains(X_CONTENT_ENCODING) &&
+                response.getHeaders().get(X_CONTENT_ENCODING).contains("br")) {
             responseBody = brotliCodec.decode(response.body());
         } else {
             responseBody = response.body();

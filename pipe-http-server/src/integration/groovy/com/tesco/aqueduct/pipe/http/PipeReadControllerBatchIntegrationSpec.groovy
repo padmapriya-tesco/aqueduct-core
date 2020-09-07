@@ -1,7 +1,9 @@
 package com.tesco.aqueduct.pipe.http
 
 import com.tesco.aqueduct.pipe.api.*
+import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import io.micronaut.context.annotation.Property
+import io.micronaut.http.MutableHttpRequest
 import io.micronaut.runtime.server.EmbeddedServer
 import io.micronaut.test.annotation.MicronautTest
 import io.micronaut.test.annotation.MockBean
@@ -29,6 +31,9 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
 
     @Inject
     PipeStateProvider pipeStateProvider
+
+    @Inject
+    BrotliCodec brotliCodec
 
     @Inject
     EmbeddedServer server
@@ -76,6 +81,22 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
             .body("[2].data", equalTo(DATA_BLOB))
     }
 
+    def "messages should be encoded if Accept-Content header set to #codec"() {
+        given: 'a read request'
+        def request = Mock(MutableHttpRequest)
+        Map<String, String> headers = new HashMap<>()
+        headers.put("Accept-Content", "br")
+        request.headers(headers)
+
+        request.getRemoteAddress() >> new InetSocketAddress("hostname", 8080)
+
+        when: "we read from the pipe"
+        server.applicationContext.getBean(PipeReadController.class).readMessages(0L, request, Collections.emptyList(), "some-location")
+
+        then: "the response is encoded"
+        1 * brotliCodec.encode(_)
+    }
+
     @MockBean(Reader)
     @Named("local")
     Reader reader() {
@@ -90,5 +111,10 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     @MockBean(LocationResolver)
     LocationResolver locationResolver() {
         Mock(LocationResolver)
+    }
+
+    @MockBean(BrotliCodec)
+    BrotliCodec brotliCodec() {
+        Mock(BrotliCodec)
     }
 }
