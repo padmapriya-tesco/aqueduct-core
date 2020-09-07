@@ -104,6 +104,10 @@ public class PipeReadController {
             response.header(X_CONTENT_ENCODING, contentEncoding);
         }
 
+        if (contentEncoding == "gzip") {
+            response.header(CONTENT_ENCODING, "gzip");
+        }
+
         messageResults.getGlobalLatestOffset()
             .ifPresent(
                 globalLatestOffset -> response.header(HttpHeaders.GLOBAL_LATEST_OFFSET, Long.toString(globalLatestOffset))

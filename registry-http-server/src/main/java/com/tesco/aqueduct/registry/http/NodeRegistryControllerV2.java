@@ -1,11 +1,14 @@
 package com.tesco.aqueduct.registry.http;
 
+import com.tesco.aqueduct.pipe.api.JsonHelper;
 import com.tesco.aqueduct.pipe.api.OffsetName;
 import com.tesco.aqueduct.pipe.api.Reader;
+import com.tesco.aqueduct.pipe.codec.GzipCodec;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.Status;
 import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Error;
@@ -16,8 +19,10 @@ import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.net.URL;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Measure
@@ -32,6 +37,9 @@ public class NodeRegistryControllerV2 {
     private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
 
+    @Inject
+    private GzipCodec gzip;
+
     public NodeRegistryControllerV2(final NodeRegistry registry, final NodeRequestStorage nodeRequestStorage, final Reader pipe) {
         this.registry = registry;
         this.nodeRequestStorage = nodeRequestStorage;
@@ -40,8 +48,12 @@ public class NodeRegistryControllerV2 {
 
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Get
-    public StateSummary getSummary(@Nullable final List<String> groups) {
-        return registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
+    public HttpResponse<byte[]> getSummary(@Nullable final List<String> groups) {
+        List<StateSummary> stateSummary = new ArrayList<>();
+        stateSummary.add(registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups));
+
+        return HttpResponse.ok(gzip.encode(JsonHelper.toJson(stateSummary).getBytes()))
+                .header(HttpHeaders.CONTENT_ENCODING, "gzip");
     }
 
     @Secured(REGISTRY_WRITE)

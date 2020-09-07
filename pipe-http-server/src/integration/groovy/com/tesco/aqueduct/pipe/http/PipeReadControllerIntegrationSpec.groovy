@@ -304,20 +304,24 @@ class PipeReadControllerIntegrationSpec extends Specification {
             """.replaceAll("\\s", "")))
     }
 
-    def "messages should be encoded if Accept-Content header set to #codec"() {
+    def "messages should be encoded if Accept-Content header set to brotli"() {
         given: 'a read request'
         def typeList = []
         def offset = 0L
         reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
-        RestAssured
-            .given()
-            .header("Accept-Encoding", "br")
-            .get("/pipe/0?location=someLocation")
+        def response = RestAssured
+                        .given()
+                        .header("Accept-Encoding", "br")
+                        .get("/pipe/0?location=someLocation")
 
         then: "the response is encoded"
         1 * brotliCodec.encode(_)
+
+        and: "the response has the correct encoding header"
+        response.header("X-Content-Encoding") == "br"
+        response.header("content-encoding") == null
     }
 
     def "messages should be encoded if Accept-Content header set to gzip"() {
@@ -327,13 +331,17 @@ class PipeReadControllerIntegrationSpec extends Specification {
         reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
-        RestAssured
-            .given()
-            .header("Accept-Encoding", "gzip")
-            .get("/pipe/0?location=someLocation")
+        def response = RestAssured
+                            .given()
+                            .header("Accept-Encoding", "gzip")
+                            .get("/pipe/0?location=someLocation")
 
         then: "the response is encoded"
         1 * gzipCodec.encode(_)
+
+        and: "the response has the correct encoding header"
+        response.header("X-Content-Encoding") == "gzip"
+        response.header("content-encoding") == "gzip"
     }
 
     @MockBean(Reader)
