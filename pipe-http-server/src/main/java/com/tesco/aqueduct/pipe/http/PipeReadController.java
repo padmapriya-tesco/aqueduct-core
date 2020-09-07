@@ -92,7 +92,7 @@ public class PipeReadController {
             );
 
         if (contentEncoding != null) {
-            response.header(CONTENT_ENCODING, "none");
+            response.header(CONTENT_ENCODING, "*");
             response.header(X_CONTENT_ENCODING, contentEncoding);
         }
 
