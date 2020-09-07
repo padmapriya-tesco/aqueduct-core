@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_ACCEPT_ENCODING;
 import static com.tesco.aqueduct.pipe.api.PipeState.OUT_OF_DATE;
 import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE;
+import static io.micronaut.http.HttpHeaders.*;
 
 @Secured("PIPE_READ")
 @Measure
@@ -90,7 +91,7 @@ public class PipeReadController {
             );
 
         if (contentEncoding != null) {
-            response.header(io.micronaut.http.HttpHeaders.CONTENT_ENCODING, contentEncoding);
+            response.header(CONTENT_ENCODING, contentEncoding);
         }
 
         messageResults.getGlobalLatestOffset()
