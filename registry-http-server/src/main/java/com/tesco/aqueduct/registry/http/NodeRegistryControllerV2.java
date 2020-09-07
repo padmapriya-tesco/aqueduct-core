@@ -49,10 +49,9 @@ public class NodeRegistryControllerV2 {
     @Secured(SecurityRule.IS_AUTHENTICATED)
     @Get
     public HttpResponse<byte[]> getSummary(@Nullable final List<String> groups) {
-        List<StateSummary> stateSummary = new ArrayList<>();
-        stateSummary.add(registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups));
+        StateSummary stateSummary = registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
 
-        return HttpResponse.ok(gzip.encode(JsonHelper.toJson(stateSummary).getBytes()))
+        return HttpResponse.ok(gzip.encode(JsonHelper.toJsonBytes(stateSummary)))
                 .header(HttpHeaders.CONTENT_ENCODING, "gzip");
     }
 

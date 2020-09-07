@@ -67,4 +67,12 @@ public class JsonHelper {
             throw new RuntimeException("Json processing error while mapping messages", jsonProcessingException);
         }
     }
+
+    public static byte[] toJsonBytes(final Object msg) {
+        try {
+            return MAPPER.writeValueAsBytes(msg);
+        } catch (final JsonProcessingException jsonProcessingException) {
+            throw new RuntimeException("Json processing error while mapping messages", jsonProcessingException);
+        }
+    }
 }
