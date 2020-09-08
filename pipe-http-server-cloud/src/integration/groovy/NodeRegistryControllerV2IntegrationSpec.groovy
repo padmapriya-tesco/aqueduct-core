@@ -130,6 +130,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 micronaut.caches.identity-cache.expire-after-write: 1m
                 micronaut.security.token.jwt.enabled: true
                 micronaut.security.token.jwt.bearer.enabled: true
+                compression.threshold: 1024
                 authentication:
                   users:
                     $USERNAME:
@@ -621,7 +622,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
     @Unroll
     def "Response is correctly encoded if it is larger than the threshold"() {
-        given: "#numberOfNodes are registered"
+        given: "#numberOfNodes nodes are registered"
         numberOfNodes.times({
             registerNode(1234, "http://1.1.1.$it:80", 123, FOLLOWING)
         })
@@ -637,7 +638,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         where:
         numberOfNodes | expectedHeader
-        1             | null
+        2             | null
         10            | "gzip"
     }
 

@@ -8,6 +8,8 @@ import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.Status;
 import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
+import io.micronaut.context.annotation.Property;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
@@ -26,6 +28,7 @@ import java.util.List;
 
 @Measure
 @Controller("/v2/registry")
+@Requires("compression.threshold")
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
     private static final String BOOTSTRAP_NODE = "BOOTSTRAP_NODE";
@@ -35,14 +38,21 @@ public class NodeRegistryControllerV2 {
     private final NodeRegistry registry;
     private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
+    private final int compressionThreshold;
 
     @Inject
     private GzipCodec gzip;
 
-    public NodeRegistryControllerV2(final NodeRegistry registry, final NodeRequestStorage nodeRequestStorage, final Reader pipe) {
+    public NodeRegistryControllerV2(
+            final NodeRegistry registry,
+            final NodeRequestStorage nodeRequestStorage,
+            final Reader pipe,
+            @Property(name = "compression.threshold") int compressionThreshold
+    ) {
         this.registry = registry;
         this.nodeRequestStorage = nodeRequestStorage;
         this.pipe = pipe;
+        this.compressionThreshold = compressionThreshold;
     }
 
     @Secured(SecurityRule.IS_AUTHENTICATED)
@@ -51,16 +61,6 @@ public class NodeRegistryControllerV2 {
         StateSummary stateSummary = registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
 
         return compressResponseIfNeeded(stateSummary);
-    }
-
-    private HttpResponse<byte[]> compressResponseIfNeeded(StateSummary stateSummary) {
-        byte[] stateSummaryInBytes = JsonHelper.toJsonBytes(stateSummary);
-        if (stateSummaryInBytes.length > 1024) {
-            return HttpResponse.ok(gzip.encode(stateSummaryInBytes))
-                    .header(HttpHeaders.CONTENT_ENCODING, "gzip");
-        } else {
-            return HttpResponse.ok(stateSummaryInBytes);
-        }
     }
 
     @Secured(REGISTRY_WRITE)
@@ -101,5 +101,15 @@ public class NodeRegistryControllerV2 {
         JsonError error = new JsonError(exception.getMessage());
         LOG.error("NodeRegistryControllerV2", "Failed to register", exception);
         return HttpResponse.<JsonError>status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+    }
+
+    private HttpResponse<byte[]> compressResponseIfNeeded(StateSummary stateSummary) {
+        byte[] stateSummaryInBytes = JsonHelper.toJsonBytes(stateSummary);
+        if (stateSummaryInBytes.length > compressionThreshold) {
+            return HttpResponse.ok(gzip.encode(stateSummaryInBytes))
+                    .header(HttpHeaders.CONTENT_ENCODING, "gzip");
+        } else {
+            return HttpResponse.ok(stateSummaryInBytes);
+        }
     }
 }
