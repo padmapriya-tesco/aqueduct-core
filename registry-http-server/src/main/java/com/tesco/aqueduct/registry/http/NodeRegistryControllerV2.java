@@ -22,7 +22,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Measure
@@ -51,8 +50,13 @@ public class NodeRegistryControllerV2 {
     public HttpResponse<byte[]> getSummary(@Nullable final List<String> groups) {
         StateSummary stateSummary = registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
 
-        return HttpResponse.ok(gzip.encode(JsonHelper.toJsonBytes(stateSummary)))
-                .header(HttpHeaders.CONTENT_ENCODING, "gzip");
+        byte[] stateSummaryInBytes = JsonHelper.toJsonBytes(stateSummary);
+        if (stateSummaryInBytes.length > 1024) {
+            return HttpResponse.ok(stateSummaryInBytes);
+        } else {
+            return HttpResponse.ok(gzip.encode(stateSummaryInBytes))
+                    .header(HttpHeaders.CONTENT_ENCODING, "gzip");
+        }
     }
 
     @Secured(REGISTRY_WRITE)
