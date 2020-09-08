@@ -86,7 +86,9 @@ class CodecIntegrationSpec extends Specification {
 
                 "location.url":                                 "${locationMockService.getHttpUrl() + "$LOCATION_BASE_PATH/"}",
                 "location.attempts":                            3,
-                "location.delay":                               "10ms"
+                "location.delay":                               "10ms",
+
+                "compression.threshold":                        1024
             )
             .mainClass(EmbeddedServer)
             .build()
@@ -174,9 +176,10 @@ class CodecIntegrationSpec extends Specification {
         and: "clusters in the storage"
         Long clusterA = insertCluster("Cluster_A")
 
-        and: "some messages in the storage"
-        def message1 = message(1, "type1", "A", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
-        def message2 = message(2, "type2", "B", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
+        and: "some large messages in the storage"
+        def someLargePayload = "data" * 300
+        def message1 = message(1, "type1", "A", "content-type", zoned("2000-12-01T10:00:00Z"), someLargePayload)
+        def message2 = message(2, "type2", "B", "content-type", zoned("2000-12-01T10:00:00Z"), someLargePayload)
         insertWithCluster(message1, clusterA)
         insertWithCluster(message2, clusterA)
 
@@ -211,7 +214,8 @@ class CodecIntegrationSpec extends Specification {
         Long clusterA = insertCluster("Cluster_A")
 
         and: "some messages in the storage"
-        def message1 = message(1, "error", "A", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
+        def someLargePayload = "data" * 300
+        def message1 = message(1, "error", "A", "content-type", zoned("2000-12-01T10:00:00Z"), someLargePayload)
         insertWithCluster(message1, clusterA)
 
         when: "read messages for the given location with codec gzip"

@@ -1,5 +1,3 @@
-
-
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import io.micronaut.context.ApplicationContext

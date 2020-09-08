@@ -4,6 +4,7 @@ import com.tesco.aqueduct.pipe.api.*
 import com.tesco.aqueduct.pipe.http.PipeStateProvider
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
+import io.micronaut.context.annotation.Property
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.HttpStatus
 import io.micronaut.inject.qualifiers.Qualifiers
@@ -63,6 +64,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
                 micronaut.security.token.jwt.enabled: true
                 micronaut.security.token.jwt.bearer.enabled: true
                 micronaut.caches.identity-cache.expire-after-write: ${CACHE_EXPIRY_SECONDS}s
+                compression.threshold: 1024
                 authentication:
                   users:
                     $USERNAME:
