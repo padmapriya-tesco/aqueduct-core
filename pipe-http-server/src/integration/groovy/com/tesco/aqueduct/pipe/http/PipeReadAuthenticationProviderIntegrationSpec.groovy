@@ -36,6 +36,7 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
                 parseYamlConfig(
                     """
                     micronaut.security.enabled: true
+                    compression.threshold: 1024
                     authentication:
                       users:
                         $USERNAME:
