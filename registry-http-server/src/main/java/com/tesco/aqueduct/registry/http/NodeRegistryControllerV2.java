@@ -9,7 +9,6 @@ import com.tesco.aqueduct.registry.model.Status;
 import com.tesco.aqueduct.registry.model.*;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Property;
-import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
@@ -28,7 +27,6 @@ import java.util.List;
 
 @Measure
 @Controller("/v2/registry")
-@Requires("compression.threshold")
 public class NodeRegistryControllerV2 {
     private static final String REGISTRY_DELETE = "REGISTRY_DELETE";
     private static final String BOOTSTRAP_NODE = "BOOTSTRAP_NODE";
@@ -38,21 +36,17 @@ public class NodeRegistryControllerV2 {
     private final NodeRegistry registry;
     private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
-    private final int compressionThreshold;
+
+    @Property(name="compression.threshold")
+    private int compressionThreshold;
 
     @Inject
     private GzipCodec gzip;
 
-    public NodeRegistryControllerV2(
-            final NodeRegistry registry,
-            final NodeRequestStorage nodeRequestStorage,
-            final Reader pipe,
-            @Property(name = "compression.threshold") int compressionThreshold
-    ) {
+    public NodeRegistryControllerV2(final NodeRegistry registry, final NodeRequestStorage nodeRequestStorage, final Reader pipe) {
         this.registry = registry;
         this.nodeRequestStorage = nodeRequestStorage;
         this.pipe = pipe;
-        this.compressionThreshold = compressionThreshold;
     }
 
     @Secured(SecurityRule.IS_AUTHENTICATED)

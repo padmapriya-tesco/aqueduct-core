@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.equalTo
 @MicronautTest
 @Property(name="pipe.http.server.read.response-size-limit-in-bytes", value="200")
 @Property(name="micronaut.security.enabled", value="false")
+@Property(name="compression.threshold", value = "1024")
 class PipeReadControllerIntegrationSpec extends Specification {
 
     @Inject @Named("local")
@@ -304,11 +305,12 @@ class PipeReadControllerIntegrationSpec extends Specification {
             """.replaceAll("\\s", "")))
     }
 
-    def "messages should be encoded if Accept-Content header set to brotli"() {
+    def "messages larger than the compression threshold should be encoded if Accept-Content header set to brotli"() {
         given: 'a read request'
         def typeList = []
         def offset = 0L
-        reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
+        def messageOverThreshold = new Message("type", "key", "contentType", 0L, ZonedDateTime.now(), "a"*1025)
+        reader.read(typeList, 0, _ as List) >> new MessageResults([messageOverThreshold], 0, of(offset), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
         def response = RestAssured
@@ -324,11 +326,12 @@ class PipeReadControllerIntegrationSpec extends Specification {
         response.header("content-encoding") == null
     }
 
-    def "messages should be encoded if Accept-Content header set to gzip"() {
+    def "messages larger than the compression threshold should be encoded if Accept-Content header set to gzip"() {
         given: 'a read request'
         def typeList = []
         def offset = 0L
-        reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
+        def messageOverThreshold = new Message("type", "key", "contentType", 0L, ZonedDateTime.now(), "a"*1025)
+        reader.read(typeList, 0, _ as List) >> new MessageResults([messageOverThreshold], 0, of(offset), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
         def response = RestAssured
@@ -342,6 +345,27 @@ class PipeReadControllerIntegrationSpec extends Specification {
         and: "the response has the correct encoding header"
         response.header("X-Content-Encoding") == "gzip"
         response.header("content-encoding") == "gzip"
+    }
+
+    def "messages smaller than the compression threshold should not be encoded"() {
+        given: 'a read request'
+        def typeList = []
+        def offset = 0L
+        reader.read(typeList, 0, _ as List) >> new MessageResults([], 0, of(offset), PipeState.UP_TO_DATE)
+
+        when: "we read from the pipe"
+        def response = RestAssured
+                .given()
+                .header("Accept-Encoding", "gzip")
+                .get("/pipe/0?location=someLocation")
+
+        then: "the response is not encoded"
+        0 * gzipCodec.encode(_)
+        0 * brotliCodec.encode(_)
+
+        and: "the response has the correct encoding header"
+        response.header("X-Content-Encoding") == null
+        response.header("content-encoding") == null
     }
 
     @MockBean(Reader)

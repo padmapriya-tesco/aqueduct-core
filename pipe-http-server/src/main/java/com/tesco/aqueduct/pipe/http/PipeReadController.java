@@ -5,6 +5,7 @@ import com.tesco.aqueduct.pipe.codec.BrotliCodec;
 import com.tesco.aqueduct.pipe.codec.GzipCodec;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.convert.format.ReadableBytes;
 import io.micronaut.core.util.StringUtils;
@@ -58,6 +59,9 @@ public class PipeReadController {
     @Inject
     private GzipCodec gzip;
 
+    @Property(name="compression.threshold")
+    private int compressionThreshold;
+
     @Get("/pipe/{offset}{?type,location}")
     public HttpResponse<byte[]> readMessages(
         final long offset,
@@ -82,15 +86,14 @@ public class PipeReadController {
         byte[] responseBytes = JsonHelper.toJson(list).getBytes();
         String contentEncoding = null;
 
-        if (request.getHeaders().contains(ACCEPT_ENCODING) &&
-                request.getHeaders().get(ACCEPT_ENCODING).contains("br")) {
-            responseBytes = brotliCodec.encode(responseBytes);
-            contentEncoding = "br";
-        } else if (
-            request.getHeaders().contains(ACCEPT_ENCODING) &&
-                request.getHeaders().get(ACCEPT_ENCODING).contains("gzip")){
-            responseBytes = gzip.encode(responseBytes);
-            contentEncoding = "gzip";
+        if (responseBytes.length > compressionThreshold && request.getHeaders().contains(ACCEPT_ENCODING)) {
+            if (request.getHeaders().get(ACCEPT_ENCODING).contains("br")) {
+                responseBytes = brotliCodec.encode(responseBytes);
+                contentEncoding = "br";
+            } else if (request.getHeaders().get(ACCEPT_ENCODING).contains("gzip")) {
+                responseBytes = gzip.encode(responseBytes);
+                contentEncoding = "gzip";
+            }
         }
 
         MutableHttpResponse<byte[]> response = HttpResponse.ok(responseBytes)
