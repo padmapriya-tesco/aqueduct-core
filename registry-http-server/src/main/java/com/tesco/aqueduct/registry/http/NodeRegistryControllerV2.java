@@ -50,12 +50,16 @@ public class NodeRegistryControllerV2 {
     public HttpResponse<byte[]> getSummary(@Nullable final List<String> groups) {
         StateSummary stateSummary = registry.getSummary(pipe.getOffset(OffsetName.GLOBAL_LATEST_OFFSET).getAsLong(), Status.OK, groups);
 
+        return compressResponseIfNeeded(stateSummary);
+    }
+
+    private HttpResponse<byte[]> compressResponseIfNeeded(StateSummary stateSummary) {
         byte[] stateSummaryInBytes = JsonHelper.toJsonBytes(stateSummary);
         if (stateSummaryInBytes.length > 1024) {
-            return HttpResponse.ok(stateSummaryInBytes);
-        } else {
             return HttpResponse.ok(gzip.encode(stateSummaryInBytes))
                     .header(HttpHeaders.CONTENT_ENCODING, "gzip");
+        } else {
+            return HttpResponse.ok(stateSummaryInBytes);
         }
     }
 

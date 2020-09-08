@@ -5,11 +5,13 @@ import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.TestAppender
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.Reader
-import com.tesco.aqueduct.registry.model.NodeRegistry
-import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
-import com.tesco.aqueduct.registry.model.NodeRequestStorage
+import com.tesco.aqueduct.pipe.codec.GzipCodec
 import com.tesco.aqueduct.registry.model.BootstrapType
+import com.tesco.aqueduct.registry.model.NodeRegistry
+import com.tesco.aqueduct.registry.model.NodeRequestStorage
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry
 import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRequestStorage
+import ersatz.undertow.util.Headers
 import groovy.json.JsonOutput
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
@@ -19,22 +21,14 @@ import io.micronaut.runtime.server.EmbeddedServer
 import io.restassured.RestAssured
 import org.hamcrest.Matcher
 import org.junit.ClassRule
-import spock.lang.AutoCleanup
-import spock.lang.Ignore
-import spock.lang.Shared
-import spock.lang.Specification
-import spock.lang.Unroll
+import spock.lang.*
 
 import javax.sql.DataSource
 import java.sql.DriverManager
 import java.time.Duration
 
 import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE
-import static com.tesco.aqueduct.registry.model.Status.FOLLOWING
-import static com.tesco.aqueduct.registry.model.Status.INITIALISING
-import static com.tesco.aqueduct.registry.model.Status.OFFLINE
-import static com.tesco.aqueduct.registry.model.Status.OK
-import static com.tesco.aqueduct.registry.model.Status.PENDING
+import static com.tesco.aqueduct.registry.model.Status.*
 import static io.restassured.RestAssured.given
 import static io.restassured.RestAssured.when
 import static org.hamcrest.Matchers.*
@@ -67,6 +61,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
     @AutoCleanup Sql sql
+
+    private GzipCodec gzip = new GzipCodec();
 
     DataSource dataSource
     NodeRegistry registry
@@ -621,6 +617,28 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         TestAppender.getEvents().stream()
             .filter { it.loggerName.contains("com.tesco.aqueduct") }
             .allMatch() { it.MDCPropertyMap.get("trace_id").startsWith("aq-") }
+    }
+
+    @Unroll
+    def "Response is correctly encoded if it is larger than the threshold"() {
+        given: "#numberOfNodes are registered"
+        numberOfNodes.times({
+            registerNode(1234, "http://1.1.1.$it:80", 123, FOLLOWING)
+        })
+
+        when: "We get the hierarchy"
+        denySingleIdentityTokenValidationRequest()
+        def request = given()
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .when().get("/v2/registry")
+
+        then: "Content-Encoding header is #expectedHeader"
+        request.then().header(Headers.CONTENT_ENCODING as String, equalTo(expectedHeader))
+
+        where:
+        numberOfNodes | expectedHeader
+        1             | null
+        10            | "gzip"
     }
 
     def acceptSingleIdentityTokenValidationRequest(
