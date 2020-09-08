@@ -101,7 +101,7 @@ public class NodeRegistryControllerV2 {
         byte[] stateSummaryInBytes = JsonHelper.toJsonBytes(stateSummary);
         if (stateSummaryInBytes.length > compressionThreshold) {
             return HttpResponse.ok(gzip.encode(stateSummaryInBytes))
-                    .header(HttpHeaders.CONTENT_ENCODING, "gzip");
+                .header(HttpHeaders.CONTENT_ENCODING, "gzip");
         } else {
             return HttpResponse.ok(stateSummaryInBytes);
         }

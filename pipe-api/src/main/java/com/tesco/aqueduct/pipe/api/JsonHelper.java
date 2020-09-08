@@ -68,11 +68,11 @@ public class JsonHelper {
         }
     }
 
-    public static byte[] toJsonBytes(final Object msg) {
+    public static byte[] toJsonBytes(final Object obj) {
         try {
-            return MAPPER.writeValueAsBytes(msg);
+            return MAPPER.writeValueAsBytes(obj);
         } catch (final JsonProcessingException jsonProcessingException) {
-            throw new RuntimeException("Json processing error while mapping messages", jsonProcessingException);
+            throw new RuntimeException("Json processing error while mapping object", jsonProcessingException);
         }
     }
 }

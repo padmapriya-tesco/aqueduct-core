@@ -47,7 +47,8 @@ public class BrotliCodec implements Codec {
         LOG.info("pre-encode:size", String.valueOf(input.length));
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (BrotliOutputStream brotliOutputStream =
-                 new BrotliOutputStream(outputStream, new Encoder.Parameters().setQuality(4))) {
+             new BrotliOutputStream(outputStream, new Encoder.Parameters().setQuality(4))
+        ) {
             brotliOutputStream.write(input);
         } catch (IOException ioException) {
             LOG.error("Codec", "Error encoding content", ioException);

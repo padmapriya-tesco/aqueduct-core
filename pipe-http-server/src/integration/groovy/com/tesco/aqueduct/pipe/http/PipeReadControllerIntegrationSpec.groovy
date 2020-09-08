@@ -314,9 +314,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         when: "we read from the pipe"
         def response = RestAssured
-                        .given()
-                        .header("Accept-Encoding", "br")
-                        .get("/pipe/0?location=someLocation")
+            .given()
+            .header("Accept-Encoding", "br")
+            .get("/pipe/0?location=someLocation")
 
         then: "the response is encoded"
         1 * brotliCodec.encode(_)
@@ -335,9 +335,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         when: "we read from the pipe"
         def response = RestAssured
-                            .given()
-                            .header("Accept-Encoding", "gzip")
-                            .get("/pipe/0?location=someLocation")
+            .given()
+            .header("Accept-Encoding", "gzip")
+            .get("/pipe/0?location=someLocation")
 
         then: "the response is encoded"
         1 * gzipCodec.encode(_)
@@ -355,9 +355,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
         when: "we read from the pipe"
         def response = RestAssured
-                .given()
-                .header("Accept-Encoding", "gzip")
-                .get("/pipe/0?location=someLocation")
+            .given()
+            .header("Accept-Encoding", "gzip")
+            .get("/pipe/0?location=someLocation")
 
         then: "the response is not encoded"
         0 * gzipCodec.encode(_)
