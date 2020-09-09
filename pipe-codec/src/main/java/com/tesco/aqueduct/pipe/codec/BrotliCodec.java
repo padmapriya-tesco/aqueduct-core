@@ -18,7 +18,7 @@ public class BrotliCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
 
-    private final Encoder.Parameters parameters;
+    private final Encoder.Parameters parameters = new Encoder.Parameters();
 
     /**
      * Allow to set compression level. It has not been tested yet on real data.
@@ -27,12 +27,12 @@ public class BrotliCodec implements Codec {
      */
     public BrotliCodec(@Value("${http.codec.brotli.level:4}") int qualityLevel) {
         loadBrotli();
-        this.parameters = new Encoder.Parameters().setQuality(qualityLevel);
+        this.parameters.setQuality(qualityLevel);
     }
 
     public BrotliCodec() {
         loadBrotli();
-        this.parameters = new Encoder.Parameters().setQuality(4);
+        this.parameters.setQuality(4);
     }
 
     private void loadBrotli() {

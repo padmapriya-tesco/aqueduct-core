@@ -1,5 +1,7 @@
 package com.tesco.aqueduct.pipe
 
+import Helper.IdentityMock
+import Helper.TestSetupHelper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.stehno.ersatz.Decoders
@@ -8,7 +10,6 @@ import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import com.tesco.aqueduct.pipe.codec.PipeCodecException
-import groovy.json.JsonOutput
 import groovy.sql.Sql
 import groovy.transform.NamedVariant
 import io.micronaut.context.ApplicationContext
@@ -32,29 +33,23 @@ import static java.util.stream.Collectors.joining
 
 class CodecIntegrationSpec extends Specification {
 
-    private static final String VALIDATE_TOKEN_BASE_PATH = '/v4/access-token/auth/validate'
     private static final String CLIENT_ID = UUID.randomUUID().toString()
     private static final String CLIENT_SECRET = UUID.randomUUID().toString()
     private static final String CLIENT_ID_AND_SECRET = "trn:tesco:cid:${CLIENT_ID}:${CLIENT_SECRET}"
-    public static final String VALIDATE_TOKEN_PATH = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${CLIENT_ID_AND_SECRET}"
 
-    private final static String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
     private final static String ACCESS_TOKEN = UUID.randomUUID().toString()
 
     private final static String LOCATION_BASE_PATH = "/tescolocation"
     private final static String LOCATION_CLUSTER_PATH = "/clusters/v1/locations/{locationUuid}/clusters/ids"
 
-    @Shared @AutoCleanup ErsatzServer identityMockService
+    @Shared IdentityMock identityMockService
     @Shared @AutoCleanup ErsatzServer locationMockService
     @Shared @AutoCleanup ApplicationContext context
     @Shared @ClassRule SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
     @AutoCleanup Sql sql
 
     def setupSpec() {
-        identityMockService = new ErsatzServer({
-            decoder('application/json', Decoders.utf8String)
-            reportToConsole()
-        })
+        identityMockService = new IdentityMock(CLIENT_ID, CLIENT_SECRET, ACCESS_TOKEN)
 
         locationMockService = new ErsatzServer({
             decoder('application/json', Decoders.utf8String)
@@ -62,7 +57,6 @@ class CodecIntegrationSpec extends Specification {
         })
 
         locationMockService.start()
-        identityMockService.start()
 
         context = ApplicationContext
             .build()
@@ -74,11 +68,11 @@ class CodecIntegrationSpec extends Specification {
                 "persistence.read.expected-node-count":         2,
                 "persistence.read.cluster-db-pool-size":        10,
 
-                "authentication.identity.url":                  "${identityMockService.getHttpUrl()}",
-                "authentication.identity.validate.token.path":  "$VALIDATE_TOKEN_PATH",
+                "authentication.identity.url":                  "${identityMockService.getUrl()}",
+                "authentication.identity.validate.token.path":  "/v4/access-token/auth/validate?client_id=${CLIENT_ID_AND_SECRET}",
                 "authentication.identity.client.id":            "$CLIENT_ID",
                 "authentication.identity.client.secret":        "$CLIENT_SECRET",
-                "authentication.identity.issue.token.path":     "$ISSUE_TOKEN_PATH",
+                "authentication.identity.issue.token.path":     "/v4/issue-token/token",
                 "authentication.identity.attempts":             "3",
                 "authentication.identity.delay":                "10ms",
                 "authentication.identity.users.userA.clientId": "someClientUserId",
@@ -120,9 +114,9 @@ class CodecIntegrationSpec extends Specification {
 
 
     void setup() {
-        setupPostgres(pg.embeddedPostgres.postgresDatabase)
-        acceptIdentityTokenValidationRequest()
-        issueValidTokenFromIdentity()
+        sql = TestSetupHelper.setupPostgres(pg.embeddedPostgres.postgresDatabase, sql)
+        identityMockService.acceptIdentityTokenValidationRequest()
+        identityMockService.issueValidTokenFromIdentity()
     }
 
     void cleanup() {
@@ -263,76 +257,6 @@ class CodecIntegrationSpec extends Specification {
         sql.executeInsert("INSERT INTO CLUSTERS(cluster_uuid) VALUES (?);", [clusterUuid]).first()[0] as Long
     }
 
-    private void setupPostgres(DataSource dataSource) {
-        sql = new Sql(dataSource.connection)
-        sql.execute("""
-        DROP TABLE IF EXISTS EVENTS;
-        DROP TABLE IF EXISTS CLUSTERS;
-          
-        CREATE TABLE EVENTS(
-            msg_offset BIGSERIAL PRIMARY KEY NOT NULL,
-            msg_key varchar NOT NULL, 
-            content_type varchar NOT NULL, 
-            type varchar NOT NULL, 
-            created_utc timestamp NOT NULL, 
-            data text NULL,
-            event_size int NOT NULL,
-            cluster_id BIGINT NOT NULL DEFAULT 1
-        );
-        
-        CREATE TABLE CLUSTERS(
-            cluster_id BIGSERIAL PRIMARY KEY NOT NULL,
-            cluster_uuid VARCHAR NOT NULL
-        );
-        
-        INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
-        """)
-    }
-
-    def acceptIdentityTokenValidationRequest() {
-        def json = JsonOutput.toJson([access_token: ACCESS_TOKEN])
-
-        identityMockService.expectations {
-            post(VALIDATE_TOKEN_BASE_PATH) {
-                queries("client_id": [CLIENT_ID_AND_SECRET])
-                body(json, "application/json")
-                called(1)
-
-                responder {
-                    header("Content-Type", "application/json;charset=UTF-8")
-                    body("""
-                        {
-                          "UserId": "someClientUserId",
-                          "Status": "VALID",
-                          "Claims": [
-                            {
-                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/clientid",
-                              "value": "trn:tesco:cid:${UUID.randomUUID()}"
-                            },
-                            {
-                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/scope",
-                              "value": "oob"
-                            },
-                            {
-                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/userkey",
-                              "value": "trn:tesco:uid:uuid:${UUID.randomUUID()}"
-                            },
-                            {
-                              "claimType": "http://schemas.tesco.com/ws/2011/12/identity/claims/confidencelevel",
-                              "value": "12"
-                            },
-                            {
-                              "claimType": "http://schemas.microsoft.com/ws/2008/06/identity/claims/expiration",
-                              "value": "1548413702"
-                            }
-                          ]
-                        }
-                    """)
-                }
-            }
-        }
-    }
-
     private void locationServiceReturningListOfClustersForGiven(
             String locationUuid, List<String> clusters) {
 
@@ -361,36 +285,4 @@ class CodecIntegrationSpec extends Specification {
     private String locationPathIncluding(String locationUuid) {
         LOCATION_CLUSTER_PATH.replace("{locationUuid}", locationUuid)
     }
-
-    def issueValidTokenFromIdentity() {
-        def requestJson = JsonOutput.toJson([
-                client_id       : CLIENT_ID,
-                client_secret   : CLIENT_SECRET,
-                grant_type      : "client_credentials",
-                scope           : "internal public",
-                confidence_level: 12
-        ])
-
-        identityMockService.expectations {
-            post(ISSUE_TOKEN_PATH) {
-                body(requestJson, "application/json")
-                header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
-                header("Content-Type", "application/json")
-                called(1)
-
-                responder {
-                    header("Content-Type", "application/vnd.tesco.identity.tokenresponse+json")
-                    body("""
-                    {
-                        "access_token": "${ACCESS_TOKEN}",
-                        "token_type"  : "bearer",
-                        "expires_in"  : 1000,
-                        "scope"       : "some: scope: value"
-                    }
-                    """)
-                }
-            }
-        }
-    }
-
 }

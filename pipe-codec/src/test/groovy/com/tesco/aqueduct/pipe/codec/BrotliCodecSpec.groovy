@@ -10,12 +10,16 @@ class BrotliCodecSpec extends Specification {
 
         and:
         def inputData = someRichJson()
+        def inputDataSize = inputData.getBytes().size()
 
         when: "encoded"
         def encodedBytes = brotliCodec.encode(inputData.bytes)
 
         then:
         new String(brotliCodec.decode(encodedBytes)) == inputData
+
+        and:
+        encodedBytes.size() < inputDataSize
     }
 
     def "Pipe codec exception thrown when compression format is not Brotli"() {
