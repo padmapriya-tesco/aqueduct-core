@@ -57,7 +57,6 @@ public class GzipCodec implements Codec {
         }
         final byte[] encodedBytes = outputStream.toByteArray();
         LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
-        LOG.info("encode:ratio", String.valueOf(((double) input.length) / ((double) encodedBytes.length)));
 
         return encodedBytes;
     }
