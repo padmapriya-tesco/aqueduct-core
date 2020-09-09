@@ -43,6 +43,6 @@ class GzipCodecSpec extends Specification {
 
     def "Codec type is gzip"() {
         expect:
-        codec.getType() == CodecType.GZIP
+        codec.getHeaderType() == "gzip"
     }
 }

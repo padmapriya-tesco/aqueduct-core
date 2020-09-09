@@ -38,7 +38,7 @@ class BrotliCodecSpec extends Specification {
 
     def "Codec type is Brotli"() {
         expect:
-        new BrotliCodec().getType() == CodecType.BROTLI
+        new BrotliCodec().getHeaderType() == "br"
     }
 
     String someRichJson() {

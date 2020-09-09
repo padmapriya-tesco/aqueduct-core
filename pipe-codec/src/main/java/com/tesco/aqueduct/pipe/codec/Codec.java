@@ -1,7 +1,9 @@
 package com.tesco.aqueduct.pipe.codec;
 
 public interface Codec {
-    CodecType getType();
+    String getHeaderType();
+
     byte[] encode(byte[] input);
+
     byte[] decode(byte[] input);
 }

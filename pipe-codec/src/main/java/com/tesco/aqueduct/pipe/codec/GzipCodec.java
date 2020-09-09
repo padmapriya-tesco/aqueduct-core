@@ -12,7 +12,6 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-
 @Singleton
 public class GzipCodec implements Codec {
 
@@ -35,8 +34,8 @@ public class GzipCodec implements Codec {
     }
 
     @Override
-    public CodecType getType() {
-        return CodecType.GZIP;
+    public String getHeaderType() {
+        return "gzip";
     }
 
     @Override

@@ -80,8 +80,8 @@ public class BrotliCodec implements Codec {
     }
 
     @Override
-    public CodecType getType() {
-        return CodecType.BROTLI;
+    public String getHeaderType() {
+        return "br";
     }
 }
 

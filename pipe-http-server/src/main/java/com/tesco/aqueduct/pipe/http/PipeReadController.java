@@ -1,8 +1,7 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.api.*;
-import com.tesco.aqueduct.pipe.codec.BrotliCodec;
-import com.tesco.aqueduct.pipe.codec.GzipCodec;
+import com.tesco.aqueduct.pipe.codec.CodecHelper;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.context.annotation.Property;
@@ -21,14 +20,15 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_CONTENT_ENCODING;
 import static com.tesco.aqueduct.pipe.api.PipeState.OUT_OF_DATE;
 import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE;
-import static io.micronaut.http.HttpHeaders.*;
+import static io.micronaut.http.HttpHeaders.ACCEPT_ENCODING;
 
 @Secured("PIPE_READ")
 @Measure
@@ -53,11 +53,7 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
-    @Inject
-    private BrotliCodec brotliCodec;
-
-    @Inject
-    private GzipCodec gzip;
+    @Inject CodecHelper codecHelper;
 
     @Property(name="compression.threshold")
     private int compressionThreshold;
@@ -69,7 +65,7 @@ public class PipeReadController {
         @Nullable final List<String> type,
         @Nullable final String location
     ) {
-        if(offset < 0 || StringUtils.isEmpty(location)) {
+        if (offset < 0 || StringUtils.isEmpty(location)) {
             return HttpResponse.badRequest();
         }
 
@@ -77,39 +73,25 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
-
         final MessageResults messageResults = reader.read(types, offset, locationResolver.resolve(location));
         final List<Message> list = messageResults.getMessages();
         final long retryTime = messageResults.getRetryAfterSeconds();
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
         byte[] responseBytes = JsonHelper.toJson(list).getBytes();
-        String contentEncoding = null;
+        Map<CharSequence, CharSequence> responseHeaders = new HashMap<>();
 
-        if (responseBytes.length > compressionThreshold && request.getHeaders().contains(ACCEPT_ENCODING)) {
-            if (request.getHeaders().get(ACCEPT_ENCODING).contains("br")) {
-                responseBytes = brotliCodec.encode(responseBytes);
-                contentEncoding = "br";
-            } else if (request.getHeaders().get(ACCEPT_ENCODING).contains("gzip")) {
-                responseBytes = gzip.encode(responseBytes);
-                contentEncoding = "gzip";
-            }
+        if (needsCompression(request, responseBytes)) {
+            CodecHelper.EncodedResponse encodedResponse = codecHelper.encodeResponse(request.getHeaders().get(ACCEPT_ENCODING), responseBytes);
+            responseBytes = encodedResponse.getEncodedBody();
+            responseHeaders = encodedResponse.getHeaders();
         }
 
-        MutableHttpResponse<byte[]> response = HttpResponse.ok(responseBytes)
-            .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime))
-            .header(
-                HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString()
-            );
+        responseHeaders.put(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime));
+        responseHeaders.put(HttpHeaders.PIPE_STATE,
+                pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString());
 
-        if (contentEncoding != null) {
-            response.header(X_CONTENT_ENCODING, contentEncoding);
-        }
-
-        if (contentEncoding == "gzip") {
-            response.header(CONTENT_ENCODING, "gzip");
-        }
+        MutableHttpResponse<byte[]> response = HttpResponse.ok(responseBytes).headers(responseHeaders);
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(
@@ -117,6 +99,10 @@ public class PipeReadController {
             );
 
         return response;
+    }
+
+    private boolean needsCompression(HttpRequest<?> request, byte[] responseBytes) {
+        return responseBytes.length > compressionThreshold && request.getHeaders().contains(ACCEPT_ENCODING);
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final HttpRequest<?> request) {
