@@ -1,7 +1,7 @@
 package com.tesco.aqueduct.pipe.http;
 
 import com.tesco.aqueduct.pipe.api.*;
-import com.tesco.aqueduct.pipe.codec.CodecHelper;
+import com.tesco.aqueduct.pipe.codec.ContentEncoder;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import io.micronaut.context.annotation.Property;
@@ -53,10 +53,8 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
-    @Inject CodecHelper codecHelper;
-
-    @Property(name="compression.threshold")
-    private int compressionThreshold;
+    @Inject
+    ContentEncoder contentEncoder;
 
     @Get("/pipe/{offset}{?type,location}")
     public HttpResponse<byte[]> readMessages(
@@ -79,19 +77,15 @@ public class PipeReadController {
 
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryTime));
         byte[] responseBytes = JsonHelper.toJson(list).getBytes();
-        Map<CharSequence, CharSequence> responseHeaders = new HashMap<>();
 
-        if (needsCompression(request, responseBytes)) {
-            CodecHelper.EncodedResponse encodedResponse = codecHelper.encodeResponse(request.getHeaders().get(ACCEPT_ENCODING), responseBytes);
-            responseBytes = encodedResponse.getEncodedBody();
-            responseHeaders = encodedResponse.getHeaders();
-        }
+        ContentEncoder.EncodedResponse encodedResponse = contentEncoder.encodeResponse(request, responseBytes);
 
+        Map<CharSequence, CharSequence> responseHeaders = new HashMap<>(encodedResponse.getHeaders());
         responseHeaders.put(HttpHeaders.RETRY_AFTER, String.valueOf(retryTime));
         responseHeaders.put(HttpHeaders.PIPE_STATE,
                 pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString());
 
-        MutableHttpResponse<byte[]> response = HttpResponse.ok(responseBytes).headers(responseHeaders);
+        MutableHttpResponse<byte[]> response = HttpResponse.ok(encodedResponse.getEncodedBody()).headers(responseHeaders);
 
         messageResults.getGlobalLatestOffset()
             .ifPresent(
@@ -99,10 +93,6 @@ public class PipeReadController {
             );
 
         return response;
-    }
-
-    private boolean needsCompression(HttpRequest<?> request, byte[] responseBytes) {
-        return responseBytes.length > compressionThreshold && request.getHeaders().contains(ACCEPT_ENCODING);
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final HttpRequest<?> request) {
