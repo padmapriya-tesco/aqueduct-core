@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.http.client;
 
-import com.tesco.aqueduct.pipe.api.Message;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Consumes;
 import io.micronaut.http.annotation.Get;
@@ -17,8 +16,8 @@ public interface InternalHttpPipeClient {
 
     @Get("/pipe/{offset}{?type,location}")
     @Consumes
-    @Header(name="Accept-Encoding", value="gzip, deflate")
-    HttpResponse<List<Message>> httpRead(
+    @Header(name="Accept-Encoding", value="brotli")
+    HttpResponse<byte[]> httpRead(
         @Nullable List<String> type,
         long offset,
         String location

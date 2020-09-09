@@ -69,7 +69,6 @@ public class PostgresqlStorage implements CentralStorage {
                 final long retry = calculateRetryAfter(end - start, messages.size());
 
                 LOG.info("PostgresSqlStorage:retry", String.valueOf(retry));
-                LOG.info("PostgresSqlStorage:retryAfter", String.valueOf(retryAfter));
                 return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
             }
         } catch (SQLException exception) {
@@ -97,7 +96,6 @@ public class PostgresqlStorage implements CentralStorage {
 
         LOG.info("PostgresSqlStorage:calculateRetryAfter:messagesCount", String.valueOf(messagesCount));
         LOG.info("PostgresSqlStorage:calculateRetryAfter:calculatedRetryAfter", String.valueOf(calculatedRetryAfter));
-        LOG.info("PostgresSqlStorage:calculateRetryAfter:retryAfter", String.valueOf(retryAfter));
 
         return Math.min(calculatedRetryAfter, retryAfter);
     }

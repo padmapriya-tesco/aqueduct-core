@@ -40,6 +40,10 @@ buildscript {
     }
 }
 
+plugins {
+    id "com.google.osdetector" version "1.6.2"
+}
+
 apply plugin: 'org.owasp.dependencycheck'
 apply plugin: 'pl.allegro.tech.build.axion-release'
 
@@ -126,13 +130,35 @@ subprojects {
                 testImplementation 'io.micronaut.test:micronaut-test-spock'
                 testImplementation 'io.micronaut.test:micronaut-test-junit5'
                 testImplementation 'org.spockframework:spock-junit4:2.0-M3-groovy-3.0'
-
             }
         }
 
         addSlf4jDependencies = {
             project.dependencies {
                 implementation 'org.slf4j:slf4j-api'
+            }
+        }
+
+        addBrotliTestDependencies = {
+            project.dependencies {
+                testImplementation('com.nixxcode.jvmbrotli:jvmbrotli:0.2.0') {
+                    switch (osdetector.os) {
+                        case "osx":
+                            testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-darwin-x86-amd64:0.2.0')
+                            break
+                        case "linux":
+                            if (osdetector.arch == 'x86_64')
+                                testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-linux-x86-amd64:0.2.0')
+                            if (osdetector.arch == 'arm_32')
+                                testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-linux-arm32-vfp-hflt:0.2.0')
+                            break
+                        case "windows":
+                            if (osdetector.arch == 'x86_64')
+                                testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-win32-x86-amd64:0.2.0')
+                            if (osdetector.arch == 'x86_32')
+                                testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-win32-x86:0.2.0')
+                    }
+                }
             }
         }
 

@@ -56,3 +56,5 @@ location:
 
 registry:
   mark-offline-after: 25m
+
+compression.threshold-in-bytes: 1024
