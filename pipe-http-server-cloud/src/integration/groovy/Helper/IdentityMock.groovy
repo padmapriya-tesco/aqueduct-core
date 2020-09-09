@@ -6,7 +6,10 @@ import groovy.json.JsonOutput
 
 class IdentityMock {
 
-    private ErsatzServer ersatzServer
+    private static final String VALIDATE_PATH = "/v4/access-token/auth/validate"
+    private static final String ISSUE_TOKEN_PATH = "/v4/issue-token/token"
+
+    private ErsatzServer identityMock
     private String clientId
     private String clientSecret
     private String clientIdAndSecret
@@ -17,19 +20,21 @@ class IdentityMock {
         this.clientSecret = clientSecret
         this.clientId = clientId
         this.clientIdAndSecret = "trn:tesco:cid:$clientId:$clientSecret"
-        this.ersatzServer = new ErsatzServer({
+
+        this.identityMock = new ErsatzServer({
             decoder('application/json', Decoders.utf8String)
             reportToConsole()
         })
-        ersatzServer.start()
+
+        identityMock.start()
     }
 
     void clearExpectations() {
-        ersatzServer.clearExpectations()
+        identityMock.clearExpectations()
     }
 
     String getUrl() {
-        ersatzServer.getHttpUrl()
+        identityMock.getHttpUrl()
     }
 
     void issueValidTokenFromIdentity() {
@@ -41,8 +46,8 @@ class IdentityMock {
                 confidence_level: 12
         ])
 
-        ersatzServer.expectations {
-            post("/v4/issue-token/token") {
+        identityMock.expectations {
+            post(ISSUE_TOKEN_PATH) {
                 body(requestJson, "application/json")
                 header("Accept", "application/vnd.tesco.identity.tokenresponse+json")
                 header("Content-Type", "application/json")
@@ -66,8 +71,8 @@ class IdentityMock {
     void acceptIdentityTokenValidationRequest() {
         def json = JsonOutput.toJson([access_token: accessToken])
 
-        ersatzServer.expectations {
-            post('/v4/access-token/auth/validate') {
+        identityMock.expectations {
+            post(VALIDATE_PATH) {
                 queries("client_id": "$clientIdAndSecret")
                 body(json, "application/json")
                 called(1)

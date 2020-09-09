@@ -1,12 +1,20 @@
 package Helper
 
+import com.tesco.aqueduct.pipe.api.Message
 import groovy.sql.Sql
 
 import javax.sql.DataSource
+import java.sql.Timestamp
 
-class TestSetupHelper {
+class SqlWrapper {
 
-    static Sql setupPostgres(DataSource dataSource, Sql sql) {
+    private Sql sql
+
+    SqlWrapper(DataSource dataSource) {
+        this.sql = setupPostgres(dataSource)
+    }
+
+    Sql setupPostgres(DataSource dataSource) {
         sql = new Sql(dataSource.connection)
         sql.execute("""
         DROP TABLE IF EXISTS EVENTS;
@@ -32,5 +40,16 @@ class TestSetupHelper {
         """)
 
         return sql
+    }
+
+    void insertWithCluster(Message msg, Long clusterId, def time = Timestamp.valueOf(msg.created.toLocalDateTime()), int maxMessageSize=0) {
+        sql.execute(
+                "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?,?);",
+                msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize, clusterId
+        )
+    }
+
+    Long insertCluster(String clusterUuid){
+        sql.executeInsert("INSERT INTO CLUSTERS(cluster_uuid) VALUES (?);", [clusterUuid]).first()[0] as Long
     }
 }

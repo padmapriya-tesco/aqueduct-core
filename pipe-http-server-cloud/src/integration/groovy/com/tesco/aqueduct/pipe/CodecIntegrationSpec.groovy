@@ -1,16 +1,14 @@
 package com.tesco.aqueduct.pipe
 
 import Helper.IdentityMock
-import Helper.TestSetupHelper
+import Helper.LocationMock
+import Helper.SqlWrapper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
-import com.stehno.ersatz.Decoders
-import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.JsonHelper
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import com.tesco.aqueduct.pipe.codec.PipeCodecException
-import groovy.sql.Sql
 import groovy.transform.NamedVariant
 import io.micronaut.context.ApplicationContext
 import io.micronaut.inject.qualifiers.Qualifiers
@@ -24,12 +22,9 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 import javax.sql.DataSource
-import java.sql.Timestamp
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-
-import static java.util.stream.Collectors.joining
 
 class CodecIntegrationSpec extends Specification {
 
@@ -39,24 +34,15 @@ class CodecIntegrationSpec extends Specification {
 
     private final static String ACCESS_TOKEN = UUID.randomUUID().toString()
 
-    private final static String LOCATION_BASE_PATH = "/tescolocation"
-    private final static String LOCATION_CLUSTER_PATH = "/clusters/v1/locations/{locationUuid}/clusters/ids"
-
     @Shared IdentityMock identityMockService
-    @Shared @AutoCleanup ErsatzServer locationMockService
+    @Shared LocationMock locationMockService
     @Shared @AutoCleanup ApplicationContext context
     @Shared @ClassRule SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
-    @AutoCleanup Sql sql
+    SqlWrapper sql
 
     def setupSpec() {
         identityMockService = new IdentityMock(CLIENT_ID, CLIENT_SECRET, ACCESS_TOKEN)
-
-        locationMockService = new ErsatzServer({
-            decoder('application/json', Decoders.utf8String)
-            reportToConsole()
-        })
-
-        locationMockService.start()
+        locationMockService = new LocationMock(ACCESS_TOKEN)
 
         context = ApplicationContext
             .build()
@@ -78,7 +64,7 @@ class CodecIntegrationSpec extends Specification {
                 "authentication.identity.users.userA.clientId": "someClientUserId",
                 "authentication.identity.users.userA.roles":    "PIPE_READ",
 
-                "location.url":                                 "${locationMockService.getHttpUrl() + "$LOCATION_BASE_PATH/"}",
+                "location.url":                                 "${locationMockService.getUrl()}",
                 "location.attempts":                            3,
                 "location.delay":                               "10ms",
 
@@ -114,7 +100,7 @@ class CodecIntegrationSpec extends Specification {
 
 
     void setup() {
-        sql = TestSetupHelper.setupPostgres(pg.embeddedPostgres.postgresDatabase, sql)
+        sql = new SqlWrapper(pg.embeddedPostgres.postgresDatabase)
         identityMockService.acceptIdentityTokenValidationRequest()
         identityMockService.issueValidTokenFromIdentity()
     }
@@ -134,16 +120,16 @@ class CodecIntegrationSpec extends Specification {
         def locationUuid = UUID.randomUUID().toString()
 
         and: "location service returning clusters for the location uuid"
-        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
+        locationMockService.getClusterForGiven(locationUuid, ["Cluster_A"])
 
         and: "clusters in the storage"
-        Long clusterA = insertCluster("Cluster_A")
+        Long clusterA = sql.insertCluster("Cluster_A")
 
         and: "some messages in the storage"
         def message1 = message(1, "type1", "A", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
         def message2 = message(2, "type2", "B", "content-type", zoned("2000-12-01T10:00:00Z"), "data")
-        insertWithCluster(message1, clusterA)
-        insertWithCluster(message2, clusterA)
+        sql.insertWithCluster(message1, clusterA)
+        sql.insertWithCluster(message2, clusterA)
 
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
@@ -165,17 +151,17 @@ class CodecIntegrationSpec extends Specification {
         def locationUuid = UUID.randomUUID().toString()
 
         and: "location service returning clusters for the location uuid"
-        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
+        locationMockService.getClusterForGiven(locationUuid, ["Cluster_A"])
 
         and: "clusters in the storage"
-        Long clusterA = insertCluster("Cluster_A")
+        Long clusterA = sql.insertCluster("Cluster_A")
 
         and: "some large messages in the storage"
         def someLargePayload = "data" * 300
         def message1 = message(1, "type1", "A", "content-type", zoned("2000-12-01T10:00:00Z"), someLargePayload)
         def message2 = message(2, "type2", "B", "content-type", zoned("2000-12-01T10:00:00Z"), someLargePayload)
-        insertWithCluster(message1, clusterA)
-        insertWithCluster(message2, clusterA)
+        sql.insertWithCluster(message1, clusterA)
+        sql.insertWithCluster(message2, clusterA)
 
         when: "read messages for the given location with codec brotli"
         def response = RestAssured.given()
@@ -202,15 +188,15 @@ class CodecIntegrationSpec extends Specification {
         def locationUuid = UUID.randomUUID().toString()
 
         and: "location service returning clusters for the location uuid"
-        locationServiceReturningListOfClustersForGiven(locationUuid, ["Cluster_A"])
+        locationMockService.getClusterForGiven(locationUuid, ["Cluster_A"])
 
         and: "clusters in the storage"
-        Long clusterA = insertCluster("Cluster_A")
+        Long clusterA = sql.insertCluster("Cluster_A")
 
         and: "some messages in the storage"
         def someLargePayload = "data" * 300
         def message1 = message(1, "error", "A", "content-type", zoned("2000-12-01T10:00:00Z"), someLargePayload)
-        insertWithCluster(message1, clusterA)
+        sql.insertWithCluster(message1, clusterA)
 
         when: "read messages for the given location with codec gzip"
         def response = RestAssured.given()
@@ -244,45 +230,5 @@ class CodecIntegrationSpec extends Specification {
             created ?: time,
             data ?: "data"
         )
-    }
-
-    void insertWithCluster(Message msg, Long clusterId, def time = Timestamp.valueOf(msg.created.toLocalDateTime()), int maxMessageSize=0) {
-        sql.execute(
-                "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?,?);",
-                msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, maxMessageSize, clusterId
-        )
-    }
-
-    Long insertCluster(String clusterUuid){
-        sql.executeInsert("INSERT INTO CLUSTERS(cluster_uuid) VALUES (?);", [clusterUuid]).first()[0] as Long
-    }
-
-    private void locationServiceReturningListOfClustersForGiven(
-            String locationUuid, List<String> clusters) {
-
-        def clusterString = clusters.stream().map{"\"$it\""}.collect(joining(","))
-
-        def revisionId = clusters.isEmpty() ? null : "2"
-
-        locationMockService.expectations {
-            get(LOCATION_BASE_PATH + locationPathIncluding(locationUuid)) {
-                header("Authorization", "Bearer ${ACCESS_TOKEN}")
-                called(1)
-
-                responder {
-                    header("Content-Type", "application/json")
-                    body("""
-                    {
-                        "clusters": [$clusterString],
-                        "revisionId": "$revisionId"
-                    }
-               """)
-                }
-            }
-        }
-    }
-
-    private String locationPathIncluding(String locationUuid) {
-        LOCATION_CLUSTER_PATH.replace("{locationUuid}", locationUuid)
     }
 }
