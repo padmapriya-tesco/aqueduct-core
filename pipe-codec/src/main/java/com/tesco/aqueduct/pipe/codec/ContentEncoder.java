@@ -15,7 +15,7 @@ import static io.micronaut.http.HttpHeaders.CONTENT_ENCODING;
 
 public class ContentEncoder {
 
-    @Property(name="compression.threshold")
+    @Property(name="compression.threshold-in-bytes")
     private int compressionThreshold;
 
     @Inject BrotliCodec brotliCodec;

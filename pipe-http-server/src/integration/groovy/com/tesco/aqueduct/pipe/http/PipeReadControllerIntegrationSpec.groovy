@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.equalTo
 @MicronautTest
 @Property(name="pipe.http.server.read.response-size-limit-in-bytes", value="200")
 @Property(name="micronaut.security.enabled", value="false")
-@Property(name="compression.threshold", value = "1024")
+@Property(name="compression.threshold-in-bytes", value = "1024")
 class PipeReadControllerIntegrationSpec extends Specification {
 
     @Inject @Named("local")

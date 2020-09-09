@@ -37,7 +37,7 @@ public class NodeRegistryControllerV2 {
     private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
 
-    @Property(name="compression.threshold")
+    @Property(name="compression.threshold-in-bytes")
     private int compressionThreshold;
 
     @Inject

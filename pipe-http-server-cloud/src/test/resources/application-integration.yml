@@ -89,4 +89,4 @@ pipe:
   server:
     url: "https://api.tesco.com/messaging/v1"
 
-compression.threshold: 1024
+compression.threshold-in-bytes: 1024

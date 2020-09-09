@@ -81,7 +81,7 @@ class LocationRoutingIntegrationSpec extends Specification {
                 "location.attempts":                            3,
                 "location.delay":                               "10ms",
 
-                "compression.threshold":                        1024
+                "compression.threshold-in-bytes":               1024
             )
             .mainClass(EmbeddedServer)
             .build()

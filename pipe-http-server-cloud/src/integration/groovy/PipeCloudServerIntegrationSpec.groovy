@@ -75,7 +75,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
                 "persistence.read.expected-node-count": 2,
                 "persistence.read.cluster-db-pool-size": 10,
                 "micronaut.security.enabled": "false",
-                "compression.threshold": 1024
+                "compression.threshold-in-bytes": 1024
             )
             .mainClass(EmbeddedServer)
             .build()
