@@ -16,7 +16,7 @@ public interface InternalHttpPipeClient {
 
     @Get("/pipe/{offset}{?type,location}")
     @Consumes
-    @Header(name="Accept-Encoding", value="brotli")
+    @Header(name="Accept-Encoding", value="br")
     HttpResponse<byte[]> httpRead(
         @Nullable List<String> type,
         long offset,

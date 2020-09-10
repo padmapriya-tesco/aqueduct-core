@@ -67,10 +67,10 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         stubFor(
             get(urlEqualTo("/pipe/0?type=type1&location=location1"))
                 .withHeader('Accept', equalTo('application/json'))
-                .withHeader('Accept-Encoding', equalTo('brotli'))
+                .withHeader('Accept-Encoding', equalTo('br'))
             .willReturn(aResponse()
                 .withHeader("Content-Type", "application/json")
-                .withHeader("Content-Encoding", "brotli")
+                .withHeader("X-Content-Encoding", "br")
                 .withStatus(200)
                 .withBody(encodedBytes)
             )
@@ -102,10 +102,10 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         stubFor(
             get(urlEqualTo("/pipe/$offset?type=$type&location=$location"))
                 .withHeader('Accept', equalTo('application/json'))
-                .withHeader('Accept-Encoding', equalTo('brotli'))
+                .withHeader('Accept-Encoding', equalTo('br'))
                 .willReturn(aResponse()
                     .withHeader("Content-Type", "application/json")
-                    .withHeader("Content-Encoding", "brotli")
+                    .withHeader("X-Content-Encoding", "br")
                     .withStatus(200)
                     .withBody(encodedBytes)
                 )
@@ -118,7 +118,7 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         verify(
             getRequestedFor(urlEqualTo("/pipe/$offset?type=$type&location=$location"))
                 .withHeader('Accept', equalTo('application/json'))
-                .withHeader('Accept-Encoding', equalTo('brotli'))
+                .withHeader('Accept-Encoding', equalTo('br'))
         )
 
         where:
