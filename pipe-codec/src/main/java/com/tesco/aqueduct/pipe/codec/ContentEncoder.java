@@ -1,7 +1,6 @@
 package com.tesco.aqueduct.pipe.codec;
 
 import io.micronaut.context.annotation.Property;
-import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import lombok.Getter;
 

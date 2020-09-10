@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_CONTENT_ENCODING;
-import static io.micronaut.http.HttpHeaders.CONTENT_ENCODING;
 
 @Named("remote")
 public class HttpPipeClient implements Reader {
