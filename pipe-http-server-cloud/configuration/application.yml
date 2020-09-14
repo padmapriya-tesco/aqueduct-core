@@ -54,6 +54,11 @@ location:
   delay: 500ms
   attempts: 3
 
+pipe:
+  delay: 500ms
+  attempts: 1
+  reset: 240s
+
 registry:
   mark-offline-after: 25m
 
