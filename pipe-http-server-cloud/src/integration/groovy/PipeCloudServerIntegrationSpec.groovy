@@ -79,7 +79,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
             )
             .mainClass(EmbeddedServer)
             .build()
-            .registerSingleton(DataSource, dataSource, Qualifiers.byName("postgres"))
+            .registerSingleton(DataSource, dataSource, Qualifiers.byName("pipe"))
             .registerSingleton(LocationResolver, locationResolver)
 
 
