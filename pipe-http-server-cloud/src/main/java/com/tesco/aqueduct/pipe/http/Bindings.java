@@ -38,7 +38,7 @@ public class Bindings {
         @Value("${persistence.read.read-delay-seconds:0}") final int readDelaySeconds,
         @Value("${persistence.read.expected-node-count}") final int expectedNodeCount,
         @Value("${persistence.read.cluster-db-pool-size}") final long clusterDBPoolSize,
-        @Named("postgres") final DataSource dataSource
+        @Named("pipe") final DataSource dataSource
         ) {
         return new PostgresqlStorage(
             dataSource, limit, retryAfter, maxBatchSize, readDelaySeconds, expectedNodeCount, clusterDBPoolSize
@@ -48,7 +48,7 @@ public class Bindings {
     @Singleton
     @Measure
     NodeRegistry bindNodeRegistry(
-        @Named("postgres") final DataSource dataSource,
+        @Named("registry") final DataSource dataSource,
         @Property(name = "pipe.server.url") final URL selfUrl,
         @Value("${registry.mark-offline-after:1m}") final Duration markAsOffline
     ) {
@@ -57,7 +57,7 @@ public class Bindings {
 
     @Singleton
     @Measure
-    NodeRequestStorage bindNodeRequestStorage(@Named("postgres") final DataSource dataSource) {
+    NodeRequestStorage bindNodeRequestStorage(@Named("registry") final DataSource dataSource) {
         return new PostgreSQLNodeRequestStorage(dataSource);
     }
 
