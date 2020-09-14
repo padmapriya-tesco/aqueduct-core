@@ -8,6 +8,7 @@ import com.tesco.aqueduct.registry.client.SelfRegistrationTask
 import com.tesco.aqueduct.registry.client.ServiceList
 import io.micronaut.context.ApplicationContext
 import io.micronaut.http.client.DefaultHttpClientConfiguration
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import org.junit.Rule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -29,8 +30,9 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         context = ApplicationContext
             .build()
             .properties(
-                "pipe.http.latest-offset.attempts": 1,
-                "pipe.http.latest-offset.delay": "1s",
+                "pipe.attempts": 1,
+                "pipe.delay": "500ms",
+                "pipe.reset": "1s",
                 "pipe.http.client.url": wireMockRule.baseUrl(),
                 "registry.http.client.url": wireMockRule.baseUrl() + "/v2",
                 "micronaut.caches.health-check.maximum-size": 20,
@@ -127,5 +129,65 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         "type2" | "location2" | "contentType2" | 123
         "type1" | "location1" | "contentType3" | 111
         "type2" | "location2" | "contentType4" | 123
+    }
+
+    def "Pipe service circuit is opened when it returns 5xx to connect for given number of times"() {
+        given: "a pipe service returning 5xx"
+        stubFor(
+            get(urlEqualTo("/pipe/0?type=someType&location=someLocation"))
+                .withHeader('Accept', equalTo('application/json'))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "application/json")
+                    .withStatus(504)
+                )
+        )
+
+        when: "pipe is read and errors"
+        client.httpRead(["someType"], 0L, "someLocation")
+
+        then: "pipe service is called 2 times"
+        verify(
+            2,
+            getRequestedFor(urlEqualTo("/pipe/0?type=someType&location=someLocation"))
+                .withHeader('Accept', equalTo('application/json'))
+        )
+
+        and: "exception is thrown"
+        thrown(HttpClientResponseException)
+
+        when: "read again"
+        client.httpRead(["someType"], 0L, "someLocation")
+
+        then: "the circuit breaker is open"
+        verify(
+            2,
+            getRequestedFor(urlEqualTo("/pipe/0?type=someType&location=someLocation"))
+                .withHeader('Accept', equalTo('application/json'))
+        )
+
+        and: "exception is thrown"
+        thrown(HttpClientResponseException)
+
+        when: "we sleep longer than the reset time"
+        Thread.sleep(1500)
+
+        and: "read again"
+        client.httpRead(["someType"], 0L, "someLocation")
+
+
+        /**
+         As per the Micronaut documentation the request should only be called once more if the
+         circuit breaker is set to half open. However the behaviour shows that it is called twice.
+         **/
+
+        then: "the circuit breaker is set to half open"
+        verify(
+            4,
+            getRequestedFor(urlEqualTo("/pipe/0?type=someType&location=someLocation"))
+                .withHeader('Accept', equalTo('application/json'))
+        )
+
+        and: "exception is thrown"
+        thrown(HttpClientResponseException)
     }
 }
