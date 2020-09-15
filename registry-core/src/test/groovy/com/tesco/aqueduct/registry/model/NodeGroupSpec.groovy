@@ -199,7 +199,7 @@ class NodeGroupSpec extends Specification {
         group.subGroups.get(1).nodes.get(0).requestedToFollow == [cloudUrl]
     }
 
-    def "Nodes are sorted based on status"() {
+    def "Nodes are sorted based on provider status"() {
         given: "a cloud url"
         URL cloudUrl = new URL("http://cloud")
 
@@ -253,14 +253,14 @@ class NodeGroupSpec extends Specification {
         group.sortNodes(cloudUrl)
 
         then: "nodes that are offline are sorted to be leaves"
-        group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n3Url, n4Url, n5Url, n1Url, n2Url, n6Url]
+        group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n3Url, n5Url, n4Url, n1Url, n2Url, n6Url]
 
         group.subGroups.get(0).nodes.get(0).requestedToFollow == [cloudUrl]
         group.subGroups.get(0).nodes.get(1).requestedToFollow == [n3Url, cloudUrl]
         group.subGroups.get(0).nodes.get(2).requestedToFollow == [n3Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(3).requestedToFollow == [n4Url, n3Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(4).requestedToFollow == [n4Url, n3Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(5).requestedToFollow == [n5Url, n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(3).requestedToFollow == [n5Url, n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(4).requestedToFollow == [n5Url, n3Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(5).requestedToFollow == [n4Url, n3Url, cloudUrl]
     }
 
     def "Nodes maintain sort order when none are offline"() {
@@ -316,8 +316,8 @@ class NodeGroupSpec extends Specification {
         when: "sort based on status is called"
         group.sortNodes(cloudUrl)
 
-        then: "the sort order is unchanged"
-        group.subGroups.get(0).nodes == [n1, n2, n3, n4, n5, n6]
+        then: "the sort is based on provider status"
+        group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n1Url, n3Url, n6Url, n5Url, n2Url, n4Url]
     }
 
     def "NodeGroup nodes json format is correct"() {

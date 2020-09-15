@@ -106,7 +106,7 @@ public class SubNodeGroup {
     }
 
     public void sortNodes(URL cloudUrl) {
-        nodes.sort(comparing(Node::getPipeState));
+        nodes.sort(comparing(Node::getStatus));
         nodes.sort(this::comparingOfflineStatus);
         updateGetFollowing(cloudUrl);
     }
