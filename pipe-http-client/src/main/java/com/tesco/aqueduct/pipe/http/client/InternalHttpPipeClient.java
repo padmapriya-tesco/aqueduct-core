@@ -16,7 +16,7 @@ public interface InternalHttpPipeClient {
     @Get("/pipe/{offset}{?type,location}")
     @Consumes
     @Header(name="Accept-Encoding", value="br")
-    @CircuitBreaker(delay = "${pipe.delay}", attempts = "${pipe.attempts}", reset = "${pipe.reset}")
+    @CircuitBreaker(delay = "${pipe.http.client.delay}", attempts = "${pipe.http.client.attempts}", reset = "${pipe.http.client.reset}")
     HttpResponse<byte[]> httpRead(
         @Nullable List<String> type,
         long offset,
