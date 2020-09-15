@@ -409,19 +409,19 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         then: "Nodes are sorted as expected"
         request.then().body(
-            "followers[0].localUrl", equalTo("http://1.1.1.3:0003"),
-            "followers[1].localUrl", equalTo("http://1.1.1.4:0004"),
-            "followers[2].localUrl", equalTo("http://1.1.1.5:0005"),
+            "followers[0].localUrl", equalTo("http://1.1.1.4:0004"),
+            "followers[1].localUrl", equalTo("http://1.1.1.5:0005"),
+            "followers[2].localUrl", equalTo("http://1.1.1.3:0003"),
             "followers[3].localUrl", equalTo("http://1.1.1.1:0001"),
             "followers[4].localUrl", equalTo("http://1.1.1.2:0002"),
             "followers[5].localUrl", equalTo("http://1.1.1.6:0006"),
             //following lists
             "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
-            "followers[1].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[2].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[3].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[4].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[5].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.3:0003", "http://cloud.pipe"]),
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[4].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[5].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://1.1.1.4:0004", "http://cloud.pipe"]),
         )
     }
 
