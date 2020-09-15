@@ -30,9 +30,9 @@ class InternalHttpPipeClientIntegrationSpec extends Specification {
         context = ApplicationContext
             .build()
             .properties(
-                "pipe.attempts": 1,
-                "pipe.delay": "500ms",
-                "pipe.reset": "1s",
+                "pipe.http.client.attempts": 1,
+                "pipe.http.client.delay": "500ms",
+                "pipe.http.client.reset": "1s",
                 "pipe.http.client.url": wireMockRule.baseUrl(),
                 "registry.http.client.url": wireMockRule.baseUrl() + "/v2",
                 "micronaut.caches.health-check.maximum-size": 20,
