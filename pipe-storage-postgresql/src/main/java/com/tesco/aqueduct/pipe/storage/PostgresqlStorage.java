@@ -322,12 +322,12 @@ public class PostgresqlStorage implements CentralStorage {
     private String getSelectLatestOffsetQuery() {
         String filterCondition = "WHERE created_utc >= %s - INTERVAL '%s SECONDS'";
         return
-        "SELECT coalesce (" +
-            " (SELECT min(msg_offset) - 1 from events where msg_offset in (" +
-                "   select msg_offset from events " + String.format(filterCondition, currentTimestamp, readDelaySeconds) + "), " +
-            " (SELECT max(msg_offset) FROM events), " +
-            " 0 " +
-        ") as last_offset;";
+            "SELECT coalesce (" +
+                " (SELECT min(msg_offset) - 1 from events where msg_offset in (" +
+                "   SELECT msg_offset FROM events " + String.format(filterCondition, currentTimestamp, readDelaySeconds) + "), " +
+                " (SELECT max(msg_offset) FROM events), " +
+                " 0 " +
+            ") as last_offset;";
     }
 
     private static String getCompactionQuery() {
