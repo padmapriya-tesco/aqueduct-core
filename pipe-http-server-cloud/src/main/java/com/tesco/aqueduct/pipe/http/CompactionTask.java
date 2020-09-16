@@ -43,6 +43,8 @@ class CompactionTask {
             postgresqlStorage.compactUpTo(ZonedDateTime.now(ZoneId.of("UTC")).minus(threshold));
             LOG.info("compaction", "compaction finished");
         });
+        
+        postgresqlStorage.vacuumAnalyseEvents();
 
         postgresqlStorage.runVisibilityCheck();
     }

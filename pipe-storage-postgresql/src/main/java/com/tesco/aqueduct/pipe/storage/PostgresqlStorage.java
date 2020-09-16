@@ -249,6 +249,16 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
+    public void vacuumAnalyseEvents() {
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
+            statement.executeUpdate();
+            LOG.info("vacuum analyse", "vacuum analyse complete");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String getSelectEventsWithoutTypeQuery(long maxBatchSize) {
         return
             " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
@@ -322,6 +332,10 @@ public class PostgresqlStorage implements CentralStorage {
             "     created_utc <= ? " +
             "     AND e.msg_key = x.msg_key AND e.cluster_id = x.cluster_id AND e.msg_offset <> x.max_offset " +
             " );";
+    }
+
+    private static String getVacuumAnalyseQuery() {
+        return "VACUUM ANALYSE EVENTS;";
     }
     
     private static String getMessageCountByTypeQuery() {
