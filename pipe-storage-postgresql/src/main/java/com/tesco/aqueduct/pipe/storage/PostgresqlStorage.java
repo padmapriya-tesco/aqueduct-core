@@ -237,7 +237,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     public void compactUpTo(final ZonedDateTime thresholdDate) {
-        try(Connection connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
                 Timestamp threshold = Timestamp.valueOf(thresholdDate.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
                 statement.setTimestamp(1, threshold);
@@ -250,7 +250,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     public void vacuumAnalyseEvents() {
-        try(Connection connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
             statement.executeUpdate();
             LOG.info("vacuum analyse", "vacuum analyse complete");
