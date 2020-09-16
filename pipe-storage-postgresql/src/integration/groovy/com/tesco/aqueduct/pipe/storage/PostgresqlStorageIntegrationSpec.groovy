@@ -541,6 +541,14 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         where:
         types << [ [], ["type1"] ]
     }
+    
+    def "vacuum analyse query is valid"() {
+        when: "vacuum analyse is called"
+        storage.vacuumAnalyseEvents()
+
+        then: "no exception thrown"
+        noExceptionThrown()
+    }
 
     @Override
     void insert(Message msg, int maxMessageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime()) ) {
