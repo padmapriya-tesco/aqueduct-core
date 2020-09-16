@@ -86,6 +86,7 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
+    // Setting work_mem here to avoid disk based sorts in Postgres
     private void setWorkMem(Connection connection) {
         try (PreparedStatement statement = connection.prepareStatement(getWorkMemQuery())) {
             statement.executeUpdate();
