@@ -543,6 +543,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     }
     
     def "vacuum analyse query is valid"() {
+        given: "a database"
+
         when: "vacuum analyse is called"
         storage.vacuumAnalyseEvents()
 
