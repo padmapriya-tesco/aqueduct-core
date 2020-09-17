@@ -481,6 +481,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         nodesState.get(0).id == "x|http://second"
     }
 
+    @Ignore
     def "the second node in the group with different version to first node should get its own hierarchy"() {
         given: "We have one node registered"
         def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
@@ -493,6 +494,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         secondNode == [cloudURL]
     }
 
+    @Ignore
     def "having third node in the group with different version to first and second node should make three hierarchies"() {
         given: "We have two nodes registered with different version"
         def firstNode = registerNode("groupA", "http://a1", 123, FOLLOWING, [], ["v": "1.0"])
@@ -520,6 +522,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         secondNode == [new URL("http://a1"), cloudURL]
     }
 
+    @Ignore
     def "on new version appearing for an existing node, the hierarchy splits into two trees"() {
         given: "2 nodes"
         long offset = 12345
@@ -561,6 +564,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[1].requestedToFollow == [cloudURL]
     }
 
+    @Ignore
     def "registry marks nodes offline and sorts based on status within their hierarchies"() {
         given: "a registry with a short offline delta"
         registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
@@ -644,8 +648,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         // version 2.0
         followers[5].requestedToFollow == [cloudURL]
     }
-
-    @Ignore
+    
     def "registry marks nodes offline and sorts nodes ignoring version"() {
         given: "a registry with a short offline delta"
         registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
