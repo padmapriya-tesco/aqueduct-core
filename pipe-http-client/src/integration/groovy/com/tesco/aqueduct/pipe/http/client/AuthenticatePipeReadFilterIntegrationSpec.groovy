@@ -63,9 +63,9 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
             .properties(
                 "authentication.read-pipe.username": "admin",
                 "authentication.read-pipe.password": "my-password",
-                "pipe.attempts": 1,
-                "pipe.delay": "500ms",
-                "pipe.reset": "1s",
+                "pipe.http.client.attempts": 1,
+                "pipe.http.client.delay": "500ms",
+                "pipe.http.client.reset": "1s",
                 "pipe.http.client.url": server.getHttpUrl(),
                 "registry.http.client.url": server.getHttpUrl()
             )
@@ -123,9 +123,9 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
                 .properties(
                     "authentication.read-pipe.username": "admin",
                     "authentication.read-pipe.password": "my-password",
-                    "pipe.attempts": 1,
-                    "pipe.delay": "500ms",
-                    "pipe.reset": "1s",
+                    "pipe.http.client.attempts": 1,
+                    "pipe.http.client.delay": "500ms",
+                    "pipe.http.client.reset": "1s",
                     "pipe.http.client.url": "cloudIP",
                     "registry.http.client.url": "cloudIP"
                 )

@@ -43,9 +43,9 @@ class PipeLoadBalancerIntegrationSpec extends Specification {
                     "registry.http.client.url": "http://does.not.exist",
                     "micronaut.caches.health-check.maximum-size": 20,
                     "micronaut.caches.health-check.expire-after-write": "5s",
-                    "pipe.attempts": 1,
-                    "pipe.delay": "1ms",
-                    "pipe.reset": "5ms",
+                    "pipe.http.client.attempts": 1,
+                    "pipe.http.client.delay": "1ms",
+                    "pipe.http.client.reset": "5ms",
                     "pipe.http.latest-offset.attempts": 1,
                     "pipe.http.latest-offset.delay": "1s"
                 ] + properties
