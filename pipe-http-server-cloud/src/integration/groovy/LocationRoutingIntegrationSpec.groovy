@@ -85,7 +85,7 @@ class LocationRoutingIntegrationSpec extends Specification {
             )
             .mainClass(EmbeddedServer)
             .build()
-            .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("postgres"))
+            .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("pipe"))
 
         context.start()
 
