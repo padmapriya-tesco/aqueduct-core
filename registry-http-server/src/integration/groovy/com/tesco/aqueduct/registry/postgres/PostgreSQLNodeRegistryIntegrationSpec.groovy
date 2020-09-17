@@ -97,7 +97,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers.size() == 1
     }
 
-    def "registry marks nodes offline and sorts based on status and pipeState"() {
+    def "registry marks nodes offline and sorts based on status"() {
         given: "a registry with a short offline delta"
         registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
 
@@ -146,11 +146,11 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "nodes are marked as offline and sorted accordingly"
         followers[0].getLocalUrl() == url3
-        followers[1].getLocalUrl() == url5
-        followers[2].getLocalUrl() == url4
-        followers[3].getLocalUrl() == url2
-        followers[4].getLocalUrl() == url6
-        followers[5].getLocalUrl() == url1
+        followers[1].getLocalUrl() == url4
+        followers[2].getLocalUrl() == url5
+        followers[3].getLocalUrl() == url1
+        followers[4].getLocalUrl() == url2
+        followers[5].getLocalUrl() == url6
 
         followers[0].status == FOLLOWING
         followers[1].status == FOLLOWING
@@ -162,9 +162,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[0].requestedToFollow == [cloudURL]
         followers[1].requestedToFollow == [url3, cloudURL]
         followers[2].requestedToFollow == [url3, cloudURL]
-        followers[3].requestedToFollow == [url5, url3, cloudURL]
-        followers[4].requestedToFollow == [url5, url3, cloudURL]
-        followers[5].requestedToFollow == [url4, url3, cloudURL]
+        followers[3].requestedToFollow == [url4, url3, cloudURL]
+        followers[4].requestedToFollow == [url4, url3, cloudURL]
+        followers[5].requestedToFollow == [url5, url3, cloudURL]
     }
 
     @Unroll
@@ -267,8 +267,8 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registerNode("x", "http://first", 0, PENDING, [])
 
         then: "It's state is updated"
-        List<Node> nodesState = registry.getSummary(0, INITIALISING, ["x"]).followers
-        nodesState.toList().get(0).status == PENDING
+        List<Node> nodes = registry.getSummary(0, INITIALISING, ["x"]).followers
+        nodes.toList().find{ it.localUrl == new URL("http://first") }.status == PENDING
     }
 
     @Unroll

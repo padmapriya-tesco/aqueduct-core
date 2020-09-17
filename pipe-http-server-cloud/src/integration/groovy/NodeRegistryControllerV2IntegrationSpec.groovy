@@ -41,8 +41,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     private static final String USERNAME_ENCODED_CREDENTIALS = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
     private static final String USERNAME_TWO = "username-two"
     private static final String PASSWORD_TWO = "password-two"
-    private static final int SERVER_TIMEOUT_MS = 5000
-    private static final int SERVER_SLEEP_TIME_MS = 500
     private static final String NODE_A_CLIENT_UID = "random"
 
     private static final String clientId = UUID.randomUUID().toString()
@@ -61,8 +59,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
     @AutoCleanup Sql sql
-
-    private GzipCodec gzip = new GzipCodec();
 
     DataSource dataSource
     NodeRegistry registry
@@ -158,11 +154,13 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 """
             )
             )
+            .mainClass(EmbeddedServer)
             .build()
             .registerSingleton(NodeRegistry, registry)
             .registerSingleton(Reader, reader)
             .registerSingleton(NodeRequestStorage, nodeRequestStorage)
-            .start()
+
+        context.start()
 
         identityMock.clearExpectations()
 
@@ -170,13 +168,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         RestAssured.port = server.port
         server.start()
-        def time = 0
-        while (!server.isRunning() && time < SERVER_TIMEOUT_MS) {
-            println("Server not yet running...")
-            sleep SERVER_SLEEP_TIME_MS
-            time += SERVER_SLEEP_TIME_MS
-        }
-        println("Test setup complete")
+
         TestAppender.clearEvents()
     }
 
@@ -409,19 +401,19 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         then: "Nodes are sorted as expected"
         request.then().body(
-            "followers[0].localUrl", equalTo("http://1.1.1.3:0003"),
-            "followers[1].localUrl", equalTo("http://1.1.1.4:0004"),
-            "followers[2].localUrl", equalTo("http://1.1.1.5:0005"),
+            "followers[0].localUrl", equalTo("http://1.1.1.4:0004"),
+            "followers[1].localUrl", equalTo("http://1.1.1.5:0005"),
+            "followers[2].localUrl", equalTo("http://1.1.1.3:0003"),
             "followers[3].localUrl", equalTo("http://1.1.1.1:0001"),
             "followers[4].localUrl", equalTo("http://1.1.1.2:0002"),
             "followers[5].localUrl", equalTo("http://1.1.1.6:0006"),
             //following lists
             "followers[0].requestedToFollow", equalTo(["http://cloud.pipe"]),
-            "followers[1].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[2].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[3].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[4].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://1.1.1.3:0003", "http://cloud.pipe"]),
-            "followers[5].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.3:0003", "http://cloud.pipe"]),
+            "followers[1].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[2].requestedToFollow", equalTo(["http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[3].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[4].requestedToFollow", equalTo(["http://1.1.1.5:0005", "http://1.1.1.4:0004", "http://cloud.pipe"]),
+            "followers[5].requestedToFollow", equalTo(["http://1.1.1.3:0003", "http://1.1.1.4:0004", "http://cloud.pipe"]),
         )
     }
 
