@@ -41,8 +41,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     private static final String USERNAME_ENCODED_CREDENTIALS = "${USERNAME}:${PASSWORD}".bytes.encodeBase64().toString()
     private static final String USERNAME_TWO = "username-two"
     private static final String PASSWORD_TWO = "password-two"
-    private static final int SERVER_TIMEOUT_MS = 5000
-    private static final int SERVER_SLEEP_TIME_MS = 500
     private static final String NODE_A_CLIENT_UID = "random"
 
     private static final String clientId = UUID.randomUUID().toString()
@@ -61,8 +59,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
     @AutoCleanup Sql sql
-
-    private GzipCodec gzip = new GzipCodec();
 
     DataSource dataSource
     NodeRegistry registry
@@ -158,11 +154,13 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 """
             )
             )
+            .mainClass(EmbeddedServer)
             .build()
             .registerSingleton(NodeRegistry, registry)
             .registerSingleton(Reader, reader)
             .registerSingleton(NodeRequestStorage, nodeRequestStorage)
-            .start()
+
+        context.start()
 
         identityMock.clearExpectations()
 
@@ -170,13 +168,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         RestAssured.port = server.port
         server.start()
-        def time = 0
-        while (!server.isRunning() && time < SERVER_TIMEOUT_MS) {
-            println("Server not yet running...")
-            sleep SERVER_SLEEP_TIME_MS
-            time += SERVER_SLEEP_TIME_MS
-        }
-        println("Test setup complete")
+
         TestAppender.clearEvents()
     }
 
