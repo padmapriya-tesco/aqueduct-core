@@ -268,7 +268,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
         then: "It's state is updated"
         List<Node> nodes = registry.getSummary(0, INITIALISING, ["x"]).followers
-        nodes.toList().find { it.getLocalUrl() == "http://first" }.status == PENDING
+        nodes.toList().find{ it.localUrl == new URL("http://first") }.status == PENDING
     }
 
     @Unroll
