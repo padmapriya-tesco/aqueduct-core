@@ -97,7 +97,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers.size() == 1
     }
 
-    def "registry marks nodes offline and sorts based on status and status"() {
+    def "registry marks nodes offline and sorts based on status"() {
         given: "a registry with a short offline delta"
         registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
 

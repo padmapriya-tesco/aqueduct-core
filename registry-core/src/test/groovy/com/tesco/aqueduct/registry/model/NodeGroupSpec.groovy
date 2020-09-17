@@ -316,7 +316,7 @@ class NodeGroupSpec extends Specification {
         when: "sort based on status is called"
         group.sortNodes(cloudUrl)
 
-        then: "the sort is based on provider status"
+        then: "the sort is based on status"
         group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n1Url, n3Url, n6Url, n5Url, n2Url, n4Url]
     }
 
