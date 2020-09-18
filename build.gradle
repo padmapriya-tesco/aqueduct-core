@@ -144,7 +144,6 @@ subprojects {
                 testImplementation('com.nixxcode.jvmbrotli:jvmbrotli:0.2.0') {
                         testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-darwin-x86-amd64:0.2.0')
                         testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-linux-x86-amd64:0.2.0')
-                        testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-linux-arm32-vfp-hflt:0.2.0')
                         testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-win32-x86-amd64:0.2.0')
                         testImplementation('com.nixxcode.jvmbrotli:jvmbrotli-win32-x86:0.2.0')
                 }
