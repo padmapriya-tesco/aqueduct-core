@@ -12,6 +12,7 @@ import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Locale;
 
 @Singleton
 public class BrotliCodec implements Codec {
@@ -36,6 +37,8 @@ public class BrotliCodec implements Codec {
     }
 
     private void loadBrotli() {
+        LOG.info("Codec", "Determine OS name: " + System.getProperty("os.name").toLowerCase(Locale.US));
+        LOG.info("Codec", "Determine OS architecture: " + System.getProperty("os.arch").toLowerCase(Locale.US));
         LOG.info("Codec", "Load Brotli: " + BrotliLoader.isBrotliAvailable());
     }
 
