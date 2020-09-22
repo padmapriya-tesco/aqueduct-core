@@ -21,7 +21,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
     def location = "someLocation"
     def offset = 100L
 
-    InternalBrotliHttpPipeClient client
+    InternalHttpPipeClient client
     def identityToken= Mock(IdentityToken) {
         getAccessToken() >> "someToken"
     }
@@ -78,7 +78,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
         ))
             .start()
 
-        client = context.getBean(InternalBrotliHttpPipeClient)
+        client = context.getBean(InternalHttpPipeClient)
 
         when:
         client.httpRead([type], offset, location).body()
@@ -138,7 +138,7 @@ class AuthenticatePipeReadFilterIntegrationSpec extends Specification {
                 ))
                 .start()
 
-        client = context.getBean(InternalBrotliHttpPipeClient)
+        client = context.getBean(InternalHttpPipeClient)
 
         when:
         client.httpRead([type], offset, location).body()
