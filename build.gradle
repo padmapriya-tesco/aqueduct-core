@@ -250,8 +250,7 @@ subprojects {
         testAnnotationProcessor 'io.micronaut:micronaut-inject-groovy' // allows testing using MicronautTest framework
         testImplementation 'io.micronaut.test:micronaut-test-spock'
 
-        testImplementation group: 'javax.activation', name: 'activation', version: '1.1'
-
+        testImplementation 'com.sun.activation:javax.activation:1.2.0'
     }
 
     // add -parameters to java compile have Jackson happy

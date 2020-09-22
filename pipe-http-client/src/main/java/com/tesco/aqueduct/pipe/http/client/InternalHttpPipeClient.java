@@ -7,8 +7,8 @@ import java.util.List;
 
 public interface InternalHttpPipeClient {
     HttpResponse<byte[]> httpRead(
-            @Nullable List<String> type,
-            long offset,
-            String location
+        @Nullable List<String> type,
+        long offset,
+        String location
     );
 }

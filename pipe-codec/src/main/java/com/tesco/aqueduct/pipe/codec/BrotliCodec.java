@@ -37,7 +37,6 @@ public class BrotliCodec implements Codec {
     }
 
     private void loadBrotli() {
-        System.out.println(System.getProperty("os.name").toLowerCase(Locale.US));
         LOG.info("Codec", "Load Brotli: " + BrotliLoader.isBrotliAvailable());
     }
 
