@@ -12,7 +12,6 @@ import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Locale;
 
 @Singleton
 public class BrotliCodec implements Codec {
