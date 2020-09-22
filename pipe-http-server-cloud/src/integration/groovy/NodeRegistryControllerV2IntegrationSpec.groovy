@@ -5,7 +5,6 @@ import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.TestAppender
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.Reader
-import com.tesco.aqueduct.pipe.codec.GzipCodec
 import com.tesco.aqueduct.registry.model.BootstrapType
 import com.tesco.aqueduct.registry.model.NodeRegistry
 import com.tesco.aqueduct.registry.model.NodeRequestStorage
@@ -22,6 +21,7 @@ import io.restassured.RestAssured
 import org.hamcrest.Matcher
 import org.junit.ClassRule
 import spock.lang.*
+import spock.util.concurrent.PollingConditions
 
 import javax.sql.DataSource
 import java.sql.DriverManager
@@ -63,6 +63,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     DataSource dataSource
     NodeRegistry registry
     NodeRequestStorage nodeRequestStorage
+
+    PollingConditions checker = new PollingConditions(timeout: 10)
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -168,6 +170,10 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         RestAssured.port = server.port
         server.start()
+
+        checker.eventually {
+            server.isRunning()
+        }
 
         TestAppender.clearEvents()
     }
