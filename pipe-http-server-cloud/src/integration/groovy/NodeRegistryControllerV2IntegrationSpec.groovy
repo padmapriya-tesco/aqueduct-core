@@ -118,41 +118,41 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         context = ApplicationContext
             .build()
             .properties(
-                    // enabling security to prove that registry is accessible anyway
-                    parseYamlConfig(
-                            """
-            micronaut.security.enabled: true
-            micronaut.server.port: -1
-            micronaut.caches.identity-cache.expire-after-write: 1m
-            micronaut.security.token.jwt.enabled: true
-            micronaut.security.token.jwt.bearer.enabled: true
-            compression.threshold-in-bytes: 1024
-            authentication:
-              users:
-                $USERNAME:
-                  password: $PASSWORD
-                  roles:
-                    - REGISTRY_DELETE
-                    - BOOTSTRAP_NODE
-                    - REGISTRY_WRITE
-                $USERNAME_TWO:
-                  password: $PASSWORD_TWO
-              identity:
-                attempts: 3
-                delay: 500ms
-                url: ${identityMock.getHttpUrl()}
-                validate.token.path: $validateTokenPath
-                client:
-                    id: $clientId
-                    secret: $secret
-                users:
-                  nodeA:
-                    clientId: "${NODE_A_CLIENT_UID}"
-                    roles:
-                      - PIPE_READ
-                      - REGISTRY_WRITE
-            """
-                    )
+                // enabling security to prove that registry is accessible anyway
+                parseYamlConfig(
+                        """
+                micronaut.security.enabled: true
+                micronaut.server.port: -1
+                micronaut.caches.identity-cache.expire-after-write: 1m
+                micronaut.security.token.jwt.enabled: true
+                micronaut.security.token.jwt.bearer.enabled: true
+                compression.threshold-in-bytes: 1024
+                authentication:
+                  users:
+                    $USERNAME:
+                      password: $PASSWORD
+                      roles:
+                        - REGISTRY_DELETE
+                        - BOOTSTRAP_NODE
+                        - REGISTRY_WRITE
+                    $USERNAME_TWO:
+                      password: $PASSWORD_TWO
+                  identity:
+                    attempts: 3
+                    delay: 500ms
+                    url: ${identityMock.getHttpUrl()}
+                    validate.token.path: $validateTokenPath
+                    client:
+                        id: $clientId
+                        secret: $secret
+                    users:
+                      nodeA:
+                        clientId: "${NODE_A_CLIENT_UID}"
+                        roles:
+                          - PIPE_READ
+                          - REGISTRY_WRITE
+                """
+                )
             )
             .mainClass(EmbeddedServer)
             .build()
