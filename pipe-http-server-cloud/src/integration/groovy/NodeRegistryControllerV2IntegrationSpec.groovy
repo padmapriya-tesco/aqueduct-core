@@ -21,7 +21,6 @@ import io.restassured.RestAssured
 import org.hamcrest.Matcher
 import org.junit.ClassRule
 import spock.lang.*
-import spock.util.concurrent.PollingConditions
 
 import javax.sql.DataSource
 import java.sql.DriverManager
@@ -58,13 +57,11 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     @ClassRule @Shared
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
-    @AutoCleanup Sql sql
+    @Shared Sql sql
 
     DataSource dataSource
-    NodeRegistry registry
-    NodeRequestStorage nodeRequestStorage
-
-    PollingConditions checker = new PollingConditions(timeout: 10)
+    @Shared NodeRegistry registry
+    @Shared NodeRequestStorage nodeRequestStorage
 
     def setupDatabase() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -75,6 +72,13 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
         }
 
+        clearTables(sql)
+
+        nodeRequestStorage = new PostgreSQLNodeRequestStorage(dataSource)
+        registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
+    }
+
+    private void clearTables(Sql sql) {
         sql.execute("""
             DROP TABLE IF EXISTS registry;
             
@@ -95,9 +99,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             bootstrap_received timestamp
             );
         """)
-
-        nodeRequestStorage = new PostgreSQLNodeRequestStorage(dataSource)
-        registry = new PostgreSQLNodeRegistry(dataSource, new URL(CLOUD_PIPE_URL), Duration.ofDays(1))
     }
 
     void setupSpec() {
@@ -107,9 +108,6 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         })
 
         identityMock.start()
-    }
-
-    void setup() {
 
         setupDatabase()
 
@@ -120,41 +118,41 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         context = ApplicationContext
             .build()
             .properties(
-            // enabling security to prove that registry is accessible anyway
-            parseYamlConfig(
-                    """
-                micronaut.security.enabled: true
-                micronaut.server.port: -1
-                micronaut.caches.identity-cache.expire-after-write: 1m
-                micronaut.security.token.jwt.enabled: true
-                micronaut.security.token.jwt.bearer.enabled: true
-                compression.threshold-in-bytes: 1024
-                authentication:
-                  users:
-                    $USERNAME:
-                      password: $PASSWORD
-                      roles:
-                        - REGISTRY_DELETE
-                        - BOOTSTRAP_NODE
-                        - REGISTRY_WRITE
-                    $USERNAME_TWO:
-                      password: $PASSWORD_TWO
-                  identity:
-                    attempts: 3
-                    delay: 500ms
-                    url: ${identityMock.getHttpUrl()}
-                    validate.token.path: $validateTokenPath
-                    client:
-                        id: $clientId
-                        secret: $secret
-                    users:
-                      nodeA:
-                        clientId: "${NODE_A_CLIENT_UID}"
-                        roles:
-                          - PIPE_READ
-                          - REGISTRY_WRITE
-                """
-            )
+                    // enabling security to prove that registry is accessible anyway
+                    parseYamlConfig(
+                            """
+            micronaut.security.enabled: true
+            micronaut.server.port: -1
+            micronaut.caches.identity-cache.expire-after-write: 1m
+            micronaut.security.token.jwt.enabled: true
+            micronaut.security.token.jwt.bearer.enabled: true
+            compression.threshold-in-bytes: 1024
+            authentication:
+              users:
+                $USERNAME:
+                  password: $PASSWORD
+                  roles:
+                    - REGISTRY_DELETE
+                    - BOOTSTRAP_NODE
+                    - REGISTRY_WRITE
+                $USERNAME_TWO:
+                  password: $PASSWORD_TWO
+              identity:
+                attempts: 3
+                delay: 500ms
+                url: ${identityMock.getHttpUrl()}
+                validate.token.path: $validateTokenPath
+                client:
+                    id: $clientId
+                    secret: $secret
+                users:
+                  nodeA:
+                    clientId: "${NODE_A_CLIENT_UID}"
+                    roles:
+                      - PIPE_READ
+                      - REGISTRY_WRITE
+            """
+                    )
             )
             .mainClass(EmbeddedServer)
             .build()
@@ -164,16 +162,15 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
 
         context.start()
 
-        identityMock.clearExpectations()
-
         server = context.getBean(EmbeddedServer)
 
         RestAssured.port = server.port
         server.start()
+    }
 
-        checker.eventually {
-            server.isRunning()
-        }
+    void setup() {
+        identityMock.clearExpectations()
+        clearTables(sql)
 
         TestAppender.clearEvents()
     }
