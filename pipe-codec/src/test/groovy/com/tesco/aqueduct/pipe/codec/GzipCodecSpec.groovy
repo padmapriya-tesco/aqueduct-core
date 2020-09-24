@@ -4,7 +4,7 @@ package com.tesco.aqueduct.pipe.codec
 import spock.lang.Specification
 
 class GzipCodecSpec extends Specification {
-    Codec codec = new GzipCodec(-1)
+    Codec codec = new GzipCodec(-1, false)
 
     def input = """
         Some example text that will be encoded by codec
