@@ -74,7 +74,7 @@ class CodecIntegrationSpec extends Specification {
             .mainClass(EmbeddedServer)
             .build()
             .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("pipe"))
-            .registerSingleton(BrotliCodec, new ErrorProneCodec(4, false))
+            .registerSingleton(BrotliCodec, new ErrorProneCodec())
 
         context.start()
 
@@ -86,9 +86,8 @@ class CodecIntegrationSpec extends Specification {
 
     private static class ErrorProneCodec extends BrotliCodec {
 
-
-        ErrorProneCodec(int level, boolean logging) {
-            super(level, logging)
+        ErrorProneCodec() {
+            super(4, false)
         }
 
         @Override
