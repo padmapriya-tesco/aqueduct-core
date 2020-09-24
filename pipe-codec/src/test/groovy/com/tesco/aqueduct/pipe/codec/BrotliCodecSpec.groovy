@@ -6,7 +6,7 @@ class BrotliCodecSpec extends Specification {
 
     def "Encoded data is decoded correctly"() {
         given:
-        def brotliCodec = new BrotliCodec()
+        def brotliCodec = new BrotliCodec(4, false)
 
         and:
         def inputData = someRichJson()
@@ -24,7 +24,7 @@ class BrotliCodecSpec extends Specification {
 
     def "Pipe codec exception thrown when compression format is not Brotli"() {
         given:
-        def brotliCodec = new BrotliCodec()
+        def brotliCodec = new BrotliCodec(4, false)
 
         and:
         def inputData = "Som non brotli codec data"
@@ -38,7 +38,7 @@ class BrotliCodecSpec extends Specification {
 
     def "Codec type is Brotli"() {
         expect:
-        new BrotliCodec().getHeaderType() == "br"
+        new BrotliCodec(4, false).getHeaderType() == "br"
     }
 
     String someRichJson() {

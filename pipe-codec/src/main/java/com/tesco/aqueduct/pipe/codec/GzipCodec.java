@@ -17,7 +17,7 @@ public class GzipCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(GzipCodec.class));
 
-    private int level;
+    private final int level;
     private final boolean logging;
 
     /**
@@ -32,11 +32,6 @@ public class GzipCodec implements Codec {
     ){
         this.level = level;
         this.logging = logging;
-    }
-
-    public GzipCodec() {
-        this.level = Deflater.DEFAULT_COMPRESSION;
-        this.logging = false;
     }
 
     @Override

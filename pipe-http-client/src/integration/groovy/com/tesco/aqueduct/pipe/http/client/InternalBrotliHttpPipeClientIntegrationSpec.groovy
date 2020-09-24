@@ -62,7 +62,7 @@ class InternalBrotliHttpPipeClientIntegrationSpec extends Specification {
                 "data": "{ \\"valid\\": \\"json\\" }"
             }
         ]"""
-        def brotliCodec = new BrotliCodec()
+        def brotliCodec = new BrotliCodec(4, false)
         def encodedBytes = brotliCodec.encode(responseString.bytes)
 
         and:
@@ -97,7 +97,7 @@ class InternalBrotliHttpPipeClientIntegrationSpec extends Specification {
                 "data": "{ \\"valid\\": \\"json\\" }"
             }
         ]"""
-        def brotliCodec = new BrotliCodec()
+        def brotliCodec = new BrotliCodec(4, false)
         def encodedBytes = brotliCodec.encode(responseString.bytes)
 
         and:

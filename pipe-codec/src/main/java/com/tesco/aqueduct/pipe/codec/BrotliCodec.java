@@ -18,7 +18,6 @@ public class BrotliCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
 
-    private final Encoder.Parameters parameters = new Encoder.Parameters();
     private final boolean logging;
 
     /**
@@ -31,14 +30,9 @@ public class BrotliCodec implements Codec {
         @Value("${compression.logging:false}") boolean logging
     ) {
         loadBrotli();
-        this.parameters.setQuality(qualityLevel);
+        Encoder.Parameters parameters = new Encoder.Parameters();
+        parameters.setQuality(qualityLevel);
         this.logging = logging;
-    }
-
-    public BrotliCodec() {
-        loadBrotli();
-        this.parameters.setQuality(4);
-        this.logging = false;
     }
 
     private void loadBrotli() {
