@@ -19,20 +19,26 @@ public class BrotliCodec implements Codec {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(BrotliCodec.class));
 
     private final Encoder.Parameters parameters = new Encoder.Parameters();
+    private final boolean logging;
 
     /**
      * Allow to set compression level. It has not been tested yet on real data.
      *
      * @param qualityLevel Compression level
      */
-    public BrotliCodec(@Value("${http.codec.brotli.level:4}") int qualityLevel) {
+    public BrotliCodec(
+        @Value("${http.codec.brotli.level:4}") int qualityLevel,
+        @Value("${compression.logging:false}") boolean logging
+    ) {
         loadBrotli();
         this.parameters.setQuality(qualityLevel);
+        this.logging = logging;
     }
 
     public BrotliCodec() {
         loadBrotli();
         this.parameters.setQuality(4);
+        this.logging = false;
     }
 
     private void loadBrotli() {
@@ -44,7 +50,9 @@ public class BrotliCodec implements Codec {
         if (input == null) {
             return null;
         }
-        LOG.info("pre-encode:size", String.valueOf(input.length));
+        if (logging) {
+            LOG.info("pre-encode:size", String.valueOf(input.length));
+        }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (BrotliOutputStream brotliOutputStream =
              new BrotliOutputStream(outputStream, new Encoder.Parameters().setQuality(4))
@@ -55,7 +63,9 @@ public class BrotliCodec implements Codec {
             throw new PipeCodecException("Error encoding content", ioException);
         }
         final byte[] encodedBytes = outputStream.toByteArray();
-        LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
+        if (logging) {
+            LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
+        }
         return encodedBytes;
     }
 
