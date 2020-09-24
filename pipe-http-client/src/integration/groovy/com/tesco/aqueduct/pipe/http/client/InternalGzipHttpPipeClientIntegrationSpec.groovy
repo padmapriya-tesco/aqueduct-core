@@ -62,7 +62,7 @@ class InternalGzipHttpPipeClientIntegrationSpec extends Specification {
                 "data": "{ \\"valid\\": \\"json\\" }"
             }
         ]"""
-        def gzipCodec = new GzipCodec()
+        def gzipCodec = new GzipCodec(-1, false)
         def encodedBytes = gzipCodec.encode(responseString.bytes)
 
         and:
@@ -98,7 +98,7 @@ class InternalGzipHttpPipeClientIntegrationSpec extends Specification {
                 "data": "{ \\"valid\\": \\"json\\" }"
             }
         ]"""
-        def gzipCodec = new GzipCodec()
+        def gzipCodec = new GzipCodec(-1, false)
         def encodedBytes = gzipCodec.encode(responseString.bytes)
 
         and:

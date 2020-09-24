@@ -17,7 +17,8 @@ public class GzipCodec implements Codec {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(GzipCodec.class));
 
-    private int level;
+    private final int level;
+    private final boolean logging;
 
     /**
      * Allow to set compression level. Differences usually are not worth the effort.
@@ -25,12 +26,12 @@ public class GzipCodec implements Codec {
      *
      * @param level Compression level as defined by constants in {@link Deflater}
      */
-    public GzipCodec(@Value("${http.codec.gzip.level:-1}") int level){
+    public GzipCodec(
+        @Value("${http.codec.gzip.level:-1}") int level,
+        @Value("${compression.logging:false}") boolean logging
+    ){
         this.level = level;
-    }
-
-    public GzipCodec() {
-        this.level = Deflater.DEFAULT_COMPRESSION;
+        this.logging = logging;
     }
 
     @Override
@@ -43,7 +44,10 @@ public class GzipCodec implements Codec {
         if (input == null) {
             return null;
         }
-        LOG.info("pre-encode:size", String.valueOf(input.length));
+
+        if (logging) {
+            LOG.info("pre-encode:size", String.valueOf(input.length));
+        }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream) {{
@@ -55,7 +59,9 @@ public class GzipCodec implements Codec {
             throw new PipeCodecException("Error encoding content", ioException);
         }
         final byte[] encodedBytes = outputStream.toByteArray();
-        LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
+        if (logging) {
+            LOG.info("post-encode:size", String.valueOf(encodedBytes.length));
+        }
 
         return encodedBytes;
     }

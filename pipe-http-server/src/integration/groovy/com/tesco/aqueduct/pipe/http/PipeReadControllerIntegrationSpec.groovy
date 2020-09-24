@@ -306,7 +306,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
             .get("/pipe/0?location=someLocation")
 
         then: "the response is encoded"
-        JsonHelper.messageFromJsonArray(new BrotliCodec().decode(response.body().asByteArray())) == [message]
+        JsonHelper.messageFromJsonArray(new BrotliCodec(4, false).decode(response.body().asByteArray())) == [message]
 
         and: "the response has the correct encoding header"
         response.header("X-Content-Encoding") == "br"

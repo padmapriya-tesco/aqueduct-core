@@ -68,7 +68,8 @@ class CodecIntegrationSpec extends Specification {
                 "location.attempts":                            3,
                 "location.delay":                               "10ms",
 
-                "compression.threshold-in-bytes":               1024
+                "compression.threshold-in-bytes":               1024,
+                "compression.logging":                          false
             )
             .mainClass(EmbeddedServer)
             .build()
@@ -86,7 +87,7 @@ class CodecIntegrationSpec extends Specification {
     private static class ErrorProneCodec extends BrotliCodec {
 
         ErrorProneCodec() {
-            super()
+            super(4, false)
         }
 
         @Override

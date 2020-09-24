@@ -68,7 +68,11 @@ pipe:
   attempts: 1
   reset: 240s
 
+metrics.interceptor.enabled: true
+
 registry:
   mark-offline-after: 25m
 
-compression.threshold-in-bytes: 1024
+compression:
+  threshold-in-bytes: 1024
+  logging: true

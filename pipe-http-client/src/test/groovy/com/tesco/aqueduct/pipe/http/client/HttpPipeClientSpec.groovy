@@ -12,7 +12,7 @@ import java.time.ZonedDateTime
 class HttpPipeClientSpec extends Specification {
 
     InternalHttpPipeClient internalClient = Mock()
-    HttpPipeClient client = new HttpPipeClient(internalClient, new BrotliCodec())
+    HttpPipeClient client = new HttpPipeClient(internalClient, new BrotliCodec(4, false))
 
     static def responseBody = """[
             {
@@ -144,7 +144,7 @@ class HttpPipeClientSpec extends Specification {
 
         where:
         responseBytes                                | content_encoding
-        new BrotliCodec().encode(responseBody.bytes) | "br"
+        new BrotliCodec(4, false).encode(responseBody.bytes) | "br"
         responseBody.bytes                           | "gzip"
     }
 
