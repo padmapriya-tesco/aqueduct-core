@@ -5,6 +5,7 @@ import com.nixxcode.jvmbrotli.dec.BrotliInputStream;
 import com.nixxcode.jvmbrotli.enc.BrotliOutputStream;
 import com.nixxcode.jvmbrotli.enc.Encoder;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import io.micronaut.context.annotation.Primary;
 import io.micronaut.context.annotation.Value;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+@Primary
 @Singleton
 public class BrotliCodec implements Codec {
 
