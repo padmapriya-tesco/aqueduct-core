@@ -46,6 +46,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         sql.execute("""
         DROP TABLE IF EXISTS EVENTS;
         DROP TABLE IF EXISTS CLUSTERS;
+        DROP TABLE IF EXISTS REGISTRY;
+        DROP TABLE IF EXISTS NODE_REQUESTS;
           
         CREATE TABLE EVENTS(
             msg_offset BIGSERIAL PRIMARY KEY NOT NULL,
@@ -56,6 +58,18 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
             data text NULL,
             event_size int NOT NULL,
             cluster_id BIGINT NOT NULL DEFAULT 1
+        );
+        
+        CREATE TABLE NODE_REQUESTS(
+            host_id VARCHAR PRIMARY KEY NOT NULL,
+            bootstrap_requested timestamp NOT NULL,
+            bootstrap_type VARCHAR NOT NULL,
+            bootstrap_received timestamp
+        );
+        
+        CREATE TABLE REGISTRY(
+            group_id VARCHAR PRIMARY KEY NOT NULL,
+            entry JSON NOT NULL
         );
         
         CREATE TABLE CLUSTERS(
