@@ -353,7 +353,11 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getVacuumAnalyseQuery() {
-        return "VACUUM ANALYSE EVENTS;";
+        return
+            " VACUUM ANALYSE EVENTS; " +
+            " VACUUM ANALYSE CLUSTERS; " +
+            " VACUUM ANALYSE REGISTRY; " +
+            " VACUUM ANALYSE NODE_REQUESTS; ";
     }
 
     private String getWorkMemQuery() {
