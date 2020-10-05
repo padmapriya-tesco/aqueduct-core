@@ -675,7 +675,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'an existing data store with duplicate messages for the same key'
         def messages = [
             message(1, "A", "type1", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-            message(2, "A","type1", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(2, "A", "type2", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
         ]
         sqliteStorage.write(messages)
 
