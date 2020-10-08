@@ -485,8 +485,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         when: 'reading with a different cluster'
         def messageResults = storage.read(["type2", "type3"], 0, ["cluster3"])
 
-        then: 'messages belonging to cluster1 are returned'
+        then: 'messages are not returned, and no exception is thrown'
         messageResults.messages.size() == 0
+        noExceptionThrown()
     }
 
     def "pipe should return messages if available from the given offset instead of empty set"() {
