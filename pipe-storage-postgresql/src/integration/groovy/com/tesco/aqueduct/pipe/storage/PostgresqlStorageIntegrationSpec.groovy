@@ -469,6 +469,26 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages*.offset*.intValue() == [4, 6, 8]
     }
 
+    def 'no messages are returned when cluster doesnt map to any messages'() {
+        given: 'some clusters are stored'
+        Long cluster1 = insertCluster("cluster1")
+        Long cluster2 = insertCluster("cluster2")
+
+        and: 'some messages are stored'
+        insertWithCluster(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
+        insertWithCluster(message(2, "type2", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster2)
+        insertWithCluster(message(3, "type3", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster2)
+        insertWithCluster(message(4, "type2", "D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
+        insertWithCluster(message(5, "type1", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
+        insertWithCluster(message(6, "type3", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
+
+        when: 'reading with a different cluster'
+        def messageResults = storage.read(["type2", "type3"], 0, ["cluster3"])
+
+        then: 'messages belonging to cluster1 are returned'
+        messageResults.messages.size() == 0
+    }
+
     def "pipe should return messages if available from the given offset instead of empty set"() {
         given: "there is postgres storage"
         def limit = 3

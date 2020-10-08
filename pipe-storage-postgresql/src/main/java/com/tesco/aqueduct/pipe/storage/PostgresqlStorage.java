@@ -211,16 +211,13 @@ public class PostgresqlStorage implements CentralStorage {
 
     private Array runClusterIdsQuery(final PreparedStatement query) throws SQLException {
         long start = System.currentTimeMillis();
-
         try (ResultSet rs = query.executeQuery()) {
-            while (rs.next()) {
-                return rs.getArray(1);
-            }
+            rs.next();
+            return rs.getArray(1);
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("runClusterIdsQuery:time", Long.toString(end - start));
         }
-        return null;
     }
 
     private PreparedStatement getLatestOffsetStatement(final Connection connection) {
@@ -241,6 +238,7 @@ public class PostgresqlStorage implements CentralStorage {
             query.setString(1, strClusters);
             return query;
         } catch (SQLException exception) {
+            LOG.error("postgresql storage", "get cluster ids statement", exception);
             throw new RuntimeException(exception);
         }
     }
