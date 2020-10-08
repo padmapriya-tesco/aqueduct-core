@@ -67,7 +67,9 @@ public class PostgresqlStorage implements CentralStorage {
 
             final long globalLatestOffset = getLatestOffsetWithConnection(connection);
 
-            try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterUuids)) {
+            final Array clusterIds = getClusterIds(connection, clusterUuids);
+
+            try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterIds)) {
 
                 final List<Message> messages = runMessagesQuery(messagesQuery);
                 long end = System.currentTimeMillis();
@@ -83,6 +85,14 @@ public class PostgresqlStorage implements CentralStorage {
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("read:time", Long.toString(end - start));
+        }
+    }
+
+    private Array getClusterIds(Connection connection, List<String> clusterUuids) {
+        try(PreparedStatement statement = getClusterIdStatement(connection, clusterUuids)) {
+            return runClusterIdsQuery(statement);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -199,6 +209,20 @@ public class PostgresqlStorage implements CentralStorage {
         return messages;
     }
 
+    private Array runClusterIdsQuery(final PreparedStatement query) throws SQLException {
+        long start = System.currentTimeMillis();
+
+        try (ResultSet rs = query.executeQuery()) {
+            while (rs.next()) {
+                return rs.getArray(1);
+            }
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("runClusterIdsQuery:time", Long.toString(end - start));
+        }
+        return null;
+    }
+
     private PreparedStatement getLatestOffsetStatement(final Connection connection) {
         try {
             return connection.prepareStatement(getSelectLatestOffsetQuery());
@@ -208,28 +232,39 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
+    private PreparedStatement getClusterIdStatement(final Connection connection, final List<String> clusterUuids) {
+        try {
+            PreparedStatement query;
+            final String strClusters = String.join(",", clusterUuidsWithDefaultCluster(clusterUuids));
+
+            query = connection.prepareStatement(getClusterIdQuery());
+            query.setString(1, strClusters);
+            return query;
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
     private PreparedStatement getMessagesStatement(
         final Connection connection,
         final List<String> types,
         final long startOffset,
         long endOffset,
-        final List<String> clusterUuids
+        final Array clusterIds
     ) {
         try {
             PreparedStatement query;
 
-            final String strClusters = String.join(",", clusterUuidsWithDefaultCluster(clusterUuids));
-
             if (types == null || types.isEmpty()) {
                 query = connection.prepareStatement(getSelectEventsWithoutTypeQuery(maxBatchSize));
-                query.setString(1, strClusters);
+                query.setArray(1,clusterIds );
                 query.setLong(2, startOffset);
                 query.setLong(3, endOffset);
                 query.setLong(4, limit);
             } else {
                 final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectEventsWithTypeQuery(maxBatchSize));
-                query.setString(1, strClusters);
+                query.setArray(1, clusterIds);
                 query.setLong(2, startOffset);
                 query.setLong(3, endOffset);
                 query.setString(4, strTypes);
@@ -284,7 +319,7 @@ public class PostgresqlStorage implements CentralStorage {
             "     type, msg_key, content_type, msg_offset, created_utc, data, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
-                  withInnerJoinToClusters() +
+                  addClusterFilter() +
             "   AND events.msg_offset >= ? " +
             "   AND events.msg_offset <= ?" +
             " ORDER BY msg_offset " +
@@ -302,7 +337,7 @@ public class PostgresqlStorage implements CentralStorage {
             "     type, msg_key, content_type, msg_offset, created_utc, data, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
-            withInnerJoinToClusters() +
+                    addClusterFilter() +
             "   AND events.msg_offset >= ? " +
             "   AND events.msg_offset <= ?" +
             "   AND type = ANY (string_to_array(?, ','))" +
@@ -312,11 +347,14 @@ public class PostgresqlStorage implements CentralStorage {
             " WHERE running_size <= " + maxBatchSize;
     }
 
-    private String withInnerJoinToClusters() {
+    private String addClusterFilter() {
         return
-            " INNER JOIN clusters ON (events.cluster_id = clusters.cluster_id)" +
             " WHERE " +
-            " clusters.cluster_uuid = ANY (string_to_array(?, ',')) ";
+            " cluster_id = ANY (?) ";
+    }
+
+    private String getClusterIdQuery() {
+        return "SELECT array_agg(cluster_id) FROM clusters WHERE ((cluster_uuid)::text = ANY (string_to_array(?, ',')));";
     }
 
     private String getSelectLatestOffsetQuery() {
