@@ -108,7 +108,7 @@ public class PostgresqlStorage implements CentralStorage {
 
     private long calculateRetryAfter(long queryTimeMs, int messagesCount) {
         if (messagesCount == 0) {
-            return retryAfter;
+            return retryAfterWithRandomJitter();
         }
 
         if (queryTimeMs == 0) {
@@ -124,6 +124,10 @@ public class PostgresqlStorage implements CentralStorage {
         LOG.info("PostgresSqlStorage:calculateRetryAfter:calculatedRetryAfter", String.valueOf(calculatedRetryAfter));
 
         return Math.min(calculatedRetryAfter, retryAfter);
+    }
+
+    private long retryAfterWithRandomJitter() {
+        return retryAfter + (long) (retryAfter * Math.random());
     }
 
     @Override
