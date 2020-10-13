@@ -930,6 +930,22 @@ class SQLiteStorageIntegrationSpec extends Specification {
         result == 2L
     }
 
+
+    def 'calculateOffsetConsistencySum returns the sum of the latest offset for the same key with different types'() {
+        given: "messages in a database of the same key"
+        def messages = [
+                message(1, "A", "type1", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+                message(2, "A", "type2", ZonedDateTime.parse("2000-12-01T10:00:00Z"))
+        ]
+        sqliteStorage.write(messages)
+
+        when: "we call calculateOffsetConsistencySum"
+        def result = sqliteStorage.calculateOffsetConsistencySum()
+
+        then: "the latest offset value is returned"
+        result == 3L
+    }
+
     def 'calculateOffsetConsistencySum returns the sum of the latest offset of each key published before today'() {
         given: "messages in a database"
         def messages = [
