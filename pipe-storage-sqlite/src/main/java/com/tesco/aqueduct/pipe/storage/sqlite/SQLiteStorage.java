@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.*;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -312,6 +313,8 @@ public class SQLiteStorage implements DistributedStorage {
     private long calculateOffsetConsistencySum() {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_CONSISTENCY_SUM)) {
+            Timestamp threshold = Timestamp.valueOf(ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).with(LocalTime.MAX).toLocalDateTime());
+            statement.setTimestamp(1, threshold);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.getLong(1);
             }
