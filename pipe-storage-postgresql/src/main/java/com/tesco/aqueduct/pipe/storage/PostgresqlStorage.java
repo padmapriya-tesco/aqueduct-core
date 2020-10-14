@@ -133,11 +133,10 @@ public class PostgresqlStorage implements CentralStorage {
     }
   
     private void logCalculatedRetryAfterInMs(long queryTimeMs) {
-        final double dbThreshold = this.clusterDBPoolSize / queryTimeMs;
+        final double dbThreshold = this.clusterDBPoolSize / (double) queryTimeMs;
         final double retryAfterMs = this.nodeCount / dbThreshold;
         final long calculatedRetryAfter = (long) Math.ceil(retryAfterMs);
         LOG.info("PostgresSqlStorage:calculateRetryAfter:RetryAfterMs", String.valueOf(Math.min(calculatedRetryAfter, retryAfter * 1000)));
-
     }
 
     @Override
