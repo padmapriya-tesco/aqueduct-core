@@ -8,6 +8,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.sql.SQLException
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -903,7 +904,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         0L == sqliteStorage.calculateOffsetConsistencySum()
     }
 
-    def 'calculateOffsetConsistencySum returns the value of the offset for a key'() {
+    def 'calculateOffsetConsistencySum returns the value of the offset for a key published before today'() {
         given: "a message in a database"
         sqliteStorage.write(message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")))
 
@@ -914,7 +915,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         result == 1L
     }
 
-    def 'calculateOffsetConsistencySum returns the sum of the latest offset for a key'() {
+    def 'calculateOffsetConsistencySum returns the sum of the latest offset for a key published before today'() {
         given: "messages in a database of the same key"
         def messages = [
             message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
@@ -929,17 +930,34 @@ class SQLiteStorageIntegrationSpec extends Specification {
         result == 2L
     }
 
-    def 'calculateOffsetConsistencySum returns the sum of the latest offset of each key'() {
+
+    def 'calculateOffsetConsistencySum returns the sum of the latest offset for the same key with different types'() {
+        given: "messages in a database of the same key"
+        def messages = [
+                message(1, "A", "type1", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+                message(2, "A", "type2", ZonedDateTime.parse("2000-12-01T10:00:00Z"))
+        ]
+        sqliteStorage.write(messages)
+
+        when: "we call calculateOffsetConsistencySum"
+        def result = sqliteStorage.calculateOffsetConsistencySum()
+
+        then: "the latest offset value is returned"
+        result == 3L
+    }
+
+    def 'calculateOffsetConsistencySum returns the sum of the latest offset of each key published before today'() {
         given: "messages in a database"
         def messages = [
-            message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-            message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-            message(3, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-            message(4, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-            message(5, "A", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-            message(6, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-            message(7, "B", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
-            message(8, "D", ZonedDateTime.parse("2000-12-03T10:00:00Z"))
+                message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+                message(2, "B", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+                message(3, "C", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+                message(4, "C", ZonedDateTime.now().minusDays(1)),
+                message(5, "A", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).with(LocalTime.MAX)),
+                message(6, "B", ZonedDateTime.now()),
+                message(7, "B", ZonedDateTime.now()),
+                message(8, "D", ZonedDateTime.now()),
+                message(9, "A", ZonedDateTime.now()),
         ]
         sqliteStorage.write(messages)
 
@@ -947,6 +965,6 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def result = sqliteStorage.calculateOffsetConsistencySum()
 
         then: "the sum of each keys latest offset is returned"
-        result == 24L
+        result == 11L
     }
 }
