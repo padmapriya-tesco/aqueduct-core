@@ -12,7 +12,7 @@ import java.time.ZonedDateTime
 class HttpPipeClientSpec extends Specification {
 
     InternalHttpPipeClient internalClient = Mock()
-    HttpPipeClient client = new HttpPipeClient(internalClient, new BrotliCodec(4, false))
+    HttpPipeClient client = new HttpPipeClient(internalClient, new BrotliCodec(4, false), 240)
 
     static def responseBody = """[
             {
@@ -42,6 +42,7 @@ class HttpPipeClientSpec extends Specification {
         HttpResponse<byte[]> httpResponse = new SimpleHttpResponse()
         httpResponse.body(response.bytes)
         httpResponse.headers.set(HttpHeaders.RETRY_AFTER, retry)
+        httpResponse.headers.set(HttpHeaders.RETRY_AFTER_MS, retryMs)
         httpResponse.headers.set(HttpHeaders.GLOBAL_LATEST_OFFSET, String.valueOf(0L))
         httpResponse.headers.set(HttpHeaders.PIPE_STATE, PipeState.UP_TO_DATE.name())
 
@@ -52,15 +53,18 @@ class HttpPipeClientSpec extends Specification {
 
         then: "we parse the retry after if its correct or return 0 otherwise"
         results.messages.size() == 1
-        results.retryAfterSeconds == result
+        results.retryAfterMs == result
 
         where:
-        retry | result
-        ""    | 0
-        null  | 0
-        "5"   | 5
-        "-5"  | 0
-        "foo" | 0
+        retry | retryMs | result
+        ""    | ""      | 240
+        null  | null    | 240
+        "5"   | null    | 5000
+        null  | "5000"  | 5000
+        "6"   | "5000"  | 5000
+        "-5"  | "-5000" | 240
+        "foo" | "bar"   | 240
+        "foo" | null    | 240
     }
 
     def "if global offset is available in the header, it should be returned in MessageResults"() {
