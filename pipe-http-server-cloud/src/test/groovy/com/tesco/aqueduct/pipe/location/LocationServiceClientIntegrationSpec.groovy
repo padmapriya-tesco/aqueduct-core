@@ -8,7 +8,6 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.server.EmbeddedServer
-import io.reactivex.exceptions.CompositeException
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -60,6 +59,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
                         url:                    $locationBasePath
                         attempts:               3
                         delay:                  500ms  
+                        reset:                  5s
                     authentication:
                         identity:
                             url:                ${identityMockService.getHttpUrl()}
@@ -104,32 +104,6 @@ class LocationServiceClientIntegrationSpec extends Specification {
 
         and: "identity service is called once"
         identityMockService.verify()
-    }
-
-    def "location is cached"() {
-        given: "a location Uuid"
-        def locationUuid = "locationUuid"
-
-        and: "a mocked Identity service for issue token endpoint"
-        identityIssueTokenService()
-
-        and: "location service returning list of clusters for a given Uuid"
-        locationServiceReturningListOfClustersForGiven(locationUuid)
-
-        and: "location service bean is initialized"
-        def locationServiceClient = context.getBean(LocationServiceClient)
-
-        when: "get clusters for a location Uuid"
-        locationServiceClient.getClusters("someTraceId", locationUuid)
-
-        then: "location service is called"
-        locationMockService.verify()
-
-        when: "location service is called with the same locationUuid"
-        locationServiceClient.getClusters("anotherTraceId", locationUuid)
-
-        then: "location is cached"
-        locationMockService.verify()
     }
 
     def "location service is retried 3 times before throwing exception when it fails to resolve location to cluster"() {
@@ -216,6 +190,7 @@ class LocationServiceClientIntegrationSpec extends Specification {
             }
         }
     }
+
 
     private void locationServiceNotInvoked(String locationUuid) {
         locationMockService.expectations {

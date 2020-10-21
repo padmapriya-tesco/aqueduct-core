@@ -2,15 +2,19 @@ package com.tesco.aqueduct.pipe.location;
 
 import com.tesco.aqueduct.pipe.api.LocationResolver;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import io.micronaut.cache.annotation.Cacheable;
 import io.micronaut.http.client.exceptions.HttpClientResponseException;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.inject.Provider;
+import javax.inject.Singleton;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
+// It needs @Singleton because otherwise Micronaut @Cacheable won't intercept the cached method call
+@Singleton
 public class CloudLocationResolver implements LocationResolver {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(CloudLocationResolver.class));
@@ -22,6 +26,7 @@ public class CloudLocationResolver implements LocationResolver {
     }
 
     @Override
+    @Cacheable(value = "cluster-cache", parameters = "locationId")
     public List<String> resolve(@NotNull String locationId) {
         try {
             return locationServiceClient.get().getClusters(traceId(), locationId)
