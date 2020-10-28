@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.*;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -107,7 +106,16 @@ public class SQLiteStorage implements DistributedStorage {
         );
     }
 
-    public int calculateRetryAfter(final int messageCount) {
+    @Override
+    public long getOffsetConsistencySum(long offset, List<String> targetUuids) {
+        try (Connection connection = dataSource.getConnection()) {
+            return getOffsetConsistencySumBasedOn(offset, connection);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int calculateRetryAfter(final int messageCount) {
         return messageCount > 0 ? 0 : retryAfterMs;
     }
 
@@ -133,6 +141,10 @@ public class SQLiteStorage implements DistributedStorage {
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
+        if(offsetName == OffsetName.MAX_OFFSET_PREVIOUS_HOUR) {
+            return getMaxOffsetInPreviousHour(ZonedDateTime.now());
+        }
+
         return executeGet(
             SQLiteQueries.getOffset(offsetName),
             (connection, statement) -> {
@@ -293,12 +305,11 @@ public class SQLiteStorage implements DistributedStorage {
     @Override
     public void runVisibilityCheck() {
         runIntegrityCheck();
-        LOG.info("OffsetConsistencySum: ", String.valueOf(calculateOffsetConsistencySum()));
     }
 
     private void runIntegrityCheck() {
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INTEGRITY_CHECK)) {
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INTEGRITY_CHECK)) {
             try (ResultSet resultSet = statement.executeQuery()) {
                 String result = resultSet.getString(1);
                 if (!result.equals("ok")) {
@@ -310,16 +321,27 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    private long calculateOffsetConsistencySum() {
+    private long getOffsetConsistencySumBasedOn(long offsetThreshold, Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_CONSISTENCY_SUM)) {
+            statement.setLong(1, offsetThreshold);
+            return queryResult(statement);
+        }
+    }
+
+    private OptionalLong getMaxOffsetInPreviousHour(ZonedDateTime currentTime) {
         try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_CONSISTENCY_SUM)) {
-            Timestamp threshold = Timestamp.valueOf(ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).with(LocalTime.MAX).toLocalDateTime());
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CHOOSE_MAX_OFFSET)) {
+            Timestamp threshold = Timestamp.valueOf(currentTime.withMinute(0).withSecond(0).withNano(0).toLocalDateTime());
             statement.setTimestamp(1, threshold);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.getLong(1);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return OptionalLong.of(queryResult(statement));
+        } catch (SQLException exception){
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private long queryResult(PreparedStatement statement) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            return resultSet.getLong(1);
         }
     }
 
