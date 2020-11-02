@@ -80,7 +80,7 @@ public class HttpPipeClient implements Reader {
 
     private long checkForValidNumber(String value, int multiplier) {
         try {
-            return Long.parseLong(value) > 0 ? Long.parseLong(value) * multiplier : defaultRetryAfter;
+            return Long.parseLong(value) >= 0 ? Long.parseLong(value) * multiplier : defaultRetryAfter;
         } catch (NumberFormatException exception) {
             return defaultRetryAfter;
         }
