@@ -65,6 +65,9 @@ class HttpPipeClientSpec extends Specification {
         "-5"  | "-5000" | 240
         "foo" | "bar"   | 240
         "foo" | null    | 240
+        "0"   | "0"     | 0
+        "0"   | null    | 0
+        null  | "0"     | 0
     }
 
     def "if global offset is available in the header, it should be returned in MessageResults"() {
