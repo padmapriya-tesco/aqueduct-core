@@ -42,9 +42,6 @@ public class PipeReadController {
     private Reader reader;
 
     @Inject
-    private PipeStateProvider pipeStateProvider;
-
-    @Inject
     private LocationResolver locationResolver;
 
     @Value("${pipe.http.server.read.poll-seconds:0}")
@@ -93,8 +90,7 @@ public class PipeReadController {
 
         responseHeaders.put(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
         responseHeaders.put(HttpHeaders.RETRY_AFTER_MS, String.valueOf(retryAfterMs));
-        responseHeaders.put(HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString());
+        responseHeaders.put(HttpHeaders.PIPE_STATE, messageResults.getPipeState().toString());
 
         MutableHttpResponse<byte[]> response = HttpResponse.ok(encodedResponse.getEncodedBody()).headers(responseHeaders);
 
