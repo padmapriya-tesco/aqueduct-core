@@ -7,14 +7,12 @@ import spock.lang.Specification
 class CloudPipeStateProviderTest extends Specification {
     def "cloud is always up to date"() {
         given: "a reader mock"
-        def reader = Mock(Reader) {
-            getOffset(_) >> OptionalLong.of(1L)
-        }
+        def reader = Mock(Reader)
 
         when: "getting pipe state"
         def pipeState = new CloudPipeStateProvider().getState([], reader)
 
         then: "pipe is up to date"
-        pipeState == new PipeStateResponse(true, 1L)
+        pipeState == new PipeStateResponse(true, 0L)
     }
 }

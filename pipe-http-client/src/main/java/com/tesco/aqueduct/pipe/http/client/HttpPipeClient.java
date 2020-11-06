@@ -25,9 +25,9 @@ public class HttpPipeClient implements Reader {
 
     @Inject
     public HttpPipeClient(
-            final InternalHttpPipeClient client,
-            final Codec codec,
-            @Property(name = "persistence.read.default-retry-after") long defaultRetryAfter
+        final InternalHttpPipeClient client,
+        final Codec codec,
+        @Property(name = "persistence.read.default-retry-after") long defaultRetryAfter
     ) {
         this.client = client;
         this.codec = codec;
