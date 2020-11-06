@@ -13,9 +13,12 @@ import javax.inject.Inject;
 public class PipeLoadBalancerHealthCheckTask {
 
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(PipeLoadBalancerHealthCheckTask.class));
+    private final ServiceList services;
 
     @Inject
-    ServiceList services;
+    public PipeLoadBalancerHealthCheckTask(ServiceList services) {
+        this.services = services;
+    }
 
     @Scheduled(fixedDelay = "${pipe.http.client.healthcheck.interval}")
     public void checkState() {
