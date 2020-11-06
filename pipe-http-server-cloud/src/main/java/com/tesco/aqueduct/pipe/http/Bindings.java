@@ -60,11 +60,6 @@ public class Bindings {
     }
 
     @Singleton
-    PipeStateProvider bindPipeStateProvider() {
-        return new CloudPipeStateProvider();
-    }
-
-    @Singleton
     TokenProvider bindTokenProvider(
         final Provider<IdentityIssueTokenClient> identityIssueTokenClient,
         @Property(name = "authentication.identity.client.id") String identityClientId,
