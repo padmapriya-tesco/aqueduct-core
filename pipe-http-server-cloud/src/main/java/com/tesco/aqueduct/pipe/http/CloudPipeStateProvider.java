@@ -9,6 +9,6 @@ import java.util.List;
 public class CloudPipeStateProvider implements PipeStateProvider {
     @Override
     public PipeStateResponse getState(List<String> types, Reader reader) {
-        return new PipeStateResponse(true, reader.getOffset(OffsetName.LOCAL_LATEST_OFFSET).getAsLong());
+        return new PipeStateResponse(true, 0L);
     }
 }
