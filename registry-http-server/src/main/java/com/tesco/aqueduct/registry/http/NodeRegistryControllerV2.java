@@ -20,7 +20,6 @@ import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
@@ -36,17 +35,21 @@ public class NodeRegistryControllerV2 {
     private final NodeRegistry registry;
     private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
+    private final int compressionThreshold;
+    private final GzipCodec gzip;
 
-    @Property(name="compression.threshold-in-bytes")
-    private int compressionThreshold;
-
-    @Inject
-    private GzipCodec gzip;
-
-    public NodeRegistryControllerV2(final NodeRegistry registry, final NodeRequestStorage nodeRequestStorage, final Reader pipe) {
+    public NodeRegistryControllerV2(
+        final NodeRegistry registry,
+        final NodeRequestStorage nodeRequestStorage,
+        final Reader pipe,
+        @Property(name="compression.threshold-in-bytes") int compressionThreshold,
+        GzipCodec gzip
+    ) {
         this.registry = registry;
         this.nodeRequestStorage = nodeRequestStorage;
         this.pipe = pipe;
+        this.compressionThreshold = compressionThreshold;
+        this.gzip = gzip;
     }
 
     @Secured(SecurityRule.IS_AUTHENTICATED)
