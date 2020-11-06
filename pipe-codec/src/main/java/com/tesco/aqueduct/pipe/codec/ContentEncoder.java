@@ -14,11 +14,20 @@ import static io.micronaut.http.HttpHeaders.CONTENT_ENCODING;
 
 public class ContentEncoder {
 
-    @Property(name="compression.threshold-in-bytes")
-    private int compressionThreshold;
+    private final int compressionThreshold;
+    private final BrotliCodec brotliCodec;
+    private final GzipCodec gzipCodec;
 
-    @Inject BrotliCodec brotliCodec;
-    @Inject GzipCodec gzipCodec;
+    @Inject
+    public ContentEncoder(
+        @Property(name = "compression.threshold-in-bytes") int compressionThreshold,
+        BrotliCodec brotliCodec,
+        GzipCodec gzipCodec
+    ) {
+        this.compressionThreshold = compressionThreshold;
+        this.brotliCodec = brotliCodec;
+        this.gzipCodec = gzipCodec;
+    }
 
     public EncodedResponse encodeResponse(HttpRequest<?> request, byte[] responseBytes) {
         Map<CharSequence, CharSequence> headers = new HashMap<>();
