@@ -468,7 +468,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         then: 'the message retrieved should be what we saved'
         notThrown(Exception)
-        message.created == retrievedMessage.created
+        message == retrievedMessage
     }
 
     def 'message with pipe state as UNKNOWN is returned when no state exists in the database'() {
