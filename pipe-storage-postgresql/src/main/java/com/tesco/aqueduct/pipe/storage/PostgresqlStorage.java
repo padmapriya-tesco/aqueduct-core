@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.storage;
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.slf4j.LoggerFactory;
+import io.micronaut.cache.annotation.Cacheable;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -65,7 +66,7 @@ public class PostgresqlStorage implements CentralStorage {
             connection.setAutoCommit(false);
             setWorkMem(connection);
 
-            final long globalLatestOffset = getLatestOffsetWithConnection(connection);
+            final long globalLatestOffset = getLatestOffsetWithConnection(connection, true);
 
             final Array clusterIds = getClusterIds(connection, clusterUuids);
 
@@ -133,7 +134,7 @@ public class PostgresqlStorage implements CentralStorage {
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         try (Connection connection = dataSource.getConnection()) {
-            return OptionalLong.of(getLatestOffsetWithConnection(connection));
+            return OptionalLong.of(getLatestOffsetWithConnection(connection, true));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset", exception);
             throw new RuntimeException(exception);
@@ -183,7 +184,9 @@ public class PostgresqlStorage implements CentralStorage {
         return messageCountByType;
     }
 
-    private long getLatestOffsetWithConnection(Connection connection) throws SQLException {
+    //public method so that cacheable works
+    @Cacheable(value = "latest-offset-cache", parameters = "shouldCache")
+    public long getLatestOffsetWithConnection(Connection connection, boolean shouldCache) throws SQLException {
         long start = System.currentTimeMillis();
 
         try (PreparedStatement statement = getLatestOffsetStatement(connection);
