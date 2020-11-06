@@ -20,6 +20,7 @@ import io.micronaut.security.rules.SecurityRule;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
@@ -38,6 +39,7 @@ public class NodeRegistryControllerV2 {
     private final int compressionThreshold;
     private final GzipCodec gzip;
 
+    @Inject
     public NodeRegistryControllerV2(
         final NodeRegistry registry,
         final NodeRequestStorage nodeRequestStorage,
