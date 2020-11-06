@@ -121,7 +121,7 @@ public class SQLiteStorage implements DistributedStorage {
 
     private Message mapRetrievedMessageFromResultSet(final ResultSet resultSet) throws SQLException {
         Message retrievedMessage;
-        final ZonedDateTime time = ZonedDateTime.of(
+        final ZonedDateTime time = ZonedDateTime.of (
             resultSet.getTimestamp("created_utc").toLocalDateTime(),
             ZoneId.of("UTC")
         );

@@ -23,7 +23,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
     private SQLiteStorage sqliteStorage
 
     ZonedDateTime currentUTCTime() {
-        ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
+        ZonedDateTime.now(ZoneId.of("UTC"))
     }
 
     def message(long offset) {
@@ -459,16 +459,16 @@ class SQLiteStorageIntegrationSpec extends Specification {
         given: 'a message'
         Message message = message(offset)
 
-        when: 'store the message to the database'
+        and: 'message stored to the database'
         sqliteStorage.write(message)
 
-        and: 'we retrieve the message from the database'
+        when: 'we retrieve the message from the database'
         MessageResults messageResults = sqliteStorage.read(null, offset, ["locationUuid"])
         Message retrievedMessage = messageResults.messages.get(0)
 
         then: 'the message retrieved should be what we saved'
         notThrown(Exception)
-        message == retrievedMessage
+        message.created == retrievedMessage.created
     }
 
     def 'message with pipe state as UNKNOWN is returned when no state exists in the database'() {

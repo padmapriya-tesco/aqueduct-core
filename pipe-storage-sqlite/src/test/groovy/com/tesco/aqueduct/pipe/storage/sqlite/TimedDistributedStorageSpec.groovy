@@ -1,21 +1,17 @@
 package com.tesco.aqueduct.pipe.storage.sqlite
 
-import com.tesco.aqueduct.pipe.api.Message
-import com.tesco.aqueduct.pipe.api.DistributedStorage
-import com.tesco.aqueduct.pipe.api.OffsetEntity
-import com.tesco.aqueduct.pipe.api.OffsetName
-import com.tesco.aqueduct.pipe.api.PipeState
+import com.tesco.aqueduct.pipe.api.*
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import spock.lang.Specification
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET
 
 class TimedDistributedStorageSpec extends Specification {
-    final long OFFSET = 1
-    final Message MOCK_MESSAGE = Mock(Message)
-    final List<String> MESSAGE_TYPES = []
-    final SimpleMeterRegistry METER_REGISTRY = Spy(SimpleMeterRegistry)
-    final List<String> LOCATION_UUID = ["locationUuid"]
+    private long OFFSET = 1
+    private Message MOCK_MESSAGE = Mock(Message)
+    private List<String> MESSAGE_TYPES = []
+    private SimpleMeterRegistry METER_REGISTRY = Spy(SimpleMeterRegistry)
+    private List<String> LOCATION_UUID = ["locationUuid"]
 
     def "read events are timed"() {
         given: "we have an instance of TimedMessageStorage"
