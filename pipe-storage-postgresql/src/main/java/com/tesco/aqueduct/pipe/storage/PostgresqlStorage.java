@@ -2,8 +2,8 @@ package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
-import org.slf4j.LoggerFactory;
 import io.micronaut.cache.annotation.Cacheable;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -194,7 +194,7 @@ public class PostgresqlStorage implements CentralStorage {
             resultSet.next();
 
             return resultSet.getLong("last_offset");
-        }finally {
+        } finally {
             long end = System.currentTimeMillis();
             LOG.info("getLatestOffsetWithConnection:time", Long.toString(end - start));
         }

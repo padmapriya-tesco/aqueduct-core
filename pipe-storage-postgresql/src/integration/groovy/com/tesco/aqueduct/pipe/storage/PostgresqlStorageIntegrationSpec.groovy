@@ -228,7 +228,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         result.messages*.key == ["B", "A"]
     }
 
-    def 'Messages with the same key but different types arent compacted'() {
+    def 'Messages with the same key but different types are not compacted'() {
         given: 'some clusters are stored'
         Long cluster1 = insertCluster("cluster1")
 
