@@ -57,11 +57,8 @@ class PipeReadAuthenticationProviderIntegrationSpec extends Specification {
         centralStorageMock.read(_, _, _) >> new MessageResults([], 0, OptionalLong.of(1), PipeState.UP_TO_DATE)
 
         context.registerSingleton(Reader, centralStorageMock, Qualifiers.byName("local"))
-        def pipeStateProvider = Mock(PipeStateProvider) {
-            getState(_ as List, _ as Reader) >> new PipeStateResponse(true, 100)
-        }
-        context.registerSingleton(pipeStateProvider)
         context.registerSingleton(locationResolver)
+        context.registerSingleton(new PipeRateLimiter(1.0))
         context.start()
 
         server = context.getBean(EmbeddedServer)

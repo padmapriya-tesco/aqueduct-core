@@ -10,6 +10,7 @@ import spock.lang.Specification
 
 import javax.inject.Inject
 import javax.inject.Named
+import java.time.ZonedDateTime
 
 import static java.util.OptionalLong.of
 import static org.hamcrest.Matchers.equalTo
@@ -17,6 +18,7 @@ import static org.hamcrest.Matchers.equalTo
 @Newify(Message)
 @MicronautTest
 @Property(name="micronaut.security.enabled", value="false")
+@Property(name="rate-limiter.capacity", value = "1")
 class PipeReadControllerBatchIntegrationSpec extends Specification {
     static final String DATA_BLOB = "some very big data blob with more than 200 bytes of size"
     static String type = "type1"
@@ -28,15 +30,11 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     LocationResolver locationResolver
 
     @Inject
-    PipeStateProvider pipeStateProvider
-
-    @Inject
     EmbeddedServer server
 
     void setup() {
         RestAssured.port = server.port
         locationResolver.resolve(_) >> ["cluster1"]
-        pipeStateProvider.getState(*_) >> new PipeStateResponse(true, 100)
     }
 
     void cleanup() {
@@ -48,9 +46,9 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     void "A batch of messages that equals the payload size is still transported"() {
         given:
         def messages = [
-            Message(type, "a", "contentType", 100, null, DATA_BLOB),
-            Message(type, "b", "contentType", 101, null, DATA_BLOB),
-            Message(type, "c", "contentType", 102, null, DATA_BLOB)
+            Message(type, "a", "contentType", 100, ZonedDateTime.now(), DATA_BLOB),
+            Message(type, "b", "contentType", 101, ZonedDateTime.now(), DATA_BLOB),
+            Message(type, "c", "contentType", 102, ZonedDateTime.now(), DATA_BLOB)
         ]
 
         and:
@@ -81,11 +79,6 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
     @Named("local")
     Reader reader() {
         Mock(Reader)
-    }
-
-    @MockBean(PipeStateProvider)
-    PipeStateProvider pipeStateProvider() {
-        Mock(PipeStateProvider)
     }
 
     @MockBean(LocationResolver)

@@ -1,7 +1,6 @@
 import com.stehno.ersatz.Decoders
 import com.stehno.ersatz.ErsatzServer
 import com.tesco.aqueduct.pipe.api.*
-import com.tesco.aqueduct.pipe.http.PipeStateProvider
 import groovy.json.JsonOutput
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -42,10 +41,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             decoder('application/json', Decoders.utf8String)
             reportToConsole()
         })
-
-        def pipeStateProvider = Mock(PipeStateProvider) {
-            getState(_ as List, _ as Reader) >> new PipeStateResponse(true, 100)
-        }
 
         def locationResolver = Mock(LocationResolver) {
             resolve(_) >> ["cluster1"]
@@ -97,7 +92,6 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         .registerSingleton(Reader, centralStorageMock, Qualifiers.byName("local"))
         .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("pipe"))
         .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("registry"))
-        .registerSingleton(pipeStateProvider)
         .registerSingleton(locationResolver)
 
         context.start()

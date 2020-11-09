@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,9 +42,6 @@ public class PipeReadController {
     private Reader reader;
 
     @Inject
-    private PipeStateProvider pipeStateProvider;
-
-    @Inject
     private LocationResolver locationResolver;
 
     @Value("${pipe.http.server.read.poll-seconds:0}")
@@ -51,8 +50,14 @@ public class PipeReadController {
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
+    @Value("${pipe.bootstrap.threshold:6h}")
+    private Duration bootstrapThreshold;
+
     @Inject
     ContentEncoder contentEncoder;
+
+    @Inject
+    PipeRateLimiter rateLimiter;
 
     @Get("/pipe/{offset}{?type,location}")
     public HttpResponse<byte[]> readMessages(
@@ -70,11 +75,12 @@ public class PipeReadController {
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
         final MessageResults messageResults = reader.read(types, offset, locationResolver.resolve(location));
-        final List<Message> list = messageResults.getMessages();
-        final long retryAfterMs = messageResults.getRetryAfterMs();
+        final List<Message> messages = messageResults.getMessages();
 
+        final long retryAfterMs = calculateRetryAfter(messageResults);
         LOG.debug("pipe read controller", String.format("set retry time to %d", retryAfterMs));
-        byte[] responseBytes = JsonHelper.toJson(list).getBytes();
+
+        byte[] responseBytes = JsonHelper.toJson(messages).getBytes();
 
         ContentEncoder.EncodedResponse encodedResponse = contentEncoder.encodeResponse(request, responseBytes);
 
@@ -84,8 +90,7 @@ public class PipeReadController {
 
         responseHeaders.put(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
         responseHeaders.put(HttpHeaders.RETRY_AFTER_MS, String.valueOf(retryAfterMs));
-        responseHeaders.put(HttpHeaders.PIPE_STATE,
-                pipeStateProvider.getState(types, reader).isUpToDate() ? UP_TO_DATE.toString() : OUT_OF_DATE.toString());
+        responseHeaders.put(HttpHeaders.PIPE_STATE, messageResults.getPipeState().toString());
 
         MutableHttpResponse<byte[]> response = HttpResponse.ok(encodedResponse.getEncodedBody()).headers(responseHeaders);
 
@@ -95,6 +100,25 @@ public class PipeReadController {
             );
 
         return response;
+    }
+
+    private long calculateRetryAfter(MessageResults messageResults) {
+        if (isBootstrappingAndCapacityAvailable(messageResults.getMessages())) {
+            LOG.info("pipe read controller", "retry time is 0ms");
+            return 0;
+        } else {
+            return messageResults.getRetryAfterMs();
+        }
+    }
+
+    private boolean isBootstrappingAndCapacityAvailable(List<Message> messages) {
+        return !messages.isEmpty()
+            && isBeforeBootstrapThreshold(messages)
+            && rateLimiter.tryAcquire();
+    }
+
+    private boolean isBeforeBootstrapThreshold(List<Message> messages) {
+        return messages.get(0).getCreated().isBefore(ZonedDateTime.now().minus(bootstrapThreshold));
     }
 
     private void logOffsetRequestFromRemoteHost(final long offset, final HttpRequest<?> request) {
