@@ -26,7 +26,7 @@ public class OffsetFetcher {
         this.readDelaySeconds = readDelaySeconds;
     }
 
-    @Cacheable("latest-offset-cache")
+    @Cacheable(value="latest-offset-cache", parameters = "")
     public long getGlobalLatestOffset(Connection connection) throws SQLException {
         long start = System.currentTimeMillis();
 

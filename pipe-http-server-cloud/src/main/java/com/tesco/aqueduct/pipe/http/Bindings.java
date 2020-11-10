@@ -4,6 +4,7 @@ import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.pipe.storage.OffsetFetcher;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
 import com.tesco.aqueduct.registry.model.NodeRequestStorage;
@@ -32,14 +33,14 @@ public class Bindings {
         @Property(name = "persistence.read.limit") final int limit,
         @Property(name = "persistence.read.retry-after") final int retryAfter,
         @Property(name = "persistence.read.max-batch-size") final int maxBatchSize,
-        @Value("${persistence.read.read-delay-seconds:0}") final int readDelaySeconds,
         @Value("${persistence.read.expected-node-count}") final int expectedNodeCount,
         @Value("${persistence.read.cluster-db-pool-size}") final long clusterDBPoolSize,
         @Value("${persistence.read.work-mem-mb:4}") final int workMemMb,
-        @Named("pipe") final DataSource dataSource
+        @Named("pipe") final DataSource dataSource,
+        final OffsetFetcher offsetFetcher
     ) {
         return new PostgresqlStorage(
-            dataSource, limit, retryAfter, maxBatchSize, readDelaySeconds, expectedNodeCount, clusterDBPoolSize, workMemMb
+            dataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb
         );
     }
 
