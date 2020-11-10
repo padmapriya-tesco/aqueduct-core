@@ -1,18 +1,25 @@
 package com.tesco.aqueduct.pipe.storage
 
+import io.micronaut.context.ApplicationContext
+import io.micronaut.context.annotation.Property
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import spock.lang.Specification
 
+import javax.inject.Inject
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 
 @MicronautTest
+@Property(name="micronaut.caches.latest-offset-cache.expire-after-write", value="1h")
 class OffsetFetcherIntegrationSpec extends Specification {
+
+    @Inject
+    private ApplicationContext applicationContext
 
     def "Offset is cached once fetched from db storage"() {
         given:
-        OffsetFetcher offsetFetcher = new OffsetFetcher(5)
+        def offsetFetcher = applicationContext.getBean(OffsetFetcher)
 
         and:
         def connection = Mock(Connection)
@@ -33,7 +40,9 @@ class OffsetFetcherIntegrationSpec extends Specification {
         def globalLatestOffset2 = offsetFetcher.getGlobalLatestOffset(connection)
 
         then:
-        0 * connection.prepareStatement(*_) >> preparedStatement
+        0 * connection.prepareStatement(*_)
+        0 * preparedStatement.executeQuery()
+        0 * resultSet.getLong("last_offset")
         globalLatestOffset2 == 10
     }
 }

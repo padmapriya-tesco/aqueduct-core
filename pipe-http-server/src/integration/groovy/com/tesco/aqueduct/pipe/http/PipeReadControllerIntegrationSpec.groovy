@@ -4,8 +4,8 @@ import com.tesco.aqueduct.pipe.api.*
 import com.tesco.aqueduct.pipe.codec.BrotliCodec
 import io.micronaut.context.annotation.Property
 import io.micronaut.runtime.server.EmbeddedServer
-import io.micronaut.test.annotation.MicronautTest
 import io.micronaut.test.annotation.MockBean
+import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import io.restassured.RestAssured
 import spock.lang.Specification
 import spock.lang.Unroll
