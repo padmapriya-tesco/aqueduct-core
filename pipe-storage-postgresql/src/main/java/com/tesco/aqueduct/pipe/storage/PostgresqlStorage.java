@@ -22,7 +22,6 @@ public class PostgresqlStorage implements CentralStorage {
     private OffsetFetcher offsetFetcher;
     private final int nodeCount;
     private final long clusterDBPoolSize;
-    private String currentTimestamp = "CURRENT_TIMESTAMP";
     private final int workMemMb;
 
     public PostgresqlStorage(

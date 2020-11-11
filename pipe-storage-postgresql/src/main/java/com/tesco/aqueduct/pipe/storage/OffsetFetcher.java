@@ -58,6 +58,6 @@ public class OffsetFetcher {
                 " ), " +
                 " (SELECT max(msg_offset) FROM events), " +
                 " 0 " +
-                ") as last_offset;";
+            ") as last_offset;";
     }
 }
