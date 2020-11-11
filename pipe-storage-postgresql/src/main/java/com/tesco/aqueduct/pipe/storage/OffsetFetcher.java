@@ -20,7 +20,7 @@ public class OffsetFetcher {
     private String currentTimestamp = "CURRENT_TIMESTAMP";
 
     public OffsetFetcher(
-        @Value("${persistence.read.read-delay-seconds:0}") final int readDelaySeconds
+        @Value("${persistence.read.read-delay-seconds}") final int readDelaySeconds
     ) {
         this.readDelaySeconds = readDelaySeconds;
     }
