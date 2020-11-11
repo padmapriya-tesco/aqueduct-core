@@ -15,10 +15,9 @@ import java.sql.SQLException;
 public class OffsetFetcher {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
-
-    private static final String currentTimestamp = "CURRENT_TIMESTAMP";
-
     private final int readDelaySeconds;
+
+    private String currentTimestamp = "CURRENT_TIMESTAMP";
 
     public OffsetFetcher(
         @Value("${persistence.read.read-delay-seconds:0}") final int readDelaySeconds
