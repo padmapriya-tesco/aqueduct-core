@@ -119,14 +119,8 @@ ansiColor('xterm') {
                     get_pipe: {
                         completeRunscopeTests("ppe", "get_pipe")
                     },
-                    publisher: {
-                        completeRunscopeTests("ppe", "publisher")
-                    },
                     registry_v2: {
                         completeRunscopeTests("ppe", "registry_v2")
-                    },
-                    auth_check: {
-                        completeRunscopeTests("ppe", "auth_check")
                     }
                 )
             }
@@ -161,14 +155,8 @@ ansiColor('xterm') {
                     get_pipe: {
                         completeRunscopeTests("live", "get_pipe")
                     },
-                    publisher: {
-                        completeRunscopeTests("live", "publisher")
-                    },
                     registry_v2: {
                         completeRunscopeTests("live", "registry_v2")
-                    },
-                    auth_check: {
-                        completeRunscopeTests("live", "auth_check")
                     }
                 )
             }
