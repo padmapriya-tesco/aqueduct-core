@@ -18,7 +18,7 @@ class PostgresqlStorageSpec extends Specification {
         def clusterDBPoolSize = 60
 
         and:
-        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, 0, readersNodeCount, clusterDBPoolSize, 4)
+        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) == result
@@ -40,7 +40,7 @@ class PostgresqlStorageSpec extends Specification {
         def clusterDBPoolSize = 60
 
         and:
-        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, 0, readersNodeCount, clusterDBPoolSize, 4)
+        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) >= result
