@@ -23,6 +23,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
 
         and:
         def connection = Mock(Connection)
+        def anotherConnection = Mock(Connection)
         def preparedStatement = Mock(PreparedStatement)
         def resultSet = Mock(ResultSet)
 
@@ -37,12 +38,10 @@ class OffsetFetcherIntegrationSpec extends Specification {
         globalLatestOffset1 == 10
 
         when:
-        def globalLatestOffset2 = offsetFetcher.getGlobalLatestOffset(connection)
+        def globalLatestOffset2 = offsetFetcher.getGlobalLatestOffset(anotherConnection)
 
         then:
-        0 * connection.prepareStatement(*_)
-        0 * preparedStatement.executeQuery()
-        0 * resultSet.getLong("last_offset")
+        0 * anotherConnection.prepareStatement(*_)
         globalLatestOffset2 == 10
     }
 }
