@@ -119,9 +119,6 @@ ansiColor('xterm') {
                     get_pipe: {
                         completeRunscopeTests("ppe", "get_pipe")
                     },
-                    publisher: {
-                        completeRunscopeTests("ppe", "publisher")
-                    },
                     registry_v2: {
                         completeRunscopeTests("ppe", "registry_v2")
                     },
