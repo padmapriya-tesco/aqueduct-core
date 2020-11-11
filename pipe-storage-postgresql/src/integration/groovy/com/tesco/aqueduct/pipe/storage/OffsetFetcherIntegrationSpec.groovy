@@ -12,6 +12,7 @@ import java.sql.ResultSet
 
 @MicronautTest
 @Property(name="micronaut.caches.latest-offset-cache.expire-after-write", value="1h")
+@Property(name="persistence.read.read-delay-seconds", value = "0")
 class OffsetFetcherIntegrationSpec extends Specification {
 
     @Inject
