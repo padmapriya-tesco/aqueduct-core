@@ -78,6 +78,8 @@ class LocationRoutingIntegrationSpec extends Specification {
                 "authentication.identity.users.userA.clientId": "someClientUserId",
                 "authentication.identity.users.userA.roles":    "PIPE_READ",
 
+                "micronaut.caches.latest-offset-cache.expire-after-write": "0s",
+
                 "location.url":                                 "${locationMockService.getHttpUrl() + "$LOCATION_BASE_PATH/"}",
                 "location.attempts":                            3,
                 "location.delay":                               "2ms",
