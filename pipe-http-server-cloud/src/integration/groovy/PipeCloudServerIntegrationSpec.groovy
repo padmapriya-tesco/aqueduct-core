@@ -1,5 +1,6 @@
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import groovy.sql.Sql
@@ -36,6 +37,8 @@ class PipeCloudServerIntegrationSpec extends Specification {
         locationResolver = Mock()
 
         dataSource.connection >>> [
+            new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
+            new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection
@@ -75,7 +78,9 @@ class PipeCloudServerIntegrationSpec extends Specification {
                 "persistence.read.expected-node-count": 2,
                 "persistence.read.cluster-db-pool-size": 10,
                 "micronaut.security.enabled": "false",
-                "compression.threshold-in-bytes": 1024
+                "compression.threshold-in-bytes": 1024,
+                "micronaut.caches.latest-offset-cache.expire-after-write": "5s",
+                "persistence.read.read-delay-seconds": "0"
             )
             .mainClass(EmbeddedServer)
             .build()
@@ -116,6 +121,35 @@ class PipeCloudServerIntegrationSpec extends Specification {
                 {"type":"type1","key":"b","contentType":"contentType","offset":"101","created":"2018-12-20T15:13:01Z"}
             ]
             """.replaceAll("\\s", "")))
+    }
+
+    def "the global latest offset is cached" () {
+        given:
+        insert(100,  "a", "contentType", "type1", time, "data")
+        insert(101, "b", "contentType", "type1", time, null)
+
+        and: "location to cluster resolution"
+        locationResolver.resolve("someLocation") >> ["a_cluster_id"]
+
+        when:
+        def request1 = RestAssured.get("/pipe/100?location=someLocation")
+
+        then:
+        request1
+            .then()
+            .header(HttpHeaders.GLOBAL_LATEST_OFFSET.toString(), equalTo("101"))
+
+        when: "more data is inserted"
+        insert(102, "b", "contentType", "type1", time, null)
+        insert(103, "b", "contentType", "type1", time, null)
+
+        and:
+        def request2 = RestAssured.get("/pipe/100?location=someLocation")
+
+        then:
+        request2
+            .then()
+            .header(HttpHeaders.GLOBAL_LATEST_OFFSET.toString(), equalTo("101"))
     }
 
     void insert(Long msg_offset, String msg_key, String content_type, String type, LocalDateTime created, String data) {

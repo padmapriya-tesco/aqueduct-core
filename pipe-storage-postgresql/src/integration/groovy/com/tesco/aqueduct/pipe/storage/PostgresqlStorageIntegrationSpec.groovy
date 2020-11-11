@@ -28,8 +28,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     PostgresqlStorage storage
     DataSource dataSource
 
-    private static final long CLUSTER_A = 1L
-    private static final long CLUSTER_B = 2L
     long retryAfter = 5000
     long batchSize = 1000
     long maxOverheadBatchSize = (Message.MAX_OVERHEAD_SIZE * limit) + batchSize
@@ -80,7 +78,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
         """)
 
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1, 4)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4)
     }
 
     @Unroll
@@ -117,7 +115,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "there is postgres storage"
         def limit = 1
         def dataSourceWithMockedConnection = Mock(DataSource)
-        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, 0, 1, 1, 4)
+        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, new OffsetFetcher(0), 1, 1, 4)
 
         and: "a mock connection is provided when requested"
         def connection = Mock(Connection)
@@ -228,7 +226,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         result.messages*.key == ["B", "A"]
     }
 
-    def 'Messages with the same key but different types arent compacted'() {
+    def 'Messages with the same key but different types are not compacted'() {
         given: 'some clusters are stored'
         Long cluster1 = insertCluster("cluster1")
 
@@ -493,7 +491,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "pipe should return messages if available from the given offset instead of empty set"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1, 4)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -528,7 +526,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "getMessageCountByType should return the count of messages by type"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1, 4)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -555,8 +553,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     @Unroll
     def "when messages have out of order created_utc, we read up to the message with minimum offset outside the limit"() {
         given:
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, 0, 1, 1, 4)
-        storage.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
+        def offsetFetcher = new OffsetFetcher(0)
+        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4)
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))

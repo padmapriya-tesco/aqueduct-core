@@ -14,6 +14,8 @@ micronaut:
       expire-after-write: 10m
     cluster-cache:
       expire-after-write: 1h
+    latest-offset-cache:
+      expire-after-write: 10s
   router:
     static-resources:
       swagger:

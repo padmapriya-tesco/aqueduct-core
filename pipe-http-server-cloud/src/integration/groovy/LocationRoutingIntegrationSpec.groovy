@@ -66,6 +66,7 @@ class LocationRoutingIntegrationSpec extends Specification {
                 "persistence.read.max-batch-size":              "10485760",
                 "persistence.read.expected-node-count":         2,
                 "persistence.read.cluster-db-pool-size":        10,
+                "persistence.read.read-delay-seconds":          0,
 
                 "authentication.identity.url":                  "${identityMockService.getHttpUrl()}",
                 "authentication.identity.validate.token.path":  "$VALIDATE_TOKEN_PATH",
@@ -77,6 +78,8 @@ class LocationRoutingIntegrationSpec extends Specification {
                 "authentication.identity.consumes":             "application/token+json",
                 "authentication.identity.users.userA.clientId": "someClientUserId",
                 "authentication.identity.users.userA.roles":    "PIPE_READ",
+
+                "micronaut.caches.latest-offset-cache.expire-after-write": "0s",
 
                 "location.url":                                 "${locationMockService.getHttpUrl() + "$LOCATION_BASE_PATH/"}",
                 "location.attempts":                            3,

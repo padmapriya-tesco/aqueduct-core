@@ -19,10 +19,9 @@ public class PostgresqlStorage implements CentralStorage {
     private final DataSource dataSource;
     private final long maxBatchSize;
     private final long retryAfter;
-    private final int readDelaySeconds;
+    private OffsetFetcher offsetFetcher;
     private final int nodeCount;
     private final long clusterDBPoolSize;
-    private String currentTimestamp = "CURRENT_TIMESTAMP";
     private final int workMemMb;
 
     public PostgresqlStorage(
@@ -30,7 +29,7 @@ public class PostgresqlStorage implements CentralStorage {
         final int limit,
         final long retryAfter,
         final long maxBatchSize,
-        final int readDelaySeconds,
+        final OffsetFetcher offsetFetcher,
         int nodeCount,
         long clusterDBPoolSize,
         int workMemMb
@@ -38,7 +37,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.retryAfter = retryAfter;
         this.limit = limit;
         this.dataSource = dataSource;
-        this.readDelaySeconds = readDelaySeconds;
+        this.offsetFetcher = offsetFetcher;
         this.nodeCount = nodeCount;
         this.clusterDBPoolSize = clusterDBPoolSize;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
@@ -65,7 +64,7 @@ public class PostgresqlStorage implements CentralStorage {
             connection.setAutoCommit(false);
             setWorkMem(connection);
 
-            final long globalLatestOffset = getLatestOffsetWithConnection(connection);
+            final long globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection);
 
             final Array clusterIds = getClusterIds(connection, clusterUuids);
 
@@ -133,7 +132,7 @@ public class PostgresqlStorage implements CentralStorage {
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         try (Connection connection = dataSource.getConnection()) {
-            return OptionalLong.of(getLatestOffsetWithConnection(connection));
+            return OptionalLong.of(offsetFetcher.getGlobalLatestOffset(connection));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset", exception);
             throw new RuntimeException(exception);
@@ -183,20 +182,6 @@ public class PostgresqlStorage implements CentralStorage {
         return messageCountByType;
     }
 
-    private long getLatestOffsetWithConnection(Connection connection) throws SQLException {
-        long start = System.currentTimeMillis();
-
-        try (PreparedStatement statement = getLatestOffsetStatement(connection);
-            ResultSet resultSet = statement.executeQuery()) {
-            resultSet.next();
-
-            return resultSet.getLong("last_offset");
-        }finally {
-            long end = System.currentTimeMillis();
-            LOG.info("getLatestOffsetWithConnection:time", Long.toString(end - start));
-        }
-    }
-
     private List<Message> runMessagesQuery(final PreparedStatement query) throws SQLException {
         final List<Message> messages = new ArrayList<>();
         long start = System.currentTimeMillis();
@@ -227,15 +212,6 @@ public class PostgresqlStorage implements CentralStorage {
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("runClusterIdsQuery:time", Long.toString(end - start));
-        }
-    }
-
-    private PreparedStatement getLatestOffsetStatement(final Connection connection) {
-        try {
-            return connection.prepareStatement(getSelectLatestOffsetQuery());
-        } catch (SQLException exception) {
-            LOG.error("postgresql storage", "get latest offset statement", exception);
-            throw new RuntimeException(exception);
         }
     }
 
@@ -361,18 +337,6 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getClusterIdQuery() {
         return "SELECT array_agg(cluster_id) FROM clusters WHERE ((cluster_uuid)::text = ANY (string_to_array(?, ',')));";
-    }
-
-    private String getSelectLatestOffsetQuery() {
-        String filterCondition = "WHERE created_utc >= %s - INTERVAL '%s SECONDS'";
-        return
-            "SELECT coalesce (" +
-                " (SELECT min(msg_offset) - 1 from events where msg_offset in " +
-                "   (SELECT msg_offset FROM events " + String.format(filterCondition, currentTimestamp, readDelaySeconds) + ")" +
-                " ), " +
-                " (SELECT max(msg_offset) FROM events), " +
-                " 0 " +
-            ") as last_offset;";
     }
 
     private static String getCompactionQuery() {
