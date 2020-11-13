@@ -37,17 +37,17 @@ ansiColor('xterm') {
         String latestImage = "$registry/aqueduct-pipe:latest"
 
         if (scmVars.GIT_BRANCH == "master") {
-            stage('Spot Bugs') {
-                sh "./gradlew spotbugsMain"
-                def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
-                publishIssues issues: [spotbugs]
-            }
-
-            stage('Pmd Analysis') {
-                sh "./gradlew pmdMain"
-                def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
-                publishIssues issues: [pmd]
-            }
+//             stage('Spot Bugs') {
+//                 sh "./gradlew spotbugsMain"
+//                 def spotbugs = scanForIssues tool: spotBugs(pattern: '**/spotbugs/main.xml')
+//                 publishIssues issues: [spotbugs]
+//             }
+//
+//             stage('Pmd Analysis') {
+//                 sh "./gradlew pmdMain"
+//                 def pmd = scanForIssues tool: pmdParser(pattern: '**/pmd/main.xml')
+//                 publishIssues issues: [pmd]
+//             }
 
             stage('OWASP Scan') {
                 sh "./gradlew dependencyCheckAggregate"
