@@ -47,6 +47,9 @@ public class PipeReadController {
     @Value("${pipe.http.server.read.poll-seconds:0}")
     private int pollSeconds;
 
+    @Value("${bootstrap.retry.logging:false}")
+    boolean logging;
+
     @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
     private int maxPayloadSizeBytes;
 
@@ -104,7 +107,9 @@ public class PipeReadController {
 
     private long calculateRetryAfter(MessageResults messageResults) {
         if (isBootstrappingAndCapacityAvailable(messageResults.getMessages())) {
-            LOG.info("pipe read controller", "retry time is 0ms");
+            if(logging) {
+                LOG.info("pipe read controller", "retry time is 0ms");
+            }
             return 0;
         } else {
             return messageResults.getRetryAfterMs();

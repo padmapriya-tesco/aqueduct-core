@@ -80,3 +80,5 @@ registry:
 compression:
   threshold-in-bytes: 1024
   logging: true
+
+bootstrap.retry.logging: true
