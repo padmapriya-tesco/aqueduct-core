@@ -10,6 +10,7 @@ import spock.lang.Unroll
 import java.sql.SQLException
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.*
 
@@ -23,7 +24,8 @@ class SQLiteStorageIntegrationSpec extends Specification {
     private SQLiteStorage sqliteStorage
 
     ZonedDateTime currentUTCTime() {
-        ZonedDateTime.now(ZoneId.of("UTC"))
+        // truncate milliseconds as this sometimes cause issues with number of digits in and out of sqlite
+        ZonedDateTime.now(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MILLIS)
     }
 
     def message(long offset) {

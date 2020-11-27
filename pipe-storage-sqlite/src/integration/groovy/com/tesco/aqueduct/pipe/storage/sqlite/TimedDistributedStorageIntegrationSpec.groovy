@@ -11,6 +11,7 @@ import spock.lang.Specification
 
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 import java.util.function.Supplier
 
 class TimedDistributedStorageIntegrationSpec extends Specification {
@@ -21,7 +22,8 @@ class TimedDistributedStorageIntegrationSpec extends Specification {
     def meterRegistry = Mock(MeterRegistry)
 
     ZonedDateTime currentUTCTime() {
-        ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
+        // truncate milliseconds as this sometimes cause issues with number of digits in and out of sqlite
+        ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).truncatedTo(ChronoUnit.MILLIS)
     }
 
     def message(long offset) {
