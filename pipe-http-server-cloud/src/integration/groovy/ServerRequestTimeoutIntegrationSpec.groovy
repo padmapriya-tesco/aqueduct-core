@@ -13,11 +13,10 @@ import javax.sql.DataSource
 
 class ServerRequestTimeoutIntegrationSpec extends Specification {
 
-    private static final String VALIDATE_TOKEN_BASE_PATH = '/v4/access-token/auth/validate'
     private static final String CLIENT_ID = UUID.randomUUID().toString()
     private static final String CLIENT_SECRET = UUID.randomUUID().toString()
     private static final String CLIENT_ID_AND_SECRET = "trn:tesco:cid:${CLIENT_ID}:${CLIENT_SECRET}"
-    public static final String VALIDATE_TOKEN_PATH = "${VALIDATE_TOKEN_BASE_PATH}?client_id=${CLIENT_ID_AND_SECRET}"
+    public static final String VALIDATE_TOKEN_PATH = "${IdentityMock.VALIDATE_PATH}?client_id=${CLIENT_ID_AND_SECRET}"
 
     private final static String ACCESS_TOKEN = UUID.randomUUID().toString()
 
@@ -43,6 +42,7 @@ class ServerRequestTimeoutIntegrationSpec extends Specification {
                 "persistence.read.expected-node-count":         2,
                 "persistence.read.cluster-db-pool-size":        10,
                 "persistence.read.read-delay-seconds":          0,
+                "location.clusters.get.path.filter.pattern":    "some/filter/pattern",
 
                 "authentication.identity.url":                  "${identityMock.getUrl()}",
                 "authentication.identity.validate.token.path":  "$VALIDATE_TOKEN_PATH",
