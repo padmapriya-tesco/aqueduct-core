@@ -113,6 +113,15 @@ public class Node {
     }
 
     @JsonIgnore
+    public Generation getGeneration() {
+        if(getHost().contains("FAST") || getHost().contains("POS") || getHost().contains("GHS") || getHost().contains("DCOS")) {
+            return Generation.LEGACY;
+        } else {
+            return Generation.STRATEGIC;
+        }
+    }
+
+    @JsonIgnore
     public boolean isSubGroupIdDifferent(Node node) {
         return !node.getSubGroupId().equals(getSubGroupId());
     }

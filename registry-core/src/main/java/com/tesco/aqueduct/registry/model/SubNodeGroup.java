@@ -107,6 +107,19 @@ public class SubNodeGroup {
 
     public void sortNodes(URL cloudUrl) {
         nodes.sort(comparing(Node::getStatus));
+        nodes.sort(comparing(Node::getGeneration));
+        nodes.sort((n1,n2) -> {
+            if(n1.getStatus() == OFFLINE && n2.getStatus() == OFFLINE) {
+                return 0;
+            } else if (n1.getStatus() != OFFLINE && n2.getStatus() != OFFLINE) {
+                return 0;
+            // we only want to sort offline nodes here
+            } else if(n1.getStatus() == OFFLINE && n2.getStatus() != OFFLINE) {
+                return 1;
+            } else {
+                return -1;
+            }
+        });
         updateGetFollowing(cloudUrl);
     }
 
