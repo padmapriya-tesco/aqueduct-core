@@ -270,79 +270,79 @@ class NodeGroupSpec extends Specification {
         URL cloudUrl = new URL("http://cloud")
 
         and: "a nodegroup with variety of generations and statuses"
-        URL n0Url = new URL("http://node-0")
-        Node n0 = Node.builder()
-            .localUrl(n0Url)
+        URL strategicOfflineUrl = new URL("http://node-0")
+        Node strategicOfflineNode = Node.builder()
+            .localUrl(strategicOfflineUrl)
             .requestedToFollow([cloudUrl])
             .status(OFFLINE)
             .pipe(["v":"1.0"])
             .build()
-        URL n1Url = new URL("http://node-FAST1")
-        Node n1 = Node.builder()
-            .localUrl(n1Url)
+        URL fast1Url = new URL("http://node-FAST1")
+        Node legacyNode1 = Node.builder()
+            .localUrl(fast1Url)
             .requestedToFollow([cloudUrl])
             .status(PENDING)
             .pipe(["v":"1.0"])
             .build()
-        URL n2Url = new URL("http://node-2-PAS")
-        Node n2 = Node.builder()
-            .localUrl(n2Url)
-            .requestedToFollow([n1Url, cloudUrl])
+        URL strategic2Url = new URL("http://node-2-PAS")
+        Node strategicNode2 = Node.builder()
+            .localUrl(strategic2Url)
+            .requestedToFollow([fast1Url, cloudUrl])
             .status(PENDING)
             .pipe(["v":"1.0"])
             .build()
-        URL n3Url = new URL("http://GHSnode-3")
-        Node n3 = Node.builder()
-            .localUrl(n3Url)
-            .requestedToFollow([n1Url, cloudUrl])
+        URL legacy3Url = new URL("http://GHSnode-3")
+        Node legacyNode3 = Node.builder()
+            .localUrl(legacy3Url)
+            .requestedToFollow([fast1Url, cloudUrl])
             .status(FOLLOWING)
             .pipe(["v":"1.0"])
             .build()
-        URL n4Url = new URL("http://node-4")
-        Node n4 = Node.builder()
-            .localUrl(n4Url)
-            .requestedToFollow([n2Url, n1Url, cloudUrl])
+        URL strategic4Url = new URL("http://node-4")
+        Node strategicNode4 = Node.builder()
+            .localUrl(strategic4Url)
+            .requestedToFollow([strategic2Url, fast1Url, cloudUrl])
             .status(FOLLOWING)
             .pipe(["v":"1.0"])
             .build()
-        URL n5Url = new URL("http://node-5")
-        Node n5 = Node.builder()
-            .localUrl(n5Url)
-            .requestedToFollow([n2Url, n1Url, cloudUrl])
+        URL strategic5Url = new URL("http://node-5")
+        Node strategicNode5 = Node.builder()
+            .localUrl(strategic5Url)
+            .requestedToFollow([strategic2Url, fast1Url, cloudUrl])
             .status(PENDING)
             .pipe(["v":"1.0"])
             .build()
-        URL n6Url = new URL("http://nodePOS-6")
-        Node n6 = Node.builder()
-            .localUrl(n6Url)
-            .requestedToFollow([n3Url, n1Url, cloudUrl])
+        URL legacy6Url = new URL("http://nodePOS-6")
+        Node legacyNode6 = Node.builder()
+            .localUrl(legacy6Url)
+            .requestedToFollow([legacy3Url, fast1Url, cloudUrl])
             .status(FOLLOWING)
             .pipe(["v":"1.0"])
             .build()
-        URL n7Url = new URL("http://noDCOSde-7POS")
-        Node n7 = Node.builder()
-            .localUrl(n7Url)
-            .requestedToFollow([n3Url, n1Url, cloudUrl])
+        URL legacy7Url = new URL("http://noDCOSde-7POS")
+        Node legacyNode7 = Node.builder()
+            .localUrl(legacy7Url)
+            .requestedToFollow([legacy3Url, fast1Url, cloudUrl])
             .status(FOLLOWING)
             .pipe(["v":"1.0"])
             .build()
 
-        NodeGroup group = new NodeGroup([n0, n1, n2, n3, n4, n5, n6, n7])
+        NodeGroup group = new NodeGroup([strategicOfflineNode, legacyNode1, strategicNode2, legacyNode3, strategicNode4, strategicNode5, legacyNode6, legacyNode7])
 
         when: "sort is called"
         group.sortNodes(cloudUrl)
 
         then: "nodes are sorted by generation and then status"
-        group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [n4Url, n2Url, n5Url, n3Url, n6Url, n7Url, n1Url, n0Url]
+        group.subGroups.get(0).nodes.stream().map({ n -> n.getLocalUrl() }).collect() == [strategic4Url, strategic2Url, strategic5Url, legacy3Url, legacy6Url, legacy7Url, fast1Url, strategicOfflineUrl]
 
         group.subGroups.get(0).nodes.get(0).requestedToFollow == [cloudUrl]
-        group.subGroups.get(0).nodes.get(1).requestedToFollow == [n4Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(2).requestedToFollow == [n4Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(3).requestedToFollow == [n2Url, n4Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(4).requestedToFollow == [n2Url, n4Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(5).requestedToFollow == [n5Url, n4Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(6).requestedToFollow == [n5Url, n4Url, cloudUrl]
-        group.subGroups.get(0).nodes.get(7).requestedToFollow == [n3Url, n2Url, n4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(1).requestedToFollow == [strategic4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(2).requestedToFollow == [strategic4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(3).requestedToFollow == [strategic2Url, strategic4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(4).requestedToFollow == [strategic2Url, strategic4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(5).requestedToFollow == [strategic5Url, strategic4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(6).requestedToFollow == [strategic5Url, strategic4Url, cloudUrl]
+        group.subGroups.get(0).nodes.get(7).requestedToFollow == [legacy3Url, strategic2Url, strategic4Url, cloudUrl]
     }
 
     def "Nodes maintain sort order when none are offline"() {
