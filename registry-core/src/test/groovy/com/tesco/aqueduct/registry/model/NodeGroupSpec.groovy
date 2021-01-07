@@ -6,10 +6,7 @@ import spock.lang.Specification
 
 import java.time.ZonedDateTime
 
-import static com.tesco.aqueduct.registry.model.Status.FOLLOWING
-import static com.tesco.aqueduct.registry.model.Status.INITIALISING
-import static com.tesco.aqueduct.registry.model.Status.OFFLINE
-import static com.tesco.aqueduct.registry.model.Status.PENDING
+import static com.tesco.aqueduct.registry.model.Status.*
 
 class NodeGroupSpec extends Specification {
     private static final URL CLOUD_URL = new URL("http://some-cloud-url")
