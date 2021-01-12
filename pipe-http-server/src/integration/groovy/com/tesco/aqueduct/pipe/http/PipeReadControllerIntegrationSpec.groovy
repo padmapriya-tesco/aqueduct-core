@@ -147,13 +147,13 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Unroll
     void "non empty response returns first available element - #requestPath"() {
         given:
-        reader.read(_ as List, 0, _ as List) >> new MessageResults(
+        reader.read(_ as List, 0, _ as String) >> new MessageResults(
             [Message(type, "a", "ct", 100, zonedDateTimeNow, null)], 0, of(0), PipeState.UP_TO_DATE)
 
-        reader.read(_ as List, 1, _ as List) >> new MessageResults(
+        reader.read(_ as List, 1, _ as String) >> new MessageResults(
             [Message(type, "a", "ct", 100, zonedDateTimeNow, null)], 0, of(0), PipeState.UP_TO_DATE)
 
-        reader.read(_ as List, 101, _ as List) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
+        reader.read(_ as List, 101, _ as String) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
         def response = RestAssured.given().get(requestPath)
@@ -176,7 +176,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
         given:
         def typeList = asList(types.split(","))
         def offset = of(messages.isEmpty() ? 0 : messages.last().offset)
-        reader.read(typeList, 0, _ as List) >> new MessageResults(messages, 0, offset, PipeState.UP_TO_DATE)
+        reader.read(typeList, 0, _ as String) >> new MessageResults(messages, 0, offset, PipeState.UP_TO_DATE)
 
         when:
         def response = RestAssured.given().get("/pipe/0?type=$types&location=someLocation")
@@ -199,7 +199,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Unroll
     void "filtering by location and type: #query"() {
         given:
-        reader.read(["type1"], 0, _ as List) >> new MessageResults(
+        reader.read(["type1"], 0, _ as String) >> new MessageResults(
             [Message("type1", "a", "ct", 100, zonedDateTimeNow, null)], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
@@ -223,9 +223,9 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Unroll
     void "pipe signals next offset despite messages not routed"() {
         given:
-        reader.read(["type1"], 0, _ as List) >> new MessageResults([], 0, of(headerValue), PipeState.UP_TO_DATE)
+        reader.read(["type1"], 0, _ as String) >> new MessageResults([], 0, of(headerValue), PipeState.UP_TO_DATE)
 
-        reader.read(["type2"], 0, _ as List) >> new MessageResults(
+        reader.read(["type2"], 0, _ as String) >> new MessageResults(
             [Message("type2", "b", "ct", headerValue, zonedDateTimeNow, null)], 0, of(headerValue), PipeState.UP_TO_DATE)
 
         when:
@@ -246,7 +246,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
     void "pipe signals pipe state in response header"() {
         given:
-        reader.read(["type1"], 0, _ as List) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
+        reader.read(["type1"], 0, _ as String) >> new MessageResults([], 0, of(0), PipeState.UP_TO_DATE)
 
         when:
         def response = RestAssured.given().get("/pipe/0?type=type1&location=someLocation")
@@ -261,7 +261,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     @Unroll
     void "the header does not contain Global-Latest-Offset when no global latest offset is stored"() {
         given: "no global offset from storage"
-        reader.read(["type1"], 0, _ as List) >> new MessageResults([], 0, OptionalLong.empty(), PipeState.UP_TO_DATE)
+        reader.read(["type1"], 0, _ as String) >> new MessageResults([], 0, OptionalLong.empty(), PipeState.UP_TO_DATE)
 
         when:
         def response = RestAssured.given().get("/pipe/0?type=type1&location=someLocation")
@@ -278,7 +278,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     void "A single message that is over the payload size is still transported"() {
         def dataBlob = "some very big data blob with more than 200 bytes of size"
         given:
-        reader.read([], 100, _ as List) >> new MessageResults(
+        reader.read([], 100, _ as String) >> new MessageResults(
             [Message(null, "a", "contentType", 100, zonedDateTimeNow, dataBlob)],
             0,
             OptionalLong.empty(),
@@ -300,7 +300,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
 
     def "assert response schema"() {
         given:
-        reader.read([], 100, _ as List) >> new MessageResults(
+        reader.read([], 100, _ as String) >> new MessageResults(
                 [Message(type, "a", "contentType", 100, ZonedDateTime.parse("2018-12-20T15:13:01Z"), "data"),
                  Message(type, "b", null, 101, zonedDateTimeNow, null)],
                 0, OptionalLong.empty(), PipeState.UP_TO_DATE)
@@ -322,7 +322,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     def "messages larger than the compression threshold should be encoded if Accept-Content header set to brotli"() {
         given: 'a read request'
         def message = new Message("type", "key", "contentType", 0L, ZonedDateTime.now(Clock.systemUTC()), "a" * 1025)
-        reader.read([], 0, _ as List) >> new MessageResults([message], 0, of(0L), PipeState.UP_TO_DATE)
+        reader.read([], 0, _ as String) >> new MessageResults([message], 0, of(0L), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
         def response = RestAssured
@@ -341,7 +341,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     def "messages larger than the compression threshold should be encoded if Accept-Content header set to gzip"() {
         given: 'a read request'
         def message = new Message("type", "key", "contentType", 0L, ZonedDateTime.now(Clock.systemUTC()), "a" * 1025)
-        reader.read([], 0, _ as List) >> new MessageResults([message], 0, of(0L), PipeState.UP_TO_DATE)
+        reader.read([], 0, _ as String) >> new MessageResults([message], 0, of(0L), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
         def response = RestAssured
@@ -360,7 +360,7 @@ class PipeReadControllerIntegrationSpec extends Specification {
     def "messages smaller than the compression threshold should not be encoded"() {
         given: 'a read request'
         def message = new Message("type", "key", "contentType", 0L, ZonedDateTime.now(Clock.systemUTC()), "smallPayload")
-        reader.read([], 0, _ as List) >> new MessageResults([message], 0, of(0L), PipeState.UP_TO_DATE)
+        reader.read([], 0, _ as String) >> new MessageResults([message], 0, of(0L), PipeState.UP_TO_DATE)
 
         when: "we read from the pipe"
         def response = RestAssured

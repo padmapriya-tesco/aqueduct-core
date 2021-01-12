@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.storage
 
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
 import com.tesco.aqueduct.pipe.api.OffsetName
@@ -28,6 +29,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     Sql sql
     PostgresqlStorage storage
     DataSource dataSource
+    LocationResolver locationResolver
 
     long retryAfter = 5000
     long batchSize = 1000
@@ -80,7 +82,9 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
         """)
 
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4)
+        locationResolver = Mock(LocationResolver)
+        locationResolver.resolve(_) >> {arguments -> arguments}
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
     }
 
     @Unroll
@@ -107,7 +111,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def "get pipe state as up to date always"() {
         when: "reading the messages"
-        def messageResults = storage.read(["some_type"], 0, ["clusterId"])
+        def messageResults = storage.read(["some_type"], 0, "clusterId")
 
         then: "pipe state is up to date"
         messageResults.pipeState == PipeState.UP_TO_DATE
@@ -117,7 +121,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "there is postgres storage"
         def limit = 1
         def dataSourceWithMockedConnection = Mock(DataSource)
-        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, new OffsetFetcher(0), 1, 1, 4)
+        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
 
         and: "a mock connection is provided when requested"
         def connection = Mock(Connection)
@@ -129,7 +133,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         connection.prepareStatement(_ as String) >> preparedStatement
 
         when: "requesting messages specifying a type key and a cluster id"
-        postgresStorage.read(["some_type"], 0, ["clusterId"])
+        postgresStorage.read(["some_type"], 0, "clusterId")
 
         then: "a query is created that contain given type and cluster including default cluster in the where clause"
         2 * preparedStatement.setLong(_, 0)
@@ -152,7 +156,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read([], 0, ["clusterId"])
+        MessageResults result = storage.read([], 0, "clusterId")
 
         then: "messages that are returned are no larger than the maximum batch size when reading with a type"
         result.messages.size() == 2
@@ -173,7 +177,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(msg3, messageSize)
 
         when: "reading from the database"
-        MessageResults result = storage.read(["type-1"], 0, ["clusterId"])
+        MessageResults result = storage.read(["type-1"], 0, "clusterId")
 
         then: "messages that are returned are no larger than the maximum batch size"
         result.messages.size() == 2
@@ -186,7 +190,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(key: "x"))
 
         when:
-        MessageResults result = storage.read([], 4, ["clusterId"])
+        MessageResults result = storage.read([], 4, "clusterId")
 
         then:
         result.retryAfterMs > 0
@@ -197,7 +201,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "I have no records in the integrated database"
 
         when:
-        MessageResults result = storage.read([], 0,["clusterId"])
+        MessageResults result = storage.read([], 0,"clusterId")
 
         then:
         result.retryAfterMs > 0
@@ -217,7 +221,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compact()
 
         and: 'all messages are read'
-        MessageResults result = storage.read(null, 0, ["cluster1"])
+        MessageResults result = storage.read(null, 0, "cluster1")
         List<Message> retrievedMessages = result.messages
 
         then: 'no messages are compacted'
@@ -237,7 +241,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compact()
 
         and: 'all messages are read'
-        MessageResults result = storage.read(null, 0, ["cluster1"])
+        MessageResults result = storage.read(null, 0, "cluster1")
         List<Message> retrievedMessages = result.messages
 
         then: 'all messages are compacted'
@@ -257,7 +261,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compact()
 
         and: 'all messages are read'
-        MessageResults result = storage.read(null, 0, ["cluster1"])
+        MessageResults result = storage.read(null, 0, "cluster1")
         List<Message> retrievedMessages = result.messages
 
         then: 'correct messages are compacted'
@@ -277,7 +281,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         storage.compact()
 
         and: 'all messages are read'
-        MessageResults result = storage.read(null, 0, ["cluster1"])
+        MessageResults result = storage.read(null, 0, "cluster1")
         List<Message> retrievedMessages = result.messages
 
         then: 'no messages are compacted'
@@ -292,7 +296,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(3, "type3", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading all messages'
-        def messageResults = storage.read([type], 0, ["clusterId"])
+        def messageResults = storage.read([type], 0, "clusterId")
 
         then: 'global latest offset is type and clusterId independent'
         messageResults.globalLatestOffset == OptionalLong.of(3)
@@ -308,7 +312,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(3, "type3", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading with no types'
-        def messageResults = storage.read([], 0, ["clusterId"])
+        def messageResults = storage.read([], 0, "clusterId")
 
         then: 'all messages from the storage are returned regardless the types'
         messageResults.messages.size() == 3
@@ -327,7 +331,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithCluster(message(3, "type3", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
 
         when: 'reading with no types but cluster provided'
-        def messageResults = storage.read([], 0, ["cluster1"])
+        def messageResults = storage.read([], 0, "cluster1")
 
         then: 'messages belonging to cluster1 are returned'
         messageResults.messages.size() == 2
@@ -350,7 +354,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(5, "type2", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading with no types but cluster provided'
-        def messageResults = storage.read([], 0, ["cluster1"])
+        def messageResults = storage.read([], 0, "cluster1")
 
         then: 'messages belonging to cluster1 and default cluster are returned'
         messageResults.messages.size() == 4
@@ -372,7 +376,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithCluster(message(6, "type3", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
 
         when: 'reading with no types but cluster provided'
-        def messageResults = storage.read(["type2", "type3"], 0, ["cluster1"])
+        def messageResults = storage.read(["type2", "type3"], 0, "cluster1")
 
         then: 'messages belonging to cluster1 are returned'
         messageResults.messages.size() == 2
@@ -398,7 +402,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(8, "type2", "H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading with no types but cluster provided'
-        def messageResults = storage.read(["type2", "type3"], 0, ["cluster1"])
+        def messageResults = storage.read(["type2", "type3"], 0, "cluster1")
 
         then: 'messages belonging to cluster1 are returned'
         messageResults.messages.size() == 3
@@ -420,7 +424,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithCluster(message(6, "type3", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), cluster1)
 
         when: 'reading with a different cluster'
-        def messageResults = storage.read(["type2", "type3"], 0, ["cluster3"])
+        def messageResults = storage.read(["type2", "type3"], 0, "cluster3")
 
         then: 'messages are not returned, and no exception is thrown'
         messageResults.messages.size() == 0
@@ -430,7 +434,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "pipe should return messages if available from the given offset instead of empty set"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -444,7 +448,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(9, "type1", "I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading all messages'
-        def messageResults = storage.read(["type1"], 0, ["cluster1"])
+        def messageResults = storage.read(["type1"], 0, "cluster1")
 
         then: 'messages are provided for the given type'
         messageResults.messages.size() == 3
@@ -453,7 +457,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.globalLatestOffset == OptionalLong.of(9)
 
         when: "read again from further offset"
-        messageResults = storage.read(["type1"], 4, [])
+        messageResults = storage.read(["type1"], 4, "")
 
         then: "we should still get relevant messages back even if they are further down from the given offset"
         messageResults.messages.size() == 3
@@ -465,7 +469,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "getMessageCountByType should return the count of messages by type"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -494,7 +498,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given:
         def offsetFetcher = new OffsetFetcher(0)
         offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4)
+        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -508,7 +512,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(8, "type1", "H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
 
         when: 'reading all messages'
-        def messageResults = storage.read(types, 1, [])
+        def messageResults = storage.read(types, 1, "")
 
         then: 'messages are provided for the given type'
         messageResults.messages.size() == 3
@@ -526,7 +530,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'reading all messages'
-        def messageResults = storage.read(types, 1, [])
+        def messageResults = storage.read(types, 1, "")
 
         then: 'messages are provided for the given type'
         messageResults.messages.size() == 1

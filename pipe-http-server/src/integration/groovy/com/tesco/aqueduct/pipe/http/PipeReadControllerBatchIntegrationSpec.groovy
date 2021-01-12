@@ -52,7 +52,7 @@ class PipeReadControllerBatchIntegrationSpec extends Specification {
         ]
 
         and:
-        reader.read(_ as List, 100, _ as List) >> {
+        reader.read(_ as List, 100, _ as String) >> {
             new MessageResults(messages, 0, of(102), PipeState.UP_TO_DATE)
         }
 

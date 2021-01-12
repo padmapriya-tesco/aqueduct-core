@@ -41,9 +41,6 @@ public class PipeReadController {
     @Inject @Named("local")
     private Reader reader;
 
-    @Inject
-    private LocationResolver locationResolver;
-
     @Value("${pipe.http.server.read.poll-seconds:0}")
     private int pollSeconds;
 
@@ -77,7 +74,7 @@ public class PipeReadController {
         final List<String> types = flattenRequestParams(type);
         LOG.withTypes(types).debug("pipe read controller", "reading with types");
 
-        final MessageResults messageResults = reader.read(types, offset, locationResolver.resolve(location));
+        final MessageResults messageResults = reader.read(types, offset, location);
         final List<Message> messages = messageResults.getMessages();
 
         final long retryAfterMs = calculateRetryAfter(messageResults);
