@@ -1,5 +1,6 @@
 package com.tesco.aqueduct.pipe.http;
 
+import com.tesco.aqueduct.pipe.api.LocationResolver;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
@@ -37,10 +38,11 @@ public class Bindings {
         @Value("${persistence.read.cluster-db-pool-size}") final long clusterDBPoolSize,
         @Value("${persistence.read.work-mem-mb:4}") final int workMemMb,
         @Named("pipe") final DataSource dataSource,
-        final OffsetFetcher offsetFetcher
+        final OffsetFetcher offsetFetcher,
+        LocationResolver locationResolver
     ) {
         return new PostgresqlStorage(
-            dataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb
+            dataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb, locationResolver
         );
     }
 

@@ -62,7 +62,7 @@ class SQLiteStorageSpec extends Specification {
         sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
         when: 'messages are requested to be read from a given offset'
-        sqliteStorage.read([], 0)
+        sqliteStorage.read([], 0, "abc")
 
         then: 'a runtime exception is thrown'
         thrown(RuntimeException)
@@ -160,7 +160,7 @@ class SQLiteStorageSpec extends Specification {
             sleep 5
             sqliteStorage.write(new OffsetEntity(GLOBAL_LATEST_OFFSET, OptionalLong.of(10L)))
         }
-        MessageResults messageResults = sqliteStorage.read(["some-type"],0, ["na"])
+        MessageResults messageResults = sqliteStorage.read(["some-type"],0, "na")
 
         then: 'global offset that is read is not the concurrently written one, but a consistent one'
         messageResults.globalLatestOffset.asLong == 1L

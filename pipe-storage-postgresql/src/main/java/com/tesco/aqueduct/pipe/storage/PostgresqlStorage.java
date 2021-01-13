@@ -23,6 +23,7 @@ public class PostgresqlStorage implements CentralStorage {
     private final int nodeCount;
     private final long clusterDBPoolSize;
     private final int workMemMb;
+    private LocationResolver locationResolver;
 
     public PostgresqlStorage(
         final DataSource dataSource,
@@ -32,7 +33,8 @@ public class PostgresqlStorage implements CentralStorage {
         final OffsetFetcher offsetFetcher,
         int nodeCount,
         long clusterDBPoolSize,
-        int workMemMb
+        int workMemMb,
+        LocationResolver locationResolver
     ) {
         this.retryAfter = retryAfter;
         this.limit = limit;
@@ -42,6 +44,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.clusterDBPoolSize = clusterDBPoolSize;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
         this.workMemMb = workMemMb;
+        this.locationResolver = locationResolver;
 
         //initialise connection pool eagerly
         try (Connection connection = this.dataSource.getConnection()) {
@@ -55,9 +58,12 @@ public class PostgresqlStorage implements CentralStorage {
     public MessageResults read(
         final List<String> types,
         final long startOffset,
-        final List<String> clusterUuids
+        final String locationUuid
     ) {
+        List<String> clusterUuids = locationResolver.resolve(locationUuid);
+
         long start = System.currentTimeMillis();
+
         try (Connection connection = dataSource.getConnection()) {
             LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
 
