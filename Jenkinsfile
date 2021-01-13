@@ -84,7 +84,7 @@ ansiColor('xterm') {
                     sh "docker build -t ${integrationImage} ."
                 } 
 
-                sh "docker run --rm  -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache/trivy:/root/.cache/trivy knqyf263/trivy:0.1.2 --quiet --ignore-unfixed $integrationImage"
+//                sh "docker run --rm  -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.cache/trivy:/root/.cache/trivy knqyf263/trivy:0.1.2 --quiet --ignore-unfixed $integrationImage"
                 sh "docker push ${integrationImage}"
 
                 if (params.INITIAL_BUILD) {
