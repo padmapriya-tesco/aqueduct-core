@@ -1,10 +1,14 @@
 package com.tesco.aqueduct.pipe.http;
 
-import com.tesco.aqueduct.pipe.api.LocationResolver;
+import com.tesco.aqueduct.pipe.api.LocationService;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
+import com.tesco.aqueduct.pipe.location.CloudLocationService;
+import com.tesco.aqueduct.pipe.location.LocationServiceClient;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.pipe.storage.ClusterStorage;
+import com.tesco.aqueduct.pipe.storage.LocationResolver;
 import com.tesco.aqueduct.pipe.storage.OffsetFetcher;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
@@ -47,6 +51,15 @@ public class Bindings {
     }
 
     @Singleton
+    LocationResolver locationResolver(
+        @Named("pipe") final DataSource dataSource,
+        @Value("${location.clusters.cache.expire-after-write}") final Duration expireAfter,
+        final LocationService locationService
+    ) {
+        return new ClusterStorage(dataSource, locationService, expireAfter);
+    }
+
+    @Singleton
     @Measure
     NodeRegistry bindNodeRegistry(
         @Named("registry") final DataSource dataSource,
@@ -69,6 +82,11 @@ public class Bindings {
         @Property(name = "authentication.identity.client.secret") String identityClientSecret
     ) {
         return new IdentityIssueTokenProvider(identityIssueTokenClient, identityClientId, identityClientSecret);
+    }
+
+    @Singleton
+    LocationService locationService(final Provider<LocationServiceClient> locationServiceClientProvider) {
+        return new CloudLocationService(locationServiceClientProvider);
     }
 
     @Singleton
