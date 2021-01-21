@@ -15,7 +15,8 @@ public class PostgresqlStorage implements CentralStorage {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
 
     private final int limit;
-    private final DataSource dataSource;
+    private final DataSource pipeDataSource;
+    private final DataSource compactionDataSource;
     private final long maxBatchSize;
     private final long retryAfter;
     private OffsetFetcher offsetFetcher;
@@ -25,7 +26,8 @@ public class PostgresqlStorage implements CentralStorage {
     private LocationResolver locationResolver;
 
     public PostgresqlStorage(
-        final DataSource dataSource,
+        final DataSource pipeDataSource,
+        final DataSource compactionDataSource,
         final int limit,
         final long retryAfter,
         final long maxBatchSize,
@@ -37,7 +39,8 @@ public class PostgresqlStorage implements CentralStorage {
     ) {
         this.retryAfter = retryAfter;
         this.limit = limit;
-        this.dataSource = dataSource;
+        this.pipeDataSource = pipeDataSource;
+        this.compactionDataSource = compactionDataSource;
         this.offsetFetcher = offsetFetcher;
         this.nodeCount = nodeCount;
         this.clusterDBPoolSize = clusterDBPoolSize;
@@ -46,7 +49,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.locationResolver = locationResolver;
 
         //initialise connection pool eagerly
-        try (Connection connection = this.dataSource.getConnection()) {
+        try (Connection connection = this.pipeDataSource.getConnection()) {
             LOG.debug("postgresql storage", "initialised connection pool");
         } catch (SQLException e) {
             LOG.error("postgresql storage", "Error initializing connection pool", e);
@@ -62,7 +65,7 @@ public class PostgresqlStorage implements CentralStorage {
         long start = System.currentTimeMillis();
         final List<Long> clusterIds = locationResolver.getClusterIds(locationUuid);
 
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = pipeDataSource.getConnection()) {
             LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
 
             connection.setAutoCommit(false);
@@ -124,7 +127,7 @@ public class PostgresqlStorage implements CentralStorage {
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = pipeDataSource.getConnection()) {
             return OptionalLong.of(offsetFetcher.getGlobalLatestOffset(connection));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset", exception);
@@ -139,7 +142,7 @@ public class PostgresqlStorage implements CentralStorage {
 
     @Override
     public void runVisibilityCheck() {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = compactionDataSource.getConnection()) {
             Map<String, Long> messageCountByType = getMessageCountByType(connection);
 
             messageCountByType.forEach((key, value) ->
@@ -234,7 +237,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     public void compact() {
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection = compactionDataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
@@ -244,8 +247,8 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     public void vacuumAnalyseEvents() {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
+        try (Connection connection = compactionDataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
             statement.executeUpdate();
             LOG.info("vacuum analyse", "vacuum analyse complete");
         } catch (SQLException e) {

@@ -62,6 +62,7 @@ class LocationServiceIntegrationSpec extends Specification {
             .build()
             .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("pipe"))
             .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("registry"))
+            .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("compaction"))
             .registerSingleton(new IdentityIssueTokenProvider(() -> context.getBean(IdentityIssueTokenClient), CLIENT_ID, CLIENT_SECRET))
 
         context.start()
