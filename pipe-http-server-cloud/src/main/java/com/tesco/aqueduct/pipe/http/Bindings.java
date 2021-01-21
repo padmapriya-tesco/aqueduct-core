@@ -41,12 +41,13 @@ public class Bindings {
         @Value("${persistence.read.expected-node-count}") final int expectedNodeCount,
         @Value("${persistence.read.cluster-db-pool-size}") final long clusterDBPoolSize,
         @Value("${persistence.read.work-mem-mb:4}") final int workMemMb,
-        @Named("pipe") final DataSource dataSource,
+        @Named("pipe") final DataSource pipeDataSource,
         final OffsetFetcher offsetFetcher,
-        LocationResolver locationResolver
+        LocationResolver locationResolver,
+        @Named("compaction") final DataSource compactionDataSource
     ) {
         return new PostgresqlStorage(
-            dataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb, locationResolver
+            pipeDataSource, compactionDataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb, locationResolver
         );
     }
 

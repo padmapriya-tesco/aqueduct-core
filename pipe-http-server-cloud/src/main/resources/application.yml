@@ -53,6 +53,14 @@ datasources:
     maximum-pool-size: 2
     max-lifetime: 600000
     leak-detection-threshold: 60000
+  compaction:
+    jdbc-url: "jdbc:postgresql://${POSTGRE_SERVER}/${POSTGRE_DATABASE}"
+    username: "${POSTGRE_USERNAME}"
+    password: "${POSTGRE_PASSWORD}"
+    driver-class-name: org.postgresql.Driver
+    maximum-pool-size: 1
+    max-lifetime: 600000
+    leak-detection-threshold: 60000
 
 authentication:
   identity:

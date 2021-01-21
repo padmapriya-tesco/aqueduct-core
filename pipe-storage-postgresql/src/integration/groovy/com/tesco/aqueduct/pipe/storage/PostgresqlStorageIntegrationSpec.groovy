@@ -84,7 +84,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         locationResolver = Mock(LocationResolver)
         locationResolver.getClusterIds("locationUuid") >> [1L]
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
     }
 
     @Unroll
@@ -121,7 +121,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "there is postgres storage"
         def limit = 1
         def dataSourceWithMockedConnection = Mock(DataSource)
-        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, limit, 0, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
+        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, dataSourceWithMockedConnection, limit, 0, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
 
         and: "a mock connection is provided when requested"
         def connection = Mock(Connection)
@@ -363,7 +363,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "pipe should return messages if available from the given offset instead of empty set"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -398,7 +398,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "getMessageCountByType should return the count of messages by type"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, locationResolver)
 
         and: 'an existing data store with two different types of messages'
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -427,7 +427,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given:
         def offsetFetcher = new OffsetFetcher(0)
         offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -457,7 +457,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given:
         def offsetFetcher = new OffsetFetcher(0)
         offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
 
         locationResolver.getClusterIds("someLocationUuid") >> [2L, 3L]
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 2L)
@@ -479,7 +479,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def someLocationUuid = "someLocationUuid"
         def offsetFetcher = new OffsetFetcher(0)
         offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, locationResolver)
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 2L)
         insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 3L)
