@@ -60,7 +60,7 @@ datasources:
     driver-class-name: org.postgresql.Driver
     maximum-pool-size: 1
     max-lifetime: 600000
-    leak-detection-threshold: 60000
+    leak-detection-threshold: 300000
 
 authentication:
   identity:
