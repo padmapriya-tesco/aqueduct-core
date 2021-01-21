@@ -36,6 +36,7 @@ class MetricsIntegrationSpec extends Specification {
             .build()
             .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("pipe"))
             .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("registry"))
+            .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("compaction"))
 
         context.start()
 

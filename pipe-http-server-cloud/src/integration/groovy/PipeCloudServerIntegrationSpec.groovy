@@ -63,6 +63,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
             .build()
             .registerSingleton(DataSource, dataSource, Qualifiers.byName("pipe"))
             .registerSingleton(DataSource, dataSource, Qualifiers.byName("registry"))
+            .registerSingleton(DataSource, dataSource, Qualifiers.byName("compaction"))
             .registerSingleton(LocationResolver, locationResolver)
 
         context.start()

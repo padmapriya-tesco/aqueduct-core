@@ -96,6 +96,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         .registerSingleton(Reader, centralStorageMock, Qualifiers.byName("local"))
         .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("pipe"))
         .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("registry"))
+        .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("compaction"))
         .registerSingleton(locationResolver)
 
         context.start()
