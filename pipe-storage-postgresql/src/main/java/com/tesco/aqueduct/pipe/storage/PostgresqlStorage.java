@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import org.postgresql.util.PSQLException;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -257,10 +258,12 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    public void compactAndMaintain() {
+    public boolean compactAndMaintain() {
+        boolean compacted = false;
         try (Connection connection = compactionDataSource.getConnection()) {
             connection.setAutoCommit(false);
             if(attemptToLock(connection)){
+                compacted=true;
                 LOG.info("compact and maintain", "obtained lock, compacting");
                 compact(connection);
                 runVisibilityCheck(connection);
@@ -275,12 +278,13 @@ public class PostgresqlStorage implements CentralStorage {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        return compacted;
     }
 
     private boolean attemptToLock(Connection connection) {
         try (PreparedStatement statement = connection.prepareStatement(getLockingQuery())) {
             return statement.execute();
-        } catch (SQLException e) {
+        } catch (PSQLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -354,7 +358,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private String getLockingQuery() {
-        return "SELECT pg_try_advisory_xact_lock(123);";
+        return "SELECT * from clusters where cluster_id=1 FOR UPDATE NOWAIT;";
     }
     
     private static String getMessageCountByTypeQuery() {

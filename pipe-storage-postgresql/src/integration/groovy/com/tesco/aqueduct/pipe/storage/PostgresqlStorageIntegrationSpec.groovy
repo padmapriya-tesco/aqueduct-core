@@ -2,22 +2,31 @@ package com.tesco.aqueduct.pipe.storage
 
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
+import com.tesco.aqueduct.pipe.api.HttpHeaders
 import com.tesco.aqueduct.pipe.api.Message
 import com.tesco.aqueduct.pipe.api.MessageResults
+import com.tesco.aqueduct.pipe.api.OffsetEntity
 import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import groovy.transform.NamedVariant
+import io.restassured.RestAssured
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Unroll
+import spock.util.concurrent.PollingConditions
 
 import javax.sql.DataSource
 import java.sql.*
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+
+import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET
 
 class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
@@ -242,7 +251,56 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         then: 'all messages are compacted'
         retrievedMessages.size() == 0
     }
-    
+
+    def 'Compaction only runs once when run in parallel'() {
+        given: 'multiple threads attempting to compact'
+        HashSet completed = new HashSet()
+        HashSet compactionRan = new HashSet()
+        //CompletableFuture startLock = new CompletableFuture()
+
+        5.times{ i ->
+            new Thread( {
+                print "here $i"
+                //startLock.get()
+                print "lock $i"
+                boolean compacted = storage.compactAndMaintain()
+                completed.add(i)
+
+                if(compacted) {
+                    compactionRan.add(i)
+                }
+            }).run()
+        }
+
+        print "after"
+        //startLock.complete(true)
+
+        expect: 'compaction only ran once'
+        PollingConditions conditions = new PollingConditions(timeout: 10)
+
+        conditions.eventually {
+            completed.size() == 5
+            compactionRan.size() == 1
+        }
+
+    }
+
+    def 'compaction doesnt run when it cant get the lock'() {
+        given: 'lock is held by the test'
+        Connection connection = sql.connection
+        connection.setAutoCommit(false)
+        Statement statement = connection.prepareStatement("SELECT * from clusters where cluster_id=1 FOR UPDATE;")
+        print statement.execute()
+
+        when: 'call compact'
+        println "here1"
+        boolean gotLock = storage.attemptToLock(DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres")))
+        println "here2"
+
+        then: 'compaction didnt happen'
+        gotLock == false
+        connection.commit()
+    }
 
     def 'Variety of TTL value messages are compacted correctly'() {
         given: 'messages stored with cluster id and TTL set to today'
