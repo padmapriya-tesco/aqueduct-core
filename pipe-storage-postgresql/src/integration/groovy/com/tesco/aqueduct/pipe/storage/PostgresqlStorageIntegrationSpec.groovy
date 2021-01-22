@@ -216,7 +216,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithClusterAndTTL(3, "A", 1, LocalDateTime.now().plusMinutes(60))
 
         when: 'compaction with ttl is run'
-        storage.compact()
+        storage.compactAndMaintain()
 
         and: 'all messages are read'
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -233,7 +233,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithClusterAndTTL(3, "A", 1, LocalDateTime.now().minusMinutes(1))
 
         when: 'compaction with ttl is run'
-        storage.compact()
+        storage.compactAndMaintain()
 
         and: 'all messages are read'
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -242,6 +242,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         then: 'all messages are compacted'
         retrievedMessages.size() == 0
     }
+    
 
     def 'Variety of TTL value messages are compacted correctly'() {
         given: 'messages stored with cluster id and TTL set to today'
@@ -250,7 +251,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithClusterAndTTL(3, "A", 1, LocalDateTime.now().minusMinutes(1))
 
         when: 'compaction with ttl is run'
-        storage.compact()
+        storage.compactAndMaintain()
 
         and: 'all messages are read'
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -267,7 +268,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: 'compaction with ttl is run'
-        storage.compact()
+        storage.compactAndMaintain()
 
         and: 'all messages are read'
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -412,7 +413,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insert(message(9, "type1", "I", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: "getMessageCountByType is called"
-        storage.runVisibilityCheck()
         Map<String, Long> result = storage.getMessageCountByType(dataSource.connection)
 
         then: "the correct count is returned"
@@ -518,8 +518,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "vacuum analyse query is valid"() {
         given: "a database"
 
-        when: "vacuum analyse is called"
-        storage.vacuumAnalyseEvents()
+        when: "vacuum analyse is called via compact and maintain method"
+        storage.compactAndMaintain()
 
         then: "no exception thrown"
         noExceptionThrown()

@@ -154,6 +154,18 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
+    private void runVisibilityCheck(Connection connection) {
+        try {
+            Map<String, Long> messageCountByType = getMessageCountByType(connection);
+            messageCountByType.forEach((key, value) ->
+                    LOG.info("count:type:" + key, String.valueOf(value))
+            );
+        } catch (SQLException exception) {
+            LOG.error("postgres storage", "run visibility check", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
     private Map<String, Long> getMessageCountByType(Connection connection) throws SQLException {
         long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(getMessageCountByTypeQuery())) {
@@ -236,9 +248,8 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    public void compact() {
-        try (Connection connection = compactionDataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+    private void compact(Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
@@ -246,9 +257,36 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    public void vacuumAnalyseEvents() {
-        try (Connection connection = compactionDataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
+    public void compactAndMaintain() {
+        try (Connection connection = compactionDataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            if(attemptToLock(connection)){
+                LOG.info("compact and maintain", "obtained lock, compacting");
+                compact(connection);
+                runVisibilityCheck(connection);
+
+                connection.commit();
+                connection.setAutoCommit(true);
+
+                vacuumAnalyseEvents(connection);
+            } else {
+                LOG.info("compact and maintain", "didn't obtain lock");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean attemptToLock(Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(getLockingQuery())) {
+            return statement.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void vacuumAnalyseEvents(Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
             statement.executeUpdate();
             LOG.info("vacuum analyse", "vacuum analyse complete");
         } catch (SQLException e) {
@@ -313,6 +351,10 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getWorkMemQuery() {
         return " SET LOCAL work_mem TO '" + workMemMb + "MB';";
+    }
+
+    private String getLockingQuery() {
+        return "SELECT pg_try_advisory_xact_lock(123);";
     }
     
     private static String getMessageCountByTypeQuery() {
