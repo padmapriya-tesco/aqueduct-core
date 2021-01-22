@@ -254,7 +254,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def 'Compaction only runs once when called in parallel'() {
         given: 'database with lots of data ready to be compacted'
-        10000.times{i ->
+        100000.times{i ->
             insertWithClusterAndTTL(i, "A", 1, LocalDateTime.now().minusMinutes(60))
         }
 
