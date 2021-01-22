@@ -252,31 +252,35 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         retrievedMessages.size() == 0
     }
 
-    def 'Compaction only runs once when run in parallel'() {
-        given: 'multiple threads attempting to compact'
-        HashSet completed = new HashSet()
-        HashSet compactionRan = new HashSet()
-        //CompletableFuture startLock = new CompletableFuture()
+    def 'Compaction only runs once when called in parallel'() {
+        given: 'database with lots of data ready to be compacted'
+        10000.times{i ->
+            insertWithClusterAndTTL(i, "A", 1, LocalDateTime.now().minusMinutes(60))
+        }
+
+        and:'multiple threads attempting to compact in parallel'
+        def completed = [] as Set
+        def compactionRan = [] as Set
+
+        ExecutorService pool = Executors.newFixedThreadPool(5)
+        CompletableFuture startLock = new CompletableFuture()
 
         5.times{ i ->
-            new Thread( {
-                print "here $i"
-                //startLock.get()
-                print "lock $i"
+            pool.execute{
+                startLock.get()
                 boolean compacted = storage.compactAndMaintain()
                 completed.add(i)
 
                 if(compacted) {
                     compactionRan.add(i)
                 }
-            }).run()
+            }
         }
 
-        print "after"
-        //startLock.complete(true)
+        startLock.complete(true)
 
         expect: 'compaction only ran once'
-        PollingConditions conditions = new PollingConditions(timeout: 10)
+        PollingConditions conditions = new PollingConditions(timeout: 5)
 
         conditions.eventually {
             completed.size() == 5
@@ -285,7 +289,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     }
 
-    def 'compaction doesnt run when it cant get the lock'() {
+    def 'locking fails gracefully when lock cannot be obtained'() {
         given: 'lock is held by the test'
         Connection connection = sql.connection
         connection.setAutoCommit(false)
@@ -293,13 +297,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         print statement.execute()
 
         when: 'call compact'
-        println "here1"
         boolean gotLock = storage.attemptToLock(DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres")))
-        println "here2"
 
         then: 'compaction didnt happen'
-        gotLock == false
-        connection.commit()
+        !gotLock
     }
 
     def 'Variety of TTL value messages are compacted correctly'() {

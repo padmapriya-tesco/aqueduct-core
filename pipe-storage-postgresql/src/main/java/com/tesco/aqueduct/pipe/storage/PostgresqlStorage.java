@@ -3,6 +3,7 @@ package com.tesco.aqueduct.pipe.storage;
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import org.postgresql.util.PSQLException;
+import org.postgresql.util.PSQLState;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -284,8 +285,13 @@ public class PostgresqlStorage implements CentralStorage {
     private boolean attemptToLock(Connection connection) {
         try (PreparedStatement statement = connection.prepareStatement(getLockingQuery())) {
             return statement.execute();
-        } catch (PSQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            if(e.getSQLState().equals("55P03")) {
+                //lock was not available
+                return false;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
