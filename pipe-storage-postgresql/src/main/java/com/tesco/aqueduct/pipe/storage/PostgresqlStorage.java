@@ -2,8 +2,6 @@ package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
-import org.postgresql.util.PSQLException;
-import org.postgresql.util.PSQLState;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -21,11 +19,11 @@ public class PostgresqlStorage implements CentralStorage {
     private final DataSource compactionDataSource;
     private final long maxBatchSize;
     private final long retryAfter;
-    private OffsetFetcher offsetFetcher;
+    private final OffsetFetcher offsetFetcher;
     private final int nodeCount;
     private final long clusterDBPoolSize;
     private final int workMemMb;
-    private LocationResolver locationResolver;
+    private final LocationResolver locationResolver;
 
     public PostgresqlStorage(
         final DataSource pipeDataSource,
@@ -269,6 +267,7 @@ public class PostgresqlStorage implements CentralStorage {
                 compact(connection);
                 runVisibilityCheck(connection);
 
+                //start a new transaction for vacuuming
                 connection.commit();
                 connection.setAutoCommit(true);
 
