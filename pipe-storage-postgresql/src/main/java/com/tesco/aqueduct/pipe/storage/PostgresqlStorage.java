@@ -141,6 +141,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     @Override
+    @Deprecated
     public void runVisibilityCheck() {
         try (Connection connection = compactionDataSource.getConnection()) {
             Map<String, Long> messageCountByType = getMessageCountByType(connection);
@@ -158,7 +159,7 @@ public class PostgresqlStorage implements CentralStorage {
         try {
             Map<String, Long> messageCountByType = getMessageCountByType(connection);
             messageCountByType.forEach((key, value) ->
-                    LOG.info("count:type:" + key, String.valueOf(value))
+                LOG.info("count:type:" + key, String.valueOf(value))
             );
         } catch (SQLException exception) {
             LOG.error("postgres storage", "run visibility check", exception);
