@@ -161,6 +161,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .registerSingleton(NodeRegistry, registry)
             .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("pipe"))
             .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("registry"))
+            .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("compaction"))
             .registerSingleton(Reader, reader)
             .registerSingleton(NodeRequestStorage, nodeRequestStorage)
 

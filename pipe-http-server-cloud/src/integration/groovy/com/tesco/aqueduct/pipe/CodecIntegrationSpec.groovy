@@ -80,6 +80,7 @@ class CodecIntegrationSpec extends Specification {
             .build()
             .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("pipe"))
             .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("registry"))
+            .registerSingleton(DataSource, pg.embeddedPostgres.postgresDatabase, Qualifiers.byName("compaction"))
             .registerSingleton(BrotliCodec, new ErrorProneCodec())
 
         context.start()
@@ -104,7 +105,6 @@ class CodecIntegrationSpec extends Specification {
             return super.encode(input)
         }
     }
-
 
     void setup() {
         sql = new SqlWrapper(pg.embeddedPostgres.postgresDatabase)

@@ -1,10 +1,14 @@
 package com.tesco.aqueduct.pipe.http;
 
-import com.tesco.aqueduct.pipe.api.LocationResolver;
+import com.tesco.aqueduct.pipe.api.LocationService;
 import com.tesco.aqueduct.pipe.api.TokenProvider;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenClient;
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityIssueTokenProvider;
+import com.tesco.aqueduct.pipe.location.CloudLocationService;
+import com.tesco.aqueduct.pipe.location.LocationServiceClient;
 import com.tesco.aqueduct.pipe.metrics.Measure;
+import com.tesco.aqueduct.pipe.storage.ClusterStorage;
+import com.tesco.aqueduct.pipe.storage.LocationResolver;
 import com.tesco.aqueduct.pipe.storage.OffsetFetcher;
 import com.tesco.aqueduct.pipe.storage.PostgresqlStorage;
 import com.tesco.aqueduct.registry.model.NodeRegistry;
@@ -37,13 +41,23 @@ public class Bindings {
         @Value("${persistence.read.expected-node-count}") final int expectedNodeCount,
         @Value("${persistence.read.cluster-db-pool-size}") final long clusterDBPoolSize,
         @Value("${persistence.read.work-mem-mb:4}") final int workMemMb,
-        @Named("pipe") final DataSource dataSource,
+        @Named("pipe") final DataSource pipeDataSource,
         final OffsetFetcher offsetFetcher,
-        LocationResolver locationResolver
+        LocationResolver locationResolver,
+        @Named("compaction") final DataSource compactionDataSource
     ) {
         return new PostgresqlStorage(
-            dataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb, locationResolver
+            pipeDataSource, compactionDataSource, limit, retryAfter, maxBatchSize, offsetFetcher, expectedNodeCount, clusterDBPoolSize, workMemMb, locationResolver
         );
+    }
+
+    @Singleton
+    LocationResolver locationResolver(
+        @Named("pipe") final DataSource dataSource,
+        @Value("${location.clusters.cache.expire-after-write}") final Duration expireAfter,
+        final LocationService locationService
+    ) {
+        return new ClusterStorage(dataSource, locationService, expireAfter);
     }
 
     @Singleton
@@ -69,6 +83,11 @@ public class Bindings {
         @Property(name = "authentication.identity.client.secret") String identityClientSecret
     ) {
         return new IdentityIssueTokenProvider(identityIssueTokenClient, identityClientId, identityClientSecret);
+    }
+
+    @Singleton
+    LocationService locationService(final Provider<LocationServiceClient> locationServiceClientProvider) {
+        return new CloudLocationService(locationServiceClientProvider);
     }
 
     @Singleton

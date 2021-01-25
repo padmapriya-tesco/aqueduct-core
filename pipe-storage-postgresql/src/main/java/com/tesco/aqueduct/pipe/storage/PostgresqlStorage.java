@@ -13,20 +13,21 @@ import java.util.*;
 public class PostgresqlStorage implements CentralStorage {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
-    public static final String DEFAULT_CLUSTER = "NONE";
 
     private final int limit;
-    private final DataSource dataSource;
+    private final DataSource pipeDataSource;
+    private final DataSource compactionDataSource;
     private final long maxBatchSize;
     private final long retryAfter;
-    private OffsetFetcher offsetFetcher;
+    private final OffsetFetcher offsetFetcher;
     private final int nodeCount;
     private final long clusterDBPoolSize;
     private final int workMemMb;
-    private LocationResolver locationResolver;
+    private final LocationResolver locationResolver;
 
     public PostgresqlStorage(
-        final DataSource dataSource,
+        final DataSource pipeDataSource,
+        final DataSource compactionDataSource,
         final int limit,
         final long retryAfter,
         final long maxBatchSize,
@@ -38,7 +39,8 @@ public class PostgresqlStorage implements CentralStorage {
     ) {
         this.retryAfter = retryAfter;
         this.limit = limit;
-        this.dataSource = dataSource;
+        this.pipeDataSource = pipeDataSource;
+        this.compactionDataSource = compactionDataSource;
         this.offsetFetcher = offsetFetcher;
         this.nodeCount = nodeCount;
         this.clusterDBPoolSize = clusterDBPoolSize;
@@ -47,7 +49,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.locationResolver = locationResolver;
 
         //initialise connection pool eagerly
-        try (Connection connection = this.dataSource.getConnection()) {
+        try (Connection connection = this.pipeDataSource.getConnection()) {
             LOG.debug("postgresql storage", "initialised connection pool");
         } catch (SQLException e) {
             LOG.error("postgresql storage", "Error initializing connection pool", e);
@@ -60,19 +62,16 @@ public class PostgresqlStorage implements CentralStorage {
         final long startOffset,
         final String locationUuid
     ) {
-        List<String> clusterUuids = locationResolver.resolve(locationUuid);
-
         long start = System.currentTimeMillis();
+        final List<Long> clusterIds = locationResolver.getClusterIds(locationUuid);
 
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = pipeDataSource.getConnection()) {
             LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
 
             connection.setAutoCommit(false);
             setWorkMem(connection);
 
             final long globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection);
-
-            final Array clusterIds = getClusterIds(connection, clusterUuids);
 
             try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterIds)) {
 
@@ -90,15 +89,6 @@ public class PostgresqlStorage implements CentralStorage {
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("read:time", Long.toString(end - start));
-        }
-    }
-
-    private Array getClusterIds(Connection connection, List<String> clusterUuids) {
-        try(PreparedStatement statement = getClusterIdStatement(connection, clusterUuids)) {
-            return runClusterIdsQuery(statement);
-        } catch (SQLException exception) {
-            LOG.error("postgresql storage", "get cluster ids", exception);
-            throw new RuntimeException(exception);
         }
     }
 
@@ -137,7 +127,7 @@ public class PostgresqlStorage implements CentralStorage {
 
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = pipeDataSource.getConnection()) {
             return OptionalLong.of(offsetFetcher.getGlobalLatestOffset(connection));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset", exception);
@@ -151,10 +141,23 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     @Override
+    @Deprecated
     public void runVisibilityCheck() {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = compactionDataSource.getConnection()) {
             Map<String, Long> messageCountByType = getMessageCountByType(connection);
 
+            messageCountByType.forEach((key, value) ->
+                LOG.info("count:type:" + key, String.valueOf(value))
+            );
+        } catch (SQLException exception) {
+            LOG.error("postgres storage", "run visibility check", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private void runVisibilityCheck(Connection connection) {
+        try {
+            Map<String, Long> messageCountByType = getMessageCountByType(connection);
             messageCountByType.forEach((key, value) ->
                 LOG.info("count:type:" + key, String.valueOf(value))
             );
@@ -210,49 +213,28 @@ public class PostgresqlStorage implements CentralStorage {
         return messages;
     }
 
-    private Array runClusterIdsQuery(final PreparedStatement query) throws SQLException {
-        long start = System.currentTimeMillis();
-        try (ResultSet rs = query.executeQuery()) {
-            rs.next();
-            return rs.getArray(1);
-        } finally {
-            long end = System.currentTimeMillis();
-            LOG.info("runClusterIdsQuery:time", Long.toString(end - start));
-        }
-    }
-
-    private PreparedStatement getClusterIdStatement(final Connection connection, final List<String> clusterUuids) {
-        try {
-            final String strClusters = String.join(",", clusterUuidsWithDefaultCluster(clusterUuids));
-            PreparedStatement query = connection.prepareStatement(getClusterIdQuery());
-            query.setString(1, strClusters);
-            return query;
-        } catch (SQLException exception) {
-            LOG.error("postgresql storage", "get cluster ids statement", exception);
-            throw new RuntimeException(exception);
-        }
-    }
-
     private PreparedStatement getMessagesStatement(
         final Connection connection,
         final List<String> types,
         final long startOffset,
         long endOffset,
-        final Array clusterIds
+        final List<Long> clusterIds
     ) {
         try {
             PreparedStatement query;
 
+            final Array clusterIdArray = connection.createArrayOf("BIGINT", clusterIds.toArray());
+
             if (types == null || types.isEmpty()) {
                 query = connection.prepareStatement(getSelectEventsWithoutTypeQuery(maxBatchSize));
-                query.setArray(1,clusterIds );
+                query.setArray(1, clusterIdArray);
                 query.setLong(2, startOffset);
                 query.setLong(3, endOffset);
                 query.setLong(4, limit);
             } else {
                 final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectEventsWithTypeQuery(maxBatchSize));
-                query.setArray(1, clusterIds);
+                query.setArray(1, clusterIdArray);
                 query.setLong(2, startOffset);
                 query.setLong(3, endOffset);
                 query.setString(4, strTypes);
@@ -267,17 +249,8 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    private List<String> clusterUuidsWithDefaultCluster(List<String> clusterUuids) {
-        // It is not safe to assume that clusterUuids is a mutable list when its not created here, hence create a copy
-        // before adding default cluster to it
-        final List<String> clusterUuidsWithDefaultCluster = new ArrayList<>(clusterUuids);
-        clusterUuidsWithDefaultCluster.add(DEFAULT_CLUSTER);
-        return Collections.unmodifiableList(clusterUuidsWithDefaultCluster);
-    }
-
-    public void compact() {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+    private void compact(Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException e) {
@@ -285,9 +258,45 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    public void vacuumAnalyseEvents() {
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
+    public boolean compactAndMaintain() {
+        boolean compacted = false;
+        try (Connection connection = compactionDataSource.getConnection()) {
+            connection.setAutoCommit(false);
+            if(attemptToLock(connection)){
+                compacted=true;
+                LOG.info("compact and maintain", "obtained lock, compacting");
+                compact(connection);
+                runVisibilityCheck(connection);
+
+                //start a new transaction for vacuuming
+                connection.commit();
+                connection.setAutoCommit(true);
+
+                vacuumAnalyseEvents(connection);
+            } else {
+                LOG.info("compact and maintain", "didn't obtain lock");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return compacted;
+    }
+
+    private boolean attemptToLock(Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(getLockingQuery())) {
+            return statement.execute();
+        } catch (SQLException e) {
+            if(e.getSQLState().equals("55P03")) {
+                //lock was not available
+                return false;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void vacuumAnalyseEvents(Connection connection) {
+        try (PreparedStatement statement = connection.prepareStatement(getVacuumAnalyseQuery())) {
             statement.executeUpdate();
             LOG.info("vacuum analyse", "vacuum analyse complete");
         } catch (SQLException e) {
@@ -338,10 +347,6 @@ public class PostgresqlStorage implements CentralStorage {
             " cluster_id = ANY (?) ";
     }
 
-    private String getClusterIdQuery() {
-        return "SELECT array_agg(cluster_id) FROM clusters WHERE ((cluster_uuid)::text = ANY (string_to_array(?, ',')));";
-    }
-
     private static String getCompactionQuery() {
         return "DELETE FROM events WHERE time_to_live < CURRENT_TIMESTAMP;";
     }
@@ -356,6 +361,10 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getWorkMemQuery() {
         return " SET LOCAL work_mem TO '" + workMemMb + "MB';";
+    }
+
+    private String getLockingQuery() {
+        return "SELECT * from clusters where cluster_id=1 FOR UPDATE NOWAIT;";
     }
     
     private static String getMessageCountByTypeQuery() {

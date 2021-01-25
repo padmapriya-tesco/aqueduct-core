@@ -1,6 +1,5 @@
 package com.tesco.aqueduct.pipe.storage
 
-import com.tesco.aqueduct.pipe.api.LocationResolver
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -20,7 +19,7 @@ class PostgresqlStorageSpec extends Specification {
         def clusterDBPoolSize = 60
 
         and:
-        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4, locationResolver)
+        def storage = new PostgresqlStorage(Mock(DataSource), Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4, locationResolver)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) == result
@@ -42,7 +41,7 @@ class PostgresqlStorageSpec extends Specification {
         def clusterDBPoolSize = 60
 
         and:
-        def storage = new PostgresqlStorage(Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4, locationResolver)
+        def storage = new PostgresqlStorage(Mock(DataSource), Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4, locationResolver)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) >= result

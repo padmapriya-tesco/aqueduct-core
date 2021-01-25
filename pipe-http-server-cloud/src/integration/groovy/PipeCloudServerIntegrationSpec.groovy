@@ -1,8 +1,9 @@
+import Helper.SqlWrapper
 import com.opentable.db.postgres.junit.EmbeddedPostgresRules
 import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.HttpHeaders
-import com.tesco.aqueduct.pipe.api.LocationResolver
 import com.tesco.aqueduct.pipe.api.Message
+import com.tesco.aqueduct.pipe.storage.LocationResolver
 import groovy.sql.Sql
 import io.micronaut.context.ApplicationContext
 import io.micronaut.inject.qualifiers.Qualifiers
@@ -31,7 +32,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
 
     def setup() {
 
-        sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
+        sql = new SqlWrapper(pg.embeddedPostgres.postgresDatabase).sql
 
         dataSource = Mock()
         locationResolver = Mock()
@@ -43,31 +44,6 @@ class PipeCloudServerIntegrationSpec extends Specification {
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection,
             new Sql(pg.embeddedPostgres.postgresDatabase.connection).connection
         ]
-        locationResolver.resolve(_) >> []
-
-        sql.execute("""
-        DROP TABLE IF EXISTS EVENTS;
-        DROP TABLE IF EXISTS CLUSTERS;
-        
-        CREATE TABLE EVENTS(
-            msg_offset BIGSERIAL PRIMARY KEY NOT NULL,
-            msg_key varchar NOT NULL, 
-            content_type varchar NOT NULL, 
-            type varchar NOT NULL, 
-            created_utc timestamp NOT NULL, 
-            data text NULL,
-            event_size int NOT NULL,
-            cluster_id BIGINT NOT NULL DEFAULT 1,
-            time_to_live TIMESTAMP NULL
-        );
-
-        CREATE TABLE CLUSTERS(
-            cluster_id BIGSERIAL PRIMARY KEY NOT NULL,
-            cluster_uuid VARCHAR NOT NULL
-        );
-          
-        INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
-        """)
 
         context = ApplicationContext
             .build()
@@ -87,6 +63,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
             .build()
             .registerSingleton(DataSource, dataSource, Qualifiers.byName("pipe"))
             .registerSingleton(DataSource, dataSource, Qualifiers.byName("registry"))
+            .registerSingleton(DataSource, dataSource, Qualifiers.byName("compaction"))
             .registerSingleton(LocationResolver, locationResolver)
 
         context.start()
@@ -107,7 +84,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
         insert(101, "b", "contentType", "type1", time, null)
 
         and: "location to cluster resolution"
-        locationResolver.resolve("someLocation") >> ["a_cluster_id"]
+        locationResolver.getClusterIds("someLocation") >> [1L]
 
         when:
         def request = RestAssured.get("/pipe/100?location=someLocation")
@@ -130,7 +107,7 @@ class PipeCloudServerIntegrationSpec extends Specification {
         insert(101, "b", "contentType", "type1", time, null)
 
         and: "location to cluster resolution"
-        locationResolver.resolve("someLocation") >> ["a_cluster_id"]
+        locationResolver.getClusterIds("someLocation") >> [1L]
 
         when:
         def request1 = RestAssured.get("/pipe/100?location=someLocation")

@@ -45,8 +45,8 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
             reportToConsole()
         })
 
-        def locationResolver = Mock(LocationResolver) {
-            resolve(_) >> ["cluster1"]
+        def locationResolver = Mock(LocationService) {
+            getClusterUuids(_) >> ["cluster1"]
         }
 
         identityMock.start()
@@ -96,6 +96,7 @@ class IdentityTokenValidatorIntegrationSpec extends Specification {
         .registerSingleton(Reader, centralStorageMock, Qualifiers.byName("local"))
         .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("pipe"))
         .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("registry"))
+        .registerSingleton(DataSource, Mock(DataSource), Qualifiers.byName("compaction"))
         .registerSingleton(locationResolver)
 
         context.start()
