@@ -23,7 +23,7 @@ public class PostgresqlStorage implements CentralStorage {
     private final int nodeCount;
     private final long clusterDBPoolSize;
     private final int workMemMb;
-    private final LocationResolver locationResolver;
+    private ClusterStorage clusterStorage;
 
     public PostgresqlStorage(
         final DataSource pipeDataSource,
@@ -35,7 +35,7 @@ public class PostgresqlStorage implements CentralStorage {
         int nodeCount,
         long clusterDBPoolSize,
         int workMemMb,
-        LocationResolver locationResolver
+        ClusterStorage clusterStorage
     ) {
         this.retryAfter = retryAfter;
         this.limit = limit;
@@ -46,7 +46,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.clusterDBPoolSize = clusterDBPoolSize;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
         this.workMemMb = workMemMb;
-        this.locationResolver = locationResolver;
+        this.clusterStorage = clusterStorage;
 
         //initialise connection pool eagerly
         try (Connection connection = this.pipeDataSource.getConnection()) {
@@ -63,32 +63,81 @@ public class PostgresqlStorage implements CentralStorage {
         final String locationUuid
     ) {
         long start = System.currentTimeMillis();
-        final List<Long> clusterIds = locationResolver.getClusterIds(locationUuid);
+        Connection connection = null;
+        try {
+            connection = getConnection();
 
-        try (Connection connection = pipeDataSource.getConnection()) {
-            LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
+            final Optional<ClusterCacheEntry> entry = clusterStorage.getClusterCacheEntry(locationUuid, connection);
 
-            connection.setAutoCommit(false);
-            setWorkMem(connection);
+            if (isValidAndUnexpired(entry)) {
+                return readMessages(types, start, startOffset, entry.get().getClusterIds(), connection);
 
-            final long globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection);
+            } else {
+                close(connection);
 
-            try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterIds)) {
+                final List<String> clusterUuids = clusterStorage.resolveClustersFor(locationUuid);
 
-                final List<Message> messages = runMessagesQuery(messagesQuery);
-                long end = System.currentTimeMillis();
+                connection = getConnection();
 
-                final long retry = calculateRetryAfter(end - start, messages.size());
+                final Optional<List<Long>> newClusterIds = clusterStorage.updateAndGetClusterIds(locationUuid, clusterUuids, entry, connection);
 
-                LOG.info("PostgresSqlStorage:retry", String.valueOf(retry));
-                return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
+                if (newClusterIds.isPresent()) {
+                    return readMessages(types, start, startOffset, newClusterIds.get(), connection);
+                } else {
+                    LOG.info("postgresql storage", "Recursive read due to Cluster Cache invalidation race condition");
+                    return read(types, startOffset, locationUuid);
+                }
             }
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
             throw new RuntimeException(exception);
         } finally {
+            if (connection != null) {
+                close(connection);
+            }
             long end = System.currentTimeMillis();
             LOG.info("read:time", Long.toString(end - start));
+        }
+    }
+
+    private Connection getConnection() throws SQLException {
+        long start = System.currentTimeMillis();
+        Connection connection = pipeDataSource.getConnection();
+        LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
+        return connection;
+    }
+
+    private boolean isValidAndUnexpired(Optional<ClusterCacheEntry> entry) {
+        return entry.map(ClusterCacheEntry::isValidAndUnexpired).orElse(false);
+    }
+
+    private MessageResults readMessages(List<String> types, long start, long startOffset, List<Long> clusterIds, Connection connection) throws SQLException {
+
+        connection.setAutoCommit(false);
+        setWorkMem(connection);
+
+        final long globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection);
+
+        try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterIds)) {
+
+            final List<Message> messages = runMessagesQuery(messagesQuery);
+            long end = System.currentTimeMillis();
+
+            final long retry = calculateRetryAfter(end - start, messages.size());
+
+            LOG.info("PostgresSqlStorage:retry", String.valueOf(retry));
+            return new MessageResults(messages, retry, OptionalLong.of(globalLatestOffset), PipeState.UP_TO_DATE);
+        }
+    }
+
+    private void close(Connection connection) {
+        try {
+            if (!connection.isClosed()) {
+                connection.close();
+            }
+        } catch (SQLException exception) {
+            LOG.error("postgresql storage", "close", exception);
+            throw new RuntimeException(exception);
         }
     }
 
@@ -366,7 +415,7 @@ public class PostgresqlStorage implements CentralStorage {
     private String getLockingQuery() {
         return "SELECT * from clusters where cluster_id=1 FOR UPDATE NOWAIT;";
     }
-    
+
     private static String getMessageCountByTypeQuery() {
         return "SELECT type, COUNT(type) FROM events GROUP BY type;";
     }

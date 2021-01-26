@@ -2,10 +2,8 @@ package com.tesco.aqueduct.pipe.storage;
 
 import com.tesco.aqueduct.pipe.api.LocationService;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
-import lombok.Data;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -14,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-public class ClusterStorage implements LocationResolver {
+public class ClusterStorage {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(ClusterStorage.class));
 
@@ -30,48 +28,28 @@ public class ClusterStorage implements LocationResolver {
 
     private static final String SELECT_CLUSTER_ID = " SELECT cluster_id FROM CLUSTERS WHERE ((cluster_uuid)::text = ANY (string_to_array(?, ',')));";
 
-    private final DataSource dataSource;
     private final LocationService locationService;
     private final Duration cacheExpiryDuration;
     private static final String CLUSTER_IDS_TYPE = "BIGINT";
 
-    public ClusterStorage(DataSource dataSource, LocationService locationService, Duration cacheExpiryDuration) {
-        this.dataSource = dataSource;
+    public ClusterStorage(LocationService locationService, Duration cacheExpiryDuration) {
         this.locationService = locationService;
         this.cacheExpiryDuration = cacheExpiryDuration;
     }
 
-    @Override
-    public List<Long> getClusterIds(String locationUuid) {
-        Optional<ClusterCache> clusterCache = getClusterIdsFromCache(locationUuid);
-
-        return clusterCache
-            .filter(this::isCached)
-            .map(ClusterCache::getClusterIds)
-            .orElseGet(() ->
-                resolveClusterIds(locationUuid, clusterCache).orElseGet(() -> getClusterIds(locationUuid))
-            );
-    }
-
-    private boolean isCached(ClusterCache entry) {
-        return entry.isValid() && entry.getExpiry().isAfter(LocalDateTime.now());
-    }
-
-    private Optional<List<Long>> resolveClusterIds(String locationUuid, Optional<ClusterCache> clusterCache) {
+    public Optional<List<Long>> updateAndGetClusterIds(String locationUuid, List<String> resolvedClusterUuids, Optional<ClusterCacheEntry> entry, Connection connection) {
         long start = System.currentTimeMillis();
 
-        final List<String> resolvedClusterUuids = locationService.getClusterUuids(locationUuid);
+        try {
+            final List<Long> clusterIds = resolveClusterIdsFor(resolvedClusterUuids, connection);
 
-        try (Connection newConnection = dataSource.getConnection()) {
-            final List<Long> clusterIds = resolveClusterIdsFor(resolvedClusterUuids, newConnection);
-
-            if (cacheNotPresentOrInvalid(clusterCache)) {
-                upsertClusterCache(locationUuid, clusterIds, newConnection);
+            if (cacheNotPresentOrInvalid(entry)) {
+                upsertClusterCache(locationUuid, clusterIds, connection);
                 return Optional.of(clusterIds);
 
             } else {
                 // the entry is present and valid but it wasn't a cache hit, hence we are here only when it is expired
-                final int updatedRowCount = updateClusterCache(locationUuid, clusterIds, newConnection);
+                final int updatedRowCount = updateClusterCache(locationUuid, clusterIds, connection);
 
                 if (updatedRowCount == 0) {
                     // the entry has been invalidated while the request to location service was in flight
@@ -80,30 +58,22 @@ public class ClusterStorage implements LocationResolver {
                     return Optional.of(clusterIds);
                 }
             }
-        } catch (SQLException exception) {
-            LOG.error("cluster storage", "resolve cluster ids", exception);
-            throw new RuntimeException(exception);
         } finally {
             long end = System.currentTimeMillis();
             LOG.info("runResolveClusterIds:time", Long.toString(end - start));
         }
     }
 
-    private boolean cacheNotPresentOrInvalid(Optional<ClusterCache> clusterCache) {
-        return !clusterCache.isPresent() || !clusterCache.get().isValid;
+    public List<String> resolveClustersFor(String locationUuid) {
+        return locationService.getClusterUuids(locationUuid);
     }
 
-    private List<Long> resolveClusterIdsFor(List<String> resolvedClusterUuids, Connection newConnection) {
-        insertClusterUuids(resolvedClusterUuids, newConnection);
-        return fetchClusterIdsFor(resolvedClusterUuids, newConnection);
-    }
-
-    private Optional<ClusterCache> getClusterIdsFromCache(String locationUuid) {
+    public Optional<ClusterCacheEntry> getClusterCacheEntry(String locationUuid, Connection connection) {
         long start = System.currentTimeMillis();
-        try (Connection connection = dataSource.getConnection()) {
-            return resolveLocationUuidToClusterIds(locationUuid, connection);
+        try (PreparedStatement statement = getLocationToClusterIdsStatement(connection, locationUuid)) {
+            return runLocationToClusterIdsQuery(statement);
         } catch (SQLException exception) {
-            LOG.error("cluster storage", "get cluster ids", exception);
+            LOG.error("cluster storage", "resolve location to clusterIds", exception);
             throw new RuntimeException(exception);
         } finally {
             long end = System.currentTimeMillis();
@@ -111,16 +81,16 @@ public class ClusterStorage implements LocationResolver {
         }
     }
 
-    private Optional<ClusterCache> resolveLocationUuidToClusterIds(String locationUuid, Connection connection) {
-        try(PreparedStatement statement = getLocationToClusterIdsStatement(connection, locationUuid)) {
-            return runLocationToClusterIdsQuery(statement);
-        } catch (SQLException exception) {
-            LOG.error("cluster storage", "resolve location to clusterIds", exception);
-            throw new RuntimeException(exception);
-        }
+    private boolean cacheNotPresentOrInvalid(Optional<ClusterCacheEntry> entry) {
+        return !entry.isPresent() || !entry.get().isValid();
     }
 
-    private Optional<ClusterCache> runLocationToClusterIdsQuery(final PreparedStatement query) throws SQLException {
+    private List<Long> resolveClusterIdsFor(List<String> resolvedClusterUuids, Connection newConnection) {
+        insertClusterUuids(resolvedClusterUuids, newConnection);
+        return fetchClusterIdsFor(resolvedClusterUuids, newConnection);
+    }
+
+    private Optional<ClusterCacheEntry> runLocationToClusterIdsQuery(final PreparedStatement query) throws SQLException {
         long start = System.currentTimeMillis();
         try (ResultSet rs = query.executeQuery()) {
             if (rs.next()) {
@@ -133,7 +103,7 @@ public class ClusterStorage implements LocationResolver {
                 final LocalDateTime expiry = rs.getTimestamp("expiry").toLocalDateTime();
                 final boolean isValid = rs.getBoolean("valid");
 
-                return Optional.of(new ClusterCache(locationUuid, clusterIds, expiry, isValid));
+                return Optional.of(new ClusterCacheEntry(locationUuid, clusterIds, expiry, isValid));
             }
 
             return Optional.empty();
@@ -225,13 +195,5 @@ public class ClusterStorage implements LocationResolver {
             throw new RuntimeException(sqlException);
         }
         return clusterIds;
-    }
-
-    @Data
-    private static class ClusterCache {
-        private final String locationUuid;
-        private final List<Long> clusterIds;
-        private final LocalDateTime expiry;
-        private final boolean isValid;
     }
 }
