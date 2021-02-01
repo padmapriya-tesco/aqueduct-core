@@ -1,7 +1,5 @@
 authentication:
   users:
-    pipe-provider-ppe:
-      password: "${PIPE_READ_PASSWORD}"
     pipe-runscope-ppe:
       password: "${RUNSCOPE_PIPE_READ_PASSWORD}"
       roles:
@@ -32,6 +30,10 @@ authentication:
           - REGISTRY_WRITE
       performance:
         clientId: "${PERFORMANCE_TEST_CLIENT_UID}"
+        roles:
+          - PIPE_READ
+      nodeC:
+        clientId: "${NODE_C_CLIENT_UID}"
         roles:
           - PIPE_READ
 
