@@ -59,59 +59,68 @@ public class SQLiteStorage implements DistributedStorage {
 
     @Override
     public MessageResults read(final List<String> types, final long offset, final String locationUuid) {
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
+
+            OptionalLong globalLatestOffset =  getOffset(connection, GLOBAL_LATEST_OFFSET);
+            PipeState pipeState = getPipeState(connection);
+            List<Message> retrievedMessages = getMessages(connection, types, offset);
+
+            return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), globalLatestOffset, pipeState);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private List<Message> getMessages(Connection connection, List<String> types, long offset) throws SQLException {
         final List<Message> retrievedMessages = new ArrayList<>();
         final int typesCount = types == null ? 0 : types.size();
 
-        /*
-         * Assumption is that reading offset and state before messages will be consistent, could be wrong
-         * We think this is better than before, but needs more investigation in the future
-         */
-        OptionalLong globalLatestOffset = getOffset(GLOBAL_LATEST_OFFSET);
-        PipeState pipeState = getPipeState();
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getReadEvent(typesCount, maxBatchSize))) {
+            int parameterIndex = 1;
+            statement.setLong(parameterIndex++, offset);
 
-        execute(
-            SQLiteQueries.getReadEvent(typesCount, maxBatchSize),
-            (connection, statement) -> {
-                int parameterIndex = 1;
-                statement.setLong(parameterIndex++, offset);
+            for (int i = 0; i < typesCount; i++, parameterIndex++) {
+                statement.setString(parameterIndex, types.get(i));
+            }
 
-                for (int i = 0; i < typesCount; i++, parameterIndex++) {
-                    statement.setString(parameterIndex, types.get(i));
-                }
+            statement.setLong(parameterIndex, limit);
 
-                statement.setLong(parameterIndex, limit);
-
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    while (resultSet.next()) {
-                        retrievedMessages.add(mapRetrievedMessageFromResultSet(resultSet));
-                    }
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    retrievedMessages.add(mapRetrievedMessageFromResultSet(resultSet));
                 }
             }
-        );
+        }
 
-        return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), globalLatestOffset, pipeState);
+        return retrievedMessages;
+    }
+
+    private PipeState getPipeState(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.GET_PIPE_STATE)) {
+            ResultSet resultSet = statement.executeQuery();
+
+            return resultSet.next()
+                ? PipeState.valueOf(resultSet.getString("value"))
+                : PipeState.UNKNOWN;
+        }
     }
 
     @Override
     public PipeState getPipeState() {
-        return executeGet(
-            SQLiteQueries.GET_PIPE_STATE,
-            (connection, statement) -> {
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    return resultSet.next()
-                        ? PipeState.valueOf(resultSet.getString("value"))
-                        : PipeState.UNKNOWN;
-                }
-            }
-        );
+        try (Connection connection = dataSource.getConnection()) {
+            return getPipeState(connection);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     @Override
     public long getOffsetConsistencySum(long offset, List<String> targetUuids) {
         try (Connection connection = dataSource.getConnection()) {
             return getOffsetConsistencySumBasedOn(offset, connection);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -139,21 +148,26 @@ public class SQLiteStorage implements DistributedStorage {
         return retrievedMessage;
     }
 
+    private OptionalLong getOffset(Connection connection, OffsetName offsetName) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getOffset(offsetName))) {
+            ResultSet resultSet = statement.executeQuery();
+
+            return resultSet.next() ?
+                    OptionalLong.of(resultSet.getLong("value")) : OptionalLong.empty();
+        }
+    }
+
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         if(offsetName == OffsetName.MAX_OFFSET_PREVIOUS_HOUR) {
             return getMaxOffsetInPreviousHour(ZonedDateTime.now());
         }
 
-        return executeGet(
-            SQLiteQueries.getOffset(offsetName),
-            (connection, statement) -> {
-                ResultSet resultSet = statement.executeQuery();
-
-                return resultSet.next() ?
-                    OptionalLong.of(resultSet.getLong("value")) : OptionalLong.empty();
-            }
-        );
+        try(Connection connection = dataSource.getConnection()) {
+            return getOffset(connection, offsetName);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     @Override
@@ -316,8 +330,8 @@ public class SQLiteStorage implements DistributedStorage {
                     LOG.error("integrity check", "integrity check failed", result);
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -437,8 +451,8 @@ public class SQLiteStorage implements DistributedStorage {
             statement.setTimestamp(2, threshold);
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
