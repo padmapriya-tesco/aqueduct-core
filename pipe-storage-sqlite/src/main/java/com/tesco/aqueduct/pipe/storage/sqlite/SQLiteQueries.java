@@ -85,7 +85,7 @@ final class SQLiteQueries {
     }
 
     static String getOffset(final OffsetName name) {
-        return "SELECT name, value FROM OFFSET WHERE name = '" + name.toString() + "'";
+        return "SELECT name, value FROM OFFSET WHERE name = '" + name.toString() + "';";
     }
 
     static void appendFilterByTypes(final StringBuilder queryBuilder, int typesCount) {
