@@ -67,8 +67,8 @@ public class SQLiteStorage implements DistributedStorage {
             List<Message> retrievedMessages = getMessages(connection, types, offset);
 
             return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), globalLatestOffset, pipeState);
-        } catch (SQLException e) {
-            throw new RuntimeException();
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -96,16 +96,13 @@ public class SQLiteStorage implements DistributedStorage {
         return retrievedMessages;
     }
 
-    private PipeState getPipeState(Connection connection) {
+    private PipeState getPipeState(Connection connection) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.GET_PIPE_STATE)) {
             ResultSet resultSet = statement.executeQuery();
 
             return resultSet.next()
                 ? PipeState.valueOf(resultSet.getString("value"))
                 : PipeState.UNKNOWN;
-
-        } catch (SQLException e) {
-            throw new RuntimeException();
         }
     }
 
@@ -113,8 +110,8 @@ public class SQLiteStorage implements DistributedStorage {
     public PipeState getPipeState() {
         try (Connection connection = dataSource.getConnection()) {
             return getPipeState(connection);
-        } catch (SQLException e) {
-            throw new RuntimeException();
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -122,8 +119,8 @@ public class SQLiteStorage implements DistributedStorage {
     public long getOffsetConsistencySum(long offset, List<String> targetUuids) {
         try (Connection connection = dataSource.getConnection()) {
             return getOffsetConsistencySumBasedOn(offset, connection);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -168,8 +165,8 @@ public class SQLiteStorage implements DistributedStorage {
 
         try(Connection connection = dataSource.getConnection()) {
             return getOffset(connection, offsetName);
-        } catch (SQLException e) {
-            throw new RuntimeException();
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -333,8 +330,8 @@ public class SQLiteStorage implements DistributedStorage {
                     LOG.error("integrity check", "integrity check failed", result);
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -454,8 +451,8 @@ public class SQLiteStorage implements DistributedStorage {
             statement.setTimestamp(2, threshold);
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
