@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite;
 
 import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -24,6 +25,7 @@ public class SQLiteStorage implements DistributedStorage {
     private final long maxBatchSize;
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(SQLiteStorage.class));
+    private static final Logger DEBUG_LOGGER = LoggerFactory.getLogger("pipe-debug-logger");
 
     public SQLiteStorage(final DataSource dataSource, final int limit, final int retryAfterMs, final long maxBatchSize) {
         this.dataSource = dataSource;
@@ -65,6 +67,10 @@ public class SQLiteStorage implements DistributedStorage {
             OptionalLong globalLatestOffset =  getOffset(connection, GLOBAL_LATEST_OFFSET);
             PipeState pipeState = getPipeState(connection);
             List<Message> retrievedMessages = getMessages(connection, types, offset);
+
+            if(retrievedMessages.isEmpty() && pipeState.equals(PipeState.UP_TO_DATE) && globalLatestOffset.isPresent()) {
+                DEBUG_LOGGER.info("Read from: " + offset + ", Global Latest Offset: " + globalLatestOffset.getAsLong() + ", PipeState: UP_TO_DATE, Messages: [ ]");
+            }
 
             return new MessageResults(retrievedMessages, calculateRetryAfter(retrievedMessages.size()), globalLatestOffset, pipeState);
         } catch (SQLException exception) {
