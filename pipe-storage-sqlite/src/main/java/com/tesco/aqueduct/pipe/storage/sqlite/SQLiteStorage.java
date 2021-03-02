@@ -68,7 +68,7 @@ public class SQLiteStorage implements DistributedStorage {
             PipeState pipeState = getPipeState(connection);
             List<Message> retrievedMessages = getMessages(connection, types, offset);
 
-            if(retrievedMessages.isEmpty() && pipeState.equals(PipeState.UP_TO_DATE)) {
+            if(retrievedMessages.isEmpty() && pipeState.equals(PipeState.UP_TO_DATE) && globalLatestOffset.isPresent()) {
                 DEBUG_LOGGER.info("Read from: " + offset + ", Global Latest Offset: " + globalLatestOffset.getAsLong() + ", PipeState: UP_TO_DATE, Messages: [ ]");
             }
 
