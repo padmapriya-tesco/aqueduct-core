@@ -13,6 +13,8 @@ final class SQLiteQueries {
     public static final String GET_PIPE_STATE =
         "SELECT value FROM PIPE_STATE WHERE name='pipe_state';";
 
+    public static final String REINDEX_EVENTS = "REINDEX EVENT;";
+
     static final String CREATE_EVENT_TABLE =
         "CREATE TABLE IF NOT EXISTS EVENT( " +
         " msg_offset bigint PRIMARY KEY NOT NULL," +

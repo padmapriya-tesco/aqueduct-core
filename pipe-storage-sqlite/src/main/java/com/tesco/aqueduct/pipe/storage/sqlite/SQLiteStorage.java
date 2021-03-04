@@ -334,8 +334,18 @@ public class SQLiteStorage implements DistributedStorage {
                 String result = resultSet.getString(1);
                 if (!result.equals("ok")) {
                     LOG.error("integrity check", "integrity check failed", result);
+                    reindex(connection);
                 }
             }
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private void reindex(Connection connection) {
+        try(PreparedStatement statement = connection.prepareStatement(SQLiteQueries.REINDEX_EVENTS)) {
+            statement.execute();
+            LOG.info("reindex", "reindexed event table");
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
         }
