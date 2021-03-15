@@ -36,17 +36,22 @@ public class NodeRegistryControllerV2 {
     private final NodeRegistry registry;
     private final NodeRequestStorage nodeRequestStorage;
     private final Reader pipe;
-
-    @Property(name="compression.threshold-in-bytes")
-    private int compressionThreshold;
+    private final int compressionThreshold;
+    private final GzipCodec gzip;
 
     @Inject
-    private GzipCodec gzip;
-
-    public NodeRegistryControllerV2(final NodeRegistry registry, final NodeRequestStorage nodeRequestStorage, final Reader pipe) {
+    public NodeRegistryControllerV2(
+        final NodeRegistry registry,
+        final NodeRequestStorage nodeRequestStorage,
+        final Reader pipe,
+        @Property(name="compression.threshold-in-bytes") int compressionThreshold,
+        GzipCodec gzip
+    ) {
         this.registry = registry;
         this.nodeRequestStorage = nodeRequestStorage;
         this.pipe = pipe;
+        this.compressionThreshold = compressionThreshold;
+        this.gzip = gzip;
     }
 
     @Secured(SecurityRule.IS_AUTHENTICATED)

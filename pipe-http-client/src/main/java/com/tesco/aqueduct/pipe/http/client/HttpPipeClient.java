@@ -18,9 +18,7 @@ import static com.tesco.aqueduct.pipe.api.HttpHeaders.X_CONTENT_ENCODING;
 public class HttpPipeClient implements Reader {
 
     private final InternalHttpPipeClient client;
-
     private final Codec codec;
-
     private final long defaultRetryAfter;
 
     @Inject

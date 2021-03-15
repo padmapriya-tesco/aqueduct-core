@@ -4,8 +4,7 @@ import com.tesco.aqueduct.pipe.api.*;
 import com.tesco.aqueduct.pipe.codec.ContentEncoder;
 import com.tesco.aqueduct.pipe.logger.PipeLogger;
 import com.tesco.aqueduct.pipe.metrics.Measure;
-import io.micronaut.context.annotation.Value;
-import io.micronaut.core.convert.format.ReadableBytes;
+import io.micronaut.context.annotation.Property;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -27,9 +26,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.tesco.aqueduct.pipe.api.PipeState.OUT_OF_DATE;
-import static com.tesco.aqueduct.pipe.api.PipeState.UP_TO_DATE;
-
 @Secured("PIPE_READ")
 @Measure
 @Controller
@@ -37,27 +33,26 @@ public class PipeReadController {
 
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PipeReadController.class));
 
-    //TODO: Use constructor
-    @Inject @Named("local")
-    private Reader reader;
-
-    @Value("${pipe.http.server.read.poll-seconds:0}")
-    private int pollSeconds;
-
-    @Value("${bootstrap.retry.logging:false}")
-    boolean logging;
-
-    @ReadableBytes @Value("${pipe.http.server.read.response-size-limit-in-bytes:1024kb}")
-    private int maxPayloadSizeBytes;
-
-    @Value("${pipe.bootstrap.threshold:6h}")
-    private Duration bootstrapThreshold;
+    private final Reader reader;
+    private final Duration bootstrapThreshold;
+    private final ContentEncoder contentEncoder;
+    private final PipeRateLimiter rateLimiter;
+    private final boolean logging;
 
     @Inject
-    ContentEncoder contentEncoder;
-
-    @Inject
-    PipeRateLimiter rateLimiter;
+    public PipeReadController(
+        @Named("local") Reader reader,
+        @Property(name = "pipe.bootstrap.threshold", defaultValue = "6h") Duration bootstrapThreshold,
+        @Property(name= "bootstrap.retry.logging", defaultValue = "false") boolean logging,
+        ContentEncoder contentEncoder,
+        PipeRateLimiter rateLimiter
+    ) {
+        this.reader = reader;
+        this.bootstrapThreshold = bootstrapThreshold;
+        this.logging = logging;
+        this.contentEncoder = contentEncoder;
+        this.rateLimiter = rateLimiter;
+    }
 
     @Get("/pipe/{offset}{?type,location}")
     public HttpResponse<byte[]> readMessages(

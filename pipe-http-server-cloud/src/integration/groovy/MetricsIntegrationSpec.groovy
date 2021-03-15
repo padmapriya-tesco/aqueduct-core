@@ -1,4 +1,3 @@
-
 import com.tesco.aqueduct.pipe.TestAppender
 import io.micronaut.context.ApplicationContext
 import io.micronaut.context.env.yaml.YamlPropertySourceLoader
@@ -8,6 +7,7 @@ import io.restassured.RestAssured
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
+
 import javax.sql.DataSource
 
 class MetricsIntegrationSpec extends Specification {
