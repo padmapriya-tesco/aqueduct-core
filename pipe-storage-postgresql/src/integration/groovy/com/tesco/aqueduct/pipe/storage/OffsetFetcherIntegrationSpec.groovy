@@ -5,18 +5,11 @@ import com.opentable.db.postgres.junit.SingleInstancePostgresRule
 import com.tesco.aqueduct.pipe.api.Message
 import groovy.sql.Sql
 import groovy.transform.NamedVariant
-import io.micronaut.context.ApplicationContext
-import io.micronaut.context.annotation.Property
-import io.micronaut.test.extensions.spock.annotation.MicronautTest
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
 import spock.lang.Specification
 
-import javax.inject.Inject
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -24,19 +17,15 @@ import java.time.ZonedDateTime
 
 import static java.sql.DriverManager.getConnection
 
-@MicronautTest
-@Property(name="micronaut.caches.latest-offset-cache.expire-after-write", value="1h")
-@Property(name="persistence.read.read-delay-seconds", value = "0")
 class OffsetFetcherIntegrationSpec extends Specification {
-
-    @Inject
-    private ApplicationContext applicationContext
 
     @Shared @ClassRule
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
 
     @AutoCleanup
     Sql sql
+
+    private OffsetFetcher offsetFetcher
 
     void setup() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
@@ -62,47 +51,18 @@ class OffsetFetcherIntegrationSpec extends Specification {
             value BIGINT NOT NULL
           );
         """)
-    }
-
-    def "Offset is cached once fetched from db storage"() {
-        given:
-        def offsetFetcher = applicationContext.getBean(OffsetFetcher)
-
-        and:
-        def connection = Mock(Connection)
-        def anotherConnection = Mock(Connection)
-        def preparedStatement = Mock(PreparedStatement)
-        def resultSet = Mock(ResultSet)
-
-        when:
-        def globalLatestOffset1 = offsetFetcher.getGlobalLatestOffset(connection)
-
-        then:
-        1 * connection.prepareStatement(*_) >> preparedStatement
-        1 * preparedStatement.executeQuery() >> resultSet
-        1 * resultSet.getLong("last_offset") >> 10
-
-        globalLatestOffset1 == 10
-
-        when:
-        def globalLatestOffset2 = offsetFetcher.getGlobalLatestOffset(anotherConnection)
-
-        then:
-        0 * anotherConnection.prepareStatement(*_)
-        globalLatestOffset2 == 10
+        offsetFetcher = new OffsetFetcher(10)
     }
 
     def "Max offset is fetched from events table when global latest offset does not exist in offsets table"() {
-        given:
-        def offsetFetcher = applicationContext.getBean(OffsetFetcher)
-
-        and: "connection to database"
+        given: "connection to database"
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists"
-        insert(message(1))
-        insert(message(2))
-        insert(message(3))
+        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def createdTime = currentTime - 11
+        insert(message(3, createdTime))
+        insert(message(4, currentTime))
 
         when:
         def globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection)
@@ -112,19 +72,74 @@ class OffsetFetcherIntegrationSpec extends Specification {
     }
 
     def "offset is fetched from offsets table when it exist there and is less than max offset"() {
-        given:
-        def offsetFetcher = applicationContext.getBean(OffsetFetcher)
-
-        and: "connection to database"
+        given: "connection to database"
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists"
-        insert(message(1))
-        insert(message(2))
-        insert(message(3))
+        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def createdTime = currentTime - 11
+        insert(message(3, createdTime))
+        insert(message(4, currentTime))
 
         and: "global latest offset exists in offsets table"
         sql.execute("INSERT INTO offsets (name, value) values('GLOBAL_LATEST_OFFSET', 2)")
+
+        when:
+        def globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection)
+
+        then:
+        globalLatestOffset == 2
+    }
+
+    def "max offset is fetched from events table when it exist in offsets table and is higher than max offset"() {
+        given: "connection to database"
+        def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+
+        and: "some events exists prior to threshold time limit"
+        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def createdTime = currentTime - 11
+        insert(message(3, createdTime))
+        insert(message(4, currentTime))
+
+        and: "global latest offset exists in offsets table"
+        sql.execute("INSERT INTO offsets (name, value) values('GLOBAL_LATEST_OFFSET', 4)")
+
+        when:
+        def globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection)
+
+        then:
+        globalLatestOffset == 3
+    }
+
+    def "offset is fetched from offsets table when exists and there are no messages in events within the given threshold"() {
+        given: "connection to database"
+        def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+
+        and: "some events exists outside of threshold time limit"
+        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def createdTime = currentTime - 11
+        insert(message(1, createdTime))
+        insert(message(2, createdTime))
+
+        and: "global latest offset exists in offsets table"
+        sql.execute("INSERT INTO offsets (name, value) values('GLOBAL_LATEST_OFFSET', 2)")
+
+        when:
+        def globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection)
+
+        then:
+        globalLatestOffset == 2
+    }
+
+    def "max offset is fetched when offsets table is empty and there are no messages in events within the given threshold"() {
+        given: "connection to database"
+        def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+
+        and: "some events exists outside of threshold time limit"
+        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def createdTime = currentTime - 11
+        insert(message(1, createdTime))
+        insert(message(2, createdTime))
 
         when:
         def globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection)
@@ -151,14 +166,14 @@ class OffsetFetcherIntegrationSpec extends Specification {
 
     @NamedVariant
     Message message(
-            Long offset
+            Long offset, ZonedDateTime createdTime=time
     ) {
         new Message(
             "type",
             "key",
             "contentType",
             offset,
-            time,
+            createdTime,
             "data"
         )
     }
