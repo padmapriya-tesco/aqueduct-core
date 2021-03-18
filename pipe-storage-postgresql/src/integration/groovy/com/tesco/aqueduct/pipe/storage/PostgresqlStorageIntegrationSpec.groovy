@@ -53,6 +53,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         DROP TABLE IF EXISTS CLUSTERS;
         DROP TABLE IF EXISTS REGISTRY;
         DROP TABLE IF EXISTS NODE_REQUESTS;
+        DROP TABLE IF EXISTS OFFSETS;
           
         CREATE TABLE EVENTS(
             msg_offset BIGSERIAL PRIMARY KEY NOT NULL,
@@ -83,6 +84,11 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
             cluster_uuid VARCHAR NOT NULL
         );
         
+        CREATE TABLE OFFSETS(
+            name VARCHAR PRIMARY KEY NOT NULL,
+            value BIGINT NOT NULL
+        );
+
         INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
         """)
 

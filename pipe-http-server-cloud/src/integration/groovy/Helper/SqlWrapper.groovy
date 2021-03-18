@@ -22,6 +22,7 @@ class SqlWrapper {
         DROP TABLE IF EXISTS CLUSTER_CACHE;
         DROP TABLE IF EXISTS REGISTRY;
         DROP TABLE IF EXISTS NODE_REQUESTS;
+        DROP TABLE IF EXISTS OFFSETS;
           
         CREATE TABLE EVENTS(
             msg_offset BIGSERIAL PRIMARY KEY NOT NULL,
@@ -58,6 +59,11 @@ class SqlWrapper {
             bootstrap_requested timestamp NOT NULL,
             bootstrap_type VARCHAR NOT NULL,
             bootstrap_received timestamp
+        );
+        
+        CREATE TABLE OFFSETS(
+            name VARCHAR PRIMARY KEY NOT NULL,
+            value BIGINT NOT NULL
         );
 
         INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');

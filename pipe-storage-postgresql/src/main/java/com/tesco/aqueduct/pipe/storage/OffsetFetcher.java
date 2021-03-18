@@ -51,10 +51,12 @@ public class OffsetFetcher {
     private String getSelectLatestOffsetQuery() {
         String filterCondition = "WHERE created_utc >= %s - INTERVAL '%s SECONDS'";
         return
-            "SELECT coalesce (" +
-                " (SELECT min(msg_offset) - 1 from events where msg_offset in " +
-                "   (SELECT msg_offset FROM events " + String.format(filterCondition, currentTimestamp, readDelaySeconds) + ")" +
-                " ), " +
+            "SELECT COALESCE (" +
+                " (SELECT LEAST(" +
+                "   (SELECT min(msg_offset) - 1 from events where msg_offset in " +
+                "     (SELECT msg_offset FROM events " + String.format(filterCondition, currentTimestamp, readDelaySeconds) + "))," +
+                    "(SELECT value FROM offsets where name='GLOBAL_LATEST_OFFSET')" +
+                " )), " +
                 " (SELECT max(msg_offset) FROM events), " +
                 " 0 " +
             ") as last_offset;";
