@@ -54,6 +54,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         DROP TABLE IF EXISTS REGISTRY;
         DROP TABLE IF EXISTS NODE_REQUESTS;
         DROP TABLE IF EXISTS OFFSETS;
+        DROP TABLE IF EXISTS LOCKS;
           
         CREATE TABLE EVENTS(
             msg_offset BIGSERIAL PRIMARY KEY NOT NULL,
@@ -88,8 +89,13 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
             name VARCHAR PRIMARY KEY NOT NULL,
             value BIGINT NOT NULL
         );
+        
+        CREATE TABLE LOCKS(
+            name VARCHAR PRIMARY KEY
+        );
 
-        INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');
+        INSERT INTO LOCKS (name) VALUES ('maintenance_lock');
+        INSERT INTO CLUSTERS (cluster_uuid) VALUES ('NONE');        
         """)
 
         clusterStorage = Mock(ClusterStorage)
@@ -287,7 +293,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
             completed.size() == 5
             compactionRan.size() == 1
         }
-
     }
 
     def "locking fails gracefully when lock cannot be obtained"() {
