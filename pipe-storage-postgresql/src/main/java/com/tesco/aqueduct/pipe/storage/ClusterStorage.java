@@ -125,6 +125,7 @@ public class ClusterStorage {
     }
 
     private void insertClusterUuids(List<String> clusterUuids, Connection connection) {
+        Long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(INSERT_CLUSTER)) {
             for (String clusterUuid : clusterUuids) {
                 statement.setString(1, clusterUuid);
@@ -134,11 +135,15 @@ public class ClusterStorage {
         } catch (SQLException exception) {
             LOG.error("cluster storage", "insert clusters statement", exception);
             throw new RuntimeException(exception);
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("insertClusterUuids:time", Long.toString(end - start));
+            LOG.info("cluster storage", "New clusters inserted: " + clusterUuids);
         }
-        LOG.info("cluster storage", "New clusters inserted: " + clusterUuids);
     }
 
     private void upsertClusterCache(String locationUuid, List<Long> clusterids, Connection connection) {
+        Long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(UPSERT_CLUSTER_CACHE)) {
             Array clustersPgArray = connection.createArrayOf(CLUSTER_IDS_TYPE, clusterids.toArray());
             Timestamp expiry = Timestamp.valueOf(LocalDateTime.now().plus(cacheExpiryDuration));
@@ -153,11 +158,15 @@ public class ClusterStorage {
         } catch (SQLException exception) {
             LOG.error("cluster storage", "upsert cluster cache statement", exception);
             throw new RuntimeException(exception);
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("upsertClusterCache:time", Long.toString(end - start));
+            LOG.info("cluster storage", "New cluster cache upserted for: " + locationUuid);
         }
-        LOG.info("cluster storage", "New cluster cache upserted for: " + locationUuid);
     }
 
     private int updateClusterCache(String locationUuid, List<Long> clusterids, Connection connection) {
+        Long start = System.currentTimeMillis();
         try (PreparedStatement statement = connection.prepareStatement(UPDATE_CLUSTER_CACHE)) {
             Array clustersPgArray = connection.createArrayOf(CLUSTER_IDS_TYPE, clusterids.toArray());
             Timestamp expiry = Timestamp.valueOf(LocalDateTime.now().plus(cacheExpiryDuration));
@@ -172,6 +181,9 @@ public class ClusterStorage {
         } catch (SQLException exception) {
             LOG.error("cluster storage", "insert cluster cache statement", exception);
             throw new RuntimeException(exception);
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info("updateClusterCache:time", Long.toString(end - start));
         }
     }
 
