@@ -299,7 +299,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "lock is held by the test"
         Connection connection = sql.connection
         connection.setAutoCommit(false)
-        Statement statement = connection.prepareStatement("SELECT * from clusters where cluster_id=1 FOR UPDATE;")
+        Statement statement = connection.prepareStatement("SELECT * from locks where name='maintenance_lock' FOR UPDATE NOWAIT;")
         print statement.execute()
 
         when: "call compact"
