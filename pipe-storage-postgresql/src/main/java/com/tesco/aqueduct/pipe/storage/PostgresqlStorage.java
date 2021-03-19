@@ -413,7 +413,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private String getLockingQuery() {
-        return "SELECT * from clusters where cluster_id=1 FOR UPDATE NOWAIT;";
+        return "SELECT * from locks where name='maintenance_lock' FOR UPDATE NOWAIT;";
     }
 
     private static String getMessageCountByTypeQuery() {
