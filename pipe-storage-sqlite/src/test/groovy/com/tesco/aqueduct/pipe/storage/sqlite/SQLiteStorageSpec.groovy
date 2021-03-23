@@ -221,7 +221,7 @@ class SQLiteStorageSpec extends Specification {
         thrown(IllegalArgumentException)
     }
 
-    def "running management tasks attempt vacuum and checkpoint onto sqlite storage"() {
+    def "running management tasks attempt vacuum, checkpoint and run integrity check onto sqlite storage"() {
         given: "mock datasource"
         def dataSource = Mock(DataSource)
         def connection = Mock(Connection)
@@ -233,6 +233,7 @@ class SQLiteStorageSpec extends Specification {
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
+            connection,
             connection,
             connection
         ]
@@ -250,6 +251,10 @@ class SQLiteStorageSpec extends Specification {
 
         and: "checkpoint is attempted"
         1 * connection.prepareStatement(SQLiteQueries.CHECKPOINT_DB) >> statement
+        1 * statement.execute()
+
+        and: "full integrity check is attempted"
+        1 * connection.prepareStatement(SQLiteQueries.FULL_INTEGRITY_CHECK) >> statement
         1 * statement.execute()
     }
 }
