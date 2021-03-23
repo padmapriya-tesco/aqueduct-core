@@ -354,6 +354,7 @@ public class SQLiteStorage implements DistributedStorage {
     private long getOffsetConsistencySumBasedOn(long offsetThreshold, Connection connection) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.OFFSET_CONSISTENCY_SUM)) {
             statement.setLong(1, offsetThreshold);
+            statement.setLong(2, offsetThreshold);
             return queryResult(statement);
         }
     }
