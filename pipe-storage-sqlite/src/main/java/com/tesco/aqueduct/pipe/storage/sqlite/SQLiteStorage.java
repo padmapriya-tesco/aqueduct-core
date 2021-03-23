@@ -329,7 +329,7 @@ public class SQLiteStorage implements DistributedStorage {
 
     private void runIntegrityCheck() {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.INTEGRITY_CHECK)) {
+             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.QUICK_INTEGRITY_CHECK)) {
             try (ResultSet resultSet = statement.executeQuery()) {
                 String result = resultSet.getString(1);
                 if (!result.equals("ok")) {
@@ -419,6 +419,7 @@ public class SQLiteStorage implements DistributedStorage {
         try (Connection connection = dataSource.getConnection()) {
             vacuumDatabase(connection);
             checkpointWalFile(connection);
+            fullIntegrityCheck(connection);
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
         }
@@ -456,6 +457,13 @@ public class SQLiteStorage implements DistributedStorage {
         try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.CHECKPOINT_DB)) {
             statement.execute();
             LOG.info("checkPointDatabase", "checkpointed database");
+        }
+    }
+
+    private void fullIntegrityCheck(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.FULL_INTEGRITY_CHECK)) {
+            statement.execute();
+            LOG.info("fullIntegrityCheck", "full integrity check");
         }
     }
 
