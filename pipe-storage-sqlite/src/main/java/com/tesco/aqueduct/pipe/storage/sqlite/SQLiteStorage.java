@@ -166,7 +166,7 @@ public class SQLiteStorage implements DistributedStorage {
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         if(offsetName == OffsetName.MAX_OFFSET_PREVIOUS_HOUR) {
-            return getMaxOffsetInPreviousHour(ZonedDateTime.now());
+            return getMaxOffsetInPreviousHour(ZonedDateTime.now(ZoneId.of("UTC")));
         }
 
         try(Connection connection = dataSource.getConnection()) {

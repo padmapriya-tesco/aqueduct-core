@@ -59,7 +59,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists"
-        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def currentTime = ZonedDateTime.now()
         def createdTime = currentTime - 11
         insert(message(3, createdTime))
         insert(message(4, currentTime))
@@ -76,7 +76,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists"
-        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def currentTime = ZonedDateTime.now()
         def createdTime = currentTime - 11
         insert(message(3, createdTime))
         insert(message(4, currentTime))
@@ -96,7 +96,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists prior to threshold time limit"
-        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def currentTime = ZonedDateTime.now()
         def createdTime = currentTime - 11
         insert(message(3, createdTime))
         insert(message(4, currentTime))
@@ -116,7 +116,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists outside of threshold time limit"
-        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def currentTime = ZonedDateTime.now()
         def createdTime = currentTime - 11
         insert(message(1, createdTime))
         insert(message(2, createdTime))
@@ -136,7 +136,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
         def connection = getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
 
         and: "some events exists outside of threshold time limit"
-        def currentTime = ZonedDateTime.now(ZoneOffset.UTC).withZoneSameLocal(ZoneId.of("UTC"))
+        def currentTime = ZonedDateTime.now()
         def createdTime = currentTime - 11
         insert(message(1, createdTime))
         insert(message(2, createdTime))
@@ -151,13 +151,13 @@ class OffsetFetcherIntegrationSpec extends Specification {
     void insert(Message msg, Long clusterId=1, int messageSize=0, def time = Timestamp.valueOf(msg.created.toLocalDateTime())) {
         if (msg.offset == null) {
             sql.execute(
-                    "INSERT INTO EVENTS(msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?);",
-                    msg.key, msg.contentType, msg.type, time, msg.data, messageSize, clusterId
+                "INSERT INTO EVENTS(msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?);",
+                msg.key, msg.contentType, msg.type, time, msg.data, messageSize, clusterId
             )
         } else {
             sql.execute(
-                    "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?,?);",
-                    msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, messageSize, clusterId
+                "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id) VALUES(?,?,?,?,?,?,?,?);",
+                msg.offset, msg.key, msg.contentType, msg.type, time, msg.data, messageSize, clusterId
             )
         }
     }
@@ -166,7 +166,7 @@ class OffsetFetcherIntegrationSpec extends Specification {
 
     @NamedVariant
     Message message(
-            Long offset, ZonedDateTime createdTime=time
+        Long offset, ZonedDateTime createdTime=time
     ) {
         new Message(
             "type",
