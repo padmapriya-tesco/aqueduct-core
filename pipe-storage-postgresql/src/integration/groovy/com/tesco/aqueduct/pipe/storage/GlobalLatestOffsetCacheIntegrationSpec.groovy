@@ -65,13 +65,13 @@ class GlobalLatestOffsetCacheIntegrationSpec extends Specification {
         insertMessage(100)
 
         when:
-        globalLatestOffsetCache.getGlobalLatestOffset(connection) == 100
+        globalLatestOffsetCache.get(connection) == 100
 
         and:
         insertMessage(101)
 
         then:
-        globalLatestOffsetCache.getGlobalLatestOffset(connection) == 100
+        globalLatestOffsetCache.get(connection) == 100
 
     }
 
@@ -84,7 +84,7 @@ class GlobalLatestOffsetCacheIntegrationSpec extends Specification {
         insertMessage(4)
 
         when:
-        def globalLatestOffset = globalLatestOffsetCache.getGlobalLatestOffset(connection)
+        def globalLatestOffset = globalLatestOffsetCache.get(connection)
 
         then:
         globalLatestOffset == 4
@@ -97,7 +97,7 @@ class GlobalLatestOffsetCacheIntegrationSpec extends Specification {
         def resultSet = Mock(ResultSet)
 
         when:
-        def globalLatestOffset = globalLatestOffsetCache.getGlobalLatestOffset(connection)
+        def globalLatestOffset = globalLatestOffsetCache.get(connection)
 
         then:
         1 * connection.prepareStatement(*_) >> preparedStatement

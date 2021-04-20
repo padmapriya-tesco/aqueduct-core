@@ -18,7 +18,7 @@ public class GlobalLatestOffsetCache {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(PostgresqlStorage.class));
 
     @Cacheable(value="latest-offset-cache", parameters = "")
-    public long getGlobalLatestOffset(Connection connection) throws SQLException {
+    public long get(Connection connection) throws SQLException {
         long start = System.currentTimeMillis();
 
         try (PreparedStatement statement = connection.prepareStatement(GET_GLOBAL_LATEST_OFFSET_QUERY)) {
