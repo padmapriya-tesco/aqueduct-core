@@ -120,7 +120,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         clusterStorage = Mock(ClusterStorage)
         clusterStorage.getClusterCacheEntry("locationUuid", _ as Connection) >> cacheEntry("locationUuid", [1L])
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, clusterStorage)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
     }
 
     @Unroll
@@ -157,7 +157,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "there is postgres storage"
         def limit = 1
         def dataSourceWithMockedConnection = Mock(DataSource)
-        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, dataSourceWithMockedConnection, limit, 0, batchSize, new OffsetFetcher(0), 1, 1, 4, clusterStorage)
+        def postgresStorage = new PostgresqlStorage(dataSourceWithMockedConnection, dataSourceWithMockedConnection, limit, 0, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
 
         and: "a mock connection is provided when requested"
         def connection = Mock(Connection)
@@ -449,7 +449,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "pipe should return messages if available from the given offset instead of empty set"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, clusterStorage)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
 
         and: "an existing data store with two different types of messages"
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -484,7 +484,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "getMessageCountByType should return the count of messages by type"() {
         given: "there is postgres storage"
         def limit = 3
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new OffsetFetcher(0), 1, 1, 4, clusterStorage)
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
 
         and: "an existing data store with two different types of messages"
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
@@ -507,42 +507,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         noExceptionThrown()
     }
 
-    @Unroll
-    def "when messages have out of order created_utc, we read up to the message with minimum offset outside the limit"() {
-        given:
-        def offsetFetcher = new OffsetFetcher(0)
-        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, clusterStorage)
-
-        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-
-        // messages out of order
-        insert(message(4, "type1", "D", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
-        insert(message(5, "type1", "E", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(6, "type1", "F", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
-        insert(message(7, "type1", "G", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
-        insert(message(8, "type1", "H", "content-type", ZonedDateTime.parse("2000-12-01T10:00:01Z"), "data"))
-
-        when: "reading all messages"
-        def messageResults = storage.read(types, 1, "locationUuid")
-
-        then: "messages are provided for the given type"
-        messageResults.messages.size() == 3
-        messageResults.messages*.key == ["A", "B", "C"]
-        messageResults.messages*.offset*.intValue() == [1, 2, 3]
-        messageResults.globalLatestOffset == OptionalLong.of(3)
-
-        where:
-        types << [ [], ["type1"] ]
-    }
-
     def "messages are returned when location uuid is contained and valid in the cluster cache"() {
         given:
-        def offsetFetcher = new OffsetFetcher(0)
-        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, clusterStorage)
+        def globalLatestOffsetCache = new GlobalLatestOffsetCache()
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, globalLatestOffsetCache, 1, 1, 4, clusterStorage)
 
         clusterStorage.getClusterCacheEntry("someLocationUuid", _ as Connection) >> cacheEntry("someLocationUuid", [2L, 3L])
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 2L)
@@ -570,9 +538,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         and:
         def someLocationUuid = "someLocationUuid"
-        def offsetFetcher = new OffsetFetcher(0)
-        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, clusterStorage)
+        def globalLatestOffsetCache = new GlobalLatestOffsetCache()
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, globalLatestOffsetCache, 1, 1, 4, clusterStorage)
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 2L)
         insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 3L)
@@ -622,9 +589,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "Read is performed twice when cluster cache is invalidated while location service request is in flight"() {
         given:
         def someLocationUuid = "someLocationUuid"
-        def offsetFetcher = new OffsetFetcher(0)
-        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, clusterStorage)
+        def globalLatestOffsetCache = new GlobalLatestOffsetCache()
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, globalLatestOffsetCache, 1, 1, 4, clusterStorage)
         def firstCacheRead = cacheEntry(someLocationUuid, [1L], LocalDateTime.now().minusMinutes(1))
         def secondCacheRead = cacheEntry(someLocationUuid, [1L], LocalDateTime.now().plusMinutes(1), false)
 
@@ -658,9 +624,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "clusters are resolved from location service and updated when cluster cache is expired"() {
         given:
         def someLocationUuid = "someLocationUuid"
-        def offsetFetcher = new OffsetFetcher(0)
-        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, clusterStorage)
+        def globalLatestOffsetCache = new GlobalLatestOffsetCache()
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, globalLatestOffsetCache, 1, 1, 4, clusterStorage)
         def cacheRead = cacheEntry(someLocationUuid, [2L, 3L], LocalDateTime.now().minusMinutes(1))
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 2L)
@@ -688,9 +653,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "Exception during cache update is propagated upstream"() {
         given:
         def someLocationUuid = "someLocationUuid"
-        def offsetFetcher = new OffsetFetcher(0)
-        offsetFetcher.currentTimestamp = "TO_TIMESTAMP( '2000-12-01 10:00:01', 'YYYY-MM-DD HH:MI:SS' )"
-        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, offsetFetcher, 1, 1, 4, clusterStorage)
+        def globalLatestOffsetCache = new GlobalLatestOffsetCache()
+        storage = new PostgresqlStorage(dataSource, dataSource, limit, retryAfter, batchSize, globalLatestOffsetCache, 1, 1, 4, clusterStorage)
         def cacheRead = cacheEntry(someLocationUuid, [2L, 3L], LocalDateTime.now().minusMinutes(1))
 
         insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"), 2L)
