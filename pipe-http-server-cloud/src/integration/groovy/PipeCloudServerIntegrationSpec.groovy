@@ -59,7 +59,6 @@ class PipeCloudServerIntegrationSpec extends Specification {
                 "micronaut.security.enabled": "false",
                 "compression.threshold-in-bytes": 1024,
                 "micronaut.caches.latest-offset-cache.expire-after-write": "5s",
-                "persistence.read.read-delay-seconds": "0"
             )
             .mainClass(EmbeddedServer)
             .build()

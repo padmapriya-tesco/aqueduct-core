@@ -19,7 +19,7 @@ public class PostgresqlStorage implements CentralStorage {
     private final DataSource compactionDataSource;
     private final long maxBatchSize;
     private final long retryAfter;
-    private final OffsetFetcher offsetFetcher;
+    private final GlobalLatestOffsetCache globalLatestOffsetCache;
     private final int nodeCount;
     private final long clusterDBPoolSize;
     private final int workMemMb;
@@ -31,7 +31,7 @@ public class PostgresqlStorage implements CentralStorage {
         final int limit,
         final long retryAfter,
         final long maxBatchSize,
-        final OffsetFetcher offsetFetcher,
+        final GlobalLatestOffsetCache globalLatestOffsetCache,
         int nodeCount,
         long clusterDBPoolSize,
         int workMemMb,
@@ -41,7 +41,7 @@ public class PostgresqlStorage implements CentralStorage {
         this.limit = limit;
         this.pipeDataSource = pipeDataSource;
         this.compactionDataSource = compactionDataSource;
-        this.offsetFetcher = offsetFetcher;
+        this.globalLatestOffsetCache = globalLatestOffsetCache;
         this.nodeCount = nodeCount;
         this.clusterDBPoolSize = clusterDBPoolSize;
         this.maxBatchSize = maxBatchSize + (((long)Message.MAX_OVERHEAD_SIZE) * limit);
@@ -150,7 +150,7 @@ public class PostgresqlStorage implements CentralStorage {
         connection.setAutoCommit(false);
         setWorkMem(connection);
 
-        final long globalLatestOffset = offsetFetcher.getGlobalLatestOffset(connection);
+        final long globalLatestOffset = globalLatestOffsetCache.get(connection);
 
         try (PreparedStatement messagesQuery = getMessagesStatement(connection, types, startOffset, globalLatestOffset, clusterIds, locationGroups)) {
 
@@ -211,7 +211,7 @@ public class PostgresqlStorage implements CentralStorage {
     @Override
     public OptionalLong getOffset(OffsetName offsetName) {
         try (Connection connection = pipeDataSource.getConnection()) {
-            return OptionalLong.of(offsetFetcher.getGlobalLatestOffset(connection));
+            return OptionalLong.of(globalLatestOffsetCache.get(connection));
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "get latest offset", exception);
             throw new RuntimeException(exception);
