@@ -287,8 +287,10 @@ public class PostgresqlStorage implements CentralStorage {
                 final Long offset = rs.getLong("msg_offset");
                 final ZonedDateTime created = ZonedDateTime.of(rs.getTimestamp("created_utc").toLocalDateTime(), ZoneId.of("UTC"));
                 final String data = rs.getString("data");
+                Long locationGroup = rs.getLong("location_group");
+                locationGroup = locationGroup == 0 ? null : locationGroup;
 
-                messages.add(new Message(type, key, contentType, offset, created, data));
+                messages.add(new Message(type, key, contentType, offset, created, data, 0L, locationGroup));
             }
 
             LOG.info("runMessagesQuery:time processing results", Long.toString(System.currentTimeMillis() - startProcessingResults));
@@ -395,11 +397,11 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getSelectEventsWithoutTypeQuery(long maxBatchSize) {
         return
-            " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
+            " SELECT type, msg_key, content_type, msg_offset, created_utc, data, location_group " +
             " FROM " +
             " ( " +
             "   SELECT " +
-            "     type, msg_key, content_type, msg_offset, created_utc, data, " +
+            "     type, msg_key, content_type, msg_offset, created_utc, data, location_group, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
                   addClusterAndLocationGroupFilter() +
@@ -413,11 +415,11 @@ public class PostgresqlStorage implements CentralStorage {
 
     private String getSelectEventsWithTypeQuery(long maxBatchSize) {
         return
-            " SELECT type, msg_key, content_type, msg_offset, created_utc, data " +
+            " SELECT type, msg_key, content_type, msg_offset, created_utc, data, location_group " +
             " FROM " +
             " ( " +
             "   SELECT " +
-            "     type, msg_key, content_type, msg_offset, created_utc, data, " +
+            "     type, msg_key, content_type, msg_offset, created_utc, data, location_group, " +
             "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
             "   FROM events " +
                     addClusterAndLocationGroupFilter() +
