@@ -51,7 +51,7 @@ public class Message {
         final String data,
         final Long size
     ) {
-        this(type, key, contentType, offset, created, data, size,null);
+        this(type, key, contentType, offset, created, data, size, null);
     }
 
     public Message(

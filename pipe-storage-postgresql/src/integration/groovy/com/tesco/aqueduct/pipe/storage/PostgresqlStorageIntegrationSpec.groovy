@@ -781,6 +781,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.globalLatestOffset == OptionalLong.of(6)
     }
 
+    @Unroll
     def "location groups are provided as part of the message results during read when available"() {
         given: "a location and its group"
         def locationUuid = "some_location"
@@ -804,13 +805,16 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         )
 
         when: "messages are read"
-        def messageResults = storage.read([], 0L, locationUuid)
+        def messageResults = storage.read(types, 0L, locationUuid)
 
         then: "messages returned for the location contain location groups where applicable"
         messageResults.messages.size() == 3
         messageResults.messages.offset*.intValue() == [1, 2, 3]
         messageResults.messages.locationGroup == [null, null, 3L]
         messageResults.globalLatestOffset == OptionalLong.of(3)
+
+        where:
+        types << [ [], ["type1"] ]
     }
 
     def "vacuum analyse query is valid"() {
