@@ -109,7 +109,7 @@ public class PipeReadController {
             ||
             isClusterChangeAndCapacityAvailable(messageResults.getMessages())
         ) {
-            if(logging) {
+            if (logging) {
                 LOG.info("pipe read controller", "retry time is 0ms");
             }
             return 0;

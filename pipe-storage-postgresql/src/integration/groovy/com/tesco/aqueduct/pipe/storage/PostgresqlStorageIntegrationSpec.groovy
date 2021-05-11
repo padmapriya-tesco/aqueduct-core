@@ -781,6 +781,38 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.globalLatestOffset == OptionalLong.of(6)
     }
 
+    def "location groups are provided as part of the message results during read when available"() {
+        given: "a location and its group"
+        def locationUuid = "some_location"
+        def clusterId_1 = 1L
+        def clusterId_2 = 2L
+        clusterStorage.getClusterCacheEntry(locationUuid, _ as Connection) >> cacheEntry(locationUuid, [clusterId_1, clusterId_2])
+        insertLocationGroupFor(locationUuid, [3L])
+
+        and: "messages are stored"
+        insert(
+            message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"),
+            clusterId_1, 0, Timestamp.valueOf(time.toLocalDateTime()), null
+        )
+        insert(
+            message(2, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"),
+            clusterId_2, 0, Timestamp.valueOf(time.toLocalDateTime()), null
+        )
+        insert(
+            message(3, "type1", "C", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"),
+            clusterId_2, 0, Timestamp.valueOf(time.toLocalDateTime()), 3L
+        )
+
+        when: "messages are read"
+        def messageResults = storage.read([], 0L, locationUuid)
+
+        then: "messages returned for the location contain location groups where applicable"
+        messageResults.messages.size() == 3
+        messageResults.messages.offset*.intValue() == [1, 2, 3]
+        messageResults.messages.locationGroup == [null, null, 3L]
+        messageResults.globalLatestOffset == OptionalLong.of(3)
+    }
+
     def "vacuum analyse query is valid"() {
         given: "a database"
 
