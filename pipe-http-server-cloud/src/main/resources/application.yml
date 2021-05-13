@@ -22,7 +22,7 @@ micronaut:
   executors:
     io:
       type: fixed
-      nThreads: 6
+      nThreads: 14
   server:
     netty:
       worker:
@@ -42,7 +42,7 @@ datasources:
     username: "${POSTGRE_USERNAME}"
     password: "${POSTGRE_PASSWORD}"
     driver-class-name: org.postgresql.Driver
-    maximum-pool-size: 4
+    maximum-pool-size: 12
     max-lifetime: 600000
     leak-detection-threshold: 60000
   registry:
