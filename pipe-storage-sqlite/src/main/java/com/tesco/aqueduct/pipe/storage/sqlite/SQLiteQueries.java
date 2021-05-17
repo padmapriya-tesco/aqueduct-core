@@ -51,8 +51,8 @@ final class SQLiteQueries {
 
     static final String OFFSET_CONSISTENCY_SUM =
         "SELECT SUM(max_offset_by_key_type) FROM ( " +
-            "SELECT MAX(msg_offset) AS max_offset_by_key_type FROM EVENT WHERE msg_key NOT IN ( " +
-                "SELECT msg_key FROM event WHERE msg_offset IN ( " +
+            "SELECT MAX(msg_offset) AS max_offset_by_key_type FROM EVENT WHERE msg_key || type NOT IN ( " +
+                "SELECT msg_key || type FROM event WHERE msg_offset IN ( " +
                     "SELECT MAX(msg_offset) FROM EVENT WHERE msg_offset <= ? GROUP BY msg_key, type " +
                 ") AND data IS NULL " +
             ") AND msg_offset <= ? GROUP BY msg_key, type " +
