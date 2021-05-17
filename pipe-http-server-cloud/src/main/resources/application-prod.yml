@@ -27,6 +27,10 @@ authentication:
           - REGISTRY_DELETE
           - BOOTSTRAP_NODE
           - PIPE_READ
+      qSupport:
+        clientId: "${Q_SUPPORT_UID}"
+        roles:
+          - BOOTSTRAP_NODE
 
 persistence:
   compact:
@@ -36,6 +40,5 @@ persistence:
     max-batch-size: 1000000
     retry-after: 240000
     expected-node-count: 7000
-    cluster-db-pool-size: 24
-    read-delay-seconds: 60
-    work-mem-mb: 512
+    cluster-db-pool-size: 72
+    work-mem-mb: 2000

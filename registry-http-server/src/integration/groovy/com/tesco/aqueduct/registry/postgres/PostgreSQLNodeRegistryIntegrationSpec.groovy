@@ -58,7 +58,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             );
         """)
 
-        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofDays(1))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofDays(1), Duration.ofDays(2))
     }
 
     def "registry always contains root"() {
@@ -73,16 +73,12 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
     def "registry accepts new elements"() {
         given: "A new node"
-
         ZonedDateTime now = ZonedDateTime.now()
-
         long offset = 12345
-
         Node expectedNode = createNode("group", new URL("http://1.1.1.1"), offset, FOLLOWING, [cloudURL], now)
 
         when: "The node is registered"
         registry.register(expectedNode)
-
         def followers = registry.getSummary(
             offset,
             FOLLOWING,
@@ -97,11 +93,11 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers.size() == 1
     }
 
-    def "registry marks nodes offline and sorts based on status"() {
+    def "registry handles nodes offline and sorts based on status"() {
         given: "a registry with a short offline delta"
-        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5), Duration.ofSeconds(7))
 
-        and: "6 nodes"
+        and: "7 nodes"
         long offset = 12345
 
         URL url1 = new URL("http://1.1.1.1")
@@ -122,6 +118,9 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         URL url6 = new URL("http://6.6.6.6")
         Node node6 = createNode("group", url6, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"OUT_OF_DATE"])
 
+        URL url7 = new URL("http://7.7.7.7")
+        Node node7 = createNode("group", url7, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"OUT_OF_DATE"])
+
         when: "nodes are registered"
         registry.register(node1)
         registry.register(node2)
@@ -129,13 +128,19 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         registry.register(node4)
         registry.register(node5)
         registry.register(node6)
+        registry.register(node7)
 
-        and: "half fail to re-register within the offline delta"
+        and: "three nodes register again"
+        sleep(2000)
+        registry.register(node1)
+        registry.register(node2)
+        registry.register(node6)
+
+        and: "three fail to re-register within the offline delta"
         sleep 5000
         registry.register(node3)
         registry.register(node4)
         registry.register(node5)
-
 
         and: "get summary"
         def followers = registry.getSummary(
@@ -144,7 +149,10 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
             []
         ).followers
 
-        then: "nodes are marked as offline and sorted accordingly"
+        then: "nodes not seen since remove threshold are removed from registry"
+        followers.size() == 6
+
+        and: "nodes are marked as offline and sorted accordingly"
         followers[0].getLocalUrl() == url3
         followers[1].getLocalUrl() == url4
         followers[2].getLocalUrl() == url5
@@ -165,6 +173,46 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
         followers[3].requestedToFollow == [url4, url3, cloudURL]
         followers[4].requestedToFollow == [url4, url3, cloudURL]
         followers[5].requestedToFollow == [url5, url3, cloudURL]
+    }
+
+    def "returns an empty state summary if all nodes are offline"() {
+        given: "a registry with a short offline delta"
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(1), Duration.ofSeconds(2))
+
+        and: "3 nodes"
+        long offset = 1234
+
+        URL url1 = new URL("http://1.1.1.1")
+        Node node1 = createNode("group", url1, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"UNKNOWN"])
+
+        URL url2 = new URL("http://2.2.2.2")
+        Node node2 = createNode("group", url2, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"UP_TO_DATE"])
+
+        URL url3 = new URL("http://3.3.3.3")
+        Node node3 = createNode("group", url3, offset, FOLLOWING, [cloudURL], null,["v":"2.0","pipeState":"UP_TO_DATE"])
+
+        when: "nodes are registered"
+        registry.register(node1)
+        registry.register(node2)
+        registry.register(node3)
+
+        and: "nodes fail to register within the remove node threshold"
+        sleep(2000)
+
+        and: "get summary"
+        def summary = registry.getSummary(
+            offset,
+            FOLLOWING,
+            []
+        )
+
+        then: "the state summary contains no nodes"
+        summary.getFollowers().isEmpty()
+
+        and: "the root is the cloud"
+        summary.root.localUrl == cloudURL
+        summary.root.offset == 1234
+        summary.root.status == FOLLOWING
     }
 
     @Unroll
@@ -447,7 +495,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
 
     def "After some time nodes are marked as offline"() {
         given: "registry with small offline mark"
-        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofMillis(100))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofMillis(100), Duration.ofMillis(500))
 
         def offset = 100
         def now = ZonedDateTime.now()
@@ -566,7 +614,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     @Ignore
     def "registry marks nodes offline and sorts based on status within their hierarchies"() {
         given: "a registry with a short offline delta"
-        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5), Duration.ofSeconds(10))
 
         and: "6 nodes with different versions"
         long offset = 12345
@@ -650,7 +698,7 @@ class PostgreSQLNodeRegistryIntegrationSpec extends Specification {
     
     def "registry marks nodes offline and sorts nodes ignoring version"() {
         given: "a registry with a short offline delta"
-        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5))
+        registry = new PostgreSQLNodeRegistry(dataSource, cloudURL, Duration.ofSeconds(5), Duration.ofSeconds(10))
 
         and: "6 nodes with different versions"
         long offset = 12345

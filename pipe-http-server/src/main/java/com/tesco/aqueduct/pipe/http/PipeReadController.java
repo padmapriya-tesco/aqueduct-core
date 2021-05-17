@@ -35,20 +35,23 @@ public class PipeReadController {
 
     private final Reader reader;
     private final Duration bootstrapThreshold;
+    private final Duration clusterChangeThreshold;
     private final ContentEncoder contentEncoder;
     private final PipeRateLimiter rateLimiter;
     private final boolean logging;
 
     @Inject
     public PipeReadController(
-        @Named("local") Reader reader,
-        @Property(name = "pipe.bootstrap.threshold", defaultValue = "6h") Duration bootstrapThreshold,
-        @Property(name= "bootstrap.retry.logging", defaultValue = "false") boolean logging,
-        ContentEncoder contentEncoder,
-        PipeRateLimiter rateLimiter
+            @Named("local") Reader reader,
+            @Property(name = "pipe.bootstrap.threshold", defaultValue = "6h") Duration bootstrapThreshold,
+            @Property(name = "pipe.clusterChange.threshold", defaultValue = "24h") Duration clusterChangeThreshold,
+            @Property(name = "bootstrap.retry.logging", defaultValue = "false") boolean logging,
+            ContentEncoder contentEncoder,
+            PipeRateLimiter rateLimiter
     ) {
         this.reader = reader;
         this.bootstrapThreshold = bootstrapThreshold;
+        this.clusterChangeThreshold = clusterChangeThreshold;
         this.logging = logging;
         this.contentEncoder = contentEncoder;
         this.rateLimiter = rateLimiter;
@@ -98,20 +101,36 @@ public class PipeReadController {
     }
 
     private long calculateRetryAfter(MessageResults messageResults) {
-        if (isBootstrappingAndCapacityAvailable(messageResults.getMessages())) {
-            if(logging) {
+        if (messageResults.getMessages().isEmpty()) {
+            return messageResults.getRetryAfterMs();
+        }
+        else if (
+            isBootstrappingAndCapacityAvailable(messageResults.getMessages())
+            ||
+            isClusterChangeAndCapacityAvailable(messageResults.getMessages())
+        ) {
+            if (logging) {
                 LOG.info("pipe read controller", "retry time is 0ms");
             }
             return 0;
-        } else {
-            return messageResults.getRetryAfterMs();
         }
+
+        return messageResults.getRetryAfterMs();
+    }
+
+    private boolean isClusterChangeAndCapacityAvailable(List<Message> messages) {
+        return isWithinClusterChangeThreshold(messages) && rateLimiter.tryAcquire();
+    }
+
+    private boolean isWithinClusterChangeThreshold(List<Message> messages) {
+        return
+            messages.get(0).getCreated().isAfter(ZonedDateTime.now().minus(clusterChangeThreshold))
+            &&
+            messages.stream().anyMatch(message -> message.getLocationGroup() != null);
     }
 
     private boolean isBootstrappingAndCapacityAvailable(List<Message> messages) {
-        return !messages.isEmpty()
-            && isBeforeBootstrapThreshold(messages)
-            && rateLimiter.tryAcquire();
+        return isBeforeBootstrapThreshold(messages) && rateLimiter.tryAcquire();
     }
 
     private boolean isBeforeBootstrapThreshold(List<Message> messages) {

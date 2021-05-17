@@ -36,5 +36,4 @@ persistence:
     retry-after: 1000
     expected-node-count: 3
     cluster-db-pool-size: 72
-    read-delay-seconds: 1
     work-mem-mb: 512

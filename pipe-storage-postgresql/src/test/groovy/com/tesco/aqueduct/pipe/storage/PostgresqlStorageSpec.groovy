@@ -21,7 +21,7 @@ class PostgresqlStorageSpec extends Specification {
         def clusterDBPoolSize = 60
 
         and:
-        def storage = new PostgresqlStorage(Mock(DataSource), Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4, clusterStorage)
+        def storage = new PostgresqlStorage(Mock(DataSource), Mock(DataSource), 20, retryAfter, 2, new GlobalLatestOffsetCache(), readersNodeCount, clusterDBPoolSize, 4, clusterStorage)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) == result
@@ -43,7 +43,7 @@ class PostgresqlStorageSpec extends Specification {
         def clusterDBPoolSize = 60
 
         and:
-        def storage = new PostgresqlStorage(Mock(DataSource), Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), readersNodeCount, clusterDBPoolSize, 4, clusterStorage)
+        def storage = new PostgresqlStorage(Mock(DataSource), Mock(DataSource), 20, retryAfter, 2, new GlobalLatestOffsetCache(), readersNodeCount, clusterDBPoolSize, 4, clusterStorage)
 
         expect:
         storage.calculateRetryAfter(timeOfQueryMs, noOfMessages) >= result
@@ -59,7 +59,7 @@ class PostgresqlStorageSpec extends Specification {
     def "Exception thrown during connection close is propagated upstream"() {
         given:
         def dataSource = Mock(DataSource)
-        def storage = new PostgresqlStorage(dataSource, Mock(DataSource), 20, retryAfter, 2, new OffsetFetcher(0), 1000, 4, 4, clusterStorage)
+        def storage = new PostgresqlStorage(dataSource, Mock(DataSource), 20, retryAfter, 2, new GlobalLatestOffsetCache(), 1000, 4, 4, clusterStorage)
 
         and:
         def connection = Mock(Connection)
