@@ -1060,7 +1060,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         result == 11L
     }
 
-    def 'calculateOffsetConsistencySum counts offset of a message that has multiple deletes including the latest one'() {
+    def 'calculateOffsetConsistencySum ignores offset of a message that has multiple delete'() {
         given: "current time"
         if(ZonedDateTime.now().minute == 59 && ZonedDateTime.now().second == 59) {
             sleep(1000) //sleep to remove the small chance that the test will be flaky
