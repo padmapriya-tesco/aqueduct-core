@@ -62,6 +62,27 @@ class SQLiteStorageIntegrationSpec extends Specification {
         )
     }
 
+    def delete(long offset, String key, String type, ZonedDateTime createdDateTime) {
+        def messageForSizing = new Message(
+            type,
+            key,
+            "text/plain",
+            offset,
+            createdDateTime,
+            null
+        )
+
+        return new Message(
+            type,
+            key,
+            "text/plain",
+            offset,
+            createdDateTime,
+            null,
+            JsonHelper.toJson(messageForSizing).length()
+        )
+    }
+
     def setup() {
         def sql = Sql.newInstance(connectionUrl)
 
@@ -986,5 +1007,83 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         and: "expected max offset is returned that was used to calculate the offset consistency sum"
         offset.get() == 6L
+    }
+
+    def 'calculateOffsetConsistencySum ignoring deleted messages prior to the current hour'() {
+        given: "current time"
+        if(ZonedDateTime.now().minute == 59 && ZonedDateTime.now().second == 59) {
+            sleep(1000) //sleep to remove the small chance that the test will be flaky
+        }
+        ZonedDateTime currentTime = ZonedDateTime.now()
+        ZonedDateTime thresholdTime = currentTime.withMinute(0).withSecond(0).withNano(0)
+
+        and: "messages in a database with deletes"
+        def messages = [
+            message(1, "A", "type1", thresholdTime.minusMinutes(50)),
+            message(2, "B", "type1", thresholdTime.minusMinutes(40)),
+            delete(3, "A", "type1", thresholdTime.minusMinutes(16)),
+            message(4, "C", "type2", thresholdTime.minusMinutes(10))
+        ]
+        sqliteStorage.write(messages)
+
+        when: "we call calculateOffsetConsistencySum"
+        def offset = sqliteStorage.getOffset(MAX_OFFSET_PREVIOUS_HOUR)
+        def result = sqliteStorage.getOffsetConsistencySum(offset.get(), [])
+
+        then: "the expected Consistency sum is returned that ignores deleted message"
+        result == 6L
+    }
+
+    def 'calculateOffsetConsistencySum counts offset of a message that has a delete but is not latest'() {
+        given: "current time"
+        if(ZonedDateTime.now().minute == 59 && ZonedDateTime.now().second == 59) {
+            sleep(1000) //sleep to remove the small chance that the test will be flaky
+        }
+        ZonedDateTime currentTime = ZonedDateTime.now()
+        ZonedDateTime thresholdTime = currentTime.withMinute(0).withSecond(0).withNano(0)
+
+        and: "messages in a database with deletes"
+        def messages = [
+            message(1, "A", "type1", thresholdTime.minusMinutes(50)),
+            message(2, "B", "type1", thresholdTime.minusMinutes(40)),
+            delete(3, "A", "type1", thresholdTime.minusMinutes(16)),
+            message(4, "C", "type2", thresholdTime.minusMinutes(10)),
+            message(5, "A", "type1", thresholdTime.minusMinutes(5)),
+        ]
+        sqliteStorage.write(messages)
+
+        when: "we call calculateOffsetConsistencySum"
+        def offset = sqliteStorage.getOffset(MAX_OFFSET_PREVIOUS_HOUR)
+        def result = sqliteStorage.getOffsetConsistencySum(offset.get(), [])
+
+        then: "the expected Consistency sum is returned that ignores deleted message"
+        result == 11L
+    }
+
+    def 'calculateOffsetConsistencySum ignores offset of a message that has multiple delete'() {
+        given: "current time"
+        if(ZonedDateTime.now().minute == 59 && ZonedDateTime.now().second == 59) {
+            sleep(1000) //sleep to remove the small chance that the test will be flaky
+        }
+        ZonedDateTime currentTime = ZonedDateTime.now()
+        ZonedDateTime thresholdTime = currentTime.withMinute(0).withSecond(0).withNano(0)
+
+        and: "messages in a database with deletes"
+        def messages = [
+            message(1, "A", "type1", thresholdTime.minusMinutes(50)),
+            message(2, "B", "type1", thresholdTime.minusMinutes(40)),
+            delete(3, "A", "type1", thresholdTime.minusMinutes(16)),
+            message(4, "C", "type2", thresholdTime.minusMinutes(15)),
+            message(5, "A", "type1", thresholdTime.minusMinutes(10)),
+            delete(6, "A", "type1", thresholdTime.minusMinutes(5))
+        ]
+        sqliteStorage.write(messages)
+
+        when: "we call calculateOffsetConsistencySum"
+        def offset = sqliteStorage.getOffset(MAX_OFFSET_PREVIOUS_HOUR)
+        def result = sqliteStorage.getOffsetConsistencySum(offset.get(), [])
+
+        then: "the expected Consistency sum is returned that ignores deleted message"
+        result == 6L
     }
 }

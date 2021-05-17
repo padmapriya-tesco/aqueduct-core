@@ -50,7 +50,13 @@ final class SQLiteQueries {
         "DELETE FROM EVENT WHERE created_utc <= ? AND msg_offset NOT IN (SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ? GROUP BY msg_key, type);";
 
     static final String OFFSET_CONSISTENCY_SUM =
-        "SELECT SUM(msg_offset) FROM EVENT WHERE msg_offset IN (SELECT max(msg_offset) FROM EVENT WHERE msg_offset <= ? GROUP BY msg_key, type);";
+        "SELECT SUM(max_offset_by_key_type) FROM ( " +
+            "SELECT MAX(msg_offset) AS max_offset_by_key_type FROM EVENT WHERE msg_key || type NOT IN ( " +
+                "SELECT msg_key || type FROM event WHERE msg_offset IN ( " +
+                    "SELECT MAX(msg_offset) FROM EVENT WHERE msg_offset <= ? GROUP BY msg_key, type " +
+                ") AND data IS NULL " +
+            ") AND msg_offset <= ? GROUP BY msg_key, type " +
+        ");";
 
     static final String CHOOSE_MAX_OFFSET =
         "SELECT max(msg_offset) FROM EVENT WHERE created_utc <= ?;";
