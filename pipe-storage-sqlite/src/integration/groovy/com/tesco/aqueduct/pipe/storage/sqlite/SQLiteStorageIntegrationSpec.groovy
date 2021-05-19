@@ -1086,4 +1086,44 @@ class SQLiteStorageIntegrationSpec extends Specification {
         then: "the expected Consistency sum is returned that ignores deleted message"
         result == 6L
     }
+
+    @Unroll
+    def 'calculate max offset for the given list of type'() {
+        given:
+        def messages = [
+            message(1, "type1"),
+            message(2, "type1"),
+            message(3, "type2"),
+            message(4, "type2"),
+            message(5, "type1"),
+            message(6, "type1"),
+            message(7, "type1"),
+            message(8, "type3"),
+            message(9, "type1")
+        ]
+
+        sqliteStorage.write(messages)
+
+        when:
+        def offset = sqliteStorage.getMaxOffsetForConsumers(types)
+
+        then:
+        offset == expected
+
+        where:
+        types       | expected
+        ["type1"]   | 9
+        ["type2"]   | 4
+        ["type3"]   | 8
+        ["type2", "type3"] | 8
+        [] | 0
+    }
+
+    def 'calculate max offset returns zero if there is no message'() {
+        when:
+        def offset = sqliteStorage.getMaxOffsetForConsumers(["type"])
+
+        then:
+        offset == 0L
+    }
 }

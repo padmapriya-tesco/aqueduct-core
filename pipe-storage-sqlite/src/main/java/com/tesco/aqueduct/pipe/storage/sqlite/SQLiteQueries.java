@@ -2,6 +2,7 @@ package com.tesco.aqueduct.pipe.storage.sqlite;
 
 import com.tesco.aqueduct.pipe.api.OffsetName;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,6 +15,8 @@ final class SQLiteQueries {
         "SELECT value FROM PIPE_STATE WHERE name='pipe_state';";
 
     public static final String REINDEX_EVENTS = "REINDEX EVENT;";
+
+    public static final String ADD_TYPES_INDEX = "CREATE INDEX IF NOT EXISTS types_idx ON event (type);";
 
     static final String CREATE_EVENT_TABLE =
         "CREATE TABLE IF NOT EXISTS EVENT( " +
@@ -106,18 +109,14 @@ final class SQLiteQueries {
         }
     }
 
-    static String getLastOffsetQuery(final int typesCount) {
+    static String getMaxOffsetForConsumersQuery(final int typesCount) {
         final StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("SELECT coalesce(max(msg_offset),0) as last_offset FROM EVENT");
-
-        if (typesCount != 0) {
-            queryBuilder
-                .append(" WHERE type IN (")
-                .append(generateQuestionMarks(typesCount))
-                .append(")");
-        }
-
-        queryBuilder.append(";");
+        queryBuilder
+            .append("SELECT max(msg_offset) FROM event ")
+            .append(" WHERE type IN (")
+            .append(generateQuestionMarks(typesCount))
+            .append(")")
+            .append(";");
 
         return queryBuilder.toString();
     }

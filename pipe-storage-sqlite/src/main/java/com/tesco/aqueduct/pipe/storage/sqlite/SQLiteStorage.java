@@ -36,6 +36,15 @@ public class SQLiteStorage implements DistributedStorage {
         createEventTableIfNotExists();
         createOffsetTableIfNotExists();
         createPipeStateTableIfNotExists();
+
+        addIndexOnTypes();
+    }
+
+    private void addIndexOnTypes() {
+        execute(
+            SQLiteQueries.ADD_TYPES_INDEX,
+            (connection, statement) -> statement.execute()
+        );
     }
 
     private void createEventTableIfNotExists() {
@@ -392,6 +401,26 @@ public class SQLiteStorage implements DistributedStorage {
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
         }
+    }
+
+    @Override
+    public Long getMaxOffsetForConsumers(List<String> types) {
+        try(Connection connection = dataSource.getConnection()) {
+            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getMaxOffsetForConsumersQuery(types.size()));
+
+            for (int i = 0; i < types.size(); i++) {
+                statement.setString(i + 1, types.get(i));
+            }
+
+            ResultSet resultSet = statement.executeQuery();
+            if(resultSet.next()) {
+                return resultSet.getLong(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     private interface SqlConsumer {
