@@ -421,7 +421,7 @@ public class SQLiteStorage implements DistributedStorage {
             throw new RuntimeException(what, exception);
         }
 
-        return null;
+        return 0L;
     }
 
     private interface SqlConsumer {
