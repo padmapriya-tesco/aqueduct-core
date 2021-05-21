@@ -36,7 +36,6 @@ public class SQLiteStorage implements DistributedStorage {
         createEventTableIfNotExists();
         createOffsetTableIfNotExists();
         createPipeStateTableIfNotExists();
-
         addIndexOnTypes();
     }
 
@@ -411,13 +410,15 @@ public class SQLiteStorage implements DistributedStorage {
             for (int i = 0; i < types.size(); i++) {
                 statement.setString(i + 1, types.get(i));
             }
-
             ResultSet resultSet = statement.executeQuery();
-            if(resultSet.next()) {
+
+            if (resultSet.next()) {
                 return resultSet.getLong(1);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException exception) {
+            final String what = "Error while fetching max offset for consumers";
+            LOG.error("getMaxOffsetForConsumers", what, exception);
+            throw new RuntimeException(what, exception);
         }
 
         return null;
