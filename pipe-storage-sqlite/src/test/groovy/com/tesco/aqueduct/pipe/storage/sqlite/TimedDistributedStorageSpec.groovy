@@ -102,4 +102,16 @@ class TimedDistributedStorageSpec extends Specification {
         then: "the get pipeState is called on the underlying storage"
         1 * mockedStorage.getPipeState()
     }
+
+    def "get max offset for consumers is timed"() {
+        given: "we have an instance of TimedMessageStorage"
+        def mockedStorage = Mock(DistributedStorage)
+        def timedStorage = new TimedDistributedStorage(mockedStorage, METER_REGISTRY)
+
+        when: "we get the max offset for given consumer types"
+        timedStorage.getMaxOffsetForConsumers(["type"])
+
+        then: "the getMaxOffsetForConsumers is called on the underlying storage"
+        1 * mockedStorage.getMaxOffsetForConsumers(["type"])
+    }
 }

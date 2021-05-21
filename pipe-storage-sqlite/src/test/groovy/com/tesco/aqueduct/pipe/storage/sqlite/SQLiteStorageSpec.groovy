@@ -258,7 +258,6 @@ class SQLiteStorageSpec extends Specification {
         1 * statement.execute()
     }
 
-
     def 'calculate max offset throws Runtime exception if error during processing'() {
         given: "mocked datasource"
         dataSource = Mock(DataSource)

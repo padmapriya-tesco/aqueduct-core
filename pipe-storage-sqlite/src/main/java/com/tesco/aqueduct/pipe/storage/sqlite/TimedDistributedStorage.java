@@ -77,7 +77,6 @@ public class TimedDistributedStorage implements DistributedStorage {
 
     @Override
     public Long getMaxOffsetForConsumers(List<String> types) {
-        // TODO
-        return null;
+        return storage.getMaxOffsetForConsumers(types);
     }
 }
