@@ -58,6 +58,7 @@ class SQLiteStorageSpec extends Specification {
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
             {throw new SQLException()}
         sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
@@ -72,6 +73,7 @@ class SQLiteStorageSpec extends Specification {
         given: 'a data store controller exists with a broken connection url'
         dataSource = Mock(DataSource)
         dataSource.getConnection() >>
+            DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
@@ -92,6 +94,7 @@ class SQLiteStorageSpec extends Specification {
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
             DriverManager.getConnection(connectionUrl) >>
+            DriverManager.getConnection(connectionUrl) >>
             {throw new SQLException()}
         sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
 
@@ -106,6 +109,7 @@ class SQLiteStorageSpec extends Specification {
         given: 'a data store controller and sqlite storage exists'
         def dataSource = Mock(DataSource)
         dataSource.getConnection() >>> [
+            DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
@@ -229,7 +233,8 @@ class SQLiteStorageSpec extends Specification {
 
         and: "data source giving out connection on demand"
         dataSource.getConnection() >>> [
-            // first three calls are for setting up database schema
+            // first four calls are for setting up database schema
+            DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),
             DriverManager.getConnection(connectionUrl),

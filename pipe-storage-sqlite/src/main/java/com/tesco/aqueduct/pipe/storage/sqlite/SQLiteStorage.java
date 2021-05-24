@@ -410,6 +410,7 @@ public class SQLiteStorage implements DistributedStorage {
             for (int i = 0; i < types.size(); i++) {
                 statement.setString(i + 1, types.get(i));
             }
+
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
