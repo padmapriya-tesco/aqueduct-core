@@ -2,7 +2,6 @@ package com.tesco.aqueduct.pipe.storage.sqlite;
 
 import com.tesco.aqueduct.pipe.api.OffsetName;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
