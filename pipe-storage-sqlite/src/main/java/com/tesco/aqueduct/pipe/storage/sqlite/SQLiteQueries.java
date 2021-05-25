@@ -108,7 +108,7 @@ final class SQLiteQueries {
         }
     }
 
-    static String getMaxOffsetForConsumersQuery(final int typesCount) {
+    static String maxOffsetForConsumersQuery(final int typesCount) {
         final StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
             .append("SELECT max(msg_offset) FROM event ")

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
+import static com.tesco.aqueduct.pipe.storage.sqlite.SQLiteQueries.maxOffsetForConsumersQuery;
 
 public class SQLiteStorage implements DistributedStorage {
 
@@ -404,8 +405,8 @@ public class SQLiteStorage implements DistributedStorage {
 
     @Override
     public Long getMaxOffsetForConsumers(List<String> types) {
-        try(Connection connection = dataSource.getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.getMaxOffsetForConsumersQuery(types.size()));
+        try (Connection connection = dataSource.getConnection();
+            PreparedStatement statement = connection.prepareStatement(maxOffsetForConsumersQuery(types.size()))) {
 
             for (int i = 0; i < types.size(); i++) {
                 statement.setString(i + 1, types.get(i));
