@@ -762,6 +762,34 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages*.key == ["A", "A", "A", "B"]
     }
 
+    def 'Deletions that are latest key over configured time are removed'() {
+        given: 'an existing data store with duplicate messages for the same key'
+        def messages = [
+            message(1, "A", "T", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(2, "B", "T", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
+            message(3, "C", "T", ZonedDateTime.parse("2000-12-03T10:00:00Z"), null),
+            message(4, "D", "T", ZonedDateTime.parse("2000-12-04T10:00:00Z"), null)
+        ]
+        sqliteStorage.write(messages)
+
+        and: 'all messages are in compaction window'
+        def compactThreshold = ZonedDateTime.parse("2000-12-05T10:00:00Z")
+
+        and: 'deletion compaction threshold is set up to offset 3'
+        def deletionCompactThreshold = ZonedDateTime.parse("2000-12-03T10:00:00Z")
+
+        when: 'compactUpTo is called'
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold)
+
+        and: 'all messages are requested'
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
+
+        then: 'deletions are removed when over configured time'
+        messageResults.messages.size() == 1
+        messageResults.messages*.offset*.intValue() == [4]
+        messageResults.messages*.key == ["D"]
+    }
+
     def 'All duplicate messages are compacted to a given offset, complex case'() {
         given: 'an existing data store with duplicate messages for the same key'
         def messages = [

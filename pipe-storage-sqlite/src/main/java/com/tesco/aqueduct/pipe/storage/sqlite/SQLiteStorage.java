@@ -490,13 +490,16 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    public void compactUpTo(final ZonedDateTime zonedDateTime) {
-        // We may want a interface - Compactable - for this method signature
+    public void compactUpTo(final ZonedDateTime compactionThreshold, final ZonedDateTime deletionCompactionThreshold) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement statement = connection.prepareStatement(SQLiteQueries.COMPACT)) {
-            Timestamp threshold = Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
-            statement.setTimestamp(1, threshold);
-            statement.setTimestamp(2, threshold);
+            Timestamp compactThreshold = Timestamp.valueOf(compactionThreshold.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+            Timestamp deletionCompactThreshold = Timestamp.valueOf(deletionCompactionThreshold.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+
+            statement.setTimestamp(1, compactThreshold);
+            statement.setTimestamp(2, deletionCompactThreshold);
+            statement.setTimestamp(3, compactThreshold);
+            statement.setTimestamp(4, deletionCompactThreshold);
             final int rowsAffected = statement.executeUpdate();
             LOG.info("compaction", "compacted " + rowsAffected + " rows");
         } catch (SQLException exception) {
