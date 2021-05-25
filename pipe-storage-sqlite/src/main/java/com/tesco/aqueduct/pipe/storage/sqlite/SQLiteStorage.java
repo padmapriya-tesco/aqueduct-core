@@ -394,15 +394,6 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    private <T> T executeGet(String query, SqlFunction<T> function) {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            return function.apply(connection, statement);
-        } catch (SQLException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
-
     @Override
     public Long getMaxOffsetForConsumers(List<String> types) {
         try (Connection connection = dataSource.getConnection();
