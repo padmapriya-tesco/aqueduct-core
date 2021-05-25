@@ -74,4 +74,9 @@ public class TimedDistributedStorage implements DistributedStorage {
     public PipeState getPipeState() {
         return readPipeStateTimer.record(storage::getPipeState);
     }
+
+    @Override
+    public Long getMaxOffsetForConsumers(List<String> types) {
+        return storage.getMaxOffsetForConsumers(types);
+    }
 }

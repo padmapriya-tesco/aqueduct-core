@@ -1,3 +1,7 @@
 package com.tesco.aqueduct.pipe.api;
 
-public interface DistributedStorage extends Reader, Writer { }
+import java.util.List;
+
+public interface DistributedStorage extends Reader, Writer {
+    Long getMaxOffsetForConsumers(List<String> types);
+}

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.OptionalLong;
 
 import static com.tesco.aqueduct.pipe.api.OffsetName.GLOBAL_LATEST_OFFSET;
+import static com.tesco.aqueduct.pipe.storage.sqlite.SQLiteQueries.maxOffsetForConsumersQuery;
 
 public class SQLiteStorage implements DistributedStorage {
 
@@ -36,6 +37,14 @@ public class SQLiteStorage implements DistributedStorage {
         createEventTableIfNotExists();
         createOffsetTableIfNotExists();
         createPipeStateTableIfNotExists();
+        addIndexOnTypes();
+    }
+
+    private void addIndexOnTypes() {
+        execute(
+            SQLiteQueries.ADD_TYPES_INDEX,
+            (connection, statement) -> statement.execute()
+        );
     }
 
     private void createEventTableIfNotExists() {
@@ -385,13 +394,27 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    private <T> T executeGet(String query, SqlFunction<T> function) {
+    @Override
+    public Long getMaxOffsetForConsumers(List<String> types) {
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            return function.apply(connection, statement);
+            PreparedStatement statement = connection.prepareStatement(maxOffsetForConsumersQuery(types.size()))) {
+
+            for (int i = 0; i < types.size(); i++) {
+                statement.setString(i + 1, types.get(i));
+            }
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getLong(1);
+            }
         } catch (SQLException exception) {
-            throw new RuntimeException(exception);
+            final String what = "Error while fetching max offset for consumers";
+            LOG.error("getMaxOffsetForConsumers", what, exception);
+            throw new RuntimeException(what, exception);
         }
+
+        return 0L;
     }
 
     private interface SqlConsumer {

@@ -15,6 +15,8 @@ final class SQLiteQueries {
 
     public static final String REINDEX_EVENTS = "REINDEX EVENT;";
 
+    public static final String ADD_TYPES_INDEX = "CREATE INDEX IF NOT EXISTS types_idx ON event (type);";
+
     static final String CREATE_EVENT_TABLE =
         "CREATE TABLE IF NOT EXISTS EVENT( " +
         " msg_offset bigint PRIMARY KEY NOT NULL," +
@@ -106,18 +108,14 @@ final class SQLiteQueries {
         }
     }
 
-    static String getLastOffsetQuery(final int typesCount) {
+    static String maxOffsetForConsumersQuery(final int typesCount) {
         final StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("SELECT coalesce(max(msg_offset),0) as last_offset FROM EVENT");
-
-        if (typesCount != 0) {
-            queryBuilder
-                .append(" WHERE type IN (")
-                .append(generateQuestionMarks(typesCount))
-                .append(")");
-        }
-
-        queryBuilder.append(";");
+        queryBuilder
+            .append("SELECT max(msg_offset) FROM event ")
+            .append(" WHERE type IN (")
+            .append(generateQuestionMarks(typesCount))
+            .append(")")
+            .append(";");
 
         return queryBuilder.toString();
     }
