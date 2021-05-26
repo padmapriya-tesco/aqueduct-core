@@ -291,4 +291,84 @@ class SQLiteStorageSpec extends Specification {
         def exception = thrown(RuntimeException)
         exception.getMessage() == "Error while fetching max offset for consumers"
     }
+
+    def "nothing is committed in compactUpTo if either compactMessages throws an exception"() {
+        given: "mocked datasource"
+        dataSource = Mock(DataSource)
+        def connection = Mock(Connection)
+        def compactMessagesStatement = Mock(PreparedStatement)
+        def compactDeletionsStatement = Mock(PreparedStatement)
+
+        dataSource.getConnection() >>>
+            [
+                DriverManager.getConnection(connectionUrl),
+                DriverManager.getConnection(connectionUrl),
+                DriverManager.getConnection(connectionUrl),
+                DriverManager.getConnection(connectionUrl),
+                connection
+            ]
+
+        sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
+
+        and: "exception thrown during compact messages"
+        connection.prepareStatement(SQLiteQueries.COMPACT) >> compactMessagesStatement
+        compactMessagesStatement.executeUpdate() >> { throw new SQLException() }
+
+        and: "no exception thrown during compact deletions"
+        connection.prepareStatement(SQLiteQueries.COMPACT_DELETIONS) >> compactDeletionsStatement
+        compactDeletionsStatement.executeUpdate() >>  1L
+
+        when:
+        sqliteStorage.compactUpTo(ZonedDateTime.now(), ZonedDateTime.now())
+
+        then:
+        def exception = thrown(RuntimeException)
+        exception.getCause().class == SQLException
+
+        and:
+        0 * connection.commit()
+
+        and:
+        1 * connection.rollback()
+    }
+
+    def "nothing is committed in compactUpTo if either compactDeletions throws an exception"() {
+        given: "mocked datasource"
+        dataSource = Mock(DataSource)
+        def connection = Mock(Connection)
+        def compactMessagesStatement = Mock(PreparedStatement)
+        def compactDeletionsStatement = Mock(PreparedStatement)
+
+        dataSource.getConnection() >>>
+            [
+                DriverManager.getConnection(connectionUrl),
+                DriverManager.getConnection(connectionUrl),
+                DriverManager.getConnection(connectionUrl),
+                DriverManager.getConnection(connectionUrl),
+                connection
+            ]
+
+        sqliteStorage = new SQLiteStorage(dataSource, limit, 10, batchSize)
+
+        and: "no exception thrown during compact messages"
+        connection.prepareStatement(SQLiteQueries.COMPACT) >> compactMessagesStatement
+        compactMessagesStatement.executeUpdate() >> 1L
+
+        and: "exception thrown during compact deletions"
+        connection.prepareStatement(SQLiteQueries.COMPACT_DELETIONS) >> compactDeletionsStatement
+        compactDeletionsStatement.executeUpdate() >>  { throw new SQLException() }
+
+        when:
+        sqliteStorage.compactUpTo(ZonedDateTime.now(), ZonedDateTime.now())
+
+        then:
+        def exception = thrown(RuntimeException)
+        exception.getCause().class == SQLException
+
+        and:
+        0 * connection.commit()
+
+        and:
+        1 * connection.rollback()
+    }
 }
