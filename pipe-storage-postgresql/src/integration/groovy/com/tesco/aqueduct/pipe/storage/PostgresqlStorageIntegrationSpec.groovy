@@ -285,21 +285,24 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "deletion compaction threshold"
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
 
-        given: "deletion messages stored with no TTL"
+        and: "deletion messages stored with no TTL"
         insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
         insertWithClusterAndTTL(2, "B", 1, null, LocalDateTime.now().minusDays(6), null)
-        insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(3, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+        insertWithClusterAndTTL(3, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
 
         when: "compaction with ttl is run"
-        storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD)
+        storage.compactAndMaintain(compactDeletionsThreshold)
 
         and: "all messages are read"
         MessageResults result = storage.read(null, 0, "locationUuid")
         List<Message> retrievedMessages = result.messages
 
-        then: "all messages are compacted"
-        retrievedMessages.size() == 0
+        then: "two messages are compacted"
+        retrievedMessages.size() == 2
+
+        retrievedMessages.get(0).offset == 3
+        retrievedMessages.get(0).offset == 4
     }
 
     def "Compaction only runs once when called in parallel"() {
@@ -871,16 +874,16 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     }
 
     void insertWithClusterAndTTL(
-            long offset,
-            String key,
-            Long clusterId,
-            LocalDateTime ttl,
-            LocalDateTime createdDate = LocalDateTime.now(),
-            String data = "data"
+        long offset,
+        String key,
+        Long clusterId,
+        LocalDateTime ttl,
+        LocalDateTime createdDate = LocalDateTime.now(),
+        String data = "data"
     ) {
         sql.execute(
             "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live) VALUES(?,?,?,?,?,?,?,?,?);",
-            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), "data", 1, clusterId, Timestamp.valueOf(ttl)
+            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, ttl == null ? null : Timestamp.valueOf(ttl)
         )
     }
 
