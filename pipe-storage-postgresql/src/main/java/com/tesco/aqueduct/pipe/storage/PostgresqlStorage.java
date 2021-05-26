@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -349,7 +350,7 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    public boolean compactAndMaintain() {
+    public boolean compactAndMaintain(LocalDateTime compactDeletionsThreshold) {
         boolean compacted = false;
         try (Connection connection = compactionDataSource.getConnection()) {
             connection.setAutoCommit(false);
