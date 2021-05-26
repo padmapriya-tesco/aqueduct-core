@@ -797,46 +797,46 @@ class SQLiteStorageIntegrationSpec extends Specification {
 
         and: 'an existing data store with duplicate messages for the same key'
         def messages = [
-                message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(2, "A", "some-type", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
-                // offsets 1,2 should be removed
+            message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(2, "A", "some-type", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
+            // offsets 1,2 should be removed
 
-                message(3, "B", ZonedDateTime.parse("2000-12-04T10:00:00Z")),
-                message(4, "B", "some-type", ZonedDateTime.parse("2000-12-05T10:00:00Z"), null),
-                // offset 3 should be removed
+            message(3, "B", ZonedDateTime.parse("2000-12-04T10:00:00Z")),
+            message(4, "B", "some-type", ZonedDateTime.parse("2000-12-05T10:00:00Z"), null),
+            // offset 3 should be removed
 
-                message(5, "C", ZonedDateTime.parse("2000-11-30T10:00:00Z")),
-                message(6, "C", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
-                message(7, "C", "some-type", ZonedDateTime.parse("2000-12-04T10:00:00Z"), null),
-                // offsets 5,6 should be removed
+            message(5, "C", ZonedDateTime.parse("2000-11-30T10:00:00Z")),
+            message(6, "C", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(7, "C", "some-type", ZonedDateTime.parse("2000-12-04T10:00:00Z"), null),
+            // offsets 5,6 should be removed
 
-                message(8, "D", ZonedDateTime.parse("2000-11-29T10:00:00Z")),
-                message(9, "D", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
-                message(10, "D", "some-type", ZonedDateTime.parse("2000-12-06T10:00:00Z"), null),
-                message(11, "D", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
-                // offsets 8,9 should be removed
+            message(8, "D", ZonedDateTime.parse("2000-11-29T10:00:00Z")),
+            message(9, "D", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(10, "D", "some-type", ZonedDateTime.parse("2000-12-06T10:00:00Z"), null),
+            message(11, "D", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
+            // offsets 8,9 should be removed
 
-                message(12, "E", ZonedDateTime.parse("2000-11-29T10:00:00Z")),
-                message(13, "E", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
-                message(14, "E", ZonedDateTime.parse("2000-12-02T10:00:00Z")),
-                // offsets 12,13 should be removed
+            message(12, "E", ZonedDateTime.parse("2000-11-29T10:00:00Z")),
+            message(13, "E", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(14, "E", ZonedDateTime.parse("2000-12-02T10:00:00Z")),
+            // offsets 12,13 should be removed
 
-                message(15, "F", ZonedDateTime.parse("2000-12-06T10:00:00Z")),
-                message(16, "F", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
-                message(17, "F", ZonedDateTime.parse("2000-12-08T10:00:00Z")),
-                // Nothing is removed
+            message(15, "F", ZonedDateTime.parse("2000-12-06T10:00:00Z")),
+            message(16, "F", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
+            message(17, "F", ZonedDateTime.parse("2000-12-08T10:00:00Z")),
+            // Nothing is removed
 
-                message(18, "F", ZonedDateTime.parse("2000-11-25T10:00:00Z")),
-                message(19, "F", "some-type", ZonedDateTime.parse("2000-11-29T10:00:00Z"), null),
-                message(20, "F", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
-                message(21, "F", "some-type", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
-                // All are removed
+            message(18, "F", ZonedDateTime.parse("2000-11-25T10:00:00Z")),
+            message(19, "F", "some-type", ZonedDateTime.parse("2000-11-29T10:00:00Z"), null),
+            message(20, "F", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(21, "F", "some-type", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
+            // All are removed
 
-                message(22, "G", ZonedDateTime.parse("2000-12-06T10:00:00Z")),
-                message(23, "G", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
-                message(24, "G", ZonedDateTime.parse("2000-12-08T10:00:00Z")),
-                message(25, "G", "some-type", ZonedDateTime.parse("2000-12-08T10:00:00Z"), null),
-                // Nothing is removed
+            message(22, "G", ZonedDateTime.parse("2000-12-06T10:00:00Z")),
+            message(23, "G", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
+            message(24, "G", ZonedDateTime.parse("2000-12-08T10:00:00Z")),
+            message(25, "G", "some-type", ZonedDateTime.parse("2000-12-08T10:00:00Z"), null),
+            // Nothing is removed
         ]
         sqliteStorage.write(messages)
 
