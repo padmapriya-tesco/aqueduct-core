@@ -341,25 +341,7 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    private void compact(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
-        int rowsAffected = compact(connection) + compactDeletions(connection, compactDeletionsThreshold);
-        LOG.info("compaction", "compacted " + rowsAffected + " rows");
-    }
-
-    private int compactDeletions(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(getCompactDeletionQuery())) {
-            statement.setTimestamp(1, Timestamp.valueOf(compactDeletionsThreshold));
-            return statement.executeUpdate();
-        }
-    }
-
-    private int compact(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
-            return statement.executeUpdate();
-        }
-    }
-
-    public boolean compactAndMaintain(LocalDateTime compactDeletionsThreshold) {
+    public boolean compactAndMaintain(LocalDateTime compactDeletionsThreshold, final boolean compactDeletions) {
         boolean compacted = false;
         try (Connection connection = compactionDataSource.getConnection()) {
             try {
@@ -367,7 +349,7 @@ public class PostgresqlStorage implements CentralStorage {
                 if (attemptToLock(connection)) {
                     compacted = true;
                     LOG.info("compact and maintain", "obtained lock, compacting");
-                    compact(connection, compactDeletionsThreshold);
+                    compact(connection, compactDeletionsThreshold, compactDeletions);
                     runVisibilityCheck(connection);
 
                     //start a new transaction for vacuuming
@@ -386,6 +368,30 @@ public class PostgresqlStorage implements CentralStorage {
             throw new RuntimeException(e);
         }
         return compacted;
+    }
+
+    private void compact(Connection connection, LocalDateTime compactDeletionsThreshold, boolean compactDeletions) throws SQLException {
+        int messageCompacted = compactMessages(connection);
+        int deletionsCompacted = 0;
+
+        if (compactDeletions) {
+            deletionsCompacted = compactDeletions(connection, compactDeletionsThreshold);
+        }
+
+        LOG.info("compaction", "compacted " + (messageCompacted + deletionsCompacted) + " rows");
+    }
+
+    private int compactDeletions(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactDeletionQuery())) {
+            statement.setTimestamp(1, Timestamp.valueOf(compactDeletionsThreshold));
+            return statement.executeUpdate();
+        }
+    }
+
+    private int compactMessages(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+            return statement.executeUpdate();
+        }
     }
 
     private boolean attemptToLock(Connection connection) {

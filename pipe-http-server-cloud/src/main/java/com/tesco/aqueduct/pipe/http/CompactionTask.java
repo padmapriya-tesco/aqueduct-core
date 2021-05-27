@@ -20,16 +20,19 @@ class CompactionTask {
     private static final PipeLogger LOG = new PipeLogger(LoggerFactory.getLogger(CompactionTask.class));
     private final PostgresqlStorage postgresqlStorage;
     private final LongTaskTimer longTaskTimer;
+    private final boolean compactionDeletions;
     private final Duration compactDeletionsThreshold;
 
     public CompactionTask(
         final MeterRegistry registry,
         final PostgresqlStorage postgresqlStorage,
         @Property(name = "persistence.compact.schedule.cron") final String cronExpression,
+        @Property(name = "persistence.compact.deletions.enabled") boolean compactionDeletions,
         @Property(name = "persistence.compact.deletions.threshold") Duration compactDeletionsThreshold
     ) {
         this.postgresqlStorage = postgresqlStorage;
         this.longTaskTimer = registry.more().longTaskTimer("persistence.compaction");
+        this.compactionDeletions = compactionDeletions;
         this.compactDeletionsThreshold = compactDeletionsThreshold;
         isValid(cronExpression);
     }
@@ -38,7 +41,7 @@ class CompactionTask {
     void compaction() {
         longTaskTimer.record(() -> {
             LOG.info("compaction", "compaction started");
-            postgresqlStorage.compactAndMaintain(LocalDateTime.now().minus(compactDeletionsThreshold));
+            postgresqlStorage.compactAndMaintain(LocalDateTime.now().minus(compactDeletionsThreshold), compactionDeletions);
             LOG.info("compaction", "compaction finished");
         });
     }
