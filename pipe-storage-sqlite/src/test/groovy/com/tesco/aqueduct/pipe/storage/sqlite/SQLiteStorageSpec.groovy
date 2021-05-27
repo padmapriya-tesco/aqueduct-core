@@ -319,7 +319,7 @@ class SQLiteStorageSpec extends Specification {
         compactDeletionsStatement.executeUpdate() >>  1L
 
         when:
-        sqliteStorage.compactUpTo(ZonedDateTime.now(), ZonedDateTime.now())
+        sqliteStorage.compactUpTo(ZonedDateTime.now(), ZonedDateTime.now(), true)
 
         then:
         def exception = thrown(RuntimeException)
@@ -359,7 +359,7 @@ class SQLiteStorageSpec extends Specification {
         compactDeletionsStatement.executeUpdate() >>  { throw new SQLException() }
 
         when:
-        sqliteStorage.compactUpTo(ZonedDateTime.now(), ZonedDateTime.now())
+        sqliteStorage.compactUpTo(ZonedDateTime.now(), ZonedDateTime.now(), true)
 
         then:
         def exception = thrown(RuntimeException)
