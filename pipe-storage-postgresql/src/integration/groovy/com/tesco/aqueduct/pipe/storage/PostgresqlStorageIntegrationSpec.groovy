@@ -249,8 +249,8 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     def "Messages with TTL set to future are not compacted"() {
         given: "messages stored with cluster id and TTL set to today"
         def createdTime = LocalDateTime.now().plusMinutes(60)
-        insertWithClusterAndTTL(1, "A", 1, createdTime, Timestamp.valueOf(LocalDateTime.now()))
-        insertWithClusterAndTTL(2, "A", 1, createdTime, Timestamp.valueOf(LocalDateTime.now()))
+        insertWithClusterAndTTL(1, "A", 1, createdTime)
+        insertWithClusterAndTTL(2, "A", 1, createdTime)
         insertWithClusterAndTTL(3, "A", 1, createdTime)
 
         when: "compaction with ttl is run"
@@ -303,7 +303,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         retrievedMessages.get(0).offset == 4
     }
 
-    def "compaction and compact-deletions are performed within a transaction"() {
+    def "transaction is rolled back when compaction succeeds but delete compactions fails"() {
         given:
         def compactionDataSource = Mock(DataSource)
         storage = new PostgresqlStorage(dataSource, compactionDataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
@@ -316,6 +316,33 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def compactionStatement = Mock(PreparedStatement)
         def compactDeletionStatement = Mock(PreparedStatement)
 
+        mockedCompactionStatementsOnly(connection, compactionStatement, compactDeletionStatement)
+
+        when:
+        storage.compactAndMaintain(LocalDateTime.now())
+
+        then: "transaction is started"
+        1 * connection.setAutoCommit(false)
+
+        and: "compaction query is executed"
+        1 * compactionStatement.executeUpdate() >> 0
+
+        and: "compact deletions query fails"
+        1 * compactDeletionStatement.executeUpdate() >> { throw new SQLException() }
+
+        and: "transaction is closed"
+        1 * connection.rollback()
+
+        and: "runtime exception is thrown"
+        def exception = thrown(RuntimeException)
+        exception.getCause().class == SQLException
+    }
+
+    private void mockedCompactionStatementsOnly (
+        Connection connection,
+        compactionStatement,
+        compactDeletionStatement
+    ) {
         connection.prepareStatement(_) >> { args ->
             def query = args[0] as String
             switch (query) {
@@ -329,23 +356,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
                     dataSource.getConnection().prepareStatement(query)
             }
         }
-
-        when:
-        storage.compactAndMaintain(LocalDateTime.now())
-
-        then: "transaction is started"
-        1 * connection.setAutoCommit(false)
-
-        and: "compaction query is executed"
-        1 * compactionStatement.executeUpdate() >> 0
-
-        and: "compact deletions query is executed"
-        1 * compactDeletionStatement.executeUpdate() >> 0
-
-        and: "transaction is closed"
-        1 * connection.commit()
     }
-
 
     def "Compaction only runs once when called in parallel"() {
         given: "database with lots of data ready to be compacted"

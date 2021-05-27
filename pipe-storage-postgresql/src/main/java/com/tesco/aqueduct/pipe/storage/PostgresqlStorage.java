@@ -341,40 +341,46 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    private void compact(Connection connection, LocalDateTime compactDeletionsThreshold) {
-        int rowsAffected = 0;
-        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
-            rowsAffected = statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    private void compact(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
+        int rowsAffected = compact(connection) + compactDeletions(connection, compactDeletionsThreshold);
+        LOG.info("compaction", "compacted " + rowsAffected + " rows");
+    }
 
+    private int compactDeletions(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(getCompactDeletionQuery())) {
             statement.setTimestamp(1, Timestamp.valueOf(compactDeletionsThreshold));
-            rowsAffected += statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+            return statement.executeUpdate();
         }
-        LOG.info("compaction", "compacted " + rowsAffected + " rows");
+    }
+
+    private int compact(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+            return statement.executeUpdate();
+        }
     }
 
     public boolean compactAndMaintain(LocalDateTime compactDeletionsThreshold) {
         boolean compacted = false;
         try (Connection connection = compactionDataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            if(attemptToLock(connection)){
-                compacted=true;
-                LOG.info("compact and maintain", "obtained lock, compacting");
-                compact(connection, compactDeletionsThreshold);
-                runVisibilityCheck(connection);
+            try {
+                connection.setAutoCommit(false);
+                if (attemptToLock(connection)) {
+                    compacted = true;
+                    LOG.info("compact and maintain", "obtained lock, compacting");
+                    compact(connection, compactDeletionsThreshold);
+                    runVisibilityCheck(connection);
 
-                //start a new transaction for vacuuming
-                connection.commit();
-                connection.setAutoCommit(true);
+                    //start a new transaction for vacuuming
+                    connection.commit();
+                    connection.setAutoCommit(true);
 
-                vacuumAnalyseEvents(connection);
-            } else {
-                LOG.info("compact and maintain", "didn't obtain lock");
+                    vacuumAnalyseEvents(connection);
+                } else {
+                    LOG.info("compact and maintain", "didn't obtain lock");
+                }
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
