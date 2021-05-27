@@ -287,11 +287,11 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         and: "deletion messages stored with no TTL"
         insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
-        insertWithClusterAndTTL(2, "B", 1, null, LocalDateTime.now().minusDays(6), null)
-        insertWithClusterAndTTL(3, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
         insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
 
-        when: "compaction with ttl is run"
+        when: "compaction with given deletion threshold is run"
         storage.compactAndMaintain(compactDeletionsThreshold)
 
         and: "all messages are read"
@@ -299,11 +299,53 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         List<Message> retrievedMessages = result.messages
 
         then: "two messages are compacted"
-        retrievedMessages.size() == 2
-
-        retrievedMessages.get(0).offset == 3
+        retrievedMessages.size() == 1
         retrievedMessages.get(0).offset == 4
     }
+
+    def "compaction and compact-deletions are performed within a transaction"() {
+        given:
+        def compactionDataSource = Mock(DataSource)
+        storage = new PostgresqlStorage(dataSource, compactionDataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
+
+        and:
+        def connection = Mock(Connection)
+        compactionDataSource.getConnection() >> connection
+
+        and: "statements available"
+        def compactionStatement = Mock(PreparedStatement)
+        def compactDeletionStatement = Mock(PreparedStatement)
+
+        connection.prepareStatement(_) >> { args ->
+            def query = args[0] as String
+            switch (query) {
+                case storage.getCompactionQuery():
+                    compactionStatement
+                    break
+                case storage.getCompactDeletionQuery():
+                    compactDeletionStatement
+                    break
+                default:
+                    dataSource.getConnection().prepareStatement(query)
+            }
+        }
+
+        when:
+        storage.compactAndMaintain(LocalDateTime.now())
+
+        then: "transaction is started"
+        1 * connection.setAutoCommit(false)
+
+        and: "compaction query is executed"
+        1 * compactionStatement.executeUpdate() >> 0
+
+        and: "compact deletions query is executed"
+        1 * compactDeletionStatement.executeUpdate() >> 0
+
+        and: "transaction is closed"
+        1 * connection.commit()
+    }
+
 
     def "Compaction only runs once when called in parallel"() {
         given: "database with lots of data ready to be compacted"

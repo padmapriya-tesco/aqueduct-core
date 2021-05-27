@@ -341,13 +341,21 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    private void compact(Connection connection) {
+    private void compact(Connection connection, LocalDateTime compactDeletionsThreshold) {
+        int rowsAffected = 0;
         try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
-            final int rowsAffected = statement.executeUpdate();
-            LOG.info("compaction", "compacted " + rowsAffected + " rows");
+            rowsAffected = statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        try (PreparedStatement statement = connection.prepareStatement(getCompactDeletionQuery())) {
+            statement.setTimestamp(1, Timestamp.valueOf(compactDeletionsThreshold));
+            rowsAffected += statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        LOG.info("compaction", "compacted " + rowsAffected + " rows");
     }
 
     public boolean compactAndMaintain(LocalDateTime compactDeletionsThreshold) {
@@ -357,7 +365,7 @@ public class PostgresqlStorage implements CentralStorage {
             if(attemptToLock(connection)){
                 compacted=true;
                 LOG.info("compact and maintain", "obtained lock, compacting");
-                compact(connection);
+                compact(connection, compactDeletionsThreshold);
                 runVisibilityCheck(connection);
 
                 //start a new transaction for vacuuming
@@ -441,6 +449,10 @@ public class PostgresqlStorage implements CentralStorage {
 
     private static String getCompactionQuery() {
         return "DELETE FROM events WHERE time_to_live < CURRENT_TIMESTAMP;";
+    }
+
+    private static String getCompactDeletionQuery() {
+        return "DELETE FROM events WHERE created_utc <= ? AND data IS NULL;";
     }
 
     private static String getVacuumAnalyseQuery() {
