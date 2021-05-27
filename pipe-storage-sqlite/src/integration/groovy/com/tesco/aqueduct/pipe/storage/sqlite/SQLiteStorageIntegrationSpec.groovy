@@ -703,7 +703,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run on the whole data store'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD)
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -726,7 +726,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run on the whole data store'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD)
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -751,7 +751,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run up to the timestamp of offset 1'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD)
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -779,7 +779,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         def deletionCompactThreshold = ZonedDateTime.parse("2000-12-03T10:00:00Z")
 
         when: 'compaction is invoked'
-        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold)
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -788,6 +788,34 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages.size() == 1
         messageResults.messages*.offset*.intValue() == [4]
         messageResults.messages*.key == ["D"]
+    }
+
+    def 'Deletions are not compacted if flag is set to false'() {
+        given: 'an existing data store with duplicate messages for the same key'
+        def messages = [
+            message(1, "A", "T", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(2, "B", "T", ZonedDateTime.parse("2000-12-02T10:00:00Z")),
+            message(3, "B", "T", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(4, "D", "T", ZonedDateTime.parse("2000-12-05T10:00:00Z"), null)
+        ]
+        sqliteStorage.write(messages)
+
+        and: 'a compaction threshold'
+        def compactThreshold = ZonedDateTime.parse("2000-12-04T10:00:00Z")
+
+        and: 'a deletion compaction threshold'
+        def deletionCompactThreshold = ZonedDateTime.parse("2000-12-03T10:00:00Z")
+
+        when: 'compaction is invoked'
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold, false)
+
+        and: 'all messages are requested'
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
+
+        then: 'deletions are not compacted'
+        messageResults.messages.size() == 3
+        messageResults.messages*.offset*.intValue() == [1, 3, 4]
+        messageResults.messages*.key == ["A", "B", "D"]
     }
 
     def 'messages are compacted as per the given compaction and deletion compaction threshold, complex case'() {
@@ -841,7 +869,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run'
-        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold)
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -867,7 +895,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run up to the timestamp of offset 4'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD)
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")

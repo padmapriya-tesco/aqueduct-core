@@ -490,19 +490,33 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    public void compactUpTo(final ZonedDateTime compactionThreshold, final ZonedDateTime deletionCompactionThreshold) {
+    public void compactUpTo(
+        final ZonedDateTime compactionThreshold,
+        final ZonedDateTime deletionCompactionThreshold,
+        final boolean compactDeletions
+    ) {
         try (Connection connection = dataSource.getConnection()) {
-            runCompactionInTransaction(compactionThreshold, deletionCompactionThreshold, connection);
+            runCompactionInTransaction(compactionThreshold, deletionCompactionThreshold, connection, compactDeletions);
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
         }
     }
 
-    private void runCompactionInTransaction(ZonedDateTime compactionThreshold, ZonedDateTime deletionCompactionThreshold, Connection connection) throws SQLException {
+    private void runCompactionInTransaction(
+        ZonedDateTime compactionThreshold,
+        ZonedDateTime deletionCompactionThreshold,
+        Connection connection,
+        boolean compactionDeletions
+    ) throws SQLException {
         connection.setAutoCommit(false);
         try {
             int compactedCount = compactMessagesOlderThan(compactionThreshold, connection);
-            int deletionCompactedCount = compactDeletionsOlderThan(deletionCompactionThreshold, connection);
+            int deletionCompactedCount = 0;
+
+            if (compactionDeletions) {
+                deletionCompactedCount = compactDeletionsOlderThan(deletionCompactionThreshold, connection);
+            }
+
             connection.commit();
             LOG.info("compaction", "compacted " + (compactedCount + deletionCompactedCount) + " rows");
         } catch (SQLException exception) {
