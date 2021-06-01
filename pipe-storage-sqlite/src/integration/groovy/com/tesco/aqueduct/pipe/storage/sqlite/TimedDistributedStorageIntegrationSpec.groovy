@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.Timer
 import org.sqlite.SQLiteDataSource
 import spock.lang.Specification
 
+import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.function.Supplier
@@ -21,7 +22,7 @@ class TimedDistributedStorageIntegrationSpec extends Specification {
     def meterRegistry = Mock(MeterRegistry)
 
     ZonedDateTime currentUTCTime() {
-        ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC"))
+        Instant.now().atZone(ZoneId.of("UTC"))
     }
 
     def message(long offset) {
