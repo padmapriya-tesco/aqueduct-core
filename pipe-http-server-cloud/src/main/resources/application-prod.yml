@@ -35,6 +35,9 @@ authentication:
 persistence:
   compact:
     schedule.cron: "0 14 0/1 * * ?"
+    deletions:
+      enabled: false
+      threshold: 30d
   read:
     limit: 2500
     max-batch-size: 1000000
