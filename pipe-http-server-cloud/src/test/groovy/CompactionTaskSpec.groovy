@@ -3,6 +3,8 @@ import com.tesco.aqueduct.pipe.storage.PostgresqlStorage
 import io.micrometer.core.instrument.MeterRegistry
 import spock.lang.Specification
 
+import java.time.Duration
+
 class CompactionTaskSpec extends Specification {
 
     PostgresqlStorage postgresqlStorage = Mock()
@@ -15,7 +17,7 @@ class CompactionTaskSpec extends Specification {
         String cronExpWith4FieldsInsteadOf6 = "4 3 * *"
 
         when:
-        new CompactionTask(registry, postgresqlStorage, cronExpWith4FieldsInsteadOf6)
+        new CompactionTask(registry, postgresqlStorage, cronExpWith4FieldsInsteadOf6, false, Duration.ofDays(1))
 
         then:
         def illegalArgException = thrown(IllegalArgumentException)
@@ -29,7 +31,7 @@ class CompactionTaskSpec extends Specification {
         String validCronExpression = "0 14 0/1 * * ?"
 
         when:
-        new CompactionTask(registry, postgresqlStorage, validCronExpression)
+        new CompactionTask(registry, postgresqlStorage, validCronExpression, false, Duration.ofDays(1))
 
         then:
         noExceptionThrown()
