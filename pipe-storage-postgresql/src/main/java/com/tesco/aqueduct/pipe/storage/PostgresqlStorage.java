@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -340,37 +341,57 @@ public class PostgresqlStorage implements CentralStorage {
         }
     }
 
-    private void compact(Connection connection) {
-        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
-            final int rowsAffected = statement.executeUpdate();
-            LOG.info("compaction", "compacted " + rowsAffected + " rows");
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean compactAndMaintain() {
+    public boolean compactAndMaintain(LocalDateTime compactDeletionsThreshold, final boolean compactDeletions) {
         boolean compacted = false;
         try (Connection connection = compactionDataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            if(attemptToLock(connection)){
-                compacted=true;
-                LOG.info("compact and maintain", "obtained lock, compacting");
-                compact(connection);
-                runVisibilityCheck(connection);
+            try {
+                connection.setAutoCommit(false);
+                if (attemptToLock(connection)) {
+                    compacted = true;
+                    LOG.info("compact and maintain", "obtained lock, compacting");
+                    compact(connection, compactDeletionsThreshold, compactDeletions);
+                    runVisibilityCheck(connection);
 
-                //start a new transaction for vacuuming
-                connection.commit();
-                connection.setAutoCommit(true);
+                    //start a new transaction for vacuuming
+                    connection.commit();
+                    connection.setAutoCommit(true);
 
-                vacuumAnalyseEvents(connection);
-            } else {
-                LOG.info("compact and maintain", "didn't obtain lock");
+                    vacuumAnalyseEvents(connection);
+                } else {
+                    LOG.info("compact and maintain", "didn't obtain lock");
+                }
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return compacted;
+    }
+
+    private void compact(Connection connection, LocalDateTime compactDeletionsThreshold, boolean compactDeletions) throws SQLException {
+        int messageCompacted = compactMessages(connection);
+        int deletionsCompacted = 0;
+
+        if (compactDeletions) {
+            deletionsCompacted = compactDeletions(connection, compactDeletionsThreshold);
+        }
+
+        LOG.info("compaction", "compacted " + (messageCompacted + deletionsCompacted) + " rows");
+    }
+
+    private int compactDeletions(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactDeletionQuery())) {
+            statement.setTimestamp(1, Timestamp.valueOf(compactDeletionsThreshold));
+            return statement.executeUpdate();
+        }
+    }
+
+    private int compactMessages(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(getCompactionQuery())) {
+            return statement.executeUpdate();
+        }
     }
 
     private boolean attemptToLock(Connection connection) {
@@ -440,6 +461,10 @@ public class PostgresqlStorage implements CentralStorage {
 
     private static String getCompactionQuery() {
         return "DELETE FROM events WHERE time_to_live < CURRENT_TIMESTAMP;";
+    }
+
+    private static String getCompactDeletionQuery() {
+        return "DELETE FROM events WHERE created_utc <= ? AND data IS NULL;";
     }
 
     private static String getVacuumAnalyseQuery() {

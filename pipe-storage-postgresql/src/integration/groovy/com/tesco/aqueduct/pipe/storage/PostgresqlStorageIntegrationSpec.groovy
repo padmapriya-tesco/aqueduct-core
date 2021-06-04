@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit
 
 class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
+    private static final LocalDateTime COMPACT_DELETIONS_THRESHOLD = LocalDateTime.now().plusMinutes(60)
+
     // Starts real PostgreSQL database, takes some time to create it and clean it up.
     @Shared @ClassRule
     SingleInstancePostgresRule pg = EmbeddedPostgresRules.singleInstance()
@@ -38,7 +40,6 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     long retryAfter = 5000
     long batchSize = 1000
     long maxOverheadBatchSize = (Message.MAX_OVERHEAD_SIZE * limit) + batchSize
-
     def setup() {
         sql = new Sql(pg.embeddedPostgres.postgresDatabase.connection)
 
@@ -247,12 +248,13 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
     def "Messages with TTL set to future are not compacted"() {
         given: "messages stored with cluster id and TTL set to today"
-        insertWithClusterAndTTL(1, "A", 1, LocalDateTime.now().plusMinutes(60))
-        insertWithClusterAndTTL(2, "A", 1, LocalDateTime.now().plusMinutes(60))
-        insertWithClusterAndTTL(3, "A", 1, LocalDateTime.now().plusMinutes(60))
+        def createdTime = LocalDateTime.now().plusMinutes(60)
+        insertWithClusterAndTTL(1, "A", 1, createdTime)
+        insertWithClusterAndTTL(2, "A", 1, createdTime)
+        insertWithClusterAndTTL(3, "A", 1, createdTime)
 
         when: "compaction with ttl is run"
-        storage.compactAndMaintain()
+        storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD, true)
 
         and: "all messages are read"
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -269,7 +271,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithClusterAndTTL(3, "A", 1, LocalDateTime.now().minusMinutes(1))
 
         when: "compaction with ttl is run"
-        storage.compactAndMaintain()
+        storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD, true)
 
         and: "all messages are read"
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -277,6 +279,105 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
 
         then: "all messages are compacted"
         retrievedMessages.size() == 0
+    }
+
+    def "deletion messages are compacted once they are older than the configured threshold"() {
+        given: "deletion compaction threshold"
+        def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
+
+        and: "deletion messages stored with no TTL"
+        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
+        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+
+        when: "compaction with given deletion threshold is run"
+        storage.compactAndMaintain(compactDeletionsThreshold, true)
+
+        and: "all messages are read"
+        MessageResults result = storage.read(null, 0, "locationUuid")
+        List<Message> retrievedMessages = result.messages
+
+        then: "two deletions and a message are compacted"
+        retrievedMessages.size() == 1
+        retrievedMessages.get(0).offset == 4
+    }
+
+    def "deletion messages are not compacted if flag is set to false"() {
+        given: "deletion compaction threshold"
+        def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
+
+        and: "deletion messages stored with no TTL"
+        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
+        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+
+        when: "compaction with given deletion threshold is run"
+        storage.compactAndMaintain(compactDeletionsThreshold, false)
+
+        and: "all messages are read"
+        MessageResults result = storage.read(null, 0, "locationUuid")
+        List<Message> retrievedMessages = result.messages
+
+        then: "no deletions are compacted"
+        retrievedMessages.size() == 3
+        retrievedMessages*.offset == [1, 3, 4]
+    }
+
+    def "transaction is rolled back when compaction succeeds but delete compactions fails"() {
+        given:
+        def compactionDataSource = Mock(DataSource)
+        storage = new PostgresqlStorage(dataSource, compactionDataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
+
+        and:
+        def connection = Mock(Connection)
+        compactionDataSource.getConnection() >> connection
+
+        and: "statements available"
+        def compactionStatement = Mock(PreparedStatement)
+        def compactDeletionStatement = Mock(PreparedStatement)
+
+        mockedCompactionStatementsOnly(connection, compactionStatement, compactDeletionStatement)
+
+        when:
+        storage.compactAndMaintain(LocalDateTime.now(), true)
+
+        then: "transaction is started"
+        1 * connection.setAutoCommit(false)
+
+        and: "compaction query is executed"
+        1 * compactionStatement.executeUpdate() >> 0
+
+        and: "compact deletions query fails"
+        1 * compactDeletionStatement.executeUpdate() >> { throw new SQLException() }
+
+        and: "transaction is closed"
+        1 * connection.rollback()
+
+        and: "runtime exception is thrown"
+        def exception = thrown(RuntimeException)
+        exception.getCause().class == SQLException
+    }
+
+    private void mockedCompactionStatementsOnly (
+        Connection connection,
+        compactionStatement,
+        compactDeletionStatement
+    ) {
+        connection.prepareStatement(_) >> { args ->
+            def query = args[0] as String
+            switch (query) {
+                case storage.getCompactionQuery():
+                    compactionStatement
+                    break
+                case storage.getCompactDeletionQuery():
+                    compactDeletionStatement
+                    break
+                default:
+                    dataSource.getConnection().prepareStatement(query)
+            }
+        }
     }
 
     def "Compaction only runs once when called in parallel"() {
@@ -295,7 +396,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         5.times{ i ->
             pool.execute{
                 startLock.get()
-                boolean compacted = storage.compactAndMaintain()
+                boolean compacted = storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD, true)
                 completed.add(i)
 
                 if(compacted) {
@@ -336,7 +437,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         insertWithClusterAndTTL(3, "A", 1, LocalDateTime.now().minusMinutes(1))
 
         when: "compaction with ttl is run"
-        storage.compactAndMaintain()
+        storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD, true)
 
         and: "all messages are read"
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -346,14 +447,14 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         retrievedMessages.size() == 1
     }
 
-    def "Messages with null TTL arent compacted"() {
+    def "Messages with null TTL are not compacted"() {
         given: "messages stored with cluster id and null TTL"
         insert(message(1, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(2, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
         insert(message(3, "type", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
 
         when: "compaction with ttl is run"
-        storage.compactAndMaintain()
+        storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD, true)
 
         and: "all messages are read"
         MessageResults result = storage.read(null, 0, "locationUuid")
@@ -821,7 +922,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         given: "a database"
 
         when: "vacuum analyse is called via compact and maintain method"
-        storage.compactAndMaintain()
+        storage.compactAndMaintain(COMPACT_DELETIONS_THRESHOLD, true)
 
         then: "no exception thrown"
         noExceptionThrown()
@@ -851,11 +952,13 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         long offset,
         String key,
         Long clusterId,
-        LocalDateTime ttl
+        LocalDateTime ttl,
+        LocalDateTime createdDate = LocalDateTime.now(),
+        String data = "data"
     ) {
         sql.execute(
             "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live) VALUES(?,?,?,?,?,?,?,?,?);",
-            offset, key, "content-type", "type", Timestamp.valueOf(LocalDateTime.now()), "data", 1, clusterId, Timestamp.valueOf(ttl)
+            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, ttl == null ? null : Timestamp.valueOf(ttl)
         )
     }
 

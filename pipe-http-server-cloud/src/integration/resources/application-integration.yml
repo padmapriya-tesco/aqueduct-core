@@ -31,6 +31,9 @@ endpoints:
 persistence:
   compact:
     schedule.cron: "0 14 2 1/1 * ?"
+    deletions:
+      enabled: false
+      threshold: 1d
   read:
     limit: 1000
     max-batch-size: 2000000
@@ -38,6 +41,7 @@ persistence:
     expected-node-count: 3000
     cluster-db-pool-size: 60
     work-mem-mb: 512
+
 
 authentication:
   users:
