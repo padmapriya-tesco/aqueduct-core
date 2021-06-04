@@ -24,7 +24,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
     long batchSize = 1000
     long maxOverheadBatchSize = (Message.MAX_OVERHEAD_SIZE * limit) + batchSize
     private SQLiteStorage sqliteStorage
-
+    private static final ZonedDateTime DELETION_COMPACT_THRESHOLD = ZonedDateTime.parse("2000-12-01T00:00:00Z")
     ZonedDateTime createdTime() {
         ZonedDateTime.of(2020, 01, 01, 00, 00, 00, 0, ZoneId.of("UTC"))
     }
@@ -703,7 +703,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run on the whole data store'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -726,7 +726,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run on the whole data store'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -751,7 +751,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run up to the timestamp of offset 1'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
@@ -760,6 +760,124 @@ class SQLiteStorageIntegrationSpec extends Specification {
         messageResults.messages.size() == 4
         messageResults.messages*.offset*.intValue() == [1, 2, 3, 4]
         messageResults.messages*.key == ["A", "A", "A", "B"]
+    }
+
+    def 'Deletions that are latest key over configured time are removed'() {
+        given: 'an existing data store with duplicate messages for the same key'
+        def messages = [
+            message(1, "A", "T", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(2, "B", "T", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
+            message(3, "C", "T", ZonedDateTime.parse("2000-12-03T10:00:00Z"), null),
+            message(4, "D", "T", ZonedDateTime.parse("2000-12-04T10:00:00Z"), null)
+        ]
+        sqliteStorage.write(messages)
+
+        and: 'all messages are in compaction window'
+        def compactThreshold = ZonedDateTime.parse("2000-12-05T10:00:00Z")
+
+        and: 'deletion compaction threshold is set up to offset 3'
+        def deletionCompactThreshold = ZonedDateTime.parse("2000-12-03T10:00:00Z")
+
+        when: 'compaction is invoked'
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold, true)
+
+        and: 'all messages are requested'
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
+
+        then: 'deletions are removed when over configured time'
+        messageResults.messages.size() == 1
+        messageResults.messages*.offset*.intValue() == [4]
+        messageResults.messages*.key == ["D"]
+    }
+
+    def 'Deletions are not compacted if flag is set to false'() {
+        given: 'an existing data store with duplicate messages for the same key'
+        def messages = [
+            message(1, "A", "T", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(2, "B", "T", ZonedDateTime.parse("2000-12-02T10:00:00Z")),
+            message(3, "B", "T", ZonedDateTime.parse("2000-12-03T10:00:00Z")),
+            message(4, "D", "T", ZonedDateTime.parse("2000-12-05T10:00:00Z"), null)
+        ]
+        sqliteStorage.write(messages)
+
+        and: 'a compaction threshold'
+        def compactThreshold = ZonedDateTime.parse("2000-12-04T10:00:00Z")
+
+        and: 'a deletion compaction threshold'
+        def deletionCompactThreshold = ZonedDateTime.parse("2000-12-03T10:00:00Z")
+
+        when: 'compaction is invoked'
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold, false)
+
+        and: 'all messages are requested'
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
+
+        then: 'deletions are not compacted'
+        messageResults.messages.size() == 3
+        messageResults.messages*.offset*.intValue() == [1, 3, 4]
+        messageResults.messages*.key == ["A", "B", "D"]
+    }
+
+    def 'messages are compacted as per the given compaction and deletion compaction threshold, complex case'() {
+        given: "Compaction threshold and deletion compaction threshold"
+        def compactThreshold = ZonedDateTime.parse("2000-12-05T10:00:00Z")
+        def deletionCompactThreshold = ZonedDateTime.parse("2000-12-03T10:00:00Z")
+
+        and: 'an existing data store with duplicate messages for the same key'
+        def messages = [
+            message(1, "A", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(2, "A", "some-type", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
+            // offsets 1,2 should be removed
+
+            message(3, "B", ZonedDateTime.parse("2000-12-04T10:00:00Z")),
+            message(4, "B", "some-type", ZonedDateTime.parse("2000-12-05T10:00:00Z"), null),
+            // offset 3 should be removed
+
+            message(5, "C", ZonedDateTime.parse("2000-11-30T10:00:00Z")),
+            message(6, "C", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(7, "C", "some-type", ZonedDateTime.parse("2000-12-04T10:00:00Z"), null),
+            // offsets 5,6 should be removed
+
+            message(8, "D", ZonedDateTime.parse("2000-11-29T10:00:00Z")),
+            message(9, "D", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(10, "D", "some-type", ZonedDateTime.parse("2000-12-06T10:00:00Z"), null),
+            message(11, "D", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
+            // offsets 8,9 should be removed
+
+            message(12, "E", ZonedDateTime.parse("2000-11-29T10:00:00Z")),
+            message(13, "E", "some-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), null),
+            message(14, "E", ZonedDateTime.parse("2000-12-02T10:00:00Z")),
+            // offsets 12,13 should be removed
+
+            message(15, "F", ZonedDateTime.parse("2000-12-06T10:00:00Z")),
+            message(16, "F", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
+            message(17, "F", ZonedDateTime.parse("2000-12-08T10:00:00Z")),
+            // Nothing is removed
+
+            message(18, "F", ZonedDateTime.parse("2000-11-25T10:00:00Z")),
+            message(19, "F", "some-type", ZonedDateTime.parse("2000-11-29T10:00:00Z"), null),
+            message(20, "F", ZonedDateTime.parse("2000-12-01T10:00:00Z")),
+            message(21, "F", "some-type", ZonedDateTime.parse("2000-12-02T10:00:00Z"), null),
+            // All are removed
+
+            message(22, "G", ZonedDateTime.parse("2000-12-06T10:00:00Z")),
+            message(23, "G", "some-type", ZonedDateTime.parse("2000-12-07T10:00:00Z"), null),
+            message(24, "G", ZonedDateTime.parse("2000-12-08T10:00:00Z")),
+            message(25, "G", "some-type", ZonedDateTime.parse("2000-12-08T10:00:00Z"), null),
+            // Nothing is removed
+        ]
+        sqliteStorage.write(messages)
+
+        when: 'compaction is run'
+        sqliteStorage.compactUpTo(compactThreshold, deletionCompactThreshold, true)
+
+        and: 'all messages are requested'
+        MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")
+
+        then: 'duplicate and delete messages that are outside of given thresholds are removed'
+        messageResults.messages.size() == 12
+        messageResults.messages*.offset*.intValue() == [4, 7, 10, 11, 14, 15, 16, 17, 22, 23, 24, 25]
+        messageResults.messages*.key == ["B", "C", "D", "D", "E", "F", "F", "F", "G", "G", "G", "G"]
     }
 
     def 'All duplicate messages are compacted to a given offset, complex case'() {
@@ -777,7 +895,7 @@ class SQLiteStorageIntegrationSpec extends Specification {
         sqliteStorage.write(messages)
 
         when: 'compaction is run up to the timestamp of offset 4'
-        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"))
+        sqliteStorage.compactUpTo(ZonedDateTime.parse("2000-12-02T10:00:00Z"), DELETION_COMPACT_THRESHOLD, true)
 
         and: 'all messages are requested'
         MessageResults messageResults = sqliteStorage.read(null, 1, "locationUuid")

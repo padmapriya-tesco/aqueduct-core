@@ -490,17 +490,55 @@ public class SQLiteStorage implements DistributedStorage {
         }
     }
 
-    public void compactUpTo(final ZonedDateTime zonedDateTime) {
-        // We may want a interface - Compactable - for this method signature
-        try (Connection connection = dataSource.getConnection();
-            PreparedStatement statement = connection.prepareStatement(SQLiteQueries.COMPACT)) {
-            Timestamp threshold = Timestamp.valueOf(zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
-            statement.setTimestamp(1, threshold);
-            statement.setTimestamp(2, threshold);
-            final int rowsAffected = statement.executeUpdate();
-            LOG.info("compaction", "compacted " + rowsAffected + " rows");
+    public void compactUpTo(
+        final ZonedDateTime compactionThreshold,
+        final ZonedDateTime deletionCompactionThreshold,
+        final boolean compactDeletions
+    ) {
+        try (Connection connection = dataSource.getConnection()) {
+            runCompactionInTransaction(compactionThreshold, deletionCompactionThreshold, connection, compactDeletions);
         } catch (SQLException exception) {
             throw new RuntimeException(exception);
+        }
+    }
+
+    private void runCompactionInTransaction(
+        ZonedDateTime compactionThreshold,
+        ZonedDateTime deletionCompactionThreshold,
+        Connection connection,
+        boolean compactionDeletions
+    ) throws SQLException {
+        connection.setAutoCommit(false);
+        try {
+            int compactedCount = compactMessagesOlderThan(compactionThreshold, connection);
+            int deletionCompactedCount = 0;
+
+            if (compactionDeletions) {
+                deletionCompactedCount = compactDeletionsOlderThan(deletionCompactionThreshold, connection);
+            }
+
+            connection.commit();
+            LOG.info("compaction", "compacted " + (compactedCount + deletionCompactedCount) + " rows");
+        } catch (SQLException exception) {
+            connection.rollback();
+            throw exception;
+        }
+    }
+
+    private int compactDeletionsOlderThan(ZonedDateTime deletionCompactionThreshold, Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.COMPACT_DELETIONS)) {
+            Timestamp deletionCompactThreshold = Timestamp.valueOf(deletionCompactionThreshold.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+            statement.setTimestamp(1, deletionCompactThreshold);
+            return statement.executeUpdate();
+        }
+    }
+
+    private int compactMessagesOlderThan(ZonedDateTime compactionThreshold, Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(SQLiteQueries.COMPACT)) {
+            Timestamp compactThreshold = Timestamp.valueOf(compactionThreshold.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime());
+            statement.setTimestamp(1, compactThreshold);
+            statement.setTimestamp(2, compactThreshold);
+            return statement.executeUpdate();
         }
     }
 
