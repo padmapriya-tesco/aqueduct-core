@@ -22,7 +22,7 @@ micronaut:
   executors:
     io:
       type: fixed
-      nThreads: 6
+      nThreads: 8
   server:
     netty:
       worker:
