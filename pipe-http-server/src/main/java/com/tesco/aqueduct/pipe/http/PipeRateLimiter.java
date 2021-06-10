@@ -9,7 +9,7 @@ import javax.inject.Singleton;
 public class PipeRateLimiter {
     private RateLimiter rateLimiter;
 
-    public PipeRateLimiter(@Property(name="rate-limiter.capacity", defaultValue = "10") double capacity) {
+    public PipeRateLimiter(@Property(name="rate-limiter.capacity", defaultValue = "2") double capacity) {
         this.rateLimiter = RateLimiter.create(capacity);
     }
 
