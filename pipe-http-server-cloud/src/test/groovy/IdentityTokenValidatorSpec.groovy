@@ -1,9 +1,5 @@
 import com.tesco.aqueduct.pipe.identity.issuer.IdentityServiceUnavailableException
-import com.tesco.aqueduct.pipe.identity.validator.IdentityTokenValidator
-import com.tesco.aqueduct.pipe.identity.validator.IdentityTokenValidatorClient
-import com.tesco.aqueduct.pipe.identity.validator.TokenUser
-import com.tesco.aqueduct.pipe.identity.validator.ValidateTokenRequest
-import com.tesco.aqueduct.pipe.identity.validator.ValidateTokenResponse
+import com.tesco.aqueduct.pipe.identity.validator.*
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.security.authentication.Authentication
@@ -11,8 +7,6 @@ import io.reactivex.Flowable
 import io.reactivex.exceptions.CompositeException
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import java.util.concurrent.Executors
 
 class IdentityTokenValidatorSpec extends Specification {
 
@@ -33,7 +27,7 @@ class IdentityTokenValidatorSpec extends Specification {
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
             validateToken(_ as String, _ as ValidateTokenRequest, clientId + ":" + clientSecret) >> Flowable.just(identityResponse)
         }
-        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, clientId, clientSecret, [tokenUser], Executors.newCachedThreadPool())
+        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, clientId, clientSecret, [tokenUser])
 
         when:
         def result = tokenValidator.validateToken("token") as Flowable
@@ -52,7 +46,7 @@ class IdentityTokenValidatorSpec extends Specification {
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
             validateToken(_ as String, _ as ValidateTokenRequest, _ as String) >> Flowable.error(new HttpClientResponseException("4xx", HttpResponse.badRequest()))
         }
-        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, "clientId", "clientSecret", ["tokenUser"] as List<TokenUser>, Executors.newCachedThreadPool())
+        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, "clientId", "clientSecret", ["tokenUser"] as List<TokenUser>)
 
         when:
         (tokenValidator.validateToken("token") as Flowable).blockingSubscribe()
@@ -66,7 +60,7 @@ class IdentityTokenValidatorSpec extends Specification {
         def identityTokenValidatorClient = Mock(IdentityTokenValidatorClient) {
             validateToken(_ as String, _ as ValidateTokenRequest, _ as String) >> Flowable.error(new HttpClientResponseException("5xx", HttpResponse.serverError()))
         }
-        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, "clientId", "clientSecret", ["tokenUser"] as List<TokenUser>, Executors.newCachedThreadPool())
+        def tokenValidator = new IdentityTokenValidator(identityTokenValidatorClient, "clientId", "clientSecret", ["tokenUser"] as List<TokenUser>)
 
         when:
         (tokenValidator.validateToken("token") as Flowable).blockingSubscribe()
