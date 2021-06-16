@@ -464,6 +464,10 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getCompactDeletionQuery() {
+        // get all the offsets that are deletions and it's the latest key and have been published over 30 days ago
+        // set time to live for each deletion and all the messages previous to the deletion offset
+        // run compaction
+
         return "DELETE FROM events WHERE created_utc <= ? AND data IS NULL;";
     }
 
