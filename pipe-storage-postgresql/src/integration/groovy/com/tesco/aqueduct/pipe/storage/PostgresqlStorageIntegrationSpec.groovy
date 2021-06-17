@@ -287,10 +287,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
 
         and: "deletion messages stored with no TTL"
-        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithCluster(1, "A", 1, LocalDateTime.now().minusDays(7), null)
         insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
-        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+        insertWithCluster(3, "B", 1, LocalDateTime.now().minusDays(6), null)
+        insertWithCluster(4, "C", 1, LocalDateTime.now().minusDays(1), null)
 
         when: "compaction with given deletion threshold is run"
         storage.compactAndMaintain(compactDeletionsThreshold, true)
@@ -309,18 +309,18 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
 
         and: "deletion messages and corresponding data messages stored with no TTL"
-        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(2, "A", 1, null, LocalDateTime.now().minusDays(7), null)
-        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(4, "B", 1, null, LocalDateTime.now().minusDays(8), null)
-        insertWithClusterAndTTL(5, "B", 1, null, LocalDateTime.now().minusDays(8))
+        insertWithCluster(1, "A", 1, LocalDateTime.now().minusDays(7))
+        insertWithCluster(2, "A", 1, LocalDateTime.now().minusDays(7), null)
+        insertWithCluster(3, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithCluster(4, "B", 1, LocalDateTime.now().minusDays(8), null)
+        insertWithCluster(5, "B", 1, LocalDateTime.now().minusDays(8))
         insertWithClusterAndTTL(6, "C", 1, LocalDateTime.now().plusDays(2), LocalDateTime.now().minusDays(8), null)
 
         // messages with location group
-        insertWithClusterAndTTL(7, "D", 1, null, LocalDateTime.now().minusDays(8), "data", 2L)
-        insertWithClusterAndTTL(8, "D", 1, null, LocalDateTime.now().minusDays(8), null, 2L)
-        insertWithClusterAndTTL(9, "D", 1, null, LocalDateTime.now().minusDays(8), "data", 2L)
-        insertWithClusterAndTTL(10, "E", 1, null, LocalDateTime.now().minusDays(8), "data", 2L)
+        insertWithCluster(7, "D", 1, LocalDateTime.now().minusDays(8), "data", 2L)
+        insertWithCluster(8, "D", 1, LocalDateTime.now().minusDays(8), null, 2L)
+        insertWithCluster(9, "D", 1, LocalDateTime.now().minusDays(8), "data", 2L)
+        insertWithCluster(10, "E", 1, LocalDateTime.now().minusDays(8), "data", 2L)
 
         when: "compaction with given deletion threshold is run"
         storage.compactAndMaintain(compactDeletionsThreshold, true)
@@ -338,10 +338,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
 
         and: "deletion messages stored with no TTL"
-        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithCluster(1, "A", 1, LocalDateTime.now().minusDays(7), null)
         insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
-        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+        insertWithCluster(3, "B", 1, LocalDateTime.now().minusDays(6), null)
+        insertWithCluster(4, "C", 1, LocalDateTime.now().minusDays(1), null)
 
         when: "compaction with given deletion threshold is run"
         storage.compactAndMaintain(compactDeletionsThreshold, false)
@@ -1117,7 +1117,21 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
     ) {
         sql.execute(
             "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live, location_group) VALUES(?,?,?,?,?,?,?,?,?,?);",
-            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, ttl == null ? null : Timestamp.valueOf(ttl), locationGroup
+            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, Timestamp.valueOf(ttl), locationGroup
+        )
+    }
+
+    void insertWithCluster(
+        long offset,
+        String key,
+        Long clusterId,
+        LocalDateTime createdDate = LocalDateTime.now(),
+        String data = "data",
+        Long locationGroup = null
+    ) {
+        sql.execute(
+            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live, location_group) VALUES(?,?,?,?,?,?,?,?,?,?);",
+            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, null, locationGroup
         )
     }
 
