@@ -66,23 +66,24 @@ public class PostgresqlStorage implements CentralStorage {
         long start = System.currentTimeMillis();
         Connection connection = null;
         try {
-            connection = getConnection();
+            connection = getConnectionAndStartTransaction();
 
             final Optional<ClusterCacheEntry> entry = clusterStorage.getClusterCacheEntry(locationUuid, connection);
 
-            final List<Long> locationGroups = getLocationGroupsFor(locationUuid, connection);
+            List<Long> locationGroups = getLocationGroupsFor(locationUuid, connection);
 
             if (isValidAndUnexpired(entry)) {
                 return readMessages(types, start, startOffset, entry.get().getClusterIds(), locationGroups, connection);
-
             } else {
+                commit(connection);
                 close(connection);
 
                 final List<String> clusterUuids = clusterStorage.resolveClustersFor(locationUuid);
 
-                connection = getConnection();
+                connection = getConnectionAndStartTransaction();
 
                 final Optional<List<Long>> newClusterIds = clusterStorage.updateAndGetClusterIds(locationUuid, clusterUuids, entry, connection);
+                locationGroups = getLocationGroupsFor(locationUuid, connection);
 
                 if (newClusterIds.isPresent()) {
                     return readMessages(types, start, startOffset, newClusterIds.get(), locationGroups, connection);
@@ -93,9 +94,11 @@ public class PostgresqlStorage implements CentralStorage {
             }
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "read", exception);
+            close(connection);
             throw new RuntimeException(exception);
         } finally {
             if (connection != null) {
+                commit(connection);
                 close(connection);
             }
             long end = System.currentTimeMillis();
@@ -128,9 +131,11 @@ public class PostgresqlStorage implements CentralStorage {
         return "SELECT groups FROM LOCATION_GROUPS WHERE location_uuid = ?;";
     }
 
-    private Connection getConnection() throws SQLException {
+    private Connection getConnectionAndStartTransaction() throws SQLException {
         long start = System.currentTimeMillis();
         Connection connection = pipeDataSource.getConnection();
+        connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+        connection.setAutoCommit(false);
         LOG.info("getConnection:time", Long.toString(System.currentTimeMillis() - start));
         return connection;
     }
@@ -148,7 +153,6 @@ public class PostgresqlStorage implements CentralStorage {
         Connection connection
     ) throws SQLException {
 
-        connection.setAutoCommit(false);
         setWorkMem(connection);
 
         final long globalLatestOffset = globalLatestOffsetCache.get(connection);
@@ -172,6 +176,17 @@ public class PostgresqlStorage implements CentralStorage {
             }
         } catch (SQLException exception) {
             LOG.error("postgresql storage", "close", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private void commit(Connection connection) {
+        try {
+            if (!connection.isClosed()) {
+             connection.commit();
+            }
+        } catch (SQLException exception) {
+            LOG.error("postgresql storage", "commit", exception);
             throw new RuntimeException(exception);
         }
     }
