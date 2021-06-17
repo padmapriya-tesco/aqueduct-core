@@ -471,10 +471,10 @@ public class PostgresqlStorage implements CentralStorage {
                 "AND time_to_live IS NULL " +
                 "GROUP BY msg_key,type,cluster_id" +
             ") as LATEST_DELETIONS " +
-            "WHERE EVENTS.msg_key = LATEST_DELETIONS.msg_key " +
-            "AND EVENTS.type = LATEST_DELETIONS.type " +
-            "AND EVENTS.cluster_id = LATEST_DELETIONS.cluster_id " +
-            "AND EVENTS.msg_offset <= LATEST_DELETIONS.last_delete_offset";
+        "WHERE EVENTS.msg_key = LATEST_DELETIONS.msg_key " +
+        "AND EVENTS.type = LATEST_DELETIONS.type " +
+        "AND EVENTS.cluster_id = LATEST_DELETIONS.cluster_id " +
+        "AND EVENTS.msg_offset <= LATEST_DELETIONS.last_delete_offset;";
     }
 
     private static String getVacuumAnalyseQuery() {
