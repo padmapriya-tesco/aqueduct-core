@@ -371,12 +371,9 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private void compact(Connection connection, LocalDateTime compactDeletionsThreshold, boolean compactDeletions) throws SQLException {
+        compactDeletions(connection, compactDeletionsThreshold);
         int messageCompacted = compactMessages(connection);
         int deletionsCompacted = 0;
-
-        if (compactDeletions) {
-            deletionsCompacted = compactDeletions(connection, compactDeletionsThreshold);
-        }
 
         LOG.info("compaction", "compacted " + (messageCompacted + deletionsCompacted) + " rows");
     }
@@ -460,7 +457,7 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getCompactionQuery() {
-        return "DELETE FROM events WHERE time_to_live < CURRENT_TIMESTAMP;";
+        return "DELETE FROM events WHERE time_to_live <= CURRENT_TIMESTAMP;";
     }
 
     private static String getCompactDeletionQuery() {
@@ -468,7 +465,12 @@ public class PostgresqlStorage implements CentralStorage {
         // set time to live for each deletion and all the messages previous to the deletion offset
         // run compaction
 
-        return "DELETE FROM events WHERE created_utc <= ? AND data IS NULL;";
+        return
+        "UPDATE EVENTS SET time_to_live = CURRENT_TIMESTAMP" +
+        " FROM (" +
+                "SELECT max(msg_offset) as last_delete_offset, msg_key, type, cluster_id FROM EVENTS WHERE created_utc <= ? AND data IS NULL group by msg_key,type,cluster_id" +
+            ") as latestDeletions" +
+            " WHERE EVENTS.msg_key=latestDeletions.msg_key AND EVENTS.type=latestDeletions.type AND EVENTS.cluster_id=latestDeletions.cluster_id AND EVENTS.msg_offset <= latestDeletions.last_delete_offset";
     }
 
     private static String getVacuumAnalyseQuery() {

@@ -303,6 +303,28 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         retrievedMessages.get(0).offset == 4
     }
 
+    def "deletions with its data messages having no time_to_live are deleted"() {
+        given: "deletion compaction threshold"
+        def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
+
+        and: "deletion messages and corresponding data messages stored with no TTL"
+        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7))
+        insertWithClusterAndTTL(2, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(8), null)
+        insertWithClusterAndTTL(4, "B", 1, null, LocalDateTime.now().minusDays(8))
+
+        when: "compaction with given deletion threshold is run"
+        storage.compactAndMaintain(compactDeletionsThreshold, true)
+
+        and: "all messages are read"
+        MessageResults result = storage.read(null, 0, "locationUuid")
+        List<Message> retrievedMessages = result.messages
+
+        then: "deletions with data message having no ttl are removed"
+        retrievedMessages.size() == 1
+        retrievedMessages.get(0).offset == 4
+    }
+
     def "deletion messages are not compacted if flag is set to false"() {
         given: "deletion compaction threshold"
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
@@ -881,6 +903,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.messages.offset*.intValue() == [3, 4, 6]
         messageResults.globalLatestOffset == OptionalLong.of(6)
     }
+
 
     @Unroll
     def "location groups are provided as part of the message results during read when available"() {
