@@ -8,6 +8,7 @@ import com.tesco.aqueduct.pipe.api.OffsetName
 import com.tesco.aqueduct.pipe.api.PipeState
 import groovy.sql.Sql
 import groovy.transform.NamedVariant
+import jdk.nashorn.internal.ir.annotations.Ignore
 import org.junit.ClassRule
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -286,10 +287,10 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
 
         and: "deletion messages stored with no TTL"
-        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithCluster(1, "A", 1, LocalDateTime.now().minusDays(7), null)
         insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
-        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+        insertWithCluster(3, "B", 1, LocalDateTime.now().minusDays(6), null)
+        insertWithCluster(4, "C", 1, LocalDateTime.now().minusDays(1), null)
 
         when: "compaction with given deletion threshold is run"
         storage.compactAndMaintain(compactDeletionsThreshold, true)
@@ -303,15 +304,44 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         retrievedMessages.get(0).offset == 4
     }
 
-    def "deletion messages are not compacted if flag is set to false"() {
+    def "deletions with its data messages having no time_to_live are deleted"() {
+        given: "deletion compaction threshold"
+        def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
+
+        and: "deletion messages and corresponding data messages stored with no TTL"
+        insertWithCluster(1, "A", 1, LocalDateTime.now().minusDays(7))
+        insertWithCluster(2, "A", 1, LocalDateTime.now().minusDays(7), null)
+        insertWithCluster(3, "B", 1, LocalDateTime.now().minusDays(7))
+        insertWithCluster(4, "B", 1, LocalDateTime.now().minusDays(8), null)
+        insertWithCluster(5, "B", 1, LocalDateTime.now().minusDays(8))
+        insertWithClusterAndTTL(6, "C", 1, LocalDateTime.now().plusDays(2), LocalDateTime.now().minusDays(8), null)
+
+        // messages with location group
+        insertWithCluster(7, "D", 1, LocalDateTime.now().minusDays(8), "data", 2L)
+        insertWithCluster(8, "D", 1, LocalDateTime.now().minusDays(8), null, 2L)
+        insertWithCluster(9, "D", 1, LocalDateTime.now().minusDays(8), "data", 2L)
+        insertWithCluster(10, "E", 1, LocalDateTime.now().minusDays(8), "data", 2L)
+
+        when: "compaction with given deletion threshold is run"
+        storage.compactAndMaintain(compactDeletionsThreshold, true)
+
+        and: "all messages are read"
+        def rows = sql.rows("select msg_offset from events")
+
+        then: "deletions and their corresponding data message having no ttl are removed"
+        rows.size() == 4
+        rows*.msg_offset == [5,6,9,10]
+    }
+
+    def "deletion messages not older than given threshold are not compacted if flag is set to false"() {
         given: "deletion compaction threshold"
         def compactDeletionsThreshold = LocalDateTime.now().minusDays(5)
 
         and: "deletion messages stored with no TTL"
-        insertWithClusterAndTTL(1, "A", 1, null, LocalDateTime.now().minusDays(7), null)
+        insertWithCluster(1, "A", 1, LocalDateTime.now().minusDays(7), null)
         insertWithClusterAndTTL(2, "B", 1, LocalDateTime.now().minusDays(7))
-        insertWithClusterAndTTL(3, "B", 1, null, LocalDateTime.now().minusDays(6), null)
-        insertWithClusterAndTTL(4, "C", 1, null, LocalDateTime.now().minusDays(1), null)
+        insertWithCluster(3, "B", 1, LocalDateTime.now().minusDays(6), null)
+        insertWithCluster(4, "C", 1, LocalDateTime.now().minusDays(1), null)
 
         when: "compaction with given deletion threshold is run"
         storage.compactAndMaintain(compactDeletionsThreshold, false)
@@ -325,7 +355,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         retrievedMessages*.offset == [1, 3, 4]
     }
 
-    def "transaction is rolled back when compaction succeeds but delete compactions fails"() {
+    def "transaction is rolled back and compaction is not run when delete compactions fails"() {
         given:
         def compactionDataSource = Mock(DataSource)
         storage = new PostgresqlStorage(dataSource, compactionDataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
@@ -347,10 +377,45 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         1 * connection.setAutoCommit(false)
 
         and: "compaction query is executed"
-        1 * compactionStatement.executeUpdate() >> 0
+        0 * compactionStatement.executeUpdate() >> 0
 
         and: "compact deletions query fails"
         1 * compactDeletionStatement.executeUpdate() >> { throw new SQLException() }
+
+        and: "transaction is closed"
+        1 * connection.rollback()
+
+        and: "runtime exception is thrown"
+        def exception = thrown(RuntimeException)
+        exception.getCause().class == SQLException
+    }
+
+    def "transaction is rolled back when delete compactions succeeds but compaction fails"() {
+        given:
+        def compactionDataSource = Mock(DataSource)
+        storage = new PostgresqlStorage(dataSource, compactionDataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage)
+
+        and:
+        def connection = Mock(Connection)
+        compactionDataSource.getConnection() >> connection
+
+        and: "statements available"
+        def compactionStatement = Mock(PreparedStatement)
+        def compactDeletionStatement = Mock(PreparedStatement)
+
+        mockedCompactionStatementsOnly(connection, compactionStatement, compactDeletionStatement)
+
+        when:
+        storage.compactAndMaintain(LocalDateTime.now(), true)
+
+        then: "transaction is started"
+        1 * connection.setAutoCommit(false)
+
+        and: "compaction query is executed"
+        1 * compactionStatement.executeUpdate() >> { throw new SQLException() }
+
+        and: "compact deletions query fails"
+        1 * compactDeletionStatement.executeUpdate() >> 2
 
         and: "transaction is closed"
         1 * connection.rollback()
@@ -371,7 +436,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
                 case storage.getCompactionQuery():
                     compactionStatement
                     break
-                case storage.getCompactDeletionQuery():
+                case storage.setTimeToLiveForDeletionsQuery():
                     compactDeletionStatement
                     break
                 default:
@@ -882,6 +947,7 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         messageResults.globalLatestOffset == OptionalLong.of(6)
     }
 
+
     @Unroll
     def "location groups are provided as part of the message results during read when available"() {
         given: "a location and its group"
@@ -928,6 +994,98 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         noExceptionThrown()
     }
 
+    def "read happens in a single transaction when cluster cache entry is valid"() {
+        given: "for a location and cluster"
+        def locationUuid = "locationUuid"
+        def clusterId = 1L
+
+        and: "location group exists"
+        insertLocationGroupFor(locationUuid, [1L])
+
+        and: "message in events table"
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        and: "a datasource"
+        DataSource mockedDataSource = Mock()
+        Connection connection1 = DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        Connection connection2 = DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        mockedDataSource.connection >>> [ connection1, connection2 ]
+
+        and: "clusterStorage returning a cache entry and while that happens another message is written in events"
+        def clusterStorage = Mock(ClusterStorage)
+        clusterStorage.getClusterCacheEntry(locationUuid, connection2) >> {
+            // simulates a read that an actual cluster cache would do
+            connection2.prepareStatement("SELECT * FROM events;").execute()
+
+            // a message is inserted into the database from another transaction
+            insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+            // a cache entry is returned
+            cacheEntry(locationUuid, [clusterId])
+        }
+
+        and:
+        def storage = new PostgresqlStorage(
+            mockedDataSource, dataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage
+        )
+
+        when: "messages are read"
+        def messageResults = storage.read([], 0L, "locationUuid")
+
+        then: "only the first message is returned and we should not see messages written outside the transaction"
+        messageResults.messages.size() == 1
+        messageResults.messages.get(0).offset == 1
+    }
+
+    def "read happens in a single transaction when cluster cache entry is invalid"() {
+        given: "for a location and cluster"
+        def locationUuid = "locationUuid"
+        def clusterId = 1L
+
+        and: "location group exists"
+        insertLocationGroupFor(locationUuid, [1L])
+
+        and: "message in events table"
+        insert(message(1, "type1", "A", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+        and: "a datasource"
+        DataSource mockedDataSource = Mock()
+        Connection connection1 = DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        Connection connection2 = DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        Connection connection3 = DriverManager.getConnection(pg.embeddedPostgres.getJdbcUrl("postgres", "postgres"))
+        mockedDataSource.connection >>> [ connection1, connection2, connection3]
+
+        and: "clusterStorage returning an invalid cache entry followed by a cache entry which at the same time another message is written in events"
+        def clusterStorage = Mock(ClusterStorage)
+        clusterStorage.getClusterCacheEntry(locationUuid, _) >>> [
+            cacheEntry(locationUuid, [clusterId], LocalDateTime.now().plusMinutes(1), false),
+            {
+                // simulates a read that an actual cluster cache would do
+                connection3.prepareStatement("SELECT * FROM events;").execute()
+
+                // a message is inserted into the database from another transaction
+                insert(message(2, "type1", "B", "content-type", ZonedDateTime.parse("2000-12-01T10:00:00Z"), "data"))
+
+                // a cache entry is returned
+                cacheEntry(locationUuid, [clusterId])
+            }
+        ]
+
+        clusterStorage.updateAndGetClusterIds(locationUuid, _, _, _) >> Optional.of([1L])
+
+        and:
+        def storage = new PostgresqlStorage(
+                mockedDataSource, dataSource, limit, retryAfter, batchSize, new GlobalLatestOffsetCache(), 1, 1, 4, clusterStorage
+        )
+
+        when: "messages are read"
+        def messageResults = storage.read([], 0L, "locationUuid")
+
+        then: "only the first message is returned and we should not see messages written outside the transaction"
+        messageResults.messages.size() == 1
+        messageResults.messages.get(0).offset == 1
+    }
+
     void insert(
         Message msg,
         Long clusterId,
@@ -954,11 +1112,26 @@ class PostgresqlStorageIntegrationSpec extends StorageSpec {
         Long clusterId,
         LocalDateTime ttl,
         LocalDateTime createdDate = LocalDateTime.now(),
-        String data = "data"
+        String data = "data",
+        Long locationGroup = null
     ) {
         sql.execute(
-            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live) VALUES(?,?,?,?,?,?,?,?,?);",
-            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, ttl == null ? null : Timestamp.valueOf(ttl)
+            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live, location_group) VALUES(?,?,?,?,?,?,?,?,?,?);",
+            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, Timestamp.valueOf(ttl), locationGroup
+        )
+    }
+
+    void insertWithCluster(
+        long offset,
+        String key,
+        Long clusterId,
+        LocalDateTime createdDate = LocalDateTime.now(),
+        String data = "data",
+        Long locationGroup = null
+    ) {
+        sql.execute(
+            "INSERT INTO EVENTS(msg_offset, msg_key, content_type, type, created_utc, data, event_size, cluster_id, time_to_live, location_group) VALUES(?,?,?,?,?,?,?,?,?,?);",
+            offset, key, "content-type", "type", Timestamp.valueOf(createdDate), data, 1, clusterId, null, locationGroup
         )
     }
 
