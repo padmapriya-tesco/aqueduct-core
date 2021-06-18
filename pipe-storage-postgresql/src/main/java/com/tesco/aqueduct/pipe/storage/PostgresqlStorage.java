@@ -386,20 +386,18 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private void compact(Connection connection, LocalDateTime compactDeletionsThreshold, boolean compactDeletions) throws SQLException {
-        int messageCompacted = compactMessages(connection);
-        int deletionsCompacted = 0;
-
         if (compactDeletions) {
-            deletionsCompacted = compactDeletions(connection, compactDeletionsThreshold);
+            setTimeToLiveForDeletions(connection, compactDeletionsThreshold);
         }
+        int messageCompacted = compactMessages(connection);
 
-        LOG.info("compaction", "compacted " + (messageCompacted + deletionsCompacted) + " rows");
+        LOG.info("compaction", "compacted " + messageCompacted + " rows");
     }
 
-    private int compactDeletions(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(getCompactDeletionQuery())) {
+    private void setTimeToLiveForDeletions(Connection connection, LocalDateTime compactDeletionsThreshold) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(setTimeToLiveForDeletionsQuery())) {
             statement.setTimestamp(1, Timestamp.valueOf(compactDeletionsThreshold));
-            return statement.executeUpdate();
+            statement.executeUpdate();
         }
     }
 
@@ -475,11 +473,23 @@ public class PostgresqlStorage implements CentralStorage {
     }
 
     private static String getCompactionQuery() {
-        return "DELETE FROM events WHERE time_to_live < CURRENT_TIMESTAMP;";
+        return "DELETE FROM events WHERE time_to_live <= CURRENT_TIMESTAMP;";
     }
 
-    private static String getCompactDeletionQuery() {
-        return "DELETE FROM events WHERE created_utc <= ? AND data IS NULL;";
+    private static String setTimeToLiveForDeletionsQuery() {
+        return
+        "UPDATE EVENTS SET time_to_live = CURRENT_TIMESTAMP " +
+        "FROM (" +
+                "SELECT max(msg_offset) as last_delete_offset, msg_key, type, cluster_id FROM EVENTS " +
+                "WHERE created_utc <= ? " +
+                "AND data IS NULL " +
+                "AND time_to_live IS NULL " +
+                "GROUP BY msg_key,type,cluster_id" +
+            ") as LATEST_DELETIONS " +
+        "WHERE EVENTS.msg_key = LATEST_DELETIONS.msg_key " +
+        "AND EVENTS.type = LATEST_DELETIONS.type " +
+        "AND EVENTS.cluster_id = LATEST_DELETIONS.cluster_id " +
+        "AND EVENTS.msg_offset <= LATEST_DELETIONS.last_delete_offset;";
     }
 
     private static String getVacuumAnalyseQuery() {
