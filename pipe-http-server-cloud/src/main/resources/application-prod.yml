@@ -45,3 +45,7 @@ persistence:
     expected-node-count: 7000
     cluster-db-pool-size: 24
     work-mem-mb: 2000
+
+endpoints:
+  all:
+    sensitive: true

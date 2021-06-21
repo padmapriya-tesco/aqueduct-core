@@ -34,7 +34,6 @@ endpoints:
   all:
     enabled: true
     path: /endpoints
-    sensitive: true
 
 datasources:
   pipe:
