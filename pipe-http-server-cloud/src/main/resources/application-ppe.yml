@@ -1,9 +1,3 @@
-endpoints:
-  loggers:
-    enabled: true
-    sensitive: false
-    write-sensitive: false
-
 authentication:
   identity:
     url: "${IDENTITY_URL}"
