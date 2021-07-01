@@ -496,6 +496,78 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         "PIPE_WITH_DELAY"   | 200        | BootstrapType.PIPE_WITH_DELAY.toString()
     }
 
+    @Unroll
+    def "when a bootstrap is requested for a location and nodes, a bootstrap request is saved for that node"() {
+        given: "We register multiple nodes"
+        registerNode("locationA", "http://1.1.1.1:0001", 123, FOLLOWING, [CLOUD_PIPE_URL],"A1")
+        registerNode("locationA", "http://1.1.1.2:0002", 123, INITIALISING, [CLOUD_PIPE_URL],"A2")
+        registerNode("locationB", "http://2.1.1.1:0001", 123, FOLLOWING, [CLOUD_PIPE_URL],"B1")
+        registerNode("locationB", "http://2.1.1.2:0002", 123, PENDING, [CLOUD_PIPE_URL],"B2")
+
+        and: "identity rejecting requests"
+        denySingleIdentityTokenValidationRequest()
+
+        when: "bootstrap is called"
+        given()
+            .contentType("application/json")
+        .when()
+            .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
+            .body("""{
+                "locations": ["locationA", "locationB"],
+                "nodeRequests": ["0000", "1111", "2222"], 
+                "bootstrapType": "$bootstrapString"
+            }""")
+            .post("/v2/registry/bootstrap")
+        .then()
+            .statusCode(statusCode)
+
+        then: "node request is saved"
+        def rows = sql.rows("SELECT * FROM node_requests;")
+
+        rows.get(0).getProperty("host_id") == "0000"
+        rows.get(0).getProperty("bootstrap_requested") != null
+        rows.get(0).getProperty("bootstrap_type") == bootstrapType
+        rows.get(0).getProperty("bootstrap_received") == null
+
+        rows.get(1).getProperty("host_id") == "1111"
+        rows.get(1).getProperty("bootstrap_requested") != null
+        rows.get(1).getProperty("bootstrap_type") == bootstrapType
+        rows.get(1).getProperty("bootstrap_received") == null
+
+        rows.get(2).getProperty("host_id") == "2222"
+        rows.get(2).getProperty("bootstrap_requested") != null
+        rows.get(2).getProperty("bootstrap_type") == bootstrapType
+        rows.get(2).getProperty("bootstrap_received") == null
+
+        rows.get(3).getProperty("host_id") == "A1"
+        rows.get(3).getProperty("bootstrap_requested") != null
+        rows.get(3).getProperty("bootstrap_type") == bootstrapType
+        rows.get(3).getProperty("bootstrap_received") == null
+
+        rows.get(4).getProperty("host_id") == "A2"
+        rows.get(4).getProperty("bootstrap_requested") != null
+        rows.get(4).getProperty("bootstrap_type") == bootstrapType
+        rows.get(4).getProperty("bootstrap_received") == null
+
+        rows.get(5).getProperty("host_id") == "B1"
+        rows.get(5).getProperty("bootstrap_requested") != null
+        rows.get(5).getProperty("bootstrap_type") == bootstrapType
+        rows.get(5).getProperty("bootstrap_received") == null
+
+        rows.get(6).getProperty("host_id") == "B2"
+        rows.get(6).getProperty("bootstrap_requested") != null
+        rows.get(6).getProperty("bootstrap_type") == bootstrapType
+        rows.get(6).getProperty("bootstrap_received") == null
+
+        where:
+        bootstrapString     | statusCode | bootstrapType
+        "PROVIDER"          | 200        | BootstrapType.PROVIDER.toString()
+        "PIPE_AND_PROVIDER" | 200        | BootstrapType.PIPE_AND_PROVIDER.toString()
+        "PIPE"              | 200        | BootstrapType.PIPE.toString()
+        "PIPE_WITH_DELAY"   | 200        | BootstrapType.PIPE_WITH_DELAY.toString()
+    }
+
+
     def "when bootstrap is called with invalid bootstrap type, a 400 is returned"() {
         given: "identity rejecting requests"
         denySingleIdentityTokenValidationRequest()
@@ -674,7 +746,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         }
     }
 
-    private void registerNode(group, url, offset = 0, status = INITIALISING.toString(), following = [CLOUD_PIPE_URL]) {
+    private void registerNode(group, url, offset = 0, status = INITIALISING.toString(), following = [CLOUD_PIPE_URL], host = "host") {
         def identityToken = UUID.randomUUID().toString()
         acceptSingleIdentityTokenValidationRequest(clientIdAndSecret, identityToken, NODE_A_CLIENT_UID, equalTo("someTraceId"))
 
@@ -686,7 +758,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
                 "group": "$group",
                 "localUrl": "$url",
                 "offset": "$offset",
-                "pipe": {"pipeState" : "$UP_TO_DATE", "v":"1.0"},
+                "pipe": {"pipeState" : "$UP_TO_DATE", "v":"1.0", "host" : "$host"},
                 "status": "$status",
                 "following": ["${following.join('", "')}"]
             }""")
@@ -696,7 +768,8 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(200)
     }
 
-    private static Map<String, Object> parseYamlConfig(String str) {
+
+        private static Map<String, Object> parseYamlConfig(String str) {
         def loader = new YamlPropertySourceLoader()
         loader.read("config", str.bytes)
     }
