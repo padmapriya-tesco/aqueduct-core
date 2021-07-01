@@ -108,7 +108,7 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return new StateSummary(getCloudNode(offset, status), followers);
     }
 
-    private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
+    public List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
         try (Connection connection = getConnection()) {
             groups = nodeGroupStorage.readNodeGroups(connection, groupIds);
