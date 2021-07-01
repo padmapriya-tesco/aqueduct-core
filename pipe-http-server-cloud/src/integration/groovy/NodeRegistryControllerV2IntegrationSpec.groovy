@@ -462,6 +462,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
         .when()
             .header("Authorization", "Basic $USERNAME_ENCODED_CREDENTIALS")
             .body("""{
+                "locations": [],
                 "nodeRequests": ["0000", "1111", "2222"], 
                 "bootstrapType": "$bootstrapString"
             }""")
