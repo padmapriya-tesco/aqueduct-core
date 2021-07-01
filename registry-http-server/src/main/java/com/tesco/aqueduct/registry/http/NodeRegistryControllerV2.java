@@ -35,7 +35,6 @@ public class NodeRegistryControllerV2 {
     private static final RegistryLogger LOG = new RegistryLogger(LoggerFactory.getLogger(NodeRegistryControllerV2.class));
     private final NodeRegistry registry;
     private final NodeRequestStorage nodeRequestStorage;
-    private final PostgreSQLNodeRegistry postgreSQLNodeRegistry;
     private final Reader pipe;
     private final int compressionThreshold;
     private final GzipCodec gzip;
@@ -44,14 +43,12 @@ public class NodeRegistryControllerV2 {
     public NodeRegistryControllerV2(
         final NodeRegistry registry,
         final NodeRequestStorage nodeRequestStorage,
-        final PostgreSQLNodeRegistry postgreSQLNodeRequestStorage,
         final Reader pipe,
         @Property(name = "compression.threshold-in-bytes") int compressionThreshold,
         GzipCodec gzip
     ) {
         this.registry = registry;
         this.nodeRequestStorage = nodeRequestStorage;
-        this.postgreSQLNodeRegistry = postgreSQLNodeRequestStorage;
         this.pipe = pipe;
         this.compressionThreshold = compressionThreshold;
         this.gzip = gzip;
@@ -94,7 +91,7 @@ public class NodeRegistryControllerV2 {
     @Secured(BOOTSTRAP_NODE)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
-        bootstrapRequest.save(nodeRequestStorage, postgreSQLNodeRegistry);
+        bootstrapRequest.save(nodeRequestStorage, registry);
         return HttpResponse.status(HttpStatus.OK);
     }
 

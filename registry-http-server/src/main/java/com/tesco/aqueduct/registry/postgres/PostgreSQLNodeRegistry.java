@@ -108,7 +108,20 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
         return new StateSummary(getCloudNode(offset, status), followers);
     }
 
-    public List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
+    @Override
+    public Set<String> getNodeHostsForGroups(List<String> groupIds) {
+        List<PostgresNodeGroup>  postgresNodeGroups = getPostgresNodeGroups(groupIds);
+
+        Set<String> nodes = new HashSet<>();
+
+        for (PostgresNodeGroup postgresNodeGroup : postgresNodeGroups) {
+            nodes.addAll(postgresNodeGroup.getNodes().stream().map(node -> node.getPipe().get("host")).collect(Collectors.toSet()));
+        }
+
+        return nodes;
+    }
+
+    private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
         List<PostgresNodeGroup> groups;
         try (Connection connection = getConnection()) {
             groups = nodeGroupStorage.readNodeGroups(connection, groupIds);
