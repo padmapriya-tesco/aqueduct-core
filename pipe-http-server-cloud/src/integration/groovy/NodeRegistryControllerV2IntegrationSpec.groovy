@@ -768,8 +768,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
             .statusCode(200)
     }
 
-
-        private static Map<String, Object> parseYamlConfig(String str) {
+    private static Map<String, Object> parseYamlConfig(String str) {
         def loader = new YamlPropertySourceLoader()
         loader.read("config", str.bytes)
     }
