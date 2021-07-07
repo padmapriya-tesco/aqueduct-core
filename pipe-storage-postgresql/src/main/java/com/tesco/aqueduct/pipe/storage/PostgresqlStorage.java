@@ -337,6 +337,7 @@ public class PostgresqlStorage implements CentralStorage {
                 query.setLong(3, startOffset);
                 query.setLong(4, endOffset);
                 query.setLong(5, limit);
+                query.setLong(6, limit);
             } else {
                 final String strTypes = String.join(",", types);
                 query = connection.prepareStatement(getSelectEventsWithTypeQuery(maxBatchSize));
@@ -434,17 +435,19 @@ public class PostgresqlStorage implements CentralStorage {
             " SELECT type, msg_key, content_type, msg_offset, created_utc, data, location_group " +
             " FROM " +
             " ( " +
-            "   SELECT " +
-            "     type, msg_key, content_type, msg_offset, created_utc, data, location_group, " +
-            "     SUM(event_size) OVER (ORDER BY msg_offset ASC) AS running_size " +
-            "   FROM events " +
-                  addClusterAndLocationGroupFilter() +
-            "   AND events.msg_offset >= ? " +
-            "   AND events.msg_offset <= ?" +
-            " ORDER BY msg_offset " +
-            " LIMIT ?" +
-            " ) unused " +
-            " WHERE running_size <= " + maxBatchSize;
+                " SELECT e.type, e.msg_key, e.content_type, e.msg_offset, e.created_utc, e.location_group, " +
+                " SUM(e.event_size) OVER (ORDER BY e.msg_offset ASC) AS running_size FROM events e, " +
+                " unnest(?) as cid, " +
+                " lateral ( " +
+                    " SELECT msg_offset" +
+                    " FROM events" +
+                    " WHERE cluster_id = cid" +
+                    " AND (location_group IS NULL OR location_group = ANY ( ? )) " +
+                    " AND events.msg_offset >= ? " +
+                    " AND events.msg_offset <= ? " +
+                    " ORDER BY msg_offset LIMIT ? ) " +
+                " filtered WHERE filtered.msg_offset = e.msg_offset ) " +
+            " unused WHERE running_size < " + maxBatchSize + " ORDER BY msg_offset LIMIT ?; ";
     }
 
     private String getSelectEventsWithTypeQuery(long maxBatchSize) {
