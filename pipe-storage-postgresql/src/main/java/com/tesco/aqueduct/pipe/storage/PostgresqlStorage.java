@@ -435,7 +435,7 @@ public class PostgresqlStorage implements CentralStorage {
             " SELECT type, msg_key, content_type, msg_offset, created_utc, data, location_group " +
             " FROM " +
             " ( " +
-                " SELECT e.type, e.msg_key, e.content_type, e.msg_offset, e.created_utc, e.location_group, " +
+                " SELECT e.type, e.msg_key, e.content_type, e.msg_offset, e.created_utc, e.data, e.location_group, " +
                 " SUM(e.event_size) OVER (ORDER BY e.msg_offset ASC) AS running_size FROM events e, " +
                 " unnest(?) as cid, " +
                 " lateral ( " +
