@@ -497,7 +497,7 @@ class NodeRegistryControllerV2IntegrationSpec extends Specification {
     }
 
     @Unroll
-    def "when a bootstrap is requested for a location and nodes, a bootstrap request is saved for that node"() {
+    def "When bootstrap is requested, a bootstrap is saved for all requested nodes and nodes belonging to requested location"() {
         given: "We register multiple nodes"
         registerNode("locationA", "http://1.1.1.1:0001", 123, FOLLOWING, [CLOUD_PIPE_URL],"A1")
         registerNode("locationA", "http://1.1.1.2:0002", 123, INITIALISING, [CLOUD_PIPE_URL],"A2")

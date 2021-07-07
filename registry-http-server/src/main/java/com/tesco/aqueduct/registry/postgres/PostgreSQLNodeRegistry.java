@@ -110,15 +110,10 @@ public class PostgreSQLNodeRegistry implements NodeRegistry {
 
     @Override
     public Set<String> getNodeHostsForGroups(List<String> groupIds) {
-        List<PostgresNodeGroup>  postgresNodeGroups = getPostgresNodeGroups(groupIds);
-
-        Set<String> nodes = new LinkedHashSet<>();
-
-        for (PostgresNodeGroup postgresNodeGroup : postgresNodeGroups) {
-            nodes.addAll(postgresNodeGroup.getNodes().stream().map(node -> node.getPipe().get("host")).collect(Collectors.toList()));
-        }
-
-        return nodes;
+        return getPostgresNodeGroups(groupIds).stream()
+            .flatMap(postgresNodeGroup -> postgresNodeGroup.getNodes().stream())
+            .map(node -> node.getPipe().get("host"))
+            .collect(LinkedHashSet::new, HashSet::add, (s1, s2) -> {});
     }
 
     private List<PostgresNodeGroup> getPostgresNodeGroups(List<String> groupIds) {
