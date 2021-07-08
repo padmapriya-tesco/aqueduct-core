@@ -25,7 +25,7 @@ public class BootstrapRequest {
     }
 
     private void retrieveNodesForLocations(NodeRegistry nodeRegistry) {
-        if (!locations.isEmpty()) {
+        if (locations != null && !locations.isEmpty()) {
             nodeRequests.addAll(nodeRegistry.getNodeHostsForGroups(locations));
         }
     }
