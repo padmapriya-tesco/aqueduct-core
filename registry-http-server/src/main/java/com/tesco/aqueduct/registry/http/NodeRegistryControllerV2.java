@@ -7,6 +7,7 @@ import com.tesco.aqueduct.pipe.codec.GzipCodec;
 import com.tesco.aqueduct.pipe.metrics.Measure;
 import com.tesco.aqueduct.registry.model.Status;
 import com.tesco.aqueduct.registry.model.*;
+import com.tesco.aqueduct.registry.postgres.PostgreSQLNodeRegistry;
 import com.tesco.aqueduct.registry.utils.RegistryLogger;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.http.HttpHeaders;
@@ -21,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class NodeRegistryControllerV2 {
         final NodeRegistry registry,
         final NodeRequestStorage nodeRequestStorage,
         final Reader pipe,
-        @Property(name="compression.threshold-in-bytes") int compressionThreshold,
+        @Property(name = "compression.threshold-in-bytes") int compressionThreshold,
         GzipCodec gzip
     ) {
         this.registry = registry;
@@ -91,7 +91,7 @@ public class NodeRegistryControllerV2 {
     @Secured(BOOTSTRAP_NODE)
     @Post("/bootstrap")
     public HttpResponse bootstrap(@Body final BootstrapRequest bootstrapRequest) throws SQLException {
-        bootstrapRequest.save(nodeRequestStorage);
+        bootstrapRequest.save(nodeRequestStorage, registry);
         return HttpResponse.status(HttpStatus.OK);
     }
 

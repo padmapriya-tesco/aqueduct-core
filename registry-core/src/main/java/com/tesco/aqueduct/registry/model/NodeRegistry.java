@@ -1,6 +1,7 @@
 package com.tesco.aqueduct.registry.model;
 
 import java.util.List;
+import java.util.Set;
 
 public interface NodeRegistry {
     /**
@@ -18,4 +19,6 @@ public interface NodeRegistry {
     StateSummary getSummary(long offset, Status status, List<String> groups);
 
     boolean deleteNode(String group, String host);
+
+    Set<String> getNodeHostsForGroups(List<String> groupIds);
 }
