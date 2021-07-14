@@ -51,4 +51,4 @@ persistence:
     work-mem-mb: 2000
 
 rate-limiter:
-  capacity: 80
+  capacity: 160
